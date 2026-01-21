@@ -1,0 +1,6 @@
+language:
+    code_comments: en
+    conversation_language: en
+    conversation_language_name: English
+    documentation: en
+    git_commit_messages: en

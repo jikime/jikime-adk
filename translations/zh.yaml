@@ -1,0 +1,140 @@
+language_section:
+  other: "语言选择"
+language_prompt:
+  other: "请选择你的对话语言"
+language_selected:
+  other: "已选择: {{.Language}}"
+user_section:
+  other: "用户设置"
+user_prompt:
+  other: "输入你的用户名（可选）"
+user_welcome:
+  other: "欢迎: {{.Name}}"
+project_prompt:
+  other: "项目名称"
+git_mode_prompt:
+  other: "Git 模式"
+github_prompt:
+  other: "GitHub 用户名"
+commit_lang_prompt:
+  other: "提交信息语言"
+code_comment_prompt:
+  other: "代码注释语言"
+documentation_prompt:
+  other: "文档语言"
+git_setup_section:
+  other: "Git 设置"
+git_mode_select_help:
+  other: "选择 Git 模式: [↑↓] 导航  [Enter] 选择"
+git_mode_manual_display:
+  other: "manual (仅本地)"
+git_mode_manual_desc:
+  other: "仅本地存储库"
+git_mode_personal_display:
+  other: "personal (GitHub 个人)"
+git_mode_personal_desc:
+  other: "GitHub 个人账户"
+git_mode_team_display:
+  other: "team (GitHub 团队)"
+git_mode_team_desc:
+  other: "GitHub 团队/组织"
+git_setup_summary:
+  other: "Git 设置"
+select_git_mode_summary:
+  other: "选择 Git 模式"
+output_language_settings:
+  other: "输出语言设置"
+commit_message_language:
+  other: "提交信息语言"
+code_comment_language:
+  other: "代码注释语言"
+documentation_language:
+  other: "文档语言"
+setup_completed:
+  other: "设置完成！"
+starting_installation:
+  other: "开始安装..."
+phase1:
+  other: "Phase 1: 准备和备份..."
+phase2:
+  other: "Phase 2: 创建目录结构..."
+phase3:
+  other: "Phase 3: 安装资源..."
+phase4:
+  other: "Phase 4: 更新配置..."
+phase5:
+  other: "Phase 5: 验证和完成..."
+initialization_completed:
+  other: "初始化成功完成！"
+summary:
+  other: "摘要:"
+location:
+  other: "位置"
+language:
+  other: "语言"
+auto_detect:
+  other: "自动检测（使用 /jikime:0-project）"
+git:
+  other: "Git"
+local_only:
+  other: "仅本地"
+github_personal:
+  other: "GitHub 个人"
+github_team:
+  other: "GitHub 团队"
+locale:
+  other: "区域"
+files:
+  other: "文件"
+created:
+  other: "已创建"
+duration:
+  other: "耗时"
+backup:
+  other: "备份"
+next_steps:
+  other: "下一步:"
+next_step_1:
+  other: "在 Claude Code 中运行 /jikime:0-project 进行完整设置"
+next_step_1_desc:
+  other: "（配置项：模式、语言、报告生成等）"
+next_step_2:
+  other: "开始使用 JikiME-ADK 开发！"
+
+# TAG System
+tag_setup_section:
+  other: "TAG 系统设置"
+tag_setup_desc:
+  other: "TAG 将代码与 SPEC 文档链接，提供可追溯性"
+tag_enabled_yes:
+  other: "启用"
+tag_enabled_yes_desc:
+  other: "在 pre-commit 钩子中启用 TAG 验证"
+tag_enabled_no:
+  other: "禁用"
+tag_enabled_no_desc:
+  other: "跳过 TAG 验证"
+tag_mode_select_help:
+  other: "选择 TAG 验证模式: [↑↓] 导航  [Enter] 选择"
+tag_mode_warn_display:
+  other: "warn（警告）"
+tag_mode_warn_desc:
+  other: "显示警告但允许提交"
+tag_mode_enforce_display:
+  other: "enforce（强制）"
+tag_mode_enforce_desc:
+  other: "阻止没有有效 TAG 的提交"
+tag_mode_off_display:
+  other: "off（关闭）"
+tag_mode_off_desc:
+  other: "禁用 TAG 验证"
+tag_setup_summary:
+  other: "TAG 设置"
+tag_enabled_label:
+  other: "TAG 系统"
+tag_mode_label:
+  other: "验证模式"
+yes:
+  other: "已启用"
+no:
+  other: "已禁用"

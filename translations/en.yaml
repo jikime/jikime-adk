@@ -1,0 +1,140 @@
+language_section:
+  other: "Language Selection"
+language_prompt:
+  other: "Select your conversation language"
+language_selected:
+  other: "Selected: {{.Language}}"
+user_section:
+  other: "User Setup"
+user_prompt:
+  other: "Enter your name (optional)"
+user_welcome:
+  other: "Welcome: {{.Name}}"
+project_prompt:
+  other: "Project name"
+git_mode_prompt:
+  other: "Git mode"
+github_prompt:
+  other: "GitHub username"
+commit_lang_prompt:
+  other: "Commit message language"
+code_comment_prompt:
+  other: "Code comment language"
+documentation_prompt:
+  other: "Documentation language"
+git_setup_section:
+  other: "Git Setup"
+git_mode_select_help:
+  other: "Select Git mode: [↑↓] Navigate  [Enter] Select"
+git_mode_manual_display:
+  other: "manual (local only)"
+git_mode_manual_desc:
+  other: "Local repository only"
+git_mode_personal_display:
+  other: "personal (GitHub personal)"
+git_mode_personal_desc:
+  other: "GitHub personal account"
+git_mode_team_display:
+  other: "team (GitHub team)"
+git_mode_team_desc:
+  other: "GitHub team/organization"
+git_setup_summary:
+  other: "Git Setup"
+select_git_mode_summary:
+  other: "Select Git mode"
+output_language_settings:
+  other: "Output Language Settings"
+commit_message_language:
+  other: "Commit message language"
+code_comment_language:
+  other: "Code comment language"
+documentation_language:
+  other: "Documentation language"
+setup_completed:
+  other: "Setup completed!"
+starting_installation:
+  other: "Starting installation..."
+phase1:
+  other: "Phase 1: Preparation and backup..."
+phase2:
+  other: "Phase 2: Creating directory structure..."
+phase3:
+  other: "Phase 3: Installing resources..."
+phase4:
+  other: "Phase 4: Updating section configurations..."
+phase5:
+  other: "Phase 5: Validation and finalization..."
+initialization_completed:
+  other: "Initialization Completed Successfully!"
+summary:
+  other: "Summary:"
+location:
+  other: "Location"
+language:
+  other: "Language"
+auto_detect:
+  other: "Auto-detect (use /jikime:0-project)"
+git:
+  other: "Git"
+local_only:
+  other: "local only"
+github_personal:
+  other: "GitHub personal"
+github_team:
+  other: "GitHub team"
+locale:
+  other: "Locale"
+files:
+  other: "Files"
+created:
+  other: "created"
+duration:
+  other: "Duration"
+backup:
+  other: "Backup"
+next_steps:
+  other: "Next Steps:"
+next_step_1:
+  other: "Run /jikime:0-project in Claude Code for full setup"
+next_step_1_desc:
+  other: "(Configure: mode, language, report generation, etc.)"
+next_step_2:
+  other: "Start developing with JikiME-ADK!"
+
+# TAG System
+tag_setup_section:
+  other: "TAG System Setup"
+tag_setup_desc:
+  other: "TAG links code to SPEC documents for traceability"
+tag_enabled_yes:
+  other: "Enable"
+tag_enabled_yes_desc:
+  other: "Enable TAG validation in pre-commit hooks"
+tag_enabled_no:
+  other: "Disable"
+tag_enabled_no_desc:
+  other: "Skip TAG validation"
+tag_mode_select_help:
+  other: "Select TAG validation mode: [↑↓] Navigate  [Enter] Select"
+tag_mode_warn_display:
+  other: "warn"
+tag_mode_warn_desc:
+  other: "Show warnings but allow commits"
+tag_mode_enforce_display:
+  other: "enforce"
+tag_mode_enforce_desc:
+  other: "Block commits without valid TAGs"
+tag_mode_off_display:
+  other: "off"
+tag_mode_off_desc:
+  other: "Disable TAG validation"
+tag_setup_summary:
+  other: "TAG Setup"
+tag_enabled_label:
+  other: "TAG System"
+tag_mode_label:
+  other: "Validation Mode"
+yes:
+  other: "Enabled"
+no:
+  other: "Disabled"

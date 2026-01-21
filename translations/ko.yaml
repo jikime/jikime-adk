@@ -1,0 +1,140 @@
+language_section:
+  other: "언어 선택"
+language_prompt:
+  other: "대화 언어를 선택하세요"
+language_selected:
+  other: "선택됨: {{.Language}}"
+user_section:
+  other: "사용자 설정"
+user_prompt:
+  other: "사용자 이름을 입력하세요 (선택사항)"
+user_welcome:
+  other: "환영합니다: {{.Name}}"
+project_prompt:
+  other: "프로젝트 이름"
+git_mode_prompt:
+  other: "Git 모드"
+github_prompt:
+  other: "GitHub 사용자명"
+commit_lang_prompt:
+  other: "커밋 메시지 언어"
+code_comment_prompt:
+  other: "코드 주석 언어"
+documentation_prompt:
+  other: "문서 언어"
+git_setup_section:
+  other: "Git 설정"
+git_mode_select_help:
+  other: "Git 모드 선택: [↑↓] 이동  [Enter] 선택"
+git_mode_manual_display:
+  other: "manual (로컬 전용)"
+git_mode_manual_desc:
+  other: "로컬 저장소만 사용"
+git_mode_personal_display:
+  other: "personal (GitHub 개인)"
+git_mode_personal_desc:
+  other: "GitHub 개인 계정"
+git_mode_team_display:
+  other: "team (GitHub 팀)"
+git_mode_team_desc:
+  other: "GitHub 팀/조직"
+git_setup_summary:
+  other: "Git 설정"
+select_git_mode_summary:
+  other: "Git 모드 선택"
+output_language_settings:
+  other: "출력 언어 설정"
+commit_message_language:
+  other: "커밋 메시지 언어"
+code_comment_language:
+  other: "코드 주석 언어"
+documentation_language:
+  other: "문서 언어"
+setup_completed:
+  other: "설정이 완료되었습니다!"
+starting_installation:
+  other: "설치를 시작합니다..."
+phase1:
+  other: "Phase 1: 준비 및 백업..."
+phase2:
+  other: "Phase 2: 디렉토리 구조 생성..."
+phase3:
+  other: "Phase 3: 리소스 설치..."
+phase4:
+  other: "Phase 4: 설정 업데이트..."
+phase5:
+  other: "Phase 5: 검증 및 마무리..."
+initialization_completed:
+  other: "초기화가 성공적으로 완료되었습니다!"
+summary:
+  other: "요약:"
+location:
+  other: "위치"
+language:
+  other: "언어"
+auto_detect:
+  other: "자동 감지 (/jikime:0-project 사용)"
+git:
+  other: "Git"
+local_only:
+  other: "로컬 전용"
+github_personal:
+  other: "GitHub 개인"
+github_team:
+  other: "GitHub 팀"
+locale:
+  other: "로케일"
+files:
+  other: "파일"
+created:
+  other: "생성됨"
+duration:
+  other: "소요 시간"
+backup:
+  other: "백업"
+next_steps:
+  other: "다음 단계:"
+next_step_1:
+  other: "Claude Code에서 /jikime:0-project를 실행하여 전체 설정"
+next_step_1_desc:
+  other: "(설정 항목: 모드, 언어, 보고서 생성 등)"
+next_step_2:
+  other: "JikiME-ADK로 개발을 시작하세요!"
+
+# TAG System
+tag_setup_section:
+  other: "TAG 시스템 설정"
+tag_setup_desc:
+  other: "TAG는 코드와 SPEC 문서를 연결하여 추적성을 제공합니다"
+tag_enabled_yes:
+  other: "활성화"
+tag_enabled_yes_desc:
+  other: "pre-commit 훅에서 TAG 검증 활성화"
+tag_enabled_no:
+  other: "비활성화"
+tag_enabled_no_desc:
+  other: "TAG 검증 건너뛰기"
+tag_mode_select_help:
+  other: "TAG 검증 모드 선택: [↑↓] 이동  [Enter] 선택"
+tag_mode_warn_display:
+  other: "warn (경고)"
+tag_mode_warn_desc:
+  other: "경고만 표시하고 커밋 허용"
+tag_mode_enforce_display:
+  other: "enforce (강제)"
+tag_mode_enforce_desc:
+  other: "유효한 TAG 없이 커밋 차단"
+tag_mode_off_display:
+  other: "off (끔)"
+tag_mode_off_desc:
+  other: "TAG 검증 비활성화"
+tag_setup_summary:
+  other: "TAG 설정"
+tag_enabled_label:
+  other: "TAG 시스템"
+tag_mode_label:
+  other: "검증 모드"
+yes:
+  other: "활성화됨"
+no:
+  other: "비활성화됨"

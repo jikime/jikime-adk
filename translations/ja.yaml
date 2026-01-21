@@ -1,0 +1,140 @@
+language_section:
+  other: "言語の選択"
+language_prompt:
+  other: "会話言語を選択してください"
+language_selected:
+  other: "選択済み: {{.Language}}"
+user_section:
+  other: "ユーザー設定"
+user_prompt:
+  other: "ユーザー名を入力してください（任意）"
+user_welcome:
+  other: "ようこそ: {{.Name}}"
+project_prompt:
+  other: "プロジェクト名"
+git_mode_prompt:
+  other: "Gitモード"
+github_prompt:
+  other: "GitHubユーザー名"
+commit_lang_prompt:
+  other: "コミットメッセージの言語"
+code_comment_prompt:
+  other: "コードコメントの言語"
+documentation_prompt:
+  other: "ドキュメントの言語"
+git_setup_section:
+  other: "Git設定"
+git_mode_select_help:
+  other: "Gitモードを選択: [↑↓] 移動  [Enter] 選択"
+git_mode_manual_display:
+  other: "manual (ローカルのみ)"
+git_mode_manual_desc:
+  other: "ローカルリポジトリのみ"
+git_mode_personal_display:
+  other: "personal (GitHub個人)"
+git_mode_personal_desc:
+  other: "GitHub個人アカウント"
+git_mode_team_display:
+  other: "team (GitHubチーム)"
+git_mode_team_desc:
+  other: "GitHubチーム/組織"
+git_setup_summary:
+  other: "Git設定"
+select_git_mode_summary:
+  other: "Gitモード選択"
+output_language_settings:
+  other: "出力言語設定"
+commit_message_language:
+  other: "コミットメッセージの言語"
+code_comment_language:
+  other: "コードコメントの言語"
+documentation_language:
+  other: "ドキュメントの言語"
+setup_completed:
+  other: "設定が完了しました！"
+starting_installation:
+  other: "インストールを開始しています..."
+phase1:
+  other: "Phase 1: 準備とバックアップ..."
+phase2:
+  other: "Phase 2: ディレクトリ構造の作成..."
+phase3:
+  other: "Phase 3: リソースのインストール..."
+phase4:
+  other: "Phase 4: 設定の更新..."
+phase5:
+  other: "Phase 5: 検証と最終処理..."
+initialization_completed:
+  other: "初期化が正常に完了しました！"
+summary:
+  other: "概要:"
+location:
+  other: "場所"
+language:
+  other: "言語"
+auto_detect:
+  other: "自動検出 (/jikime:0-project を使用)"
+git:
+  other: "Git"
+local_only:
+  other: "ローカルのみ"
+github_personal:
+  other: "GitHub 個人"
+github_team:
+  other: "GitHub チーム"
+locale:
+  other: "ロケール"
+files:
+  other: "ファイル"
+created:
+  other: "作成済み"
+duration:
+  other: "所要時間"
+backup:
+  other: "バックアップ"
+next_steps:
+  other: "次のステップ:"
+next_step_1:
+  other: "Claude Codeで /jikime:0-project を実行して完全なセットアップ"
+next_step_1_desc:
+  other: "(設定項目: モード、言語、レポート生成など)"
+next_step_2:
+  other: "JikiME-ADKで開発を開始しましょう！"
+
+# TAG System
+tag_setup_section:
+  other: "TAGシステム設定"
+tag_setup_desc:
+  other: "TAGはコードとSPECドキュメントを連携させ、追跡性を提供します"
+tag_enabled_yes:
+  other: "有効化"
+tag_enabled_yes_desc:
+  other: "pre-commitフックでTAG検証を有効化"
+tag_enabled_no:
+  other: "無効化"
+tag_enabled_no_desc:
+  other: "TAG検証をスキップ"
+tag_mode_select_help:
+  other: "TAG検証モードを選択: [↑↓] 移動  [Enter] 選択"
+tag_mode_warn_display:
+  other: "warn（警告）"
+tag_mode_warn_desc:
+  other: "警告を表示しコミットを許可"
+tag_mode_enforce_display:
+  other: "enforce（強制）"
+tag_mode_enforce_desc:
+  other: "有効なTAGなしのコミットをブロック"
+tag_mode_off_display:
+  other: "off（オフ）"
+tag_mode_off_desc:
+  other: "TAG検証を無効化"
+tag_setup_summary:
+  other: "TAG設定"
+tag_enabled_label:
+  other: "TAGシステム"
+tag_mode_label:
+  other: "検証モード"
+yes:
+  other: "有効"
+no:
+  other: "無効"

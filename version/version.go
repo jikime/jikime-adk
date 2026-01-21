@@ -1,0 +1,13 @@
+package version
+
+// buildVersion is injected at build time via -ldflags "-X 'jikime-adk-v2/version.buildVersion=<value>'".
+var buildVersion string
+
+const fallbackVersion = "2.0.0"
+
+func String() string {
+	if buildVersion != "" {
+		return buildVersion
+	}
+	return fallbackVersion
+}
