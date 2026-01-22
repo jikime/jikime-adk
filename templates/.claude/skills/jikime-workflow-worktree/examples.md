@@ -1,9 +1,9 @@
 # JikiME Worktree Examples
 
-Purpose: Real-world usage examples and patterns for jikime-worktree skill integration with JikiME-ADK workflow.
+Purpose: Real-world usage examples and patterns for jikime worktree skill integration with JikiME-ADK workflow.
 
-Version: 1.0.0
-Last Updated: 2025-11-29
+Version: 2.0.0
+Last Updated: 2026-01-22
 
 ---
 
@@ -22,20 +22,19 @@ Scenario: Creating a new SPEC with automatic worktree setup
 # Worktree created: .jikime/worktrees/JikiME-ADK/SPEC-AUTH-001
 #
 # Next steps:
-# 1. Switch to worktree: jikime-worktree switch SPEC-AUTH-001
-# 2. Or use shell eval: eval $(jikime-worktree go SPEC-AUTH-001)
-# 3. Start development: /jikime:2-run SPEC-AUTH-001
+# 1. Navigate to worktree: eval $(jikime worktree go SPEC-AUTH-001)
+# 2. Start development: /jikime:2-run SPEC-AUTH-001
 
 # Development Phase - Implement in isolated environment
-eval $(jikime-worktree go SPEC-AUTH-001)
+eval $(jikime worktree go SPEC-AUTH-001)
 /jikime:2-run SPEC-AUTH-001
 
 # Sync Phase - Synchronize and integrate
-jikime-worktree sync SPEC-AUTH-001
+jikime worktree sync SPEC-AUTH-001
 /jikime:3-sync SPEC-AUTH-001
 
 # Cleanup Phase - Remove completed worktree
-jikime-worktree remove SPEC-AUTH-001
+jikime worktree remove SPEC-AUTH-001
 ```
 
 ### Example 2: Parallel SPEC Development
@@ -44,28 +43,28 @@ Scenario: Working on multiple SPECs simultaneously
 
 ```bash
 # Create multiple worktrees for parallel development
-jikime-worktree new SPEC-AUTH-001 "User Authentication"
-jikime-worktree new SPEC-PAY-001 "Payment Processing"
-jikime-worktree new SPEC-DASH-001 "Dashboard Analytics"
+jikime worktree new SPEC-AUTH-001
+jikime worktree new SPEC-PAY-001
+jikime worktree new SPEC-DASH-001
 
-# Switch between worktrees
-jikime-worktree switch SPEC-AUTH-001
+# Navigate between worktrees using shell eval
+eval $(jikime worktree go SPEC-AUTH-001)
 # Work on authentication...
 
-jikime-worktree switch SPEC-PAY-001
+eval $(jikime worktree go SPEC-PAY-001)
 # Work on payment system...
 
-jikime-worktree switch SPEC-DASH-001
+eval $(jikime worktree go SPEC-DASH-001)
 # Work on dashboard...
 
 # Check status of all worktrees
-jikime-worktree status --all
+jikime worktree status --all
 
 # Sync all worktrees
-jikime-worktree sync --all
+jikime worktree sync --all
 
 # Clean up completed worktrees
-jikime-worktree clean --merged-only
+jikime worktree clean --merged-only
 ```
 
 ### Example 3: Worktree in Development Commands
@@ -83,9 +82,9 @@ Scenario: Using worktree-aware DDD implementation
 # - Updates worktree metadata
 
 # Manual worktree management during development
-jikime-worktree status SPEC-AUTH-001
-jikime-worktree sync SPEC-AUTH-001 --include "src/"
-jikime-worktree config get worktree_root
+jikime worktree status SPEC-AUTH-001
+jikime worktree sync SPEC-AUTH-001 --include "src/"
+jikime worktree config get worktree_root
 ```
 
 ---
@@ -98,7 +97,7 @@ Agent Usage: Project initialization with worktree support
 
 ```python
 # In manager-project agent context
-Skill("jikime-worktree") # Load worktree patterns
+Skill("jikime worktree") # Load worktree patterns
 
 # Setup project with worktree support
 project_config = {
@@ -119,7 +118,6 @@ if project_config.get("worktree_enabled"):
 
  worktree_info = worktree_manager.create(
  spec_id="SPEC-AUTH-001",
- description="User Authentication System",
  template="authentication"
  )
 ```
@@ -130,19 +128,20 @@ Agent Usage: Git operations with worktree awareness
 
 ```python
 # In manager-git agent context
-Skill("jikime-worktree") # Load worktree patterns
+Skill("jikime worktree") # Load worktree patterns
 
-def create_feature_branch_with_worktree(spec_id: str, description: str):
+def create_feature_branch_with_worktree(spec_id: str, branch_name: str = None):
  """Create feature branch and associated worktree."""
 
  # Check if in worktree environment
  current_worktree = detect_worktree_environment()
 
+ # Use default branch name if not provided
+ if branch_name is None:
+ branch_name = f"feature/{spec_id}"
+
  if current_worktree:
  # In worktree - create branch from worktree
- branch_name = f"feature/SPEC-{spec_id}-{description.lower().replace(' ', '-')}"
-
- # Create worktree-specific branch
  git_checkout(branch_name, create_new=True)
 
  # Update worktree registry
@@ -154,12 +153,11 @@ def create_feature_branch_with_worktree(spec_id: str, description: str):
  worktree_manager = WorktreeManager(Path.cwd())
  worktree_manager.create(
  spec_id=spec_id,
- description=description,
  branch=branch_name
  )
 
 # Usage in agent workflow
-create_feature_branch_with_worktree("SPEC-AUTH-001", "User Authentication")
+create_feature_branch_with_worktree("SPEC-AUTH-001")
 ```
 
 ---
@@ -184,12 +182,12 @@ echo " Phase 1: Creating SPEC and worktree..."
 /jikime:1-plan "$SPEC_DESCRIPTION" --worktree --spec-id "$SPEC_ID"
 
 # Check if worktree was created successfully
-if jikime-worktree list --format json | jq -r ".worktrees[\"$SPEC_ID\"]" > /dev/null; then
+if jikime worktree list --format json | jq -r ".worktrees[\"$SPEC_ID\"]" > /dev/null; then
  echo " Worktree $SPEC_ID created successfully"
 
  # Phase 2: Develop
  echo " Phase 2: Switching to worktree for development..."
- cd $(jikime-worktree go "$SPEC_ID")
+ cd $(jikime worktree go "$SPEC_ID")
 
  # Development loop
  while true; do
@@ -205,7 +203,7 @@ if jikime-worktree list --format json | jq -r ".worktrees[\"$SPEC_ID\"]" > /dev/
 
  # Phase 3: Sync
  echo " Phase 3: Synchronizing worktree..."
- jikime-worktree sync "$SPEC_ID"
+ jikime worktree sync "$SPEC_ID"
  cd - # Return to main repository
  /jikime:3-sync "$SPEC_ID"
 
@@ -214,7 +212,7 @@ if jikime-worktree list --format json | jq -r ".worktrees[\"$SPEC_ID\"]" > /dev/
  echo "Remove worktree $SPEC_ID? (y/n)"
  read -r cleanup_response
  if [[ "$cleanup_response" =~ ^[Yy]$ ]]; then
- jikime-worktree remove "$SPEC_ID"
+ jikime worktree remove "$SPEC_ID"
  echo " Worktree $SPEC_ID removed"
  fi
 
@@ -256,11 +254,11 @@ cat > "$WORKTREE_ROOT/.team-config.json" << EOF
 EOF
 
 # Initialize shared registry
-jikime-worktree config set worktree_root "$WORKTREE_ROOT"
-jikime-worktree config set registry_type team
+jikime worktree config set worktree_root "$WORKTREE_ROOT"
+jikime worktree config set registry_type team
 
 echo " Team worktree configuration completed"
-echo "Team members can now join with: jikime-worktree join --team $TEAM_NAME"
+echo "Team members can now join with: jikime worktree join --team $TEAM_NAME"
 ```
 
 ---
@@ -340,7 +338,7 @@ DEBUG=true""",
  }
 
  # Save template
- template_path = Path.home() / ".jikime-worktree/templates" / "fullstack.json"
+ template_path = Path.home() / ".jikime/worktree-templates" / "fullstack.json"
  template_path.parent.mkdir(parents=True, exist_ok=True)
 
  import json
@@ -353,7 +351,7 @@ DEBUG=true""",
 create_fullstack_template()
 
 # Create worktree with template
-# jikime-worktree new SPEC-FULL-001 "Fullstack Application" --template fullstack
+# jikime worktree new SPEC-FULL-001 --template fullstack
 ```
 
 ### Example 9: Worktree Automation Script
@@ -379,16 +377,19 @@ class WorktreeAutomation:
 
  for spec in specs:
  spec_id = spec.get('id')
- description = spec.get('description', f"Development for {spec_id}")
  template = spec.get('template', 'default')
+ branch = spec.get('branch')
 
  try:
  print(f" Creating worktree: {spec_id}")
 
- result = subprocess.run([
- "jikime-worktree", "new", spec_id, description,
- "--template", template
- ], capture_output=True, text=True, check=True)
+ cmd = ["jikime", "worktree", "new", spec_id]
+ if template != 'default':
+ cmd.extend(["--template", template])
+ if branch:
+ cmd.extend(["--branch", branch])
+
+ result = subprocess.run(cmd, capture_output=True, text=True, check=True)
 
  worktree_info = {
  'spec_id': spec_id,
@@ -419,7 +420,7 @@ class WorktreeAutomation:
  if spec_ids is None:
  # Get all active worktrees
  result = subprocess.run([
- "jikime-worktree", "list", "--status", "active", "--format", "json"
+ "jikime", "worktree", "list", "--status", "active", "--format", "json"
  ], capture_output=True, text=True, check=True)
 
  worktrees = json.loads(result.stdout)
@@ -432,7 +433,7 @@ class WorktreeAutomation:
  print(f" Syncing worktree: {spec_id}")
 
  result = subprocess.run([
- "jikime-worktree", "sync", spec_id
+ "jikime", "worktree", "sync", spec_id
  ], capture_output=True, text=True, check=True)
 
  sync_info = {
@@ -463,7 +464,7 @@ class WorktreeAutomation:
 
  # Get worktree status
  status_result = subprocess.run([
- "jikime-worktree", "status", "--all", "--format", "json"
+ "jikime", "worktree", "status", "--all", "--format", "json"
  ], capture_output=True, text=True, check=True)
 
  worktrees = json.loads(status_result.stdout)
@@ -505,7 +506,7 @@ class WorktreeAutomation:
  recommendations.append({
  'type': 'cleanup',
  'message': f"Found {len(stale_worktrees)} stale worktrees: {', '.join(stale_worktrees)}",
- 'action': 'jikime-worktree clean --stale --days 30'
+ 'action': 'jikime worktree clean --stale --days 30'
  })
 
  # Check for large worktrees
@@ -518,7 +519,7 @@ class WorktreeAutomation:
  recommendations.append({
  'type': 'optimization',
  'message': f"Found {len(large_worktrees)} large worktrees: {', '.join(large_worktrees)}",
- 'action': 'jikime-worktree optimize --analyze'
+ 'action': 'jikime worktree optimize --analyze'
  })
 
  return recommendations
@@ -529,9 +530,9 @@ if __name__ == "__main__":
 
  # Create worktrees from spec list
  specs = [
- {'id': 'SPEC-AUTH-001', 'description': 'User Authentication', 'template': 'backend'},
- {'id': 'SPEC-PAY-001', 'description': 'Payment Processing', 'template': 'backend'},
- {'id': 'SPEC-UI-001', 'description': 'User Interface', 'template': 'frontend'}
+ {'id': 'SPEC-AUTH-001', 'template': 'backend'},
+ {'id': 'SPEC-PAY-001', 'template': 'backend'},
+ {'id': 'SPEC-UI-001', 'template': 'frontend'}
  ]
 
  results = automation.batch_create_worktrees(specs)
@@ -565,29 +566,29 @@ git status
 git remote -v
 
 # Try with verbose output
-jikime-worktree new SPEC-DEBUG-001 "Debug Test" --verbose
+jikime worktree new SPEC-DEBUG-001 --verbose
 
 # Problem 2: Worktree sync conflicts
 echo " Resolving sync conflicts..."
 
 # Check sync status
-jikime-worktree status SPEC-CONFLICT-001
+jikime worktree status SPEC-CONFLICT-001
 
 # Interactive conflict resolution
-jikime-worktree sync SPEC-CONFLICT-001 --interactive
+jikime worktree sync SPEC-CONFLICT-001 --interactive
 
 # Force sync (if appropriate)
-jikime-worktree sync SPEC-CONFLICT-001 --force
+jikime worktree sync SPEC-CONFLICT-001 --force
 
 # Problem 3: Worktree registry corruption
 echo " Repairing worktree registry..."
 
 # Backup current registry
-cp .jikime/worktrees/PROJECT/.jikime-worktree-registry.json .jikime/worktrees/PROJECT/.jikime-worktree-registry.json.backup
+cp .jikime/worktrees/PROJECT/worktree-registry.json .jikime/worktrees/PROJECT/worktree-registry.json.backup
 
 # Rebuild registry from worktree directories
-jikime-worktree config set registry_rebuild true
-jikime-worktree list --rebuild-registry
+jikime worktree config set registry_rebuild true
+jikime worktree list --rebuild-registry
 
 # Problem 4: Permission issues
 echo " Fixing permission issues..."
@@ -601,6 +602,6 @@ chmod -R 755 .jikime/worktrees/PROJECT/
 
 ---
 
-Version: 1.0.0
-Last Updated: 2025-11-29
-Examples: Real-world usage patterns for jikime-worktree integration
+Version: 2.0.0
+Last Updated: 2026-01-22
+Examples: Real-world usage patterns for jikime worktree integration

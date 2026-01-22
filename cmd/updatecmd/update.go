@@ -16,8 +16,8 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"jikime-adk-v2/backup"
-	"jikime-adk-v2/version"
+	"jikime-adk/backup"
+	"jikime-adk/version"
 )
 
 const (
@@ -184,7 +184,7 @@ func getLatestRelease() (*GitHubRelease, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", "jikime-adk-v2/"+version.String())
+	req.Header.Set("User-Agent", "jikime-adk/"+version.String())
 
 	resp, err := client.Do(req)
 	if err != nil {

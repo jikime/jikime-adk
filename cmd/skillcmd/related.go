@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"jikime-adk-v2/skill"
+	"jikime-adk/skill"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"

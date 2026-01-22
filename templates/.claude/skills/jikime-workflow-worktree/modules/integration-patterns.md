@@ -1,6 +1,6 @@
 # Integration Patterns Module
 
-Purpose: Overview of integration patterns for jikime-worktree with JikiME-ADK workflow, development tools, and external systems.
+Purpose: Overview of integration patterns for jikime worktree with JikiME-ADK workflow, development tools, and external systems.
 
 Version: 2.0.0
 Last Updated: 2026-01-06
@@ -17,7 +17,7 @@ Integration Points:
 
 Core Integration Pattern:
 
-The basic integration workflow follows three phases. During the Plan Phase, the /jikime:1-plan command auto-creates a worktree for the SPEC. During the Development Phase, use the jikime-worktree go command to navigate to the isolated environment and run /jikime:2-run for DDD implementation. During the Sync Phase, use jikime-worktree sync to update the worktree and /jikime:3-sync for documentation synchronization.
+The basic integration workflow follows three phases. During the Plan Phase, the /jikime:1-plan command auto-creates a worktree for the SPEC. During the Development Phase, use the jikime worktree go command to navigate to the isolated environment and run /jikime:2-run for DDD implementation. During the Sync Phase, use jikime worktree sync to update the worktree and /jikime:3-sync for documentation synchronization.
 
 ---
 

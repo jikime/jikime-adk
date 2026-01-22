@@ -1,6 +1,6 @@
 # Tools Integration Module
 
-Purpose: Integration patterns for jikime-worktree with development tools, IDEs, terminals, CI/CD pipelines, and monitoring systems.
+Purpose: Integration patterns for jikime worktree with development tools, IDEs, terminals, CI/CD pipelines, and monitoring systems.
 
 Version: 1.0.0
 Last Updated: 2026-01-06
@@ -44,7 +44,7 @@ Worktree-Specific Settings:
 
 Task Generation Per Worktree:
 - Run Tests: Execute /jikime:2-run for the SPEC
-- Sync Worktree: Run jikime-worktree sync command
+- Sync Worktree: Run jikime worktree sync command
 - Switch to Worktree: Change active directory
 
 ### JetBrains IDE Integration
@@ -64,7 +64,7 @@ Add to .bashrc or .zshrc for improved worktree experience.
 
 Completion Support:
 - Tab completion for worktree IDs using registry data
-- Command option completion for all jikime-worktree subcommands
+- Command option completion for all jikime worktree subcommands
 
 Prompt Customization:
 - Detect if current directory is within a worktree
@@ -72,7 +72,7 @@ Prompt Customization:
 - Color coding for worktree status
 
 Navigation Aliases:
-- mw: Short alias for jikime-worktree
+- mw: Short alias for jikime worktree
 - mwl: List worktrees
 - mws: Switch to worktree
 - mwg: Navigate with eval pattern

@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"jikime-adk-v2/internal/hooks"
+	"jikime-adk/internal/hooks"
 )
 
 // StopLoopCmd represents the stop-loop hook command
@@ -70,14 +70,6 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Load current loop state
-	state := LoadEnhancedLoopState()
-
-	// If loop is not active, just exit
-	if !state.Active {
-		return nil
-	}
-
 	// Read input from stdin (contains conversation context)
 	var conversationText string
 	var input stopLoopInput
@@ -91,27 +83,53 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// PRIORITY CHECK: Completion promise marker
+	// PRIORITY CHECK: Completion promise marker - always check first
 	if checkCompletionPromise(conversationText) {
-		state.Active = false
-		state.FinalStatus = "COMPLETE"
-		state.CompletionReason = "Completion promise detected"
+		// Clear any active loop state
 		ClearEnhancedLoopState()
 
 		output := stopLoopOutput{
 			HookSpecificOutput: &stopLoopHookOutput{
 				HookEventName:     "Stop",
-				AdditionalContext: formatFinalReport(state, "COMPLETE - Completion promise detected"),
+				AdditionalContext: "Ralph Loop: COMPLETE - Completion promise detected",
 			},
 		}
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetEscapeHTML(false)
 		encoder.Encode(output)
+		return nil // exit 0 - complete
+	}
+
+	// Collect current diagnostics
+	currentSnapshot := collectCurrentDiagnostics()
+
+	// Load current loop state
+	state := LoadEnhancedLoopState()
+
+	// AUTO-LOOP: If loop is not explicitly active, check if errors exist
+	if !state.Active {
+		// If there are errors or security issues, automatically continue
+		if currentSnapshot.ErrorCount > 0 || currentSnapshot.SecurityIssues > 0 {
+			// Format auto-loop feedback
+			context := formatAutoLoopFeedback(currentSnapshot)
+
+			output := stopLoopOutput{
+				HookSpecificOutput: &stopLoopHookOutput{
+					HookEventName:     "Stop",
+					AdditionalContext: context,
+				},
+			}
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
+			encoder.Encode(output)
+
+			os.Exit(1) // Continue - errors exist
+		}
+		// No errors - normal exit
 		return nil
 	}
 
-	// Collect current diagnostics and update snapshot
-	currentSnapshot := collectCurrentDiagnostics()
+	// Loop is explicitly active - use full loop logic
 	state.AddSnapshot(currentSnapshot)
 
 	// Evaluate completion conditions
@@ -345,4 +363,35 @@ func formatFinalReport(state *LoopState, action string) string {
 func formatProgressPercent(rate float64) string {
 	percent := int(rate * 100)
 	return strconv.Itoa(percent) + "%"
+}
+
+// formatAutoLoopFeedback creates feedback message for automatic loop continuation
+func formatAutoLoopFeedback(snapshot DiagnosticSnapshot) string {
+	var parts []string
+
+	parts = append(parts, "Ralph Loop: AUTO-CONTINUE")
+	parts = append(parts, "Issues detected - continuing automatically")
+
+	// Current issues
+	if snapshot.ErrorCount > 0 {
+		parts = append(parts, strconv.Itoa(snapshot.ErrorCount)+" error(s) remaining")
+	}
+	if snapshot.SecurityIssues > 0 {
+		parts = append(parts, strconv.Itoa(snapshot.SecurityIssues)+" security issue(s) remaining")
+	}
+	if snapshot.WarningCount > 0 {
+		parts = append(parts, strconv.Itoa(snapshot.WarningCount)+" warning(s)")
+	}
+
+	// Guidance
+	if snapshot.ErrorCount > 0 {
+		parts = append(parts, "Next: Fix the remaining errors")
+	} else if snapshot.SecurityIssues > 0 {
+		parts = append(parts, "Next: Address security issues")
+	}
+
+	// Completion instruction
+	parts = append(parts, "Output <jikime:done /> when complete")
+
+	return strings.Join(parts, " | ")
 }

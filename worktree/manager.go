@@ -95,11 +95,21 @@ func (m *Manager) Create(specID, branchName, baseBranch string, force bool, llmC
 		return nil, err
 	}
 
-	// Copy LLM config to worktree if provided
+	// Copy LLM config to worktree
 	if llmConfigPath != "" {
+		// Use explicitly provided config
 		if err := m.copyLLMConfig(worktreePath, llmConfigPath); err != nil {
-			// Log warning but don't fail
 			fmt.Fprintf(os.Stderr, "Warning: Failed to copy LLM config: %v\n", err)
+		}
+	} else {
+		// Auto-detect and copy settings.local.json from main repo
+		autoConfigPath := filepath.Join(m.RepoPath, ".claude", "settings.local.json")
+		if _, err := os.Stat(autoConfigPath); err == nil {
+			if err := m.copyLLMConfig(worktreePath, autoConfigPath); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: Failed to auto-copy LLM config: %v\n", err)
+			} else {
+				fmt.Fprintf(os.Stdout, "Auto-copied LLM settings from %s\n", autoConfigPath)
+			}
 		}
 	}
 
@@ -143,7 +153,7 @@ func (m *Manager) List() []*WorktreeInfo {
 }
 
 // Sync synchronizes a worktree with the base branch.
-func (m *Manager) Sync(specID, baseBranch string, rebase, ffOnly, autoResolve bool) error {
+func (m *Manager) Sync(specID, baseBranch string, rebase, ffOnly, squash, autoResolve bool) error {
 	info := m.Registry.Get(specID, m.ProjectName)
 	if info == nil {
 		return &WorktreeNotFoundError{SpecID: specID}
@@ -163,12 +173,19 @@ func (m *Manager) Sync(specID, baseBranch string, rebase, ffOnly, autoResolve bo
 		}
 	}
 
-	// Perform sync
+	// Perform sync based on strategy
 	var err error
 	if ffOnly {
 		_, err = m.gitCmdInDir(info.Path, "merge", targetBranch, "--ff-only")
 	} else if rebase {
 		_, err = m.gitCmdInDir(info.Path, "rebase", targetBranch)
+	} else if squash {
+		// Squash merge: merge all changes into a single commit
+		_, err = m.gitCmdInDir(info.Path, "merge", targetBranch, "--squash")
+		if err == nil {
+			// Commit the squashed changes
+			_, err = m.gitCmdInDir(info.Path, "commit", "-m", fmt.Sprintf("Squash merge from %s", targetBranch))
+		}
 	} else {
 		_, err = m.gitCmdInDir(info.Path, "merge", targetBranch)
 	}

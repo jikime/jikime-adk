@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/spf13/cobra"
-	"jikime-adk-v2/worktree"
+	"jikime-adk/worktree"
 )
 
 var (

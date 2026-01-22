@@ -1,6 +1,6 @@
 package main
 
-import "jikime-adk-v2/cmd"
+import "jikime-adk/cmd"
 
 func main() {
 	cmd.Execute()

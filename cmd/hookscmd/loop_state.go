@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"jikime-adk-v2/internal/hooks"
+	"jikime-adk/internal/hooks"
 )
 
 // LoopState represents the enhanced state for Ralph Loop

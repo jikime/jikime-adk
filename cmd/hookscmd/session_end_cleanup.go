@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"jikime-adk-v2/internal/hooks"
+	"jikime-adk/internal/hooks"
 )
 
 // SessionEndCleanupCmd represents the session-end-cleanup hook command

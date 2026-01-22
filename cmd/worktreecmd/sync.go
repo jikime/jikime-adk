@@ -5,7 +5,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"jikime-adk-v2/worktree"
+	"jikime-adk/worktree"
 )
 
 func newSyncCmd() *cobra.Command {
@@ -13,6 +13,7 @@ func newSyncCmd() *cobra.Command {
 		base        string
 		rebase      bool
 		ffOnly      bool
+		squash      bool
 		syncAll     bool
 		autoResolve bool
 	)
@@ -23,7 +24,7 @@ func newSyncCmd() *cobra.Command {
 		Long: `Sync worktree with base branch.
 
 Fetches latest changes from the base branch and merges them into
-the worktree. Supports merge, rebase, and fast-forward strategies.`,
+the worktree. Supports merge, rebase, squash, and fast-forward strategies.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if len(args) == 0 && !syncAll {
 				color.Red("✗ Either SPEC_ID or --all option is required")
@@ -53,7 +54,7 @@ the worktree. Supports merge, rebase, and fast-forward strategies.`,
 				conflictCount := 0
 
 				for _, info := range worktrees {
-					err := manager.Sync(info.SpecID, base, rebase, ffOnly, autoResolve)
+					err := manager.Sync(info.SpecID, base, rebase, ffOnly, squash, autoResolve)
 					if err != nil {
 						if _, ok := err.(*worktree.MergeConflictError); ok {
 							color.Red("✗ %s (conflicts)", info.SpecID)
@@ -68,6 +69,8 @@ the worktree. Supports merge, rebase, and fast-forward strategies.`,
 							method = "rebase"
 						} else if ffOnly {
 							method = "fast-forward"
+						} else if squash {
+							method = "squash"
 						}
 						color.Green("✓ %s (%s)", info.SpecID, method)
 						successCount++
@@ -78,7 +81,7 @@ the worktree. Supports merge, rebase, and fast-forward strategies.`,
 				color.Green("Summary: %d synced, %d failed", successCount, conflictCount)
 			} else {
 				specID := args[0]
-				if err := manager.Sync(specID, base, rebase, ffOnly, autoResolve); err != nil {
+				if err := manager.Sync(specID, base, rebase, ffOnly, squash, autoResolve); err != nil {
 					color.Red("✗ %v", err)
 					return err
 				}
@@ -88,6 +91,8 @@ the worktree. Supports merge, rebase, and fast-forward strategies.`,
 					method = "rebase"
 				} else if ffOnly {
 					method = "fast-forward"
+				} else if squash {
+					method = "squash"
 				}
 				color.Green("✓ Worktree synced: %s (%s)", specID, method)
 			}
@@ -99,6 +104,7 @@ the worktree. Supports merge, rebase, and fast-forward strategies.`,
 	cmd.Flags().StringVar(&base, "base", "main", "Base branch to sync from")
 	cmd.Flags().BoolVar(&rebase, "rebase", false, "Use rebase instead of merge")
 	cmd.Flags().BoolVar(&ffOnly, "ff-only", false, "Only sync if fast-forward is possible")
+	cmd.Flags().BoolVar(&squash, "squash", false, "Squash all commits into a single commit")
 	cmd.Flags().BoolVar(&syncAll, "all", false, "Sync all worktrees")
 	cmd.Flags().BoolVar(&autoResolve, "auto-resolve", false, "Automatically resolve conflicts")
 

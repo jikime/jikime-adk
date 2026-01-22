@@ -18,7 +18,7 @@ Parallel Development Benefits:
 
 Core Workflow:
 
-To set up parallel development, create worktrees for each SPEC using jikime-worktree new with the SPEC ID and description. For parallel execution, navigate to each worktree using jikime-worktree go and run /jikime:2-run in separate terminals or background processes. For integration, use jikime-worktree sync --all to synchronize all worktrees, then clean up merged worktrees with jikime-worktree clean --merged-only.
+To set up parallel development, create worktrees for each SPEC using jikime worktree new with the SPEC ID and description. For parallel execution, navigate to each worktree using jikime worktree go and run /jikime:2-run in separate terminals or background processes. For integration, use jikime worktree sync --all to synchronize all worktrees, then clean up merged worktrees with jikime worktree clean --merged-only.
 
 ---
 

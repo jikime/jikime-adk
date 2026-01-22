@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"jikime-adk-v2/cmd/worktreecmd"
-	"jikime-adk-v2/version"
+	"jikime-adk/cmd/worktreecmd"
+	"jikime-adk/version"
 )
 
 func main() {

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
-	"jikime-adk-v2/templates"
+	"jikime-adk/templates"
 )
 
 // ProjectInitializer orchestrates project scaffolding.

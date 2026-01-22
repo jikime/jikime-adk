@@ -41,11 +41,11 @@ Available contexts in @.claude/contexts/:
 
 | Context | Mode | Auto-loaded by |
 |---------|------|----------------|
-| dev.md | Development (code-first) | /jikime:dev-2-implement |
-| planning.md | Planning (think-first) | /jikime:dev-1-plan |
-| review.md | Code Review (quality-focus) | /jikime:dev-4-review |
+| dev.md | Development (code-first) | /jikime:2-run |
+| planning.md | Planning (think-first) | /jikime:1-plan |
+| sync.md | Sync (doc-first) | /jikime:3-sync |
 | debug.md | Debugging (investigate) | /jikime:build-fix |
-| research.md | Research (understand-first) | /jikime:learn |
+| research.md | Research (understand-first) | /jikime:0-project |
 
 Manual context switching:
 ```
@@ -85,8 +85,6 @@ Route request based on command type:
 Type A Workflow Commands: All tools available, agent delegation recommended for complex tasks
 
 Type B Utility Commands: Direct tool access permitted for efficiency
-
-Type C Feedback Commands: User feedback command for improvements and bug reports.
 
 Direct Agent Requests: Immediate delegation when user explicitly requests an agent
 
@@ -141,7 +139,7 @@ WHY: Flexibility enables efficient execution while maintaining quality through a
 
 Definition: Commands for rapid fixes and automation where speed is prioritized.
 
-Commands: /jikime:alfred, /jikime:fix, /jikime:loop
+Commands: /jikime:jarvis, /jikime:fix, /jikime:loop, /jikime:test
 
 Allowed Tools: Task, AskUserQuestion, TodoWrite, Bash, Read, Write, Edit, Glob, Grep
 
@@ -153,20 +151,6 @@ Allowed Tools: Task, AskUserQuestion, TodoWrite, Bash, Read, Write, Edit, Glob, 
 - User retains responsibility for reviewing changes
 
 WHY: Ensures consistent quality through agent expertise regardless of session state.
-
-### Type C: Feedback Command
-
-Definition: User feedback command for improvements and bug reports.
-
-Commands: /jikime:9-feedback
-
-Purpose: When users encounter bugs or have improvement suggestions, this command automatically creates a GitHub issue in the JikiME-ADK repository.
-
-Allowed Tools: Full access (all tools)
-
-- No restrictions on tool usage
-- Automatically formats and submits feedback to GitHub
-- Quality gates are optional
 
 ---
 
@@ -340,7 +324,7 @@ Permission errors: Review settings.json and file permissions manually
 
 Integration errors: Use the expert-devops subagent to resolve issues
 
-JikiME-ADK errors: When JikiME-ADK specific errors occur (workflow failures, agent issues, command problems), suggest user to run /jikime:9-feedback to report the issue
+JikiME-ADK errors: When JikiME-ADK specific errors occur (workflow failures, agent issues, command problems), report the issue to the user with details
 
 ### Resumable Agents
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -14,16 +15,19 @@ import (
 func newCleanCmd() *cobra.Command {
 	var (
 		mergedOnly  bool
+		stale       bool
+		days        int
 		interactive bool
 	)
 
 	cmd := &cobra.Command{
 		Use:   "clean",
-		Short: "Remove worktrees for merged branches",
-		Long: `Remove worktrees for merged branches.
+		Short: "Remove worktrees for merged branches or stale worktrees",
+		Long: `Remove worktrees for merged branches or stale worktrees.
 
 By default, removes all worktrees. Use --merged-only to only remove
-worktrees whose branches have been merged to main.`,
+worktrees whose branches have been merged to main. Use --stale to
+remove worktrees not accessed within the specified days.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			manager, err := getManager()
 			if err != nil {
@@ -34,6 +38,41 @@ worktrees whose branches have been merged to main.`,
 
 			if mergedOnly {
 				cleaned = manager.CleanMerged()
+			} else if stale {
+				// Clean stale worktrees (not accessed within N days)
+				threshold := time.Now().AddDate(0, 0, -days)
+				worktrees := manager.List()
+
+				if len(worktrees) == 0 {
+					color.Yellow("No worktrees found")
+					return nil
+				}
+
+				var staleWorktrees []string
+				for _, info := range worktrees {
+					if info.LastAccessed.Before(threshold) {
+						staleWorktrees = append(staleWorktrees, info.SpecID)
+					}
+				}
+
+				if len(staleWorktrees) == 0 {
+					color.Yellow("No stale worktrees found (threshold: %d days)", days)
+					return nil
+				}
+
+				color.Cyan("Found %d stale worktree(s) (not accessed in %d days):", len(staleWorktrees), days)
+				for _, specID := range staleWorktrees {
+					fmt.Printf("  - %s\n", specID)
+				}
+
+				// Remove stale worktrees
+				for _, specID := range staleWorktrees {
+					if err := manager.Remove(specID, true); err != nil {
+						color.Red("✗ Failed to remove %s: %v", specID, err)
+					} else {
+						cleaned = append(cleaned, specID)
+					}
+				}
 			} else if interactive {
 				worktrees := manager.List()
 				if len(worktrees) == 0 {
@@ -128,6 +167,8 @@ worktrees whose branches have been merged to main.`,
 	}
 
 	cmd.Flags().BoolVar(&mergedOnly, "merged-only", false, "Only remove merged branch worktrees")
+	cmd.Flags().BoolVar(&stale, "stale", false, "Remove worktrees not accessed within the specified days")
+	cmd.Flags().IntVar(&days, "days", 30, "Stale threshold in days (default: 30)")
 	cmd.Flags().BoolVar(&interactive, "interactive", false, "Interactive cleanup with confirmation prompts")
 
 	return cmd

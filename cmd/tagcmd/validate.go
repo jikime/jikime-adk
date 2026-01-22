@@ -9,7 +9,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"jikime-adk-v2/tag"
+	"jikime-adk/tag"
 )
 
 // ValidationConfig holds TAG validation settings.

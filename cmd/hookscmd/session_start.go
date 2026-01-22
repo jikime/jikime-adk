@@ -10,7 +10,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
-	"jikime-adk-v2/version"
+	"jikime-adk/version"
 )
 
 // SessionStartCmd represents the session-start hook command

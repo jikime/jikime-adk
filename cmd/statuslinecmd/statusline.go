@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
-	"jikime-adk-v2/version"
+	"jikime-adk/version"
 )
 
 // SessionContext represents the JSON context from Claude Code
@@ -184,7 +184,7 @@ func checkForUpdate() (bool, string) {
 		return false, ""
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", "jikime-adk-v2/"+version.String())
+	req.Header.Set("User-Agent", "jikime-adk/"+version.String())
 
 	resp, err := client.Do(req)
 	if err != nil {

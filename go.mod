@@ -1,4 +1,4 @@
-module jikime-adk-v2
+module jikime-adk
 
 go 1.24.0
 

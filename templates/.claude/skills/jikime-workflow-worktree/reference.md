@@ -1,6 +1,6 @@
 # JikiME Worktree Reference
 
-Purpose: External resources, documentation, and additional learning materials for jikime-worktree skill.
+Purpose: External resources, documentation, and additional learning materials for jikime worktree skill.
 
 Version: 1.0.0
 Last Updated: 2025-11-29
@@ -29,14 +29,14 @@ Last Updated: 2025-11-29
  - Extension management across worktrees
 
 - Click Framework: [https://click.palletsprojects.com/](https://click.palletsprojects.com/)
- - Command-line interface framework used by jikime-worktree
+ - Command-line interface framework used by jikime worktree
  - Advanced CLI patterns and argument parsing
  - Custom command development
 
 ### Python Development Resources
 
 - Rich Library: [https://rich.readthedocs.io/](https://rich.readthedocs.io/)
- - Terminal output formatting used by jikime-worktree
+ - Terminal output formatting used by jikime worktree
  - Tables, progress bars, and syntax highlighting
  - Advanced terminal UI patterns
 
@@ -128,17 +128,17 @@ Last Updated: 2025-11-29
 
 1. Shallow Worktrees: For fast prototyping and testing
  ```bash
- jikime-worktree new SPEC-PROTO-001 "Prototype" --shallow --depth 1
+ jikime worktree new SPEC-PROTO-001 "Prototype" --shallow --depth 1
  ```
 
 2. Selective Synchronization: Sync only essential files
  ```bash
- jikime-worktree sync SPEC-001 --include "src/" --exclude "node_modules/"
+ jikime worktree sync SPEC-001 --include "src/" --exclude "node_modules/"
  ```
 
 3. Background Operations: Non-blocking worktree operations
  ```bash
- jikime-worktree sync --all --background
+ jikime worktree sync --all --background
  ```
 
 ---
@@ -198,7 +198,7 @@ jobs:
  with:
  fetch-depth: 0
 
- - name: Setup jikime-worktree
+ - name: Setup jikime worktree
  run: |
  pip install jikime-adk
  echo "Setting up worktree environment..."
@@ -206,13 +206,13 @@ jobs:
  - name: Test Worktree Operations
  run: |
  # Test worktree creation
- jikime-worktree new test-spec "Test Worktree"
+ jikime worktree new test-spec "Test Worktree"
 
  # Test worktree synchronization
- jikime-worktree sync test-spec
+ jikime worktree sync test-spec
 
  # Test worktree cleanup
- jikime-worktree remove test-spec
+ jikime worktree remove test-spec
 ```
 
 #### Jenkins Pipeline
@@ -227,7 +227,7 @@ pipeline {
  steps {
  sh '''
  pip install jikime-adk
- jikime-worktree config set worktree_root $WORKSPACE/worktrees
+ jikime worktree config set worktree_root $WORKSPACE/worktrees
  '''
  }
  }
@@ -237,8 +237,8 @@ pipeline {
  stage('Auth Worktree') {
  steps {
  sh '''
- jikime-worktree new SPEC-AUTH-001 "Authentication Worktree"
- cd $(jikime-worktree go SPEC-AUTH-001)
+ jikime worktree new SPEC-AUTH-001 "Authentication Worktree"
+ cd $(jikime worktree go SPEC-AUTH-001)
  npm test
  '''
  }
@@ -247,8 +247,8 @@ pipeline {
  stage('Payment Worktree') {
  steps {
  sh '''
- jikime-worktree new SPEC-PAY-001 "Payment Worktree"
- cd $(jikime-worktree go SPEC-PAY-001)
+ jikime worktree new SPEC-PAY-001 "Payment Worktree"
+ cd $(jikime worktree go SPEC-PAY-001)
  npm test
  '''
  }
@@ -259,7 +259,7 @@ pipeline {
  stage('Cleanup') {
  steps {
  sh '''
- jikime-worktree clean --force
+ jikime worktree clean --force
  rm -rf $WORKSPACE/worktrees
  '''
  }
@@ -354,4 +354,4 @@ mkdocs build
 
 Version: 1.0.0
 Last Updated: 2025-11-29
-Reference: External resources and additional learning materials for jikime-worktree
+Reference: External resources and additional learning materials for jikime worktree

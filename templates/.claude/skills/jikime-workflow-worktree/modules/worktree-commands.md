@@ -11,58 +11,58 @@ Last Updated: 2026-01-06
 
 Command Categories:
 - Creation: new - Create isolated worktree
-- Navigation: list, switch, go - Browse and navigate
-- Management: sync, remove, clean - Maintain worktrees
+- Navigation: list, go - Browse and navigate
+- Management: sync, remove, clean, done - Maintain worktrees
 - Status: status - Check worktree state
-- Configuration: config - Manage settings
+- Configuration: config, recover - Manage settings
 
 Quick Start:
-1. Create worktree: jikime-worktree new SPEC-001 "User Authentication"
-2. Switch to worktree: jikime-worktree switch SPEC-001
-3. Or use shell eval: eval $(jikime-worktree go SPEC-001)
+1. Create worktree: jikime worktree new SPEC-001
+2. List worktrees: jikime worktree list
+3. Go to worktree: eval $(jikime worktree go SPEC-001)
 
 ---
 
 ## Creation Commands
 
-### jikime-worktree new - Create Worktree
+### jikime worktree new - Create Worktree
 
 Create a new isolated Git worktree for SPEC development.
 
-Syntax: jikime-worktree new <spec-id> [description] [options]
+Syntax: jikime worktree new <spec-id> [options]
 
 Arguments:
 - spec-id: SPEC identifier (e.g., SPEC-001, SPEC-AUTH-001)
-- description: Optional description for the worktree
 
 Options:
-- --branch <name>: Create specific branch instead of auto-generated
+- --branch, -b <name>: Custom branch name (default: feature/{spec-id})
 - --base <branch>: Base branch for new worktree (default: main)
-- --template <name>: Use predefined template
-- --shallow: Create shallow clone for faster setup
-- --depth <number>: Clone depth for shallow clone
-- --force: Force creation even if worktree exists
+- --force, -f: Force creation even if worktree exists
+- --llm-config <path>: Path to custom LLM config file
 
 Examples:
-- Basic creation: jikime-worktree new SPEC-001 "User Auth System"
-- Custom branch: jikime-worktree new SPEC-002 "Payment" --branch feature/payment-gateway
-- From develop: jikime-worktree new SPEC-003 "API Refactor" --base develop
-- With template: jikime-worktree new SPEC-004 "Frontend" --template frontend
-- Fast creation: jikime-worktree new SPEC-005 "Bug Fixes" --shallow --depth 1
+- Basic creation: jikime worktree new SPEC-001
+- Custom branch: jikime worktree new SPEC-002 --branch feature/payment-gateway
+- From develop: jikime worktree new SPEC-003 --base develop
+- Force recreate: jikime worktree new SPEC-001 --force
+- With LLM config: jikime worktree new SPEC-001 --llm-config ~/.claude/my-settings.json
 
 Auto-Generated Branch Pattern:
-- Format: feature/SPEC-{ID}-{description-kebab-case}
-- Example: SPEC-001 becomes feature/SPEC-001-user-authentication
+- Format: feature/{SPEC-ID}
+- Example: SPEC-001 becomes feature/SPEC-001
+
+LLM Settings Auto-Copy:
+- If .claude/settings.local.json exists in main repo, it's automatically copied to the new worktree
 
 ---
 
 ## Navigation Commands
 
-### jikime-worktree list - List Worktrees
+### jikime worktree list - List Worktrees
 
 Display all registered worktrees with their status and metadata.
 
-Syntax: jikime-worktree list [options]
+Syntax: jikime worktree list [options]
 
 Options:
 - --format <format>: Output format (table, json, csv)
@@ -72,86 +72,74 @@ Options:
 - --verbose: Show detailed information
 
 Examples:
-- Table format: jikime-worktree list
-- JSON output: jikime-worktree list --format json
-- Active only: jikime-worktree list --status active
-- Sort by date: jikime-worktree list --sort created
-- Detailed: jikime-worktree list --verbose
+- Table format: jikime worktree list
+- JSON output: jikime worktree list --format json
+- Active only: jikime worktree list --status active
+- Sort by date: jikime worktree list --sort created
+- Detailed: jikime worktree list --verbose
 
-### jikime-worktree switch - Switch to Worktree
+### jikime worktree go - Navigate to Worktree
 
-Change current working directory to the specified worktree.
+Output the worktree path for shell navigation.
 
-Syntax: jikime-worktree switch <spec-id> [options]
+Syntax: jikime worktree go <spec-id>
 
-Options:
-- --auto-sync: Automatically sync before switching
-- --force: Force switch even with uncommitted changes
-- --new-terminal: Open in new terminal window
+Arguments:
+- spec-id: SPEC identifier to navigate to
+
+Shell Integration:
+- eval pattern (recommended): eval $(jikime worktree go SPEC-001)
 
 Examples:
-- Basic switch: jikime-worktree switch SPEC-001
-- With sync: jikime-worktree switch SPEC-002 --auto-sync
-- Force switch: jikime-worktree switch SPEC-003 --force
-
-### jikime-worktree go - Get Worktree Path
-
-Output the cd command for shell integration.
-
-Syntax: jikime-worktree go <spec-id> [options]
-
-Options:
-- --absolute: Show absolute path
-- --relative: Show relative path from current directory
-- --export: Export as environment variable
-
-Shell Integration Methods:
-- eval pattern (recommended): eval $(jikime-worktree go SPEC-001)
-- source pattern: jikime-worktree go SPEC-001 | source
-- manual cd: cd $(jikime-worktree go SPEC-001 --absolute)
+- Navigate to worktree: eval $(jikime worktree go SPEC-001)
+- Get path only: jikime worktree go SPEC-001
 
 ---
 
 ## Management Commands
 
-### jikime-worktree sync - Synchronize Worktree
+### jikime worktree sync - Synchronize Worktree
 
 Synchronize worktree with its base branch.
 
-Syntax: jikime-worktree sync <spec-id> [options]
+Syntax: jikime worktree sync <spec-id> [options]
 
 Arguments:
 - spec-id: Worktree identifier (or --all for all worktrees)
 
 Options:
-- --auto-resolve: Automatically resolve simple conflicts
-- --interactive: Interactive conflict resolution
-- --dry-run: Show what would be synced without doing it
-- --force: Force sync even with uncommitted changes
-- --include <pattern>: Include only specific files
-- --exclude <pattern>: Exclude specific files
+- --base <branch>: Base branch to sync from (default: main)
+- --rebase: Use rebase instead of merge
+- --ff-only: Only sync if fast-forward is possible
+- --squash: Squash all commits into a single commit
+- --auto-resolve: Automatically resolve conflicts
+- --all: Sync all worktrees
+
+Sync Strategies:
+- merge (default): Preserve history with merge commit
+- rebase: Linear history by replaying commits
+- squash: Combine all changes into single commit
+- fast-forward: Only sync if no divergence
 
 Examples:
-- Sync specific: jikime-worktree sync SPEC-001
-- Sync all: jikime-worktree sync --all
-- Interactive: jikime-worktree sync SPEC-001 --interactive
-- Preview: jikime-worktree sync SPEC-001 --dry-run
-- Include pattern: jikime-worktree sync SPEC-001 --include "src/"
-- Exclude pattern: jikime-worktree sync SPEC-001 --exclude "node_modules/"
+- Sync specific: jikime worktree sync SPEC-001
+- Sync all: jikime worktree sync --all
+- With rebase: jikime worktree sync SPEC-001 --rebase
+- Fast-forward only: jikime worktree sync SPEC-001 --ff-only
+- Squash merge: jikime worktree sync SPEC-001 --squash
+- From develop: jikime worktree sync SPEC-001 --base develop
+- Auto-resolve conflicts: jikime worktree sync SPEC-001 --auto-resolve
 
-Conflict Resolution:
-When conflicts detected, choose from:
-1. Keep worktree version
-2. Accept base branch version
-3. Open merge tool
-4. Skip file
-5. Abort sync
+Conflict Auto-Resolution (3-stage):
+1. Try --ours (keep worktree version)
+2. Try --theirs (accept base version)
+3. Remove conflict markers
 
-### jikime-worktree remove - Remove Worktree
+### jikime worktree remove - Remove Worktree
 
 Remove a worktree and clean up its registration.
 
-Syntax: jikime-worktree remove <spec-id> [options]
+Syntax: jikime worktree remove <spec-id> [options]
 
 Options:
 - --force: Force removal without confirmation
@@ -160,17 +148,17 @@ Options:
 - --dry-run: Show what would be removed without doing it
 
 Examples:
-- Interactive: jikime-worktree remove SPEC-001
-- Force: jikime-worktree remove SPEC-001 --force
-- Keep branch: jikime-worktree remove SPEC-001 --keep-branch
-- With backup: jikime-worktree remove SPEC-001 --backup
-- Preview: jikime-worktree remove SPEC-001 --dry-run
+- Interactive: jikime worktree remove SPEC-001
+- Force: jikime worktree remove SPEC-001 --force
+- Keep branch: jikime worktree remove SPEC-001 --keep-branch
+- With backup: jikime worktree remove SPEC-001 --backup
+- Preview: jikime worktree remove SPEC-001 --dry-run
 
-### jikime-worktree clean - Clean Up Worktrees
+### jikime worktree clean - Clean Up Worktrees
 
 Remove worktrees for merged branches or stale worktrees.
 
-Syntax: jikime-worktree clean [options]
+Syntax: jikime worktree clean [options]
 
 Options:
 - --merged-only: Only remove worktrees with merged branches
@@ -181,22 +169,46 @@ Options:
 - --force: Skip confirmation prompts
 
 Examples:
-- Merged only: jikime-worktree clean --merged-only
-- Stale (30 days): jikime-worktree clean --stale
-- Custom threshold: jikime-worktree clean --stale --days 14
-- Interactive: jikime-worktree clean --interactive
-- Preview: jikime-worktree clean --dry-run
-- Force: jikime-worktree clean --force
+- Merged only: jikime worktree clean --merged-only
+- Stale (30 days): jikime worktree clean --stale
+- Custom threshold: jikime worktree clean --stale --days 14
+- Interactive: jikime worktree clean --interactive
+
+### jikime worktree done - Complete and Merge
+
+Complete worktree workflow: merge to base and cleanup.
+
+Syntax: jikime worktree done <spec-id> [options]
+
+Arguments:
+- spec-id: SPEC identifier to complete
+
+Options:
+- --push: Push to remote after merge
+- --force: Force merge even with uncommitted changes
+
+Examples:
+- Complete and cleanup: jikime worktree done SPEC-001
+- Complete and push: jikime worktree done SPEC-001 --push
+
+### jikime worktree recover - Recover Registry
+
+Rebuild registry from existing worktree directories on disk.
+
+Syntax: jikime worktree recover
+
+Examples:
+- Recover registry: jikime worktree recover
 
 ---
 
 ## Status and Configuration
 
-### jikime-worktree status - Show Worktree Status
+### jikime worktree status - Show Worktree Status
 
 Display detailed status information about worktrees.
 
-Syntax: jikime-worktree status [spec-id] [options]
+Syntax: jikime worktree status [spec-id] [options]
 
 Arguments:
 - spec-id: Specific worktree (optional, shows current if not specified)
@@ -208,11 +220,11 @@ Options:
 - --format <format>: Output format (table, json)
 
 Examples:
-- Current worktree: jikime-worktree status
-- Specific worktree: jikime-worktree status SPEC-001
-- All with sync check: jikime-worktree status --all --sync-check
-- Detailed Git status: jikime-worktree status SPEC-001 --detailed
-- JSON output: jikime-worktree status --all --format json
+- Current worktree: jikime worktree status
+- Specific worktree: jikime worktree status SPEC-001
+- All with sync check: jikime worktree status --all --sync-check
+- Detailed Git status: jikime worktree status SPEC-001 --detailed
+- JSON output: jikime worktree status --all --format json
 
 Status Output Includes:
 - Worktree path and branch
@@ -220,11 +232,11 @@ Status Output Includes:
 - Modified and untracked files
 - Sync status and last sync time
 
-### jikime-worktree config - Configuration Management
+### jikime worktree config - Configuration Management
 
-Manage jikime-worktree configuration settings.
+Manage jikime worktree configuration settings.
 
-Syntax: jikime-worktree config <action> [key] [value]
+Syntax: jikime worktree config <action> [key] [value]
 
 Actions:
 - get [key]: Get configuration value
@@ -242,11 +254,11 @@ Configuration Keys:
 - sync_strategy: Sync strategy (merge, rebase, squash)
 
 Examples:
-- List all: jikime-worktree config list
-- Get value: jikime-worktree config get worktree_root
-- Set value: jikime-worktree config set auto_sync true
-- Reset: jikime-worktree config reset worktree_root
-- Edit: jikime-worktree config edit
+- List all: jikime worktree config list
+- Get value: jikime worktree config get worktree_root
+- Set value: jikime worktree config set auto_sync true
+- Reset: jikime worktree config reset worktree_root
+- Edit: jikime worktree config edit
 
 ---
 
@@ -259,7 +271,7 @@ Sync all active worktrees:
 - Run sync for each ID in sequence or parallel
 
 Clean all merged worktrees:
-- jikime-worktree clean --merged-only --force
+- jikime worktree clean --merged-only --force
 
 Create worktrees from SPEC list:
 - Read SPEC IDs from file
@@ -268,12 +280,12 @@ Create worktrees from SPEC list:
 ### Shell Aliases
 
 Recommended aliases for .bashrc or .zshrc:
-- mw: Short for jikime-worktree
-- mwl: List worktrees
-- mws: Switch to worktree
-- mwg: Navigate with eval pattern
-- mwsync: Sync current worktree
-- mwclean: Clean merged worktrees
+- jwl: jikime worktree list
+- jwg: Navigate with eval pattern (jikime worktree go)
+- jwsync: Sync current worktree
+- jwclean: Clean merged worktrees
+
+Note: The CLI also supports short alias `jikime wt` (e.g., `jikime wt list`)
 
 ### Git Hooks Integration
 

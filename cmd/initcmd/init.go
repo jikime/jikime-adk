@@ -12,9 +12,9 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/spf13/cobra"
-	"jikime-adk-v2/cmd/banner"
-	"jikime-adk-v2/project"
-	"jikime-adk-v2/version"
+	"jikime-adk/cmd/banner"
+	"jikime-adk/project"
+	"jikime-adk/version"
 )
 
 // Cyberpunk colors

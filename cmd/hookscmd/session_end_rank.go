@@ -2,7 +2,7 @@ package hookscmd
 
 import (
 	"github.com/spf13/cobra"
-	"jikime-adk-v2/internal/hooks"
+	"jikime-adk/internal/hooks"
 )
 
 // SessionEndRankCmd represents the session-end-rank hook command
