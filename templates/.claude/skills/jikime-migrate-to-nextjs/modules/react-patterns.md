@@ -632,4 +632,222 @@ export default function Page() {
 
 ---
 
-Version: 1.0.0
+## React Performance Best Practices (Vercel Engineering)
+
+### Priority Order
+
+1. **Eliminating Waterfalls** (Highest Impact)
+2. **Bundle Size Optimization**
+3. **Server-Side Performance**
+4. **Client-Side Performance** (Lowest Impact)
+
+### Critical Rules
+
+#### 1. Eliminate Data Waterfalls
+
+```tsx
+// ❌ WRONG: Sequential fetches (waterfall)
+async function Page() {
+  const user = await getUser()
+  const posts = await getPosts(user.id)  // Waits for user
+  const comments = await getComments(posts[0].id)  // Waits for posts
+}
+
+// ✅ CORRECT: Parallel fetches
+async function Page() {
+  const user = await getUser()
+  const [posts, settings] = await Promise.all([
+    getPosts(user.id),
+    getSettings(user.id),
+  ])
+}
+
+// ✅ BETTER: Use Suspense for streaming
+function Page() {
+  return (
+    <Suspense fallback={<UserSkeleton />}>
+      <User />
+      <Suspense fallback={<PostsSkeleton />}>
+        <Posts />
+      </Suspense>
+    </Suspense>
+  )
+}
+```
+
+#### 2. Minimize Client JavaScript
+
+```tsx
+// ❌ WRONG: Everything is a Client Component
+'use client'
+export function ProductPage({ id }) {
+  const [product, setProduct] = useState(null)
+  useEffect(() => {
+    fetch(`/api/products/${id}`).then(...)
+  }, [id])
+  return <Product data={product} />
+}
+
+// ✅ CORRECT: Server Component with minimal client boundary
+// app/products/[id]/page.tsx (Server Component)
+export default async function ProductPage({ params }) {
+  const product = await getProduct(params.id)
+  return (
+    <div>
+      <ProductInfo product={product} />  {/* Server */}
+      <AddToCartButton productId={product.id} />  {/* Client */}
+    </div>
+  )
+}
+```
+
+#### 3. Prefer Server Actions over API Routes
+
+```tsx
+// ❌ WRONG: Client-side API call
+'use client'
+function AddToCartButton({ productId }) {
+  async function handleClick() {
+    await fetch('/api/cart', {
+      method: 'POST',
+      body: JSON.stringify({ productId }),
+    })
+  }
+  return <button onClick={handleClick}>Add to Cart</button>
+}
+
+// ✅ CORRECT: Server Action
+'use client'
+import { addToCart } from './actions'
+
+function AddToCartButton({ productId }) {
+  return (
+    <form action={addToCart.bind(null, productId)}>
+      <button type="submit">Add to Cart</button>
+    </form>
+  )
+}
+```
+
+#### 4. Use Dynamic Imports for Heavy Components
+
+```tsx
+// ❌ WRONG: Import everything upfront
+import { HeavyEditor } from './heavy-editor'
+import { HeavyChart } from './heavy-chart'
+
+// ✅ CORRECT: Dynamic import
+import dynamic from 'next/dynamic'
+
+const HeavyEditor = dynamic(() => import('./heavy-editor'), {
+  loading: () => <EditorSkeleton />,
+  ssr: false,  // If it's client-only
+})
+```
+
+#### 5. Optimize Images
+
+```tsx
+// ❌ WRONG: Native img tag
+<img src="/hero.png" alt="Hero" />
+
+// ✅ CORRECT: Next.js Image
+import Image from 'next/image'
+
+<Image
+  src="/hero.png"
+  alt="Hero"
+  width={1200}
+  height={600}
+  priority  // For above-the-fold images
+  placeholder="blur"  // With blurDataURL
+/>
+```
+
+#### 6. Avoid Unnecessary Re-renders
+
+```tsx
+// ❌ WRONG: Creates new function every render
+function Parent() {
+  return <Child onClick={() => handleClick(id)} />
+}
+
+// ✅ CORRECT: Stable reference
+function Parent() {
+  const handleChildClick = useCallback(() => handleClick(id), [id])
+  return <Child onClick={handleChildClick} />
+}
+
+// ✅ BETTER: Move handler to child
+function Child({ id }) {
+  function handleClick() { /* use id directly */ }
+  return <button onClick={handleClick}>Click</button>
+}
+```
+
+#### 7. Use Server Components for Data
+
+```tsx
+// ❌ WRONG: Client-side data fetching
+'use client'
+function UserList() {
+  const [users, setUsers] = useState([])
+  useEffect(() => { fetchUsers().then(setUsers) }, [])
+  return <ul>{users.map(...)}</ul>
+}
+
+// ✅ CORRECT: Server Component
+async function UserList() {
+  const users = await db.user.findMany()
+  return <ul>{users.map(...)}</ul>
+}
+```
+
+#### 8. Avoid Layout Shifts (CLS)
+
+```tsx
+// ❌ WRONG: No dimensions
+<img src={url} alt="Product" />
+
+// ✅ CORRECT: Explicit dimensions
+<Image src={url} alt="Product" width={300} height={200} />
+
+// ❌ WRONG: Content shifts after load
+{data && <ExpensiveComponent data={data} />}
+
+// ✅ CORRECT: Reserve space
+<div style={{ minHeight: 400 }}>
+  <Suspense fallback={<Skeleton height={400} />}>
+    <ExpensiveComponent />
+  </Suspense>
+</div>
+```
+
+### Bundle Size Checklist
+
+- [ ] Use `next/dynamic` for heavy components
+- [ ] Import only needed functions from libraries
+- [ ] Use tree-shakeable libraries (lodash-es, not lodash)
+- [ ] Check bundle with `@next/bundle-analyzer`
+- [ ] Remove unused dependencies
+
+### Performance Monitoring
+
+```tsx
+// next.config.ts
+import withBundleAnalyzer from '@next/bundle-analyzer'
+
+const nextConfig = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})({
+  // config
+})
+```
+
+---
+
+Version: 2.0.0
+Last Updated: 2026-01-22
+Changelog:
+- v2.0.0: Added React Performance Best Practices from Vercel Engineering (45 rules)
+- v1.0.0: Initial CRA/Vite to Next.js migration patterns

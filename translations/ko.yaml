@@ -4,24 +4,38 @@ language_prompt:
   other: "대화 언어를 선택하세요"
 language_selected:
   other: "선택됨: {{.Language}}"
+language_label:
+  other: "대화 언어"
 user_section:
   other: "사용자 설정"
 user_prompt:
   other: "사용자 이름을 입력하세요 (선택사항)"
 user_welcome:
   other: "환영합니다: {{.Name}}"
+user_name_label:
+  other: "사용자 이름"
 project_prompt:
+  other: "프로젝트 이름"
+project_name_label:
   other: "프로젝트 이름"
 git_mode_prompt:
   other: "Git 모드"
 github_prompt:
   other: "GitHub 사용자명"
+github_label:
+  other: "GitHub 사용자"
 commit_lang_prompt:
   other: "커밋 메시지 언어"
 code_comment_prompt:
   other: "코드 주석 언어"
 documentation_prompt:
   other: "문서 언어"
+commit_lang_label:
+  other: "커밋 언어"
+code_comment_label:
+  other: "코드 주석"
+documentation_label:
+  other: "문서"
 git_setup_section:
   other: "Git 설정"
 git_mode_select_help:

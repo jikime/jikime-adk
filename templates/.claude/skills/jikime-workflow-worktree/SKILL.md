@@ -1,6 +1,12 @@
 ---
 name: jikime-workflow-worktree
 description: Git worktree management for parallel SPEC development with isolated workspaces, automatic registration, and seamless JikiME-ADK integration
+tags: ["workflow", "git", "worktree", "parallel-development", "isolation"]
+triggers:
+  keywords: ["worktree", "parallel", "branch", "isolation", "병렬 개발"]
+  phases: ["plan"]
+  agents: ["manager-git"]
+  languages: []
 user-invocable: false
 allowed-tools:
   - Read

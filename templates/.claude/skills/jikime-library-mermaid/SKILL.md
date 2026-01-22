@@ -1,6 +1,12 @@
 ---
 name: jikime-library-mermaid
 description: Enterprise Mermaid diagramming skill for Claude Code using MCP Playwright. Use when creating architecture diagrams, flowcharts, sequence diagrams, or visual documentation.
+tags: ["library", "mermaid", "diagrams", "documentation", "flowchart", "visualization"]
+triggers:
+  keywords: ["mermaid", "diagram", "flowchart", "sequence", "다이어그램", "시퀀스"]
+  phases: ["sync"]
+  agents: ["manager-docs"]
+  languages: []
 user-invocable: false
 ---
 

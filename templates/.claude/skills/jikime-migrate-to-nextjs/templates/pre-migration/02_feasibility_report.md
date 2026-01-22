@@ -1,6 +1,6 @@
 # Feasibility Report
 
-## {{PROJECT_NAME}} Migration Feasibility Assessment
+## jikime-adk-v2 Migration Feasibility Assessment
 
 ---
 

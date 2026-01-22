@@ -651,4 +651,412 @@ export default async function Layout({ children, params }: LayoutProps) {
 
 ---
 
-Version: 1.0.0
+## Next.js 16 New Features (canary/latest)
+
+### Cache Components with 'use cache'
+
+Next.js 16 introduces a new caching directive `'use cache'` for granular caching control.
+
+```tsx
+// Cached function - replaces unstable_cache
+'use cache'
+
+export async function getProducts() {
+  const products = await db.product.findMany()
+  return products
+}
+
+// Usage in Server Component
+export default async function ProductsPage() {
+  const products = await getProducts()
+  return <ProductList products={products} />
+}
+```
+
+### Cache Lifecycle Control
+
+```tsx
+import { cacheLife, cacheTag } from 'next/cache'
+
+export async function getProduct(id: string) {
+  'use cache'
+  cacheLife('hours')  // 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks' | 'max'
+  cacheTag(`product-${id}`)
+
+  return await db.product.findUnique({ where: { id } })
+}
+```
+
+### Cache Invalidation
+
+```tsx
+// Server Action for mutations
+'use server'
+
+import { revalidateTag } from 'next/cache'
+import { updateTag } from 'next/cache' // Next.js 16+
+
+export async function updateProduct(id: string, data: ProductData) {
+  await db.product.update({ where: { id }, data })
+
+  // updateTag: immediate invalidation (synchronous)
+  updateTag(`product-${id}`)
+
+  // revalidateTag: background revalidation (async, eventual consistency)
+  // revalidateTag(`product-${id}`)
+}
+```
+
+### Partial Prerendering (PPR)
+
+PPR enables hybrid static/dynamic rendering in a single route.
+
+```tsx
+// next.config.ts
+const nextConfig = {
+  experimental: {
+    ppr: true,
+  },
+}
+
+// app/products/[id]/page.tsx
+import { Suspense } from 'react'
+import { ProductInfo } from './product-info'
+import { DynamicReviews } from './dynamic-reviews'
+
+// Static shell + Dynamic content
+export default async function ProductPage({
+  params
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+
+  return (
+    <div>
+      {/* Static: Pre-rendered at build time */}
+      <ProductInfo id={id} />
+
+      {/* Dynamic: Streamed at request time */}
+      <Suspense fallback={<ReviewsSkeleton />}>
+        <DynamicReviews productId={id} />
+      </Suspense>
+    </div>
+  )
+}
+```
+
+---
+
+## Server Component Navigation
+
+### CRITICAL: Never add 'use client' just for navigation
+
+```tsx
+// ✅ CORRECT: Server Component with Link
+import Link from 'next/link'
+
+export function Navbar() {
+  return (
+    <nav>
+      <Link href="/">Home</Link>
+      <Link href="/about">About</Link>
+      <Link href="/products">Products</Link>
+    </nav>
+  )
+}
+```
+
+```tsx
+// ❌ WRONG: Unnecessary Client Component
+'use client'  // DON'T DO THIS!
+import { useRouter } from 'next/navigation'
+
+export function Navbar() {
+  const router = useRouter()
+  return (
+    <nav>
+      <button onClick={() => router.push('/')}>Home</button>
+    </nav>
+  )
+}
+```
+
+### Server-Side Redirect
+
+```tsx
+// Server Component redirect
+import { redirect } from 'next/navigation'
+
+export default async function ProtectedPage() {
+  const session = await getSession()
+
+  if (!session) {
+    redirect('/login')  // Server-side redirect
+  }
+
+  return <Dashboard user={session.user} />
+}
+```
+
+---
+
+## useSearchParams Pattern (CRITICAL)
+
+### MUST use Suspense boundary
+
+`useSearchParams()` requires BOTH `'use client'` AND a `<Suspense>` boundary.
+
+```tsx
+// components/search-filters.tsx
+'use client'
+
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+
+export function SearchFilters() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const currentFilter = searchParams.get('filter') || 'all'
+
+  function setFilter(filter: string) {
+    const params = new URLSearchParams(searchParams)
+    params.set('filter', filter)
+    router.push(`${pathname}?${params.toString()}`)
+  }
+
+  return (
+    <div>
+      <button onClick={() => setFilter('all')}>All</button>
+      <button onClick={() => setFilter('active')}>Active</button>
+      <button onClick={() => setFilter('completed')}>Completed</button>
+    </div>
+  )
+}
+```
+
+```tsx
+// app/products/page.tsx (Server Component)
+import { Suspense } from 'react'
+import { SearchFilters } from '@/components/search-filters'
+import { FiltersSkeleton } from '@/components/skeletons'
+
+export default function ProductsPage() {
+  return (
+    <div>
+      <h1>Products</h1>
+      {/* REQUIRED: Suspense boundary for useSearchParams */}
+      <Suspense fallback={<FiltersSkeleton />}>
+        <SearchFilters />
+      </Suspense>
+      <ProductList />
+    </div>
+  )
+}
+```
+
+### URL State Pattern for Filters/Pagination
+
+```tsx
+// hooks/use-url-state.ts
+'use client'
+
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+import { useCallback } from 'react'
+
+export function useUrlState<T extends string>(key: string, defaultValue: T) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const value = (searchParams.get(key) as T) || defaultValue
+
+  const setValue = useCallback((newValue: T) => {
+    const params = new URLSearchParams(searchParams)
+    if (newValue === defaultValue) {
+      params.delete(key)
+    } else {
+      params.set(key, newValue)
+    }
+    router.push(`${pathname}?${params.toString()}`)
+  }, [searchParams, router, pathname, key, defaultValue])
+
+  return [value, setValue] as const
+}
+```
+
+---
+
+## Enhanced SEO Patterns
+
+### Viewport Configuration (CRITICAL: Separate Export)
+
+```tsx
+// app/layout.tsx
+import type { Metadata, Viewport } from 'next'
+
+// CRITICAL: Viewport must be separate export in Next.js 14+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+}
+
+export const metadata: Metadata = {
+  title: {
+    default: 'My App',
+    template: '%s | My App',
+  },
+  description: 'Description here',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+}
+```
+
+### Dynamic Sitemap
+
+```tsx
+// app/sitemap.ts
+import { MetadataRoute } from 'next'
+
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const products = await db.product.findMany({
+    select: { slug: true, updatedAt: true }
+  })
+
+  const productUrls = products.map(product => ({
+    url: `https://example.com/products/${product.slug}`,
+    lastModified: product.updatedAt,
+    changeFrequency: 'weekly' as const,
+    priority: 0.8,
+  }))
+
+  return [
+    {
+      url: 'https://example.com',
+      lastModified: new Date(),
+      changeFrequency: 'daily',
+      priority: 1,
+    },
+    ...productUrls,
+  ]
+}
+```
+
+### JSON-LD Structured Data
+
+```tsx
+// components/json-ld.tsx
+export function ProductJsonLd({ product }: { product: Product }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description,
+    image: product.image,
+    offers: {
+      '@type': 'Offer',
+      price: product.price,
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock',
+    },
+  }
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+    />
+  )
+}
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+### 1. DON'T use 'use client' for navigation
+
+```tsx
+// ❌ WRONG
+'use client'
+import { useRouter } from 'next/navigation'
+export function NavLink() {
+  const router = useRouter()
+  return <button onClick={() => router.push('/about')}>About</button>
+}
+
+// ✅ CORRECT
+import Link from 'next/link'
+export function NavLink() {
+  return <Link href="/about">About</Link>
+}
+```
+
+### 2. DON'T fetch data in Server Actions
+
+```tsx
+// ❌ WRONG: Server Action for data fetching
+'use server'
+export async function getProducts() {
+  return await db.product.findMany()
+}
+
+// ✅ CORRECT: Regular async function with 'use cache'
+'use cache'
+export async function getProducts() {
+  return await db.product.findMany()
+}
+```
+
+### 3. DON'T forget Suspense for useSearchParams
+
+```tsx
+// ❌ WRONG: Missing Suspense boundary
+export default function Page() {
+  return <FilterComponent />  // Will cause hydration errors!
+}
+
+// ✅ CORRECT: Wrapped in Suspense
+export default function Page() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <FilterComponent />
+    </Suspense>
+  )
+}
+```
+
+### 4. DON'T use revalidateTag for immediate updates
+
+```tsx
+// ❌ WRONG: User expects immediate update
+await updateProduct(id, data)
+revalidateTag('products')  // Background revalidation, may be stale
+
+// ✅ CORRECT: Immediate invalidation
+await updateProduct(id, data)
+updateTag('products')  // Immediate, synchronous invalidation
+```
+
+---
+
+Version: 2.0.0
+Last Updated: 2026-01-22
+Changelog:
+- v2.0.0: Added Next.js 16 'use cache', PPR, updateTag, useSearchParams patterns, enhanced SEO
+- v1.0.0: Initial version

@@ -144,6 +144,16 @@ func runPostToolLsp(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Record to loop snapshot if loop is active
+	if IsLoopActive() {
+		AppendDiagnosticToSnapshot(DiagnosticEntry{
+			Source:       "lsp",
+			FilePath:     filePath,
+			ErrorCount:   result.ErrorCount,
+			WarningCount: result.WarningCount,
+		})
+	}
+
 	// Exit with attention code if errors found
 	if result.ErrorCount > 0 {
 		os.Exit(2)

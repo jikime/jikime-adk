@@ -1,6 +1,12 @@
 ---
 name: jikime-workflow-tdd
 description: Test-Driven Development workflow for new feature development. RED-GREEN-REFACTOR cycle for building new functionality with test-first approach.
+tags: ["workflow", "tdd", "testing", "red-green-refactor", "test-first"]
+triggers:
+  keywords: ["TDD", "test-driven", "RED-GREEN", "test first", "테스트 주도"]
+  phases: ["run"]
+  agents: ["expert-testing", "tdd-guide"]
+  languages: []
 user-invocable: false
 context: fork
 agent: tdd-guide

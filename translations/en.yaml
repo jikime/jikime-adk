@@ -4,24 +4,38 @@ language_prompt:
   other: "Select your conversation language"
 language_selected:
   other: "Selected: {{.Language}}"
+language_label:
+  other: "Language"
 user_section:
   other: "User Setup"
 user_prompt:
   other: "Enter your name (optional)"
 user_welcome:
   other: "Welcome: {{.Name}}"
+user_name_label:
+  other: "User Name"
 project_prompt:
   other: "Project name"
+project_name_label:
+  other: "Project Name"
 git_mode_prompt:
   other: "Git mode"
 github_prompt:
   other: "GitHub username"
+github_label:
+  other: "GitHub User"
 commit_lang_prompt:
   other: "Commit message language"
 code_comment_prompt:
   other: "Code comment language"
 documentation_prompt:
   other: "Documentation language"
+commit_lang_label:
+  other: "Commit Language"
+code_comment_label:
+  other: "Code Comments"
+documentation_label:
+  other: "Documentation"
 git_setup_section:
   other: "Git Setup"
 git_mode_select_help:

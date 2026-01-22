@@ -1,6 +1,12 @@
 ---
 name: jikime-platform-vercel
 description: Vercel edge deployment specialist covering Edge Functions, Next.js optimization, preview deployments, ISR, and storage solutions. Use when deploying Next.js applications, implementing edge computing, or configuring Vercel platform features.
+tags: ["platform", "vercel", "deployment", "edge", "nextjs", "isr", "serverless"]
+triggers:
+  keywords: ["vercel", "edge", "ISR", "deployment", "KV", "Blob", "배포"]
+  phases: ["sync"]
+  agents: ["expert-devops"]
+  languages: []
 user-invocable: false
 ---
 

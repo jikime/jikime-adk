@@ -1,6 +1,12 @@
 ---
 name: jikime-foundation-core
 description: JikiME-ADK's foundational principles - TRUST 5, SPEC-First DDD, delegation patterns, token optimization, progressive disclosure, modular architecture, agent catalog, command reference, and execution rules for building AI-powered development workflows
+tags: ["foundation", "trust-5", "spec", "ddd", "delegation", "token-optimization", "patterns"]
+triggers:
+  keywords: ["TRUST", "foundation", "principle", "architecture", "delegation", "token", "원칙"]
+  phases: ["plan", "run", "sync"]
+  agents: ["manager-spec", "manager-strategy", "manager-quality"]
+  languages: []
 user-invocable: false
 allowed-tools:
   - Read

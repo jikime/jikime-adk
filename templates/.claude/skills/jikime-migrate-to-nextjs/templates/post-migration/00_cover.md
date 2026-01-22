@@ -1,4 +1,4 @@
-# {{PROJECT_NAME}} Migration Completion Report
+# jikime-adk-v2 Migration Completion Report
 
 ## Post-Migration Whitepaper
 
@@ -6,7 +6,7 @@
 
 ### 마이그레이션 완료 보고서
 
-**프로젝트**: {{PROJECT_NAME}}
+**프로젝트**: jikime-adk-v2
 **클라이언트**: {{CLIENT_NAME}}
 **완료일**: {{COMPLETION_DATE}}
 **버전**: {{VERSION}}

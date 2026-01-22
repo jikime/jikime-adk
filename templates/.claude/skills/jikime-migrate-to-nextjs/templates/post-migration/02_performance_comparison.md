@@ -1,6 +1,6 @@
 # Performance Comparison Report
 
-## {{PROJECT_NAME}} 성능 비교 분석
+## jikime-adk-v2 성능 비교 분석
 
 ---
 

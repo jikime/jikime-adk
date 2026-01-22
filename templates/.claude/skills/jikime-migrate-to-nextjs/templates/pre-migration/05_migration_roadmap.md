@@ -1,6 +1,6 @@
 # Migration Roadmap
 
-## {{PROJECT_NAME}} Migration Implementation Plan
+## jikime-adk-v2 Migration Implementation Plan
 
 ---
 
@@ -34,7 +34,7 @@ Week 10-11 │ Phase 4: QA    ░░░░░░░░░░░░░░░░�
 
 ```mermaid
 gantt
-    title {{PROJECT_NAME}} Migration Roadmap
+    title jikime-adk-v2 Migration Roadmap
     dateFormat  YYYY-MM-DD
 
     section Phase 1: Setup

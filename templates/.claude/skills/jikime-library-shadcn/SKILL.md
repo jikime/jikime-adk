@@ -1,6 +1,12 @@
 ---
 name: jikime-library-shadcn
 description: Moai Lib Shadcn Ui - Professional implementation guide
+tags: ["library", "shadcn", "ui", "components", "tailwind", "radix", "accessibility"]
+triggers:
+  keywords: ["shadcn", "radix", "tailwind", "ui-components", "design-system"]
+  phases: ["run"]
+  agents: ["expert-frontend"]
+  languages: ["typescript"]
 user-invocable: false
 allowed-tools:
   - Read

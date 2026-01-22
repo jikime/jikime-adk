@@ -34,5 +34,9 @@ func NewHooks() *cobra.Command {
 	hooks.AddCommand(StopLoopCmd)
 	hooks.AddCommand(StopAuditCmd) // from everything-claude-code
 
+	// Loop control hooks
+	hooks.AddCommand(StartLoopCmd)
+	hooks.AddCommand(CancelLoopCmd)
+
 	return hooks
 }

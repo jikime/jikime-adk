@@ -1,6 +1,6 @@
 # Architecture Report
 
-## {{PROJECT_NAME}} Architecture Analysis
+## jikime-adk-v2 Architecture Analysis
 
 ---
 

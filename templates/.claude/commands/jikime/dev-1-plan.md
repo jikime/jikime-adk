@@ -1,33 +1,30 @@
 ---
-description: "[Step 1/4] Create implementation plan. Analyze requirements, assess risks, WAIT for confirmation."
+description: "[Step 1/4] Create SPEC document with EARS format. Analyze requirements, create 3-file structure, WAIT for confirmation."
 context: planning
 ---
 
-# Development Step 1: Plan
+# Development Step 1: Plan (SPEC Creation)
 
 **Context**: @.claude/contexts/planning.md (Auto-loaded)
 
-**계획 단계**: 요구사항을 분석하고 구현 계획을 수립합니다.
+**계획 단계**: 요구사항을 분석하고 EARS 형식의 SPEC 문서를 생성합니다.
 
 **Note**: 이 단계에서 사용자 확인을 받기 전까지 코드를 작성하지 않습니다.
 
 ## Usage
 
 ```bash
-# Plan a new feature
+# Create new SPEC document
 /jikime:dev-1-plan Add user authentication
 
-# Plan with SPEC document
-/jikime:dev-1-plan --spec Add payment gateway
+# Create SPEC with domain specification
+/jikime:dev-1-plan --domain AUTH Add JWT-based login
 
-# Plan with context
+# Create SPEC with context reference
 /jikime:dev-1-plan @src/services/ Add caching layer
 
-# Plan refactoring
-/jikime:dev-1-plan Refactor order processing
-
-# From existing SPEC
-/jikime:dev-1-plan FEAT-001
+# Use existing SPEC document
+/jikime:dev-1-plan SPEC-AUTH-001
 ```
 
 ## Options
@@ -36,137 +33,161 @@ context: planning
 |--------|-------------|---------|
 | `[description]` | Feature or task description | Required |
 | `@path` | Reference existing code | - |
-| `--spec` | Create/update SPEC document | Off |
-| `--detail` | More detailed breakdown | Off |
-| `[FEAT-ID]` | Use existing SPEC document | - |
+| `--domain` | Specify SPEC domain (AUTH, USER, API, etc.) | Auto-detect |
+| `[SPEC-ID]` | Use existing SPEC document | - |
 
 ## Process
 
 ```
 1. Analyze Request
    - Understand requirements
-   - Identify affected areas
+   - Identify domain and affected areas
+   - Detect technology keywords
         ↓
-2. Check SPEC (if --spec or FEAT-ID)
-   - Create new SPEC document
-   - Or load existing SPEC
+2. Delegate to manager-spec Agent
+   - Use the manager-spec subagent to create SPEC document
+   - Manager-spec creates 3-file structure in .jikime/specs/
         ↓
-3. Create Plan
-   - Break into phases
-   - Identify dependencies
-   - Assess risks
+3. Create SPEC Directory Structure
+   .jikime/specs/SPEC-{DOMAIN}-{NUMBER}/
+   ├── spec.md         (EARS requirements)
+   ├── plan.md         (Implementation plan)
+   └── acceptance.md   (Acceptance criteria)
         ↓
 4. Present & WAIT
-   - Show plan to user
+   - Show SPEC summary to user
    - Wait for confirmation
         ↓
 5. User Response
    - "yes" → Proceed to dev-2-implement
-   - "modify: [changes]" → Revise plan
+   - "modify: [changes]" → Revise SPEC
    - "no" → Cancel
 ```
 
-## Plan Format
+## SPEC ID Format
 
-### Standard Plan
+- **Pattern**: `SPEC-{DOMAIN}-{NUMBER}`
+- **Domain**: Uppercase letters indicating feature area
+- **Number**: 3-digit zero-padded sequential number
+
+### Domain Examples
+
+| Domain | Description |
+|--------|-------------|
+| AUTH | Authentication, authorization |
+| USER | User management |
+| API | API endpoints |
+| DB | Database operations |
+| UI | User interface |
+| PERF | Performance optimization |
+| SEC | Security features |
+
+## 3-File Structure
+
+### spec.md (Requirements)
+
+EARS format specification containing:
+- Metadata (ID, Title, Status, Priority)
+- Environment and Assumptions
+- Requirements (Ubiquitous, Event-driven, State-driven, Unwanted, Optional)
+- Specifications and Traceability
+
+### plan.md (Implementation Plan)
+
+- Milestones by priority (Primary, Secondary, Optional)
+- Technical approach and architecture
+- Implementation phases
+- Risks and mitigations
+
+### acceptance.md (Acceptance Criteria)
+
+- Success criteria
+- Test scenarios (Given-When-Then format)
+- Quality gates
+- Definition of Done
+
+## Output Example
 
 ```markdown
-# Implementation Plan: [Feature Name]
+## SPEC Creation Complete: SPEC-AUTH-001
 
-## Requirements
-- [Requirement 1]
-- [Requirement 2]
+**Status**: SUCCESS
+**Title**: JWT-based User Authentication
 
-## Phases
+### Created Files
+- `.jikime/specs/SPEC-AUTH-001/spec.md` (EARS format)
+- `.jikime/specs/SPEC-AUTH-001/plan.md` (Implementation plan)
+- `.jikime/specs/SPEC-AUTH-001/acceptance.md` (Acceptance criteria)
 
-### Phase 1: [Name]
-- Task 1 (File: path/to/file.ts)
-- Task 2
+### Requirements Summary
+- Ubiquitous: 3 requirements
+- Event-driven: 2 requirements
+- State-driven: 1 requirement
+- Unwanted: 2 requirements
 
-### Phase 2: [Name]
-...
+### Quality Verification
+- EARS Syntax: PASS
+- Completeness: 100%
+- Traceability Tags: Applied
 
-## Dependencies
-- [Dependency 1]
-
-## Risks
-- HIGH: [Risk description]
-- MEDIUM: [Risk description]
-
-## Complexity: MEDIUM
+---
 
 **WAITING FOR CONFIRMATION**
-Proceed? (yes/no/modify)
+
+Proceed to implementation? (yes/no/modify)
+- "yes" → Run /jikime:dev-2-implement SPEC-AUTH-001
+- "modify: [changes]" → Revise SPEC
+- "no" → Cancel
 ```
 
-### With SPEC (--spec)
+## Agent Delegation
 
-```markdown
-# Implementation Plan: [Feature Name]
-**SPEC**: .jikime/specs/FEAT-001.md
+[HARD] This command MUST delegate SPEC creation to manager-spec agent:
 
-## SPEC Summary
-- **ID**: FEAT-001
-- **Status**: Planning
-- **Created**: [Date]
-
-## Requirements (from SPEC)
-...
-
-[Rest of standard plan]
 ```
+Use the manager-spec subagent to create SPEC document for: {description}
 
-## SPEC Integration
+Context:
+- Domain: {detected or specified domain}
+- Referenced code: {if @path provided}
+- Requirements: {user description}
 
-### Create New SPEC (--spec flag)
-
-```bash
-/jikime:dev-1-plan --spec Add user dashboard
+Expected output:
+- 3-file SPEC structure in .jikime/specs/
+- EARS-formatted requirements
+- Implementation plan with milestones
+- Acceptance criteria with test scenarios
 ```
-
-Creates `.jikime/specs/FEAT-XXX.md` with:
-- Requirements extracted from plan
-- Acceptance criteria
-- Risk assessment
-
-### Use Existing SPEC
-
-```bash
-/jikime:dev-1-plan FEAT-001
-```
-
-Loads requirements from existing SPEC document.
 
 ## Critical Rules
 
 1. **MUST WAIT** - 사용자 확인 전 코드 작성 금지
-2. **Be Specific** - 파일 경로, 함수명 명시
-3. **Consider Risks** - 잠재적 문제 식별
-4. **SPEC Sync** - SPEC 사용 시 문서와 계획 동기화
+2. **3-File Structure** - 반드시 3파일 구조로 생성
+3. **EARS Format** - 요구사항은 EARS 패턴 사용
+4. **No Flat Files** - `.jikime/specs/SPEC-*.md` 단일 파일 금지
+5. **Delegate to Agent** - manager-spec 에이전트에 위임
 
 ## Workflow
 
 ```
-/jikime:dev-0-init   (선택적)
+/jikime:dev-0-init   (Optional: Project initialization)
         ↓
-/jikime:dev-1-plan  ← 현재
+/jikime:dev-1-plan  ← Current (SPEC Creation)
         ↓
-/jikime:dev-2-implement
+/jikime:dev-2-implement (DDD Implementation)
         ↓
-/jikime:dev-3-test
+/jikime:dev-3-test (Testing)
         ↓
-/jikime:dev-4-review
+/jikime:dev-4-review (Code Review)
 ```
 
 ## Next Step
 
 승인 후 다음 단계로:
 ```bash
-/jikime:dev-2-implement
-# Or with SPEC
-/jikime:dev-2-implement FEAT-001
+/jikime:dev-2-implement SPEC-AUTH-001
 ```
 
 ---
 
-Version: 2.0.0
+Version: 3.0.0 (3-File SPEC Structure)

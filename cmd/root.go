@@ -10,7 +10,7 @@ import (
 	"jikime-adk-v2/cmd/hookscmd"
 	"jikime-adk-v2/cmd/initcmd"
 	"jikime-adk-v2/cmd/languagecmd"
-	"jikime-adk-v2/cmd/rankcmd"
+	"jikime-adk-v2/cmd/skillcmd"
 	"jikime-adk-v2/cmd/statuscmd"
 	"jikime-adk-v2/cmd/statuslinecmd"
 	"jikime-adk-v2/cmd/tagcmd"
@@ -42,9 +42,6 @@ func NewRoot() *cobra.Command {
 	// Language management
 	root.AddCommand(languagecmd.NewLanguage())
 
-	// Rank leaderboard
-	root.AddCommand(rankcmd.NewRank())
-
 	// Update command
 	root.AddCommand(updatecmd.NewUpdate())
 
@@ -56,6 +53,9 @@ func NewRoot() *cobra.Command {
 
 	// TAG System v2.0
 	root.AddCommand(tagcmd.NewTag())
+
+	// Skill System (tag-based skill discovery)
+	root.AddCommand(skillcmd.NewSkill())
 
 	// Banner preview (dev tool)
 	root.AddCommand(banner.NewBannerPreview())

@@ -1,6 +1,6 @@
 # Complexity Matrix
 
-## {{PROJECT_NAME}} Component Complexity Analysis
+## jikime-adk-v2 Component Complexity Analysis
 
 ---
 

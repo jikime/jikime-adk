@@ -1,6 +1,6 @@
 # Security & Performance Baseline Report
 
-## {{PROJECT_NAME}} Pre-Migration Baseline Assessment
+## jikime-adk-v2 Pre-Migration Baseline Assessment
 
 ---
 

@@ -2,7 +2,7 @@
 
 ---
 
-## {{PROJECT_NAME}} → {{TARGET_FRAMEWORK}} Migration
+## jikime-adk-v2 → {{TARGET_FRAMEWORK}} Migration
 
 ### Technical Assessment & Implementation Strategy
 
@@ -24,7 +24,7 @@
 
 | Item | Details |
 |------|---------|
-| Project Name | {{PROJECT_NAME}} |
+| Project Name | jikime-adk-v2 |
 | Source Framework | {{SOURCE_FRAMEWORK}} {{SOURCE_VERSION}} |
 | Target Framework | {{TARGET_FRAMEWORK}} {{TARGET_VERSION}} |
 | Analysis Date | {{DATE}} |

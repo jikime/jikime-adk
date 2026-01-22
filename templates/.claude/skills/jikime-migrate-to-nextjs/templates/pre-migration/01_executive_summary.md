@@ -1,6 +1,6 @@
 # Executive Summary
 
-## {{PROJECT_NAME}} Migration Assessment
+## jikime-adk-v2 Migration Assessment
 
 ---
 
@@ -8,7 +8,7 @@
 
 {{PROJECT_OVERVIEW}}
 
-본 문서는 {{CLIENT_NAME}}의 {{PROJECT_NAME}} 프로젝트를 {{SOURCE_FRAMEWORK}}에서 {{TARGET_FRAMEWORK}}로 마이그레이션하기 위한 기술 평가 결과를 담고 있습니다.
+본 문서는 {{CLIENT_NAME}}의 jikime-adk-v2 프로젝트를 {{SOURCE_FRAMEWORK}}에서 {{TARGET_FRAMEWORK}}로 마이그레이션하기 위한 기술 평가 결과를 담고 있습니다.
 
 ---
 

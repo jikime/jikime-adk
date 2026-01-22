@@ -1,6 +1,6 @@
 # Cost-Benefit Analysis
 
-## {{PROJECT_NAME}} 비용 대비 효과 분석
+## jikime-adk-v2 비용 대비 효과 분석
 
 ---
 

@@ -1,6 +1,6 @@
 # Code Quality Report
 
-## {{PROJECT_NAME}} 코드 품질 비교 보고서
+## jikime-adk-v2 코드 품질 비교 보고서
 
 ---
 

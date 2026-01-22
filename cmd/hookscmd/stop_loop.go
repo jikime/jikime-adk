@@ -20,7 +20,9 @@ var StopLoopCmd = &cobra.Command{
 
 Features:
 - Check if loop is active
-- Check completion conditions (zero errors, tests pass)
+- Collect diagnostic snapshots from LSP/AST-grep
+- Evaluate completion conditions (zero errors, tests pass, stagnation)
+- Calculate improvement rate
 - Either continue loop or signal completion
 
 Exit codes:
@@ -30,10 +32,7 @@ Exit codes:
 }
 
 const (
-	disableEnvVar       = "JIKIME_DISABLE_LOOP_CONTROLLER"
-	loopActiveEnvVar    = "JIKIME_LOOP_ACTIVE"
-	loopIterationEnvVar = "JIKIME_LOOP_ITERATION"
-	maxIterations       = 10
+	disableEnvVar = "JIKIME_DISABLE_LOOP_CONTROLLER"
 )
 
 // Completion promise markers
@@ -45,26 +44,6 @@ var completionMarkers = []string{
 	"<alfred:complete />",
 	"<jikime:done />",
 	"<jikime:complete />",
-}
-
-type loopState struct {
-	Active           bool     `json:"active"`
-	Iteration        int      `json:"iteration"`
-	MaxIterations    int      `json:"max_iterations"`
-	LastErrorCount   int      `json:"last_error_count"`
-	LastWarningCount int      `json:"last_warning_count"`
-	FilesModified    []string `json:"files_modified,omitempty"`
-	CompletionReason string   `json:"completion_reason,omitempty"`
-}
-
-type completionStatus struct {
-	ZeroErrors       bool
-	ZeroWarnings     bool
-	TestsPass        bool
-	AllConditionsMet bool
-	ErrorCount       int
-	WarningCount     int
-	TestDetails      string
 }
 
 type stopLoopInput struct {
@@ -92,7 +71,7 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 	}
 
 	// Load current loop state
-	state := loadLoopState()
+	state := LoadEnhancedLoopState()
 
 	// If loop is not active, just exit
 	if !state.Active {
@@ -115,13 +94,14 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 	// PRIORITY CHECK: Completion promise marker
 	if checkCompletionPromise(conversationText) {
 		state.Active = false
+		state.FinalStatus = "COMPLETE"
 		state.CompletionReason = "Completion promise detected"
-		clearLoopState()
+		ClearEnhancedLoopState()
 
 		output := stopLoopOutput{
 			HookSpecificOutput: &stopLoopHookOutput{
 				HookEventName:     "Stop",
-				AdditionalContext: "Ralph Loop: COMPLETE - <promise>DONE</promise> detected",
+				AdditionalContext: formatFinalReport(state, "COMPLETE - Completion promise detected"),
 			},
 		}
 		encoder := json.NewEncoder(os.Stdout)
@@ -130,65 +110,57 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Check completion conditions
-	status := checkCompletionConditions()
+	// Collect current diagnostics and update snapshot
+	currentSnapshot := collectCurrentDiagnostics()
+	state.AddSnapshot(currentSnapshot)
 
-	// Update state
-	state.LastErrorCount = status.ErrorCount
-	state.LastWarningCount = status.WarningCount
+	// Evaluate completion conditions
+	result := state.EvaluateCompletion()
 
 	// Determine action
 	var action string
 	var exitCode int
 
-	if status.AllConditionsMet {
-		// Loop complete
+	if result.Complete {
+		// Loop complete - all conditions met
 		state.Active = false
-		state.CompletionReason = "All conditions met"
-		action = "COMPLETE - All conditions satisfied"
-		clearLoopState()
+		state.FinalStatus = "COMPLETE"
+		state.CompletionReason = result.Reason
+		action = "COMPLETE - " + result.Reason
+		ClearEnhancedLoopState()
 		exitCode = 0
 	} else if state.Iteration >= state.MaxIterations {
 		// Max iterations reached
 		state.Active = false
+		state.FinalStatus = "STOPPED"
 		state.CompletionReason = "Max iterations reached"
 		action = "STOPPED - Max iterations (" + strconv.Itoa(state.MaxIterations) + ") reached"
-		clearLoopState()
+		ClearEnhancedLoopState()
+		exitCode = 0
+	} else if state.IsStagnant() {
+		// Stagnation detected
+		state.Active = false
+		state.FinalStatus = "STOPPED"
+		state.CompletionReason = "Stagnation - no improvement detected"
+		action = "STOPPED - No improvement in last " + strconv.Itoa(state.Criteria.StagnationLimit) + " iterations"
+		ClearEnhancedLoopState()
 		exitCode = 0
 	} else {
 		// Continue loop
 		state.Iteration++
-		action = "CONTINUE - Issues remain"
-		saveLoopState(state)
+		action = "CONTINUE"
+		SaveEnhancedLoopState(state)
 		exitCode = 1
 	}
 
-	// Format output
-	context := formatLoopOutput(state, status, action)
-
-	// Build guidance for Claude
-	guidance := ""
-	if exitCode == 1 {
-		var issues []string
-		if status.ErrorCount > 0 {
-			issues = append(issues, "Fix "+strconv.Itoa(status.ErrorCount)+" error(s)")
-		}
-		if status.WarningCount > 0 && !status.ZeroWarnings {
-			issues = append(issues, "Address "+strconv.Itoa(status.WarningCount)+" warning(s)")
-		}
-		if !status.TestsPass {
-			issues = append(issues, "Fix failing tests")
-		}
-		if len(issues) > 0 {
-			guidance = "\nNext actions: " + strings.Join(issues, ", ")
-		}
-	}
+	// Format output with feedback
+	context := formatLoopFeedback(state, result, action)
 
 	// Prepare hook output
 	output := stopLoopOutput{
 		HookSpecificOutput: &stopLoopHookOutput{
 			HookEventName:     "Stop",
-			AdditionalContext: context + guidance,
+			AdditionalContext: context,
 		},
 	}
 
@@ -200,67 +172,6 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 
 	os.Exit(exitCode)
 	return nil
-}
-
-func loadLoopState() loopState {
-	// First check environment variables
-	if active := os.Getenv(loopActiveEnvVar); active != "" {
-		if active == "1" || strings.ToLower(active) == "true" || strings.ToLower(active) == "yes" {
-			iteration := 0
-			if iterStr := os.Getenv(loopIterationEnvVar); iterStr != "" {
-				if iter, err := strconv.Atoi(iterStr); err == nil {
-					iteration = iter
-				}
-			}
-			return loopState{Active: true, Iteration: iteration, MaxIterations: maxIterations}
-		}
-	}
-
-	// Then check state file
-	statePath := getLoopStatePath()
-	data, err := os.ReadFile(statePath)
-	if err != nil {
-		return loopState{MaxIterations: maxIterations}
-	}
-
-	var state loopState
-	if err := json.Unmarshal(data, &state); err != nil {
-		return loopState{MaxIterations: maxIterations}
-	}
-
-	if state.MaxIterations == 0 {
-		state.MaxIterations = maxIterations
-	}
-
-	return state
-}
-
-func saveLoopState(state loopState) {
-	statePath := getLoopStatePath()
-
-	// Ensure directory exists
-	os.MkdirAll(filepath.Dir(statePath), 0755)
-
-	data, err := json.MarshalIndent(state, "", "  ")
-	if err != nil {
-		return
-	}
-
-	os.WriteFile(statePath, data, 0644)
-}
-
-func clearLoopState() {
-	statePath := getLoopStatePath()
-	os.Remove(statePath)
-}
-
-func getLoopStatePath() string {
-	jikimeDir, err := hooks.FindJikimeDir()
-	if err != nil {
-		// Fallback to current directory
-		return ".jikime_loop_state.json"
-	}
-	return filepath.Join(jikimeDir, "cache", ".jikime_loop_state.json")
 }
 
 func checkCompletionPromise(text string) bool {
@@ -277,14 +188,10 @@ func checkCompletionPromise(text string) bool {
 	return false
 }
 
-func checkCompletionConditions() completionStatus {
-	status := completionStatus{
-		ZeroErrors:   true,
-		ZeroWarnings: true,
-		TestsPass:    true,
-	}
+func collectCurrentDiagnostics() DiagnosticSnapshot {
+	snapshot := DiagnosticSnapshot{}
 
-	// Check for errors using ruff (Python)
+	// Run ruff for Python diagnostics
 	if _, err := exec.LookPath("ruff"); err == nil {
 		projectRoot, err := hooks.FindProjectRoot()
 		if err == nil {
@@ -298,9 +205,9 @@ func checkCompletionConditions() completionStatus {
 					for _, issue := range issues {
 						code, _ := issue["code"].(string)
 						if strings.HasPrefix(code, "E") || strings.HasPrefix(code, "F") {
-							status.ErrorCount++
+							snapshot.ErrorCount++
 						} else {
-							status.WarningCount++
+							snapshot.WarningCount++
 						}
 					}
 				}
@@ -308,19 +215,34 @@ func checkCompletionConditions() completionStatus {
 		}
 	}
 
-	status.ZeroErrors = status.ErrorCount == 0
-	status.ZeroWarnings = status.WarningCount == 0
+	// Check TypeScript if applicable
+	if _, err := exec.LookPath("tsc"); err == nil {
+		projectRoot, err := hooks.FindProjectRoot()
+		if err == nil {
+			if hooks.FileExists(filepath.Join(projectRoot, "tsconfig.json")) {
+				cmd := exec.Command("tsc", "--noEmit", "--pretty", "false")
+				cmd.Dir = projectRoot
+				output, _ := cmd.CombinedOutput()
+
+				if len(output) > 0 {
+					lines := strings.Split(string(output), "\n")
+					for _, line := range lines {
+						if strings.Contains(strings.ToLower(line), "error") {
+							snapshot.ErrorCount++
+						}
+					}
+				}
+			}
+		}
+	}
 
 	// Check tests
-	status.TestsPass, status.TestDetails = checkLoopTests()
+	snapshot.TestsPassed, _ = checkTests()
 
-	// All conditions met if no errors and tests pass
-	status.AllConditionsMet = status.ZeroErrors && status.TestsPass
-
-	return status
+	return snapshot
 }
 
-func checkLoopTests() (bool, string) {
+func checkTests() (bool, string) {
 	projectRoot, err := hooks.FindProjectRoot()
 	if err != nil {
 		return true, "No project root found"
@@ -356,31 +278,71 @@ func checkLoopTests() (bool, string) {
 	return true, "No test framework detected"
 }
 
-func formatLoopOutput(state loopState, status completionStatus, action string) string {
-	parts := []string{"Ralph Loop: " + action}
+func formatLoopFeedback(state *LoopState, result CompletionResult, action string) string {
+	var parts []string
 
-	if state.Active || state.CompletionReason != "" {
-		parts = append(parts, "Iteration: "+strconv.Itoa(state.Iteration)+"/"+strconv.Itoa(state.MaxIterations))
-	}
+	// Header
+	parts = append(parts, "Ralph Loop: "+action)
 
-	if status.ErrorCount > 0 || status.WarningCount > 0 {
-		parts = append(parts, "Errors: "+strconv.Itoa(status.ErrorCount))
-		parts = append(parts, "Warnings: "+strconv.Itoa(status.WarningCount))
-	}
+	// Iteration info
+	parts = append(parts, "Iteration: "+strconv.Itoa(state.Iteration)+"/"+strconv.Itoa(state.MaxIterations))
 
-	if status.TestDetails != "" && status.TestDetails != "No test framework detected" {
-		if status.TestsPass {
-			parts = append(parts, "Tests: PASS")
+	// Current snapshot info
+	if latest := state.GetLatestSnapshot(); latest != nil {
+		if latest.ErrorCount > 0 || latest.WarningCount > 0 || latest.SecurityIssues > 0 {
+			parts = append(parts, "Current: "+strconv.Itoa(latest.ErrorCount)+" error(s), "+
+				strconv.Itoa(latest.WarningCount)+" warning(s), "+
+				strconv.Itoa(latest.SecurityIssues)+" security issue(s)")
 		} else {
-			parts = append(parts, "Tests: FAIL")
+			parts = append(parts, "Current: No issues detected")
+		}
+
+		if !latest.TestsPassed && state.Criteria.TestsPass {
+			parts = append(parts, "Tests: FAILING")
 		}
 	}
 
-	if status.AllConditionsMet {
-		parts = append(parts, "Status: COMPLETE")
-	} else if state.Active {
-		parts = append(parts, "Status: CONTINUE")
+	// Progress info
+	if len(state.Snapshots) >= 2 {
+		rate := state.CalculateImprovementRate()
+		parts = append(parts, "Progress: "+formatProgressPercent(rate)+" improvement")
+	}
+
+	// Guidance for continuation
+	if result.Guidance != "" && !result.Complete {
+		parts = append(parts, "Next: "+result.Guidance)
 	}
 
 	return strings.Join(parts, " | ")
+}
+
+func formatFinalReport(state *LoopState, action string) string {
+	var parts []string
+
+	parts = append(parts, "Ralph Loop: "+action)
+	parts = append(parts, "Session: "+state.SessionID)
+	parts = append(parts, "Iterations: "+strconv.Itoa(state.Iteration))
+
+	if len(state.Snapshots) >= 2 {
+		rate := state.CalculateImprovementRate()
+		parts = append(parts, "Total improvement: "+formatProgressPercent(rate))
+
+		initial := state.Snapshots[0]
+		latest := state.GetLatestSnapshot()
+
+		parts = append(parts, "Initial: "+strconv.Itoa(initial.ErrorCount)+" errors, "+
+			strconv.Itoa(initial.WarningCount)+" warnings")
+
+		if latest != nil {
+			parts = append(parts, "Final: "+strconv.Itoa(latest.ErrorCount)+" errors, "+
+				strconv.Itoa(latest.WarningCount)+" warnings")
+		}
+	}
+
+	return strings.Join(parts, " | ")
+}
+
+func formatProgressPercent(rate float64) string {
+	percent := int(rate * 100)
+	return strconv.Itoa(percent) + "%"
 }

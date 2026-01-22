@@ -77,15 +77,6 @@ func languageDisplay(value string) string {
 	return value
 }
 
-func getGitModeOption(options []selectOption, value string) selectOption {
-	for _, opt := range options {
-		if opt.Value == value {
-			return opt
-		}
-	}
-	return selectOption{Value: value, Display: value, Description: ""}
-}
-
 func NewInit() *cobra.Command {
 	opts := &initOptions{}
 
@@ -243,17 +234,13 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 	answers.Locale = promptSelectLanguage(localize(localizer, "language_prompt", nil), languageOptions, answers.Locale)
 
 	localizer = getTranslation(answers.Locale)
-	fmt.Println(successStyle.Render("    ✓ ") + whiteStyle.Render(localize(localizer, "language_selected", map[string]interface{}{"Language": languageDisplay(answers.Locale)})))
+	fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(localize(localizer, "language_label", nil)+": ") + whiteStyle.Render(languageDisplay(answers.Locale)))
 
 	// User Section
 	printCyberSection("👤", localize(localizer, "user_section", nil))
-	answers.UserName = promptInput("    "+localize(localizer, "user_prompt", nil), answers.UserName)
-	if answers.UserName != "" {
-		fmt.Println(successStyle.Render("    ✓ ") + whiteStyle.Render(localize(localizer, "user_welcome", map[string]interface{}{"Name": answers.UserName})))
-	}
-
+	answers.UserName = promptInputWithLabel("    "+localize(localizer, "user_prompt", nil), localize(localizer, "user_name_label", nil), answers.UserName)
 	// Project name
-	answers.ProjectName = promptInput("    "+localize(localizer, "project_prompt", nil), answers.ProjectName)
+	answers.ProjectName = promptInputWithLabel("    "+localize(localizer, "project_prompt", nil), localize(localizer, "project_name_label", nil), answers.ProjectName)
 
 	// Git Setup section
 	printCyberSection("🔀", localize(localizer, "git_setup_section", nil))
@@ -275,28 +262,26 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 			Description: localize(localizer, "git_mode_team_desc", nil),
 		},
 	}
-	answers.GitMode = promptSelectWithDescription(gitModeOptions, answers.GitMode)
+	answers.GitMode = promptSelectWithDescriptionWithLabel(gitModeOptions, localize(localizer, "select_git_mode_summary", nil), answers.GitMode)
 
 	if answers.GitMode == "personal" || answers.GitMode == "team" {
-		answers.GitHubUser = promptInputRequired("    "+localize(localizer, "github_prompt", nil), answers.GitHubUser)
+		answers.GitHubUser = promptInputRequiredWithLabel("    "+localize(localizer, "github_prompt", nil), localize(localizer, "github_label", nil), answers.GitHubUser)
 	}
 
-	answers.GitCommitLang = promptSelectLanguage(localize(localizer, "commit_lang_prompt", nil), languageOptions, answers.GitCommitLang)
-	answers.CodeCommentLang = promptSelectLanguage(localize(localizer, "code_comment_prompt", nil), languageOptions, answers.CodeCommentLang)
-	answers.DocLang = promptSelectLanguage(localize(localizer, "documentation_prompt", nil), languageOptions, answers.DocLang)
-
-	// Git Summary
-	fmt.Println()
-	fmt.Println(sectionStyle.Render("    ─── ") + highlightStyle.Render("GIT CONFIGURATION") + sectionStyle.Render(" ───"))
-	gitModeOption := getGitModeOption(gitModeOptions, answers.GitMode)
-	fmt.Println(successStyle.Render("    ✓ ") + dimStyle.Render("Mode: ") + whiteStyle.Render(gitModeOption.Display))
-
-	// Output Language Summary
-	fmt.Println()
-	fmt.Println(sectionStyle.Render("    ─── ") + highlightStyle.Render("OUTPUT LANGUAGES") + sectionStyle.Render(" ───"))
-	fmt.Println(successStyle.Render("    ✓ ") + dimStyle.Render("Commits: ") + whiteStyle.Render(languageDisplay(answers.GitCommitLang)))
-	fmt.Println(successStyle.Render("    ✓ ") + dimStyle.Render("Comments: ") + whiteStyle.Render(languageDisplay(answers.CodeCommentLang)))
-	fmt.Println(successStyle.Render("    ✓ ") + dimStyle.Render("Docs: ") + whiteStyle.Render(languageDisplay(answers.DocLang)))
+	// Output Language Settings section
+	printCyberSection("🌍", localize(localizer, "output_language_settings", nil))
+	answers.GitCommitLang = promptSelectLanguageWithLabel(
+		localize(localizer, "commit_lang_prompt", nil),
+		localize(localizer, "commit_lang_label", nil),
+		languageOptions, answers.GitCommitLang)
+	answers.CodeCommentLang = promptSelectLanguageWithLabel(
+		localize(localizer, "code_comment_prompt", nil),
+		localize(localizer, "code_comment_label", nil),
+		languageOptions, answers.CodeCommentLang)
+	answers.DocLang = promptSelectLanguageWithLabel(
+		localize(localizer, "documentation_prompt", nil),
+		localize(localizer, "documentation_label", nil),
+		languageOptions, answers.DocLang)
 
 	// TAG System Setup
 	printCyberSection("🏷️", localize(localizer, "tag_setup_section", nil))
@@ -318,7 +303,7 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 	if !answers.TagEnabled {
 		tagEnabledValue = "no"
 	}
-	tagEnabledResult := promptSelectWithDescription(tagEnabledOptions, tagEnabledValue)
+	tagEnabledResult := promptSelectWithDescriptionWithLabel(tagEnabledOptions, localize(localizer, "tag_enabled_label", nil), tagEnabledValue)
 	answers.TagEnabled = tagEnabledResult == "yes"
 
 	if answers.TagEnabled {
@@ -340,14 +325,13 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 				Description: localize(localizer, "tag_mode_off_desc", nil),
 			},
 		}
-		answers.TagMode = promptSelectWithDescription(tagModeOptions, answers.TagMode)
+		answers.TagMode = promptSelectWithDescriptionWithLabel(tagModeOptions, localize(localizer, "tag_mode_label", nil), answers.TagMode)
 	} else {
 		answers.TagMode = "off"
 	}
 
-	// TAG Summary
-	fmt.Println()
-	fmt.Println(sectionStyle.Render("    ─── ") + highlightStyle.Render("TAG SYSTEM") + sectionStyle.Render(" ───"))
+	// TAG Summary Box
+	var tagLines []string
 	if answers.TagEnabled {
 		tagModeDisplay := answers.TagMode
 		switch answers.TagMode {
@@ -358,11 +342,16 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 		case "off":
 			tagModeDisplay = localize(localizer, "tag_mode_off_display", nil)
 		}
-		fmt.Println(successStyle.Render("    ✓ ") + dimStyle.Render("Enabled: ") + whiteStyle.Render("Yes"))
-		fmt.Println(successStyle.Render("    ✓ ") + dimStyle.Render("Mode: ") + whiteStyle.Render(tagModeDisplay))
+		tagLines = []string{
+			successStyle.Render("✓ ") + dimStyle.Render("Enabled: ") + whiteStyle.Render("Yes"),
+			successStyle.Render("✓ ") + dimStyle.Render("Mode: ") + whiteStyle.Render(tagModeDisplay),
+		}
 	} else {
-		fmt.Println(successStyle.Render("    ✓ ") + dimStyle.Render("Enabled: ") + whiteStyle.Render("No"))
+		tagLines = []string{
+			successStyle.Render("✓ ") + dimStyle.Render("Enabled: ") + whiteStyle.Render("No"),
+		}
 	}
+	printSummaryBox("TAG SYSTEM", tagLines)
 
 	return answers, nil
 }
@@ -376,31 +365,80 @@ func printCyberSection(icon, title string) {
 	fmt.Println(header)
 }
 
-func promptInput(label, current string) string {
-	prompt := promptui.Prompt{
-		Label:     label,
+
+// printSummaryBox prints a bordered summary box with title and content
+func printSummaryBox(title string, lines []string) {
+	borderColor := lipgloss.NewStyle().Foreground(dimCyan)
+	titleColor := lipgloss.NewStyle().Foreground(neonPink).Bold(true)
+
+	boxWidth := 50
+
+	// Top border with title
+	titleText := " " + title + " "
+	leftPad := 2
+	rightPad := boxWidth - leftPad - len(titleText)
+	if rightPad < 0 {
+		rightPad = 0
+	}
+
+	fmt.Println()
+	fmt.Println(borderColor.Render("    ┌" + strings.Repeat("─", leftPad)) + titleColor.Render(titleText) + borderColor.Render(strings.Repeat("─", rightPad) + "┐"))
+
+	// Content lines
+	for _, line := range lines {
+		// Pad line to fit box width
+		padding := boxWidth - len(line) - 2
+		if padding < 0 {
+			padding = 0
+		}
+		fmt.Println(borderColor.Render("    │ ") + line + strings.Repeat(" ", padding) + borderColor.Render(" │"))
+	}
+
+	// Bottom border
+	fmt.Println(borderColor.Render("    └" + strings.Repeat("─", boxWidth) + "┘"))
+}
+
+// promptInputWithLabel prompts for input and shows a success message with the setting name
+func promptInputWithLabel(prompt, settingLabel, current string) string {
+	p := promptui.Prompt{
+		Label:     prompt,
 		Default:   current,
 		AllowEdit: true,
 		Templates: &promptui.PromptTemplates{
-			Prompt:  "{{ . | cyan }}",
-			Valid:   "{{ . | cyan }}",
-			Invalid: "{{ . | red }}",
-			Success: "{{ . | green }}",
+			Prompt:  "{{ . | cyan }}: ",
+			Valid:   "{{ . | cyan }}: ",
+			Invalid: "{{ . | red }}: ",
+			Success: " ",
 		},
 	}
-	if result, err := prompt.Run(); err == nil {
-		return strings.TrimSpace(result)
+	if result, err := p.Run(); err == nil {
+		trimmed := strings.TrimSpace(result)
+		// Clear the previous line (promptui's input echo) and print success message
+		fmt.Print("\033[A\033[K")
+		if trimmed != "" {
+			fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(settingLabel+": ") + whiteStyle.Render(trimmed))
+		} else {
+			fmt.Println()
+		}
+		return trimmed
 	} else if handleInterrupt(err) {
 		os.Exit(1)
 	}
 	return current
 }
 
-func promptInputRequired(label, current string) string {
-	prompt := promptui.Prompt{
-		Label:     label,
+// promptInputRequiredWithLabel prompts for required input and shows a success message
+func promptInputRequiredWithLabel(prompt, settingLabel, current string) string {
+	p := promptui.Prompt{
+		Label:     prompt,
 		Default:   current,
 		AllowEdit: true,
+		Templates: &promptui.PromptTemplates{
+			Prompt:  "{{ . | cyan }}: ",
+			Valid:   "{{ . | cyan }}: ",
+			Invalid: "{{ . | red }}: ",
+			Success: " ",
+		},
 		Validate: func(input string) error {
 			if strings.TrimSpace(input) == "" {
 				return fmt.Errorf("this field is required")
@@ -409,9 +447,12 @@ func promptInputRequired(label, current string) string {
 		},
 	}
 	for {
-		if result, err := prompt.Run(); err == nil {
+		if result, err := p.Run(); err == nil {
 			trimmed := strings.TrimSpace(result)
 			if trimmed != "" {
+				// Clear the previous line (promptui's input echo) and print success message
+				fmt.Print("\033[A\033[K")
+				fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(settingLabel+": ") + whiteStyle.Render(trimmed))
 				return trimmed
 			}
 		} else if handleInterrupt(err) {
@@ -440,7 +481,7 @@ func promptSelectLanguage(label string, choices []languageOption, current string
 		Label:    "{{ . | cyan }}",
 		Active:   "\033[38;5;201m❯\033[0m {{ .Icon }} \033[38;5;226m{{ .Display }}\033[0m",
 		Inactive: "  {{ .Display | faint }}",
-		Selected: "\033[38;5;46m✓\033[0m {{ .Display | green }}",
+		Selected: " ",
 	}
 
 	prompt := promptui.Select{
@@ -448,10 +489,55 @@ func promptSelectLanguage(label string, choices []languageOption, current string
 		Items:     items,
 		Templates: templates,
 		Size:      4,
+		HideHelp:  true,
 	}
 
 	if i, _, err := prompt.Run(); err == nil {
 		return items[i].Value
+	} else if handleInterrupt(err) {
+		os.Exit(1)
+	}
+	return current
+}
+
+// promptSelectLanguageWithLabel shows a contextual success message with the setting name
+func promptSelectLanguageWithLabel(prompt, settingLabel string, choices []languageOption, current string) string {
+	type option struct {
+		Display string
+		Value   string
+		Icon    string
+	}
+
+	var items []option
+	for _, choice := range choices {
+		icon := "  "
+		if choice.value == current {
+			icon = "▶"
+		}
+		items = append(items, option{Display: choice.display, Value: choice.value, Icon: icon})
+	}
+
+	templates := &promptui.SelectTemplates{
+		Label:    "{{ . | cyan }}",
+		Active:   "\033[38;5;201m❯\033[0m {{ .Icon }} \033[38;5;226m{{ .Display }}\033[0m",
+		Inactive: "  {{ .Display | faint }}",
+		Selected: " ",
+	}
+
+	sel := promptui.Select{
+		Label:     fmt.Sprintf("    %s:", prompt),
+		Items:     items,
+		Templates: templates,
+		Size:      4,
+		HideHelp:  true,
+	}
+
+	if i, _, err := sel.Run(); err == nil {
+		selected := items[i]
+		// Clear the previous line (promptui's selected echo) and print success message
+		fmt.Print("\033[A\033[K")
+		fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(settingLabel+": ") + whiteStyle.Render(selected.Display))
+		return selected.Value
 	} else if handleInterrupt(err) {
 		os.Exit(1)
 	}
@@ -464,7 +550,8 @@ type selectOption struct {
 	Description string
 }
 
-func promptSelectWithDescription(options []selectOption, current string) string {
+// promptSelectWithDescriptionWithLabel shows a contextual success message with the setting name
+func promptSelectWithDescriptionWithLabel(options []selectOption, settingLabel, current string) string {
 	type displayOption struct {
 		Value       string
 		Display     string
@@ -487,20 +574,26 @@ func promptSelectWithDescription(options []selectOption, current string) string 
 	}
 
 	templates := &promptui.SelectTemplates{
+		Label:    " ",
 		Active:   "\033[38;5;201m❯\033[0m {{ .Icon }} \033[38;5;226m{{ .Display }}\033[0m \033[38;5;242m{{ .Description }}\033[0m",
 		Inactive: "  {{ .Display }} \033[38;5;242m{{ .Description }}\033[0m",
-		Selected: "\033[38;5;46m✓\033[0m {{ .Display | green }}",
+		Selected: " ",
 	}
 
 	prompt := promptui.Select{
-		Label:     "",
+		Label:     " ",
 		Items:     items,
 		Templates: templates,
 		Size:      len(items),
+		HideHelp:  true,
 	}
 
 	if i, _, err := prompt.Run(); err == nil {
-		return items[i].Value
+		selected := items[i]
+		// Clear the previous line (promptui's selected echo) and print success message
+		fmt.Print("\033[A\033[K")
+		fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(settingLabel+": ") + whiteStyle.Render(selected.Display))
+		return selected.Value
 	} else if handleInterrupt(err) {
 		os.Exit(1)
 	}
@@ -539,21 +632,6 @@ func localize(localizer *i18n.Localizer, messageID string, data map[string]inter
 		return messageID
 	}
 	return result
-}
-
-func formatPath(path string) string {
-	home, err := os.UserHomeDir()
-	if err == nil && strings.HasPrefix(path, home) {
-		rel := strings.TrimPrefix(path, home)
-		if rel == "" {
-			return "~"
-		}
-		if rel[0] != '/' {
-			return "~/" + rel
-		}
-		return "~" + rel
-	}
-	return path
 }
 
 func displayFinalResult(result project.InitializeResult, answers project.SetupAnswers, duration time.Duration, localizer *i18n.Localizer) {

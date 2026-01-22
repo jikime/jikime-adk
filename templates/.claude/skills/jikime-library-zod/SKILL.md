@@ -1,6 +1,13 @@
 ---
 name: jikime-library-zod
 description: Zod schema validation and React Hook Form integration for TypeScript frontends. This skill should be used when creating forms, defining API schemas, validating form data, implementing type-safe validation, using ZodResolver with React Hook Form, or migrating legacy forms to the Zod + React Hook Form pattern.
+tags: ["library", "zod", "validation", "typescript", "react-hook-form", "forms"]
+triggers:
+  keywords: ["zod", "validation", "schema", "form", "react-hook-form", "검증"]
+  phases: ["run"]
+  agents: ["expert-frontend", "expert-backend"]
+  languages: ["typescript"]
+user-invocable: false
 ---
 
 # Zod Form Validation Skill

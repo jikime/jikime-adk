@@ -1,6 +1,6 @@
 # Executive Summary
 
-## {{PROJECT_NAME}} 마이그레이션 완료 보고서
+## jikime-adk-v2 마이그레이션 완료 보고서
 
 ---
 
@@ -127,7 +127,7 @@ xychart-beta
 
 ## 5. 결론
 
-{{PROJECT_NAME}} 마이그레이션이 성공적으로 완료되었습니다.
+jikime-adk-v2 마이그레이션이 성공적으로 완료되었습니다.
 
 **핵심 성과**:
 - 성능 {{OVERALL_PERF_IMPROVEMENT}}% 개선

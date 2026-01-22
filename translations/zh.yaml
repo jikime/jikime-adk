@@ -4,24 +4,38 @@ language_prompt:
   other: "请选择你的对话语言"
 language_selected:
   other: "已选择: {{.Language}}"
+language_label:
+  other: "语言"
 user_section:
   other: "用户设置"
 user_prompt:
   other: "输入你的用户名（可选）"
 user_welcome:
   other: "欢迎: {{.Name}}"
+user_name_label:
+  other: "用户名"
 project_prompt:
+  other: "项目名称"
+project_name_label:
   other: "项目名称"
 git_mode_prompt:
   other: "Git 模式"
 github_prompt:
   other: "GitHub 用户名"
+github_label:
+  other: "GitHub 用户"
 commit_lang_prompt:
   other: "提交信息语言"
 code_comment_prompt:
   other: "代码注释语言"
 documentation_prompt:
   other: "文档语言"
+commit_lang_label:
+  other: "提交语言"
+code_comment_label:
+  other: "代码注释"
+documentation_label:
+  other: "文档"
 git_setup_section:
   other: "Git 设置"
 git_mode_select_help:

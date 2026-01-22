@@ -1,6 +1,6 @@
 # Architecture Evolution Report
 
-## {{PROJECT_NAME}} 아키텍처 진화 보고서
+## jikime-adk-v2 아키텍처 진화 보고서
 
 ---
 

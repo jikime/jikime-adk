@@ -1,6 +1,6 @@
 # Security Improvement Report
 
-## {{PROJECT_NAME}} 보안 개선 보고서
+## jikime-adk-v2 보안 개선 보고서
 
 ---
 
@@ -10,7 +10,7 @@
 
 | 항목 | 설명 |
 |------|------|
-| **평가 대상** | {{PROJECT_NAME}} 웹 애플리케이션 |
+| **평가 대상** | jikime-adk-v2 웹 애플리케이션 |
 | **평가 기간** | {{ASSESSMENT_PERIOD}} |
 | **평가 기준** | OWASP Top 10, CWE/SANS Top 25 |
 | **평가 도구** | {{ASSESSMENT_TOOLS}} |

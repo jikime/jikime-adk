@@ -1,6 +1,12 @@
 ---
 name: jikime-workflow-spec
 description: SPEC workflow orchestration with EARS format, requirement clarification, and Plan-Run-Sync integration for JikiME-ADK development methodology
+tags: ["workflow", "spec", "ears", "requirements", "planning"]
+triggers:
+  keywords: ["SPEC", "requirement", "EARS", "specification", "planning", "요구사항"]
+  phases: ["plan"]
+  agents: ["manager-spec", "manager-strategy"]
+  languages: []
 user-invocable: false
 context: fork
 agent: Plan
@@ -43,10 +49,11 @@ When to Use:
 - Quality assurance and validation planning
 
 Quick Commands:
-- Create new SPEC: /jikime:1-plan "user authentication system"
-- Create parallel SPECs with Worktrees: /jikime:1-plan "login feature" "signup feature" --worktree
-- Create SPEC with new branch: /jikime:1-plan "payment processing" --branch
-- Update existing SPEC: /jikime:1-plan SPEC-001 "add OAuth support"
+- Create new SPEC: /jikime:dev-1-plan "user authentication system"
+- Create SPEC with domain: /jikime:dev-1-plan --domain AUTH "JWT login"
+- Create parallel SPECs with Worktrees: /jikime:dev-1-plan "login feature" "signup feature" --worktree
+- Create SPEC with new branch: /jikime:dev-1-plan "payment processing" --branch
+- Use existing SPEC: /jikime:dev-1-plan SPEC-AUTH-001
 
 ---
 
@@ -171,27 +178,32 @@ Step 4 - Test Scenario Creation:
 - Edge Cases: Boundary conditions and corner cases
 - Security Cases: Injection attacks, privilege escalation attempts
 
-### Plan-Run-Sync Workflow Integration
+### Plan-Implement-Test-Review Workflow Integration
 
-PLAN Phase (/jikime:1-plan):
+PLAN Phase (/jikime:dev-1-plan):
 - manager-spec agent analyzes user input
 - EARS format requirements generation
 - Requirement clarification with user interaction
-- SPEC document creation in .jikime/specs/ directory
+- 3-file SPEC creation in .jikime/specs/SPEC-{DOMAIN}-{NUMBER}/ directory
 - Git branch creation (optional --branch flag)
 - Git Worktree setup (optional --worktree flag)
 
-RUN Phase (/jikime:2-run):
+IMPLEMENT Phase (/jikime:dev-2-implement):
 - manager-ddd agent loads SPEC document
 - ANALYZE-PRESERVE-IMPROVE DDD cycle execution
 - jikime-workflow-testing skill reference for test patterns
 - Domain Expert agent delegation (expert-backend, expert-frontend, etc.)
 - Quality validation through manager-quality agent
 
-SYNC Phase (/jikime:3-sync):
-- manager-docs agent synchronizes documentation
-- API documentation generation from SPEC
-- README and architecture document updates
+TEST Phase (/jikime:dev-3-test):
+- Test execution based on acceptance.md criteria
+- Given-When-Then scenario verification
+- Quality gate validation
+- Coverage and performance checks
+
+REVIEW Phase (/jikime:dev-4-review):
+- Code review against spec.md requirements
+- Documentation updates and synchronization
 - CHANGELOG entry creation
 - Version control commit with SPEC reference
 
@@ -225,27 +237,47 @@ For advanced patterns including SPEC templates, validation automation, and workf
 
 ## Resources
 
-### SPEC File Organization
+### SPEC File Organization (3-File Structure)
 
 Directory Structure:
-- .jikime/specs/: SPEC document files (SPEC-001-feature-name.md)
-- .jikime/memory/: Session state files (last-session-state.json)
-- .jikime/docs/: Generated documentation (api-documentation.md)
+```
+.jikime/specs/
+├── README.md                    # Directory documentation
+└── SPEC-{DOMAIN}-{NUMBER}/      # SPEC document directory
+    ├── spec.md                  # EARS requirements
+    ├── plan.md                  # Implementation plan
+    └── acceptance.md            # Acceptance criteria
+```
+
+SPEC ID Format:
+- Pattern: `SPEC-{DOMAIN}-{NUMBER}`
+- Domain: Uppercase letters (AUTH, USER, API, DB, UI, PERF, SEC)
+- Number: 3-digit zero-padded (001, 002, etc.)
+- Examples: `SPEC-AUTH-001`, `SPEC-API-002`, `SPEC-USER-003`
+
+3-File Structure:
+- spec.md: EARS format requirements (Ubiquitous, Event-driven, State-driven, Unwanted, Optional)
+- plan.md: Implementation plan with milestones, phases, and risks
+- acceptance.md: Given-When-Then acceptance criteria with quality gates
+
+[HARD] Flat file creation is BLOCKED:
+- `.jikime/specs/SPEC-*.md` single file is prohibited
+- All SPECs MUST use directory structure with 3 files
 
 ### SPEC Metadata Schema
 
-Required Fields:
-- SPEC ID: Sequential number (SPEC-001, SPEC-002, etc.)
+Required Fields (in spec.md):
+- SPEC ID: Format SPEC-{DOMAIN}-{NUMBER} (e.g., SPEC-AUTH-001)
 - Title: Feature name in English
 - Created: ISO 8601 timestamp
-- Status: Planned, In Progress, Completed, Blocked
+- Status: Planning, In Progress, Completed, Blocked
 - Priority: High, Medium, Low
 - Assigned: Agent responsible for implementation
 
 Optional Fields:
 - Related SPECs: Dependencies and related features
 - Epic: Parent feature group
-- Estimated Effort: Time estimate in hours or story points
+- Estimated Effort: Priority-based (Primary/Secondary/Optional goals)
 - Labels: Tags for categorization
 
 ### SPEC Lifecycle Management (SDD 2025 Standard)
@@ -300,15 +332,16 @@ Validation Checklist:
 ### Integration Examples
 
 Sequential Workflow:
-- Step 1 PLAN: /jikime:1-plan "user authentication system"
-- Step 2 RUN: /jikime:2-run SPEC-001
-- Step 3 SYNC: /jikime:3-sync SPEC-001
+- Step 1 PLAN: /jikime:dev-1-plan "user authentication system"
+- Step 2 IMPLEMENT: /jikime:dev-2-implement SPEC-AUTH-001
+- Step 3 TEST: /jikime:dev-3-test SPEC-AUTH-001
+- Step 4 REVIEW: /jikime:dev-4-review SPEC-AUTH-001
 
 Parallel Workflow:
-- Create multiple SPECs: /jikime:1-plan "backend API" "frontend UI" "database schema" --worktree
-- Session 1: /jikime:2-run SPEC-001 (backend API)
-- Session 2: /jikime:2-run SPEC-002 (frontend UI)
-- Session 3: /jikime:2-run SPEC-003 (database schema)
+- Create multiple SPECs: /jikime:dev-1-plan "backend API" "frontend UI" "database schema" --worktree
+- Session 1: /jikime:dev-2-implement SPEC-API-001 (backend API)
+- Session 2: /jikime:dev-2-implement SPEC-UI-001 (frontend UI)
+- Session 3: /jikime:dev-2-implement SPEC-DB-001 (database schema)
 
 ### Token Management
 
@@ -325,6 +358,6 @@ Context Optimization:
 
 ---
 
-Version: 1.2.0 (SDD 2025 Standard Integration)
-Last Updated: 2025-12-30
-Integration Status: Complete - Full Plan-Run-Sync workflow with SDD 2025 features
+Version: 2.0.0 (3-File SPEC Structure)
+Last Updated: 2026-01-22
+Integration Status: Complete - Full Plan-Implement-Test-Review workflow with 3-file SPEC structure

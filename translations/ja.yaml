@@ -4,24 +4,38 @@ language_prompt:
   other: "会話言語を選択してください"
 language_selected:
   other: "選択済み: {{.Language}}"
+language_label:
+  other: "言語"
 user_section:
   other: "ユーザー設定"
 user_prompt:
   other: "ユーザー名を入力してください（任意）"
 user_welcome:
   other: "ようこそ: {{.Name}}"
+user_name_label:
+  other: "ユーザー名"
 project_prompt:
+  other: "プロジェクト名"
+project_name_label:
   other: "プロジェクト名"
 git_mode_prompt:
   other: "Gitモード"
 github_prompt:
   other: "GitHubユーザー名"
+github_label:
+  other: "GitHubユーザー"
 commit_lang_prompt:
   other: "コミットメッセージの言語"
 code_comment_prompt:
   other: "コードコメントの言語"
 documentation_prompt:
   other: "ドキュメントの言語"
+commit_lang_label:
+  other: "コミット言語"
+code_comment_label:
+  other: "コードコメント"
+documentation_label:
+  other: "ドキュメント"
 git_setup_section:
   other: "Git設定"
 git_mode_select_help:

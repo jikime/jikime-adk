@@ -1,6 +1,12 @@
 ---
 name: jikime-tool-ast-grep
 description: AST-based structural code search, security scanning, and refactoring using ast-grep (sg CLI). Supports 40+ languages with pattern matching and code transformation.
+tags: ["tool", "ast", "code-analysis", "refactoring", "security-scan", "pattern-matching"]
+triggers:
+  keywords: ["ast-grep", "sg", "code-search", "refactor", "pattern", "AST"]
+  phases: ["run"]
+  agents: ["expert-refactoring", "expert-security"]
+  languages: []
 user-invocable: false
 context: fork
 agent: Explore

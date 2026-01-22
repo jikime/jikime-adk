@@ -1,6 +1,12 @@
 ---
 name: jikime-migrate-to-nextjs
 description: Legacy to Next.js 16 migration workflow specialist. Analyzes legacy projects (Vue, React CRA, Angular, Svelte) and orchestrates migration to modern Next.js 16 App Router architecture.
+tags: ["migration", "nextjs", "react", "vue", "angular", "svelte", "app-router"]
+triggers:
+  keywords: ["migrate", "migration", "nextjs", "vue-to-react", "angular-to-react", "마이그레이션"]
+  phases: ["plan", "run"]
+  agents: ["manager-strategy", "expert-frontend"]
+  languages: []
 user-invocable: false
 ---
 
@@ -300,7 +306,8 @@ Migrated project structure:
 ### Phase 2 (Skill)
 - [ ] Component mappings defined
 - [ ] Coding conventions established
-- [ ] Project SKILL.md generated
+- [ ] Project SKILL.md generated with reference skills
+- [ ] Template: `@templates/project-skill-template.md`
 
 ### Phase 3 (Run)
 - [ ] Next.js project created
@@ -310,13 +317,70 @@ Migrated project structure:
 
 ---
 
+## Skill Reference System
+
+`migrate-to-nextjs skill` 명령어 실행 시 생성되는 프로젝트별 SKILL.md는 다음 스킬들을 자동 참조합니다.
+
+### Core Reference Skills (Auto-linked)
+
+| Skill | Purpose | Auto-Load Condition |
+|-------|---------|---------------------|
+| `jikime-nextjs@16` | Next.js 16 App Router 패턴 | 항상 |
+| `jikime-nextjs@15` | Next.js 15 Breaking Changes | async params 감지 시 |
+| `jikime-migration-patterns-auth` | 인증 마이그레이션 | 인증 코드 감지 시 |
+
+### Conditional Reference Skills
+
+| Skill | Trigger Condition |
+|-------|-------------------|
+| `jikime-platform-clerk` | Clerk import 감지 |
+| `jikime-platform-supabase` | Supabase import 감지 |
+| `jikime-library-vercel-ai-sdk` | AI SDK import 감지 |
+| `jikime-library-shadcn` | shadcn/ui 사용 시 (기본) |
+
+### Template Location
+
+```
+templates/project-skill-template.md  ← 프로젝트 SKILL.md 생성 템플릿
+```
+
+### How It Works
+
+```
+migrate-to-nextjs skill my-app
+    │
+    ├─▶ 1. as_is_spec.md 분석
+    │
+    ├─▶ 2. 사용 기술 감지 (Auth, State, Styling)
+    │
+    ├─▶ 3. 관련 스킬 자동 매핑
+    │       - jikime-nextjs@16 (필수)
+    │       - jikime-migration-patterns-auth (조건부)
+    │       - jikime-platform-* (조건부)
+    │
+    └─▶ 4. SKILL.md 생성 (Reference Skills 섹션 포함)
+```
+
+---
+
 ## Progressive Disclosure Modules
 
 For detailed patterns, load on-demand:
 
+### Tutorials & Quick Reference
+- `@modules/project-initialization.md` - **프로젝트 초기화 완전 가이드** ⭐⭐ (NEW)
+- `@modules/migration-flow-tutorial.md` - **실제 명령어 사용 흐름 튜토리얼** ⭐
+- `@modules/cheatsheet.md` - **빠른 참조 가이드** ⭐
+- `@modules/migration-scenario.md` - 완전한 마이그레이션 시나리오 (React → Next.js)
+
+### Framework Patterns
 - `@modules/vue-patterns.md` - Vue 2/3 → Next.js conversion rules
 - `@modules/react-patterns.md` - React CRA/Vite → Next.js migration
 - `@modules/nextjs16-patterns.md` - Next.js 16 App Router best practices
+
+### Auth Migration
+- `@jikime-migration-patterns-auth` - 인증 마이그레이션 종합 가이드
+- `@jikime-nextjs@14`, `@jikime-nextjs@15`, `@jikime-nextjs@16` - 버전별 업그레이드
 
 ---
 
@@ -558,9 +622,12 @@ Post-Migration 문서 템플릿 위치:
 
 ---
 
-Version: 1.4.0
-Last Updated: 2026-01-20
+Version: 1.7.0
+Last Updated: 2026-01-22
 Changelog:
+- v1.7.0: Added project-initialization.md with complete CLI setup guide (create-next-app, shadcn init, packages)
+- v1.6.0: Added Skill Reference System - project SKILL.md now auto-references related skills
+- v1.5.0: Added migration-flow-tutorial.md, cheatsheet.md with real command examples
 - v1.4.0: Added --whitepaper-output and --lang options; Fixed whitepaper output path to project root (./whitepaper/, ./whitepaper-report/)
 - v1.3.0: Reorganized templates into pre-migration/ and post-migration/ folders
 - v1.2.0: Added Post-Migration Whitepaper with 8 document templates

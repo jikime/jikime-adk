@@ -1,6 +1,12 @@
 ---
 name: jikime-lang-python
 description: Python 3.13+ development specialist covering FastAPI, Django, async patterns, and data science. Use when developing Python APIs, web applications, data pipelines, or writing tests.
+tags: ["language", "python", "fastapi", "django", "pytest", "async", "data-science"]
+triggers:
+  keywords: ["python", "fastapi", "django", "pytest", "pydantic", "sqlalchemy", "파이썬"]
+  phases: ["run"]
+  agents: ["expert-backend", "expert-testing"]
+  languages: ["python"]
 user-invocable: false
 ---
 

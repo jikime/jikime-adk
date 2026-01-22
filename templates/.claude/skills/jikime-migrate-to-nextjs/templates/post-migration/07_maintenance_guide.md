@@ -1,6 +1,6 @@
 # Maintenance Guide
 
-## {{PROJECT_NAME}} 유지보수 가이드
+## jikime-adk-v2 유지보수 가이드
 
 ---
 
@@ -75,7 +75,7 @@ graph TD
 ```bash
 # 1. 저장소 클론
 git clone {{REPO_URL}}
-cd {{PROJECT_NAME}}
+cd jikime-adk-v2
 
 # 2. 의존성 설치
 npm install
@@ -105,7 +105,7 @@ npm run dev
 ### 3.1 디렉토리 구조
 
 ```
-{{PROJECT_NAME}}/
+jikime-adk-v2/
 ├── src/
 │   ├── app/                    # App Router 페이지
 │   │   ├── layout.tsx          # 루트 레이아웃

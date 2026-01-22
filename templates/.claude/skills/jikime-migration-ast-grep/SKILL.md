@@ -1,6 +1,12 @@
 ---
 name: jikime-migration-ast-grep
 description: AST-based code transformation skill using ast-grep. Structural code search and automated migration patterns for legacy code conversion.
+tags: ["migration", "ast", "code-transformation", "legacy", "refactoring"]
+triggers:
+  keywords: ["ast-grep", "sg", "code transformation", "migration pattern", "리팩토링"]
+  phases: ["run"]
+  agents: ["expert-refactoring"]
+  languages: []
 user-invocable: false
 context: fork
 agent: migration-orchestrator

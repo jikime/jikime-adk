@@ -371,6 +371,56 @@ capabilities:
 ---
 ```
 
+### 4.5 Skill CLI Commands
+
+jikime-adk CLI는 tag-based skill discovery를 위한 명령어를 제공합니다.
+
+```bash
+# 모든 스킬 목록 조회
+jikime-adk skill list
+
+# 태그, 페이즈, 에이전트, 언어로 필터링
+jikime-adk skill list --tag framework
+jikime-adk skill list --phase run
+jikime-adk skill list --agent expert-frontend
+jikime-adk skill list --language typescript
+
+# 출력 형식 지정
+jikime-adk skill list --format json
+jikime-adk skill list --format compact
+
+# 스킬 검색
+jikime-adk skill search nextjs
+jikime-adk skill search "react components" --limit 5
+jikime-adk skill search --tags framework,nextjs
+jikime-adk skill search --phases run --languages typescript
+
+# 관련 스킬 찾기
+jikime-adk skill related jikime-lang-typescript
+jikime-adk skill related jikime-platform-vercel --limit 5
+
+# 스킬 상세 정보 조회
+jikime-adk skill info jikime-lang-typescript
+jikime-adk skill info jikime-platform-vercel --body  # 마크다운 본문 포함
+```
+
+### 4.6 Triggers Structure (moai-adk compatible)
+
+스킬 발견을 위한 트리거 구조:
+
+```yaml
+triggers:
+  keywords: []     # 사용자 입력에서 감지할 키워드
+  phases: []       # 개발 단계 (plan, run, sync)
+  agents: []       # 이 스킬을 사용하는 에이전트
+  languages: []    # 지원 프로그래밍 언어
+```
+
+**Progressive Disclosure 레벨**:
+- **Level 1** (~100 tokens): YAML frontmatter 메타데이터만 로드
+- **Level 2** (~5K tokens): 전체 마크다운 본문 로드
+- **Level 3+**: 참조 파일 온디맨드 로드 (modules/, examples/, reference.md)
+
 ---
 
 ## 5. Hybrid Hook System

@@ -1,6 +1,12 @@
 ---
 name: jikime-lang-java
 description: Java 21 LTS development specialist covering Spring Boot 3.3, virtual threads, pattern matching, and enterprise patterns. Use when building enterprise applications, microservices, or Spring projects.
+tags: ["language", "java", "spring-boot", "jpa", "hibernate", "virtual-threads", "enterprise"]
+triggers:
+  keywords: ["java", "spring", "spring-boot", "jpa", "hibernate", "maven", "gradle", "자바"]
+  phases: ["run"]
+  agents: ["expert-backend"]
+  languages: ["java"]
 user-invocable: false
 ---
 

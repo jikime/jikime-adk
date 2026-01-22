@@ -1,6 +1,12 @@
 ---
 name: jikime-lang-php
 description: PHP 8.3+ development specialist covering Laravel 11, Symfony 7, Eloquent ORM, and modern PHP patterns. Use when developing PHP APIs, web applications, or Laravel/Symfony projects.
+tags: ["language", "php", "laravel", "symfony", "eloquent", "web"]
+triggers:
+  keywords: ["php", "laravel", "symfony", "eloquent", "composer", "피에이치피"]
+  phases: ["run"]
+  agents: ["expert-backend"]
+  languages: ["php"]
 user-invocable: false
 ---
 

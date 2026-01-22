@@ -155,6 +155,15 @@ func runPostToolAstGrep(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	// Record to loop snapshot if loop is active
+	if IsLoopActive() {
+		AppendDiagnosticToSnapshot(DiagnosticEntry{
+			Source:       "ast-grep",
+			FilePath:     filePath,
+			SecurityHits: result.IssuesFound,
+		})
+	}
+
 	// Exit with attention code if errors found
 	if result.ErrorCount > 0 {
 		os.Exit(2)
