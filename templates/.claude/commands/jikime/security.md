@@ -7,7 +7,7 @@ context: review
 
 **Context**: @.claude/contexts/review.md (Auto-loaded)
 
-보안 감사를 실행합니다. OWASP Top 10 취약점 탐지, 의존성 스캔, 시크릿 검색.
+Run security audit. OWASP Top 10 vulnerability detection, dependency scan, secrets detection.
 
 ## Usage
 
@@ -119,7 +119,7 @@ npm audit fix
 
 ## Related Commands
 
-- `/jikime:review` - Code review
+- `/jikime:refactor` - Code refactoring
 - `/jikime:test` - Run security tests
 
 ---

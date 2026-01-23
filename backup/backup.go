@@ -15,10 +15,10 @@ import (
 // BackupExcludeDirs defines paths excluded from backups (protect user data).
 // These are relative paths within .jikime/ directory.
 var BackupExcludeDirs = []string{
-	"specs",           // User SPEC documents
-	"reports",         // User reports
-	"project",         // User project documents (product/structure/tech.md)
-	"config/sections", // User configuration section files (YAML)
+	"specs",   // User SPEC documents
+	"reports", // User reports
+	"project", // User project documents (product/structure/tech.md)
+	"config",  // User configuration files (YAML)
 }
 
 // TrackedItems defines the items to be backed up.

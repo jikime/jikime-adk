@@ -261,10 +261,10 @@ sg scan --config sgconfig.yml --json > results.json
 
 ### Related Agents
 
-- **expert-refactoring** - AST-based large-scale refactoring
-- **expert-security** - Security vulnerability scanning
+- **refactorer** - AST-based large-scale refactoring
+- **security-auditor** - Security vulnerability scanning
 - **manager-quality** - Code complexity analysis
-- **expert-debug** - Pattern-based debugging
+- **debugger** - Pattern-based debugging
 
 ### Books & Resources
 

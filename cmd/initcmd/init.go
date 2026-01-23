@@ -199,6 +199,8 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 		ProjectName:     defaultProjectName,
 		Locale:          opts.locale,
 		UserName:        "",
+		Honorific:       "",
+		TonePreset:      "friendly",
 		GitMode:         "manual",
 		GitHubUser:      "",
 		GitCommitLang:   "en",
@@ -239,6 +241,34 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 	// User Section
 	printCyberSection("👤", localize(localizer, "user_section", nil))
 	answers.UserName = promptInputWithLabel("    "+localize(localizer, "user_prompt", nil), localize(localizer, "user_name_label", nil), answers.UserName)
+	answers.Honorific = promptInputWithLabel("    "+localize(localizer, "honorific_prompt", nil), localize(localizer, "honorific_label", nil), answers.Honorific)
+
+	// Tone preset selection
+	fmt.Println(dimStyle.Render("    " + localize(localizer, "tone_preset_help", nil)))
+	tonePresetOptions := []selectOption{
+		{
+			Value:       "friendly",
+			Display:     localize(localizer, "tone_friendly_display", nil),
+			Description: localize(localizer, "tone_friendly_desc", nil),
+		},
+		{
+			Value:       "professional",
+			Display:     localize(localizer, "tone_professional_display", nil),
+			Description: localize(localizer, "tone_professional_desc", nil),
+		},
+		{
+			Value:       "casual",
+			Display:     localize(localizer, "tone_casual_display", nil),
+			Description: localize(localizer, "tone_casual_desc", nil),
+		},
+		{
+			Value:       "mentor",
+			Display:     localize(localizer, "tone_mentor_display", nil),
+			Description: localize(localizer, "tone_mentor_desc", nil),
+		},
+	}
+	answers.TonePreset = promptSelectWithDescriptionWithLabel(tonePresetOptions, localize(localizer, "tone_preset_label", nil), answers.TonePreset)
+
 	// Project name
 	answers.ProjectName = promptInputWithLabel("    "+localize(localizer, "project_prompt", nil), localize(localizer, "project_name_label", nil), answers.ProjectName)
 

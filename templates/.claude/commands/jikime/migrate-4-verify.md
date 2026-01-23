@@ -1,23 +1,37 @@
 ---
-description: "[Step 4/4] 마이그레이션 검증. 테스트 실행, 동작 비교, 최종 보고서 생성."
+description: "[Step 4/4] Migration verification. Run tests, compare behavior, generate final report."
+argument-hint: '[--full] [--behavior] [--e2e] [--performance] [--source-url URL] [--target-url URL]'
+type: workflow
+allowed-tools: Task, AskUserQuestion, TodoWrite, Bash, Read, Write, Glob, Grep
+model: inherit
 ---
 
 # Migration Step 4: Verify
 
-**검증 단계**: 마이그레이션 성공을 검증합니다.
+**Verification Phase**: Validate migration success.
+
+## CRITICAL: Input Sources
+
+**Project settings are automatically read from `.migrate-config.yaml`.**
+
+### Required Inputs (from Previous Steps)
+
+1. **`.migrate-config.yaml`** - artifacts_dir, output_dir, source/target framework
+2. **`{artifacts_dir}/progress.yaml`** - Migration progress status (Step 3 output)
+3. **`{output_dir}/`** - Migrated project (Step 3 output)
 
 ## What This Command Does
 
-1. **Characterization Tests** - 동작 보존 테스트 실행
-2. **Behavior Comparison** - 소스/타겟 출력 비교
-3. **E2E Testing** - 전체 사용자 흐름 검증
-4. **Performance Check** - 성능 비교 분석
-5. **Final Report** - 종합 검증 보고서
+1. **Characterization Tests** - Run behavior preservation tests
+2. **Behavior Comparison** - Compare source/target outputs
+3. **E2E Testing** - Validate full user flows
+4. **Performance Check** - Comparative performance analysis
+5. **Final Report** - Comprehensive verification report
 
 ## Usage
 
 ```bash
-# Verify current migration
+# Verify current migration (reads all from config)
 /jikime:migrate-4-verify
 
 # Verify with all checks
@@ -28,8 +42,8 @@ description: "[Step 4/4] 마이그레이션 검증. 테스트 실행, 동작 비
 /jikime:migrate-4-verify --e2e
 /jikime:migrate-4-verify --performance
 
-# Compare live systems
-/jikime:migrate-4-verify --source http://old.local --target http://new.local
+# Compare live systems (optional: for running instances)
+/jikime:migrate-4-verify --source-url http://old.local --target-url http://new.local
 ```
 
 ## Options
@@ -40,8 +54,10 @@ description: "[Step 4/4] 마이그레이션 검증. 테스트 실행, 동작 비
 | `--behavior` | Behavior comparison only |
 | `--e2e` | E2E tests only |
 | `--performance` | Performance comparison only |
-| `--source` | Source system URL |
-| `--target` | Target system URL |
+| `--source-url` | Source system URL (for live comparison) |
+| `--target-url` | Target system URL (for live comparison) |
+
+**Note**: `--source-url` and `--target-url` are for comparing **live running instances**. They are NOT the source/target frameworks (those come from `.migrate-config.yaml`).
 
 ## Verification Types
 
@@ -112,34 +128,37 @@ User Registration  ✅ Passed
 | E2E Testing | `e2e-runner` | Playwright tests |
 | Security Review | `security-reviewer` | Vulnerability check |
 
-## Workflow
+## Workflow (Data Flow)
 
 ```
 /jikime:migrate-0-discover
-        ↓
+        ↓ (.migrate-config.yaml created)
 /jikime:migrate-1-analyze
-        ↓
+        ↓ (config updated + as_is_spec.md)
 /jikime:migrate-2-plan
-        ↓
+        ↓ (migration_plan.md)
 /jikime:migrate-3-execute
-        ↓
-/jikime:migrate-4-verify  ← 현재 (마지막)
+        ↓ (output_dir/ + progress.yaml)
+/jikime:migrate-4-verify  ← current (final)
+        │
+        ├─ Reads: .migrate-config.yaml (paths, frameworks)
+        ├─ Reads: {artifacts_dir}/progress.yaml (migration status)
+        ├─ Tests: {output_dir}/ (migrated project)
+        ├─ Creates: {artifacts_dir}/verification_report.md
 ```
 
 ## Migration Complete!
 
-마이그레이션이 완료되었습니다! 🎉
+Migration is complete when verification passes.
 
-**다음 단계:**
-1. 스테이징 환경에 배포
-2. 사용자 승인 테스트 (UAT)
-3. 프로덕션 배포
-
-**필요시 유틸리티 커맨드 사용:**
-- `/jikime:build-fix` - 빌드 에러 수정
-- `/jikime:review` - 코드 리뷰
-- `/jikime:docs` - 문서 업데이트
+**Next Steps:**
+1. Deploy to staging environment
+2. User Acceptance Testing (UAT)
+3. Production deployment
 
 ---
 
-Version: 2.1.0
+Version: 3.0.0
+Changelog:
+- v3.0.0: Config-first approach; Renamed --source/--target to --source-url/--target-url for clarity; Added data flow diagram
+- v2.1.0: Initial verification command

@@ -1,5 +1,5 @@
 # ============================================
-# MoAI-ADK Package Distribution .gitignore
+# JikiME-ADK Package Distribution .gitignore
 # ============================================
 # Version: 0.33.0
 # Updated: 2026-01-10
@@ -99,7 +99,7 @@ logs/
 # ===========================================
 # Backups
 # ===========================================
-.moai-backups/
+.jikime-backups/
 *.backup/
 *-backup/
 *_backup_*/
@@ -155,6 +155,12 @@ secret-*.*
 .claude/skills/*/*/*secret*
 .claude/skills/*/*/*key*
 .claude/skills/*/*/*token*
+
+# ===========================================
+# JikiME Local Files
+# ===========================================
+.jikime/cache/
+.jikime/logs/
 
 # ===========================================
 # Node.js (for docs/Nextra)

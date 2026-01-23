@@ -1,5 +1,5 @@
 // Package skill provides Skill System for jikime-adk.
-// Implements tag-based skill discovery compatible with moai-adk patterns.
+// Implements tag-based skill discovery for JikiME-ADK.
 package skill
 
 // Version of the Skill system.
@@ -26,7 +26,7 @@ type Skill struct {
 	Body     string `yaml:"-"` // Markdown body content (Level 2)
 }
 
-// Triggers defines conditions for loading a skill (moai-adk compatible).
+// Triggers defines conditions for loading a skill.
 type Triggers struct {
 	Keywords  []string `yaml:"keywords"`  // Keywords to detect in user input
 	Phases    []string `yaml:"phases"`    // Development phases (plan, run, sync)

@@ -1,6 +1,7 @@
 ---
 name: jikime-workflow-worktree
 description: Git worktree management for parallel SPEC development with isolated workspaces, automatic registration, and seamless JikiME-ADK integration
+version: 1.0.0
 tags: ["workflow", "git", "worktree", "parallel-development", "isolation"]
 triggers:
   keywords: ["worktree", "parallel", "branch", "isolation", "병렬 개발"]
@@ -190,13 +191,12 @@ Commands:
 - jikime:1-plan - SPEC creation with automatic worktree setup
 - jikime:2-run - Development in isolated worktree environment
 - jikime:3-sync - Integration with automatic worktree sync
-- jikime:9-feedback - Worktree workflow improvements
 
 Skills:
 - jikime-foundation-core - Parallel development patterns
 - jikime-workflow-project - Project management integration
 - jikime-workflow-spec - SPEC-driven development
-- jikime-git-strategy - Git workflow optimization
+- jikime-workflow-ddd - DDD development workflow
 
 Tools:
 - Git worktree - Native Git worktree functionality

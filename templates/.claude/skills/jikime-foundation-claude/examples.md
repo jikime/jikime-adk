@@ -202,9 +202,9 @@ async def test_async_api_call():
 ## Sequential Delegation Pattern
 
 ```python
-# Phase 1: Analysis with spec-builder
+# Phase 1: Analysis with manager-spec
 analysis = Task(
-    subagent_type="spec-builder",
+    subagent_type="manager-spec",
     prompt="""
     Analyze the following requirement and create a SPEC:
 
@@ -223,9 +223,9 @@ analysis = Task(
     }
 )
 
-# Phase 2: Implementation with ddd-implementer (depends on analysis)
+# Phase 2: Implementation with manager-ddd (depends on analysis)
 implementation = Task(
-    subagent_type="ddd-implementer",
+    subagent_type="manager-ddd",
     prompt=f"""
     Implement the SPEC using DDD approach:
 
@@ -243,9 +243,9 @@ implementation = Task(
     }
 )
 
-# Phase 3: Validation with quality-gate (depends on implementation)
+# Phase 3: Validation with manager-quality (depends on implementation)
 validation = Task(
-    subagent_type="quality-gate",
+    subagent_type="manager-quality",
     prompt=f"""
     Validate the implementation:
 
@@ -275,21 +275,21 @@ validation = Task(
 results = await Promise.all([
     # Backend implementation
     Task(
-        subagent_type="backend-expert",
+        subagent_type="backend",
         prompt="Implement API endpoints for SPEC-001",
         context={"spec_id": "SPEC-001", "focus": "api"}
     ),
 
     # Frontend implementation
     Task(
-        subagent_type="frontend-expert",
+        subagent_type="frontend",
         prompt="Implement UI components for SPEC-001",
         context={"spec_id": "SPEC-001", "focus": "ui"}
     ),
 
     # Documentation generation
     Task(
-        subagent_type="docs-manager",
+        subagent_type="manager-docs",
         prompt="Generate API documentation for SPEC-001",
         context={"spec_id": "SPEC-001", "focus": "docs"}
     )
@@ -302,7 +302,7 @@ docs_result = results[2]
 
 # Integration validation (sequential - depends on all parallel tasks)
 integration = Task(
-    subagent_type="quality-gate",
+    subagent_type="manager-quality",
     prompt="Validate integration of all components",
     context={
         "backend": backend_result,
@@ -624,7 +624,7 @@ name: everything-skill
 # Incorrect approach
 def backend_agent_task():
     # Sub-agent spawning another sub-agent - BAD
-    result = Task(subagent_type="database-expert", prompt="...")
+    result = Task(subagent_type="backend", prompt="...")
     return result
 ```
 
@@ -632,9 +632,9 @@ def backend_agent_task():
 
 ```python
 # Correct approach - main thread orchestrates all
-analysis = Task(subagent_type="spec-builder", prompt="...")
-database = Task(subagent_type="database-expert", prompt="...", context=analysis)
-backend = Task(subagent_type="backend-expert", prompt="...", context=database)
+analysis = Task(subagent_type="manager-spec", prompt="...")
+database = Task(subagent_type="backend", prompt="...", context=analysis)
+backend = Task(subagent_type="backend", prompt="...", context=database)
 ```
 
 ### Anti-Pattern 3: Hardcoded Paths in Skills
@@ -664,7 +664,7 @@ Load configuration from @config.yaml or $PROJECT_ROOT/config.yaml
 
 # Step 1: Plan - Create SPEC
 plan_result = Task(
-    subagent_type="spec-builder",
+    subagent_type="manager-spec",
     prompt="Create SPEC for: User profile management with avatar upload",
     context={"project": "@CLAUDE.md"}
 )
@@ -674,14 +674,14 @@ plan_result = Task(
 
 # Step 3: Run - Implement with DDD
 run_result = Task(
-    subagent_type="ddd-implementer",
+    subagent_type="manager-ddd",
     prompt=f"Implement SPEC: {plan_result.spec_id}",
     context={"spec": plan_result}
 )
 
 # Step 4: Sync - Generate documentation
 sync_result = Task(
-    subagent_type="docs-manager",
+    subagent_type="manager-docs",
     prompt=f"Generate docs for: {run_result.spec_id}",
     context={"implementation": run_result}
 )

@@ -5,7 +5,7 @@ tags: ["framework", "nextjs", "version", "app-router", "server-components", "ser
 triggers:
   keywords: ["nextjs", "next.js 14", "app-router", "server-components", "server-actions"]
   phases: ["run"]
-  agents: ["expert-frontend"]
+  agents: ["frontend"]
   languages: ["typescript"]
 type: version
 framework: nextjs

@@ -2,7 +2,7 @@
 # Basic project metadata
 
 project:
-  name: ""                    # Project name (set during /jikime:0-project)
+  name: "{{PROJECT_NAME}}"    # Project name (set during jikime init)
   description: ""             # Project description
   type: ""                    # Project type: web_browser_app, mobile_app, cli_tool, backend_api
   locale: "{{LOCALE}}"        # Auto-derived from conversation_language (ko→ko_KR, en→en_US, etc.)
@@ -10,4 +10,4 @@ project:
   initialized: false          # Auto-set during init
 
 github:
-  profile_name: ""            # GitHub username (e.g., @GoosLab)
+  profile_name: "{{GITHUB_USER}}"  # GitHub username (e.g., @GoosLab)

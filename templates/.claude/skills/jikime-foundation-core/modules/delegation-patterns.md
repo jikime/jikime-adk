@@ -9,12 +9,12 @@ Last Updated: 2026-01-06
 
 ## Quick Reference (30 seconds)
 
-Core Principle: Alfred NEVER executes directly. All work via `Task()` delegation to specialized agents.
+Core Principle: The orchestrator NEVER executes directly. All work via `Task()` delegation to specialized agents.
 
 Three Primary Patterns:
 1. Sequential - Dependencies between agents (Phase 1 → Phase 2 → Phase 3)
 2. Parallel - Independent agents (Backend + Frontend + Docs simultaneously)
-3. Conditional - Analysis-driven routing (Security issue → security-expert)
+3. Conditional - Analysis-driven routing (Security issue → security-auditor)
 
 Base Syntax:
 ```python
@@ -62,7 +62,7 @@ async def implement_feature_sequential(feature_description: str):
 
     # Phase 1: SPEC Generation
     spec_result = await Task(
-        subagent_type="workflow-spec",
+        subagent_type="manager-spec",
         prompt=f"Generate SPEC for: {feature_description}",
         context={"requirements": ["TRUST 5 compliance", "≥85% coverage"]}
     )
@@ -71,14 +71,14 @@ async def implement_feature_sequential(feature_description: str):
 
     # Phase 2: API Design (depends on SPEC)
     api_result = await Task(
-        subagent_type="api-designer",
+        subagent_type="backend",
         prompt="Design REST API for feature",
         context={"spec_id": spec_result.spec_id}
     )
 
     # Phase 3: Implementation (depends on API design)
     backend_result = await Task(
-        subagent_type="code-backend",
+        subagent_type="backend",
         prompt="Implement backend with DDD",
         context={"spec_id": spec_result.spec_id, "api_design": api_result}
     )
@@ -110,17 +110,17 @@ async def implement_feature_parallel(spec_id: str):
 
     results = await Promise.all([
         Task(
-            subagent_type="code-backend",
+            subagent_type="backend",
             prompt=f"Implement backend for {spec_id}",
             context={"spec_id": spec_id, "focus": "API endpoints"}
         ),
         Task(
-            subagent_type="code-frontend",
+            subagent_type="frontend",
             prompt=f"Implement UI for {spec_id}",
             context={"spec_id": spec_id, "focus": "Components"}
         ),
         Task(
-            subagent_type="data-database",
+            subagent_type="backend",
             prompt=f"Design database for {spec_id}",
             context={"spec_id": spec_id, "focus": "Schema"}
         )
@@ -130,7 +130,7 @@ async def implement_feature_parallel(spec_id: str):
 
     # Integration step (sequential, depends on parallel results)
     integration = await Task(
-        subagent_type="core-quality",
+        subagent_type="manager-quality",
         prompt="Run integration tests",
         context={"backend": backend.summary, "frontend": frontend.summary}
     )
@@ -154,10 +154,10 @@ Use Case: Route to different agents based on analysis results.
 Flow Diagram:
 ```
 Analysis Agent → Determines issue type
-    → Security issue → security-expert
-    → Performance issue → performance-engineer
-    → Quality issue → core-quality
-    → Bug → support-debug
+    → Security issue → security-auditor
+    → Performance issue → optimizer
+    → Quality issue → manager-quality
+    → Bug → debugger
 ```
 
 Example:
@@ -166,28 +166,28 @@ async def handle_issue_conditional(issue_description: str):
     """Conditional routing based on issue analysis."""
 
     analysis = await Task(
-        subagent_type="support-debug",
+        subagent_type="debugger",
         prompt=f"Analyze issue: {issue_description}",
         context={"focus": "classification"}
     )
 
     if analysis.category == "security":
         return await Task(
-            subagent_type="security-expert",
+            subagent_type="security-auditor",
             prompt="Analyze and fix security issue",
             context={"issue": issue_description, "analysis": analysis.details}
         )
 
     elif analysis.category == "performance":
         return await Task(
-            subagent_type="performance-engineer",
+            subagent_type="optimizer",
             prompt="Optimize performance issue",
             context={"issue": issue_description, "bottleneck": analysis.bottleneck}
         )
 
     else:
         return await Task(
-            subagent_type="support-debug",
+            subagent_type="debugger",
             prompt="Debug and fix issue",
             context={"issue": issue_description, "analysis": analysis.details}
         )
@@ -207,15 +207,15 @@ For comprehensive implementation patterns including context optimization, error 
 ## Works Well With
 
 Agents (Delegation Targets):
-- workflow-spec - SPEC generation
-- workflow-ddd - DDD implementation
-- code-backend - Backend development
-- code-frontend - Frontend development
-- security-expert - Security analysis
-- core-quality - Quality validation
+- manager-spec - SPEC generation
+- manager-ddd - DDD implementation
+- backend - Backend development
+- frontend - Frontend development
+- security-auditor - Security analysis
+- manager-quality - Quality validation
 
 Skills:
-- jikime-foundation-token-optimization - Context management
+- jikime-foundation-context - Context and token management
 
 Foundation Modules:
 - [Token Optimization](token-optimization.md) - Context passing strategies

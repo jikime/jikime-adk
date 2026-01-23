@@ -199,8 +199,8 @@ func runSet(langCode string) error {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
-	// Update language.yaml in sections
-	langPath := filepath.Join(cwd, ".jikime", "config", "sections", "language.yaml")
+	// Update language.yaml in config
+	langPath := filepath.Join(cwd, ".jikime", "config", "language.yaml")
 
 	// Create directory if it doesn't exist
 	if err := os.MkdirAll(filepath.Dir(langPath), 0755); err != nil {
@@ -247,7 +247,7 @@ func runValidate(configFile string, validateLanguages bool) error {
 
 	// Default config file path
 	if configFile == "" {
-		configFile = filepath.Join(cwd, ".jikime", "config", "sections", "language.yaml")
+		configFile = filepath.Join(cwd, ".jikime", "config", "language.yaml")
 	}
 
 	green := color.New(color.FgGreen)

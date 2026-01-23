@@ -18,7 +18,10 @@ type Config struct {
 
 // UserConfig holds user configuration
 type UserConfig struct {
-	Name string `yaml:"name"`
+	Name             string `yaml:"name"`
+	Honorific        string `yaml:"honorific"`
+	TonePreset       string `yaml:"tone_preset"`
+	OrchestratorStyle string `yaml:"orchestrator_style"`
 }
 
 // LanguageConfig holds language configuration

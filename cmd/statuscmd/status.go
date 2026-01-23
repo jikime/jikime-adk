@@ -16,7 +16,10 @@ import (
 // Config represents the jikime configuration structure
 type Config struct {
 	User struct {
-		Name string `yaml:"name"`
+		Name              string `yaml:"name"`
+		Honorific         string `yaml:"honorific"`
+		TonePreset        string `yaml:"tone_preset"`
+		OrchestratorStyle string `yaml:"orchestrator_style"`
 	} `yaml:"user"`
 	Language struct {
 		ConversationLanguage     string `yaml:"conversation_language"`
@@ -118,15 +121,18 @@ func runStatus(cmd *cobra.Command, args []string) error {
 func loadConfig(cwd string) (*Config, error) {
 	config := &Config{}
 
-	// Try loading from sections first
-	sectionsDir := filepath.Join(cwd, ".jikime", "config", "sections")
+	// Load from config directory
+	sectionsDir := filepath.Join(cwd, ".jikime", "config")
 
 	// Load user.yaml
 	userPath := filepath.Join(sectionsDir, "user.yaml")
 	if data, err := os.ReadFile(userPath); err == nil {
 		var userConfig struct {
 			User struct {
-				Name string `yaml:"name"`
+				Name              string `yaml:"name"`
+				Honorific         string `yaml:"honorific"`
+				TonePreset        string `yaml:"tone_preset"`
+				OrchestratorStyle string `yaml:"orchestrator_style"`
 			} `yaml:"user"`
 		}
 		if err := yaml.Unmarshal(data, &userConfig); err == nil {

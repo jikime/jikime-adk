@@ -13,7 +13,7 @@ model: inherit
 
 ## Essential Files
 
-@.jikime/config/sections/language.yaml
+@.jikime/config/language.yaml
 @.jikime/project/product.md
 @.jikime/project/structure.md
 @.jikime/project/tech.md
@@ -26,7 +26,7 @@ User Interaction Architecture: AskUserQuestion tool must be used at COMMAND leve
 
 Architecture: Commands delegate to Agents, which coordinate Skills. This command orchestrates exclusively through Task() tool.
 
-Workflow Integration: This command implements Step 0 of JikiME's three-step execution model (Project → Plan → Run → Sync).
+Workflow Integration: This command implements Step 0 of the development workflow (Project → Plan → Run → Sync).
 
 ---
 
@@ -234,7 +234,7 @@ Options:
 
 [HARD] Always use user's conversation_language for all output and prompts.
 
-Read language from `.jikime/config/sections/language.yaml` before starting.
+Read language from `.jikime/config/language.yaml` before starting.
 
 ### User Interaction
 

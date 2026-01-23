@@ -110,9 +110,9 @@ Length: Maximum 64 characters
 Uniqueness: Must be unique within project
 Pattern: `[domain]-[specialization]` or `[function]-expert`
 Examples:
-- `code-backend` (backend domain specialization)
-- `frontend-developer` (frontend specialization)
-- `api-designer` (API design specialization)
+- `backend` (backend domain specialization)
+- `frontend` (frontend specialization)
+- `backend` (API design specialization)
 - `security-auditor` (security specialization)
 - `MyAgent` (uppercase, spaces)
 - `agent_v2` (underscore)
@@ -126,7 +126,7 @@ Required Components:
 3. "CRITICAL: This agent MUST be invoked via Task(subagent_type='...')" clause
 
 Examples:
-- `Use PROACTIVELY for backend architecture, API design, server implementation, database integration, or microservices architecture. Called from /jikime:1-plan and task delegation workflows. CRITICAL: This agent MUST be invoked via Task(subagent_type='code-backend') - NEVER executed directly.`
+- `Use PROACTIVELY for backend architecture, API design, server implementation, database integration, or microservices architecture. Called from /jikime:1-plan and task delegation workflows. CRITICAL: This agent MUST be invoked via Task(subagent_type='backend') - NEVER executed directly.`
 - `Backend development agent` (too vague, missing required clauses)
 - `Helps with backend stuff` (unprofessional, missing trigger scenarios)
 
@@ -198,10 +198,10 @@ Loading: Skills available automatically, no explicit invocation needed
 Examples:
 ```yaml
 # Load language and domain skills
-skills: jikime-lang-python, jikime-domain-backend, jikime-context7-integration
+skills: jikime-lang-python, jikime-domain-backend, jikime-workflow-jit-docs
 
 # Load quality and documentation skills
-skills: jikime-foundation-quality, jikime-docs-generation, jikime-cc-claude-code
+skills: jikime-foundation-quality, jikime-docs-generation, jikime-foundation-claude
 ```
 
 ---
@@ -258,7 +258,7 @@ Critical Constraints Section:
 ## Critical Constraints
 
 - No sub-agent spawning: This agent CANNOT create other sub-agents. Use Task() delegation only.
-- Domain focus: Stay within backend domain. Delegate frontend tasks to code-frontend.
+- Domain focus: Stay within backend domain. Delegate frontend tasks to frontend.
 - Security-first: All designs must pass OWASP validation.
 - Performance-aware: Include scalability and optimization considerations.
 ```
@@ -302,10 +302,10 @@ When to Use:
 - Conducting backend security audits
 
 Delegation Targets:
-- `data-database` for complex database schema design
-- `security-expert` for advanced security analysis
-- `performance-engineer` for performance optimization
-- `api-designer` for detailed API specification
+- `backend` for complex database schema design
+- `security-auditor` for advanced security analysis
+- `optimizer` for performance optimization
+- `backend` for detailed API specification
 ```
 
 ### 6. Quality Standards
@@ -329,15 +329,15 @@ Specific Quality Requirements:
 
 Purpose: Deep expertise in specific technical domain
 Structure: Domain-focused responsibilities, specialized workflows
-Examples: `code-backend`, `code-frontend`, `data-database`
+Examples: `backend`, `frontend`, `backend`
 
 ```yaml
 ---
-name: code-backend
+name: backend
 description: Use PROACTIVELY for backend architecture, API design, server implementation, database integration, or microservices architecture. Called from /jikime:1-plan and task delegation workflows.
 tools: Read, Write, Edit, Bash, WebFetch, Grep, Glob, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: sonnet
-skills: jikime-domain-backend, jikime-essentials-perf, jikime-context7-integration
+skills: jikime-domain-backend, jikime-foundation-quality, jikime-workflow-jit-docs
 ---
 
 # Backend Expert 
@@ -355,15 +355,15 @@ Focus Areas: Scalability, security, performance optimization
 
 Purpose: Expertise in specific tools or technologies
 Structure: Tool-focused workflows, integration patterns
-Examples: `format-expert`, `support-debug`, `workflow-docs`
+Examples: `documenter`, `debugger`, `manager-docs`
 
 ```yaml
 ---
-name: format-expert
+name: documenter
 description: Use PROACTIVELY for code formatting, style consistency, linting configuration, and automated code quality improvements. Called from /jikime:2-run quality gates and task delegation workflows.
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: haiku
-skills: jikime-code-quality, jikime-cc-configuration
+skills: jikime-foundation-quality, jikime-foundation-claude
 ---
 
 # Code Format Expert
@@ -381,15 +381,15 @@ Focus Areas: Code readability, consistency, maintainability
 
 Purpose: Manage complex multi-step processes
 Structure: Phase-based workflows, coordination patterns
-Examples: `workflow-ddd`, `agent-factory`, `skill-factory`
+Examples: `manager-ddd`, `agent-builder`, `skill-builder`
 
 ```yaml
 ---
-name: workflow-ddd
+name: manager-ddd
 description: Execute ANALYZE-PRESERVE-IMPROVE DDD cycle for implementing features with behavior preservation. Called from /jikime:2-run SPEC implementation and task delegation workflows.
 tools: Read, Write, Edit, Bash, Grep, Glob, MultiEdit, TodoWrite
 model: sonnet
-skills: jikime-lang-python, jikime-domain-testing, jikime-foundation-quality
+skills: jikime-lang-python, jikime-workflow-testing, jikime-foundation-quality
 ---
 
 # DDD Implementation Expert
@@ -407,15 +407,15 @@ Focus Areas: Behavior-first development, comprehensive coverage, code quality
 
 Purpose: Validate and improve quality of work products
 Structure: Quality criteria, validation workflows, improvement recommendations
-Examples: `core-quality`, `security-expert`, `core-quality`
+Examples: `manager-quality`, `security-auditor`, `manager-quality`
 
 ```yaml
 ---
-name: core-quality
+name: manager-quality
 description: Validate code quality against TRUST 5 framework (Testable, Readable, Unified, Secured, Trackable). Called from /jikime:2-run quality validation and task delegation workflows.
 tools: Read, Grep, Glob, Bash, Write, Edit
 model: sonnet
-skills: jikime-foundation-trust, jikime-code-quality, jikime-security-expert
+skills: jikime-foundation-quality, jikime-foundation-quality, jikime-workflow-testing
 ---
 
 # Quality Gate Validator
@@ -503,26 +503,26 @@ System Prompt Development:
 
 Pattern: Agent A completes → Agent B continues
 Use Case: Multi-phase workflows with dependencies
-Example: `workflow-spec` → `workflow-ddd` → `workflow-docs`
+Example: `manager-spec` → `manager-ddd` → `manager-docs`
 
 ```python
 # Sequential delegation example
 # Phase 1: Specification
 spec_result = Task(
- subagent_type="workflow-spec",
+ subagent_type="manager-spec",
  prompt="Create specification for user authentication system"
 )
 
 # Phase 2: Implementation (passes spec as context)
 implementation_result = Task(
- subagent_type="workflow-ddd",
+ subagent_type="manager-ddd",
  prompt="Implement user authentication from specification",
  context={"specification": spec_result}
 )
 
 # Phase 3: Documentation (passes implementation as context)
 documentation_result = Task(
- subagent_type="workflow-docs",
+ subagent_type="manager-docs",
  prompt="Generate API documentation",
  context={"implementation": implementation_result}
 )
@@ -532,28 +532,28 @@ documentation_result = Task(
 
 Pattern: Multiple agents work simultaneously
 Use Case: Independent tasks that can be processed in parallel
-Example: `code-backend` + `code-frontend` + `data-database`
+Example: `backend` + `frontend` + `backend`
 
 ```python
 # Parallel delegation example
 results = await Promise.all([
  Task(
- subagent_type="code-backend",
+ subagent_type="backend",
  prompt="Design backend API for user management"
  ),
  Task(
- subagent_type="code-frontend",
+ subagent_type="frontend",
  prompt="Design frontend user interface for user management"
  ),
  Task(
- subagent_type="data-database",
+ subagent_type="backend",
  prompt="Design database schema for user management"
  )
 ])
 
 # Integration phase
 integrated_result = Task(
- subagent_type="integration-specialist",
+ subagent_type="manager-quality",
  prompt="Integrate backend, frontend, and database designs",
  context={"results": results}
 )
@@ -563,24 +563,24 @@ integrated_result = Task(
 
 Pattern: Route to different agents based on analysis
 Use Case: Task classification and routing
-Example: `security-expert` vs `performance-engineer`
+Example: `security-auditor` vs `optimizer`
 
 ```python
 # Conditional delegation example
 analysis_result = Task(
- subagent_type="analysis-expert",
+ subagent_type="debugger",
  prompt="Analyze code issue and classify problem type"
 )
 
 if analysis_result.type == "security":
  result = Task(
- subagent_type="security-expert",
+ subagent_type="security-auditor",
  prompt="Adddess security vulnerability",
  context={"analysis": analysis_result}
  )
 elif analysis_result.type == "performance":
  result = Task(
- subagent_type="performance-engineer",
+ subagent_type="optimizer",
  prompt="Optimize performance issue",
  context={"analysis": analysis_result}
  )
@@ -891,7 +891,7 @@ name: full-stack-developer
 description: Use PROACTIVELY for complete application development including frontend, backend, database, and deployment. Called from /jikime:2-run comprehensive implementation and task delegation workflows.
 tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, MultiEdit, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: sonnet
-skills: jikime-domain-backend, jikime-domain-frontend, jikime-domain-database, jikime-devops-expert, jikime-security-expert
+skills: jikime-domain-backend, jikime-domain-frontend, jikime-domain-database, jikime-workflow-project, jikime-workflow-testing
 ---
 
 # Full-Stack Developer

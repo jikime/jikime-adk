@@ -1,11 +1,12 @@
 ---
 name: jikime-migrate-to-nextjs
 description: Legacy to Next.js 16 migration workflow specialist. Analyzes legacy projects (Vue, React CRA, Angular, Svelte) and orchestrates migration to modern Next.js 16 App Router architecture.
+version: 1.0.0
 tags: ["migration", "nextjs", "react", "vue", "angular", "svelte", "app-router"]
 triggers:
   keywords: ["migrate", "migration", "nextjs", "vue-to-react", "angular-to-react", "마이그레이션"]
   phases: ["plan", "run"]
-  agents: ["manager-strategy", "expert-frontend"]
+  agents: ["manager-strategy", "frontend"]
   languages: []
 user-invocable: false
 ---
@@ -40,19 +41,19 @@ This skill provides a comprehensive workflow for migrating legacy frontend proje
 ## Migration Workflow
 
 ```
-/jikime:migrate-analyze "./my-vue-app"
+/jikime:migrate-1-analyze "./my-vue-app"
     │
     └─▶ ./migrations/my-vue-app/as_is_spec.md
                 │
-/jikime:migrate-to-nextjs plan my-vue-app
+/jikime:migrate-2-plan my-vue-app
                 │
                 └─▶ ./migrations/my-vue-app/migration_plan.md
                             │
-/jikime:migrate-to-nextjs skill my-vue-app
+/jikime:migrate-2-plan --skill my-vue-app
                             │
                             └─▶ .claude/skills/my-vue-app/SKILL.md
                                         │
-/jikime:migrate-to-nextjs run my-vue-app [--output ./out]
+/jikime:migrate-3-execute my-vue-app [--output ./out]
                                         │
                                         └─▶ ./migrations/my-vue-app/out/ (migrated project)
                                             + ./migrations/my-vue-app/progress.yaml
@@ -287,11 +288,11 @@ Migrated project structure:
 
 | Phase | Command | Primary Agent | Supporting |
 |-------|---------|---------------|------------|
-| 0 | migrate-analyze | Explore | expert-frontend |
-| 1 | migrate-to-nextjs plan | manager-spec | manager-strategy |
-| 2 | migrate-to-nextjs skill | builder-skill | expert-frontend |
-| 3 | migrate-to-nextjs run | manager-ddd | expert-frontend, expert-testing |
-| Full | migrate-to-nextjs | manager-migrate-nextjs | All above |
+| 0 | migrate-analyze | Explore | frontend |
+| 1 | migrate-2-plan | manager-spec | manager-strategy |
+| 2 | migrate-2-plan --skill | skill-builder | frontend |
+| 3 | migrate-3-execute | manager-ddd | frontend, test-guide |
+| Full | friday | manager-migrate-nextjs | All above |
 
 ---
 
@@ -319,7 +320,7 @@ Migrated project structure:
 
 ## Skill Reference System
 
-`migrate-to-nextjs skill` 명령어 실행 시 생성되는 프로젝트별 SKILL.md는 다음 스킬들을 자동 참조합니다.
+`migrate-2-plan --skill` 명령어 실행 시 생성되는 프로젝트별 SKILL.md는 다음 스킬들을 자동 참조합니다.
 
 ### Core Reference Skills (Auto-linked)
 
@@ -347,7 +348,7 @@ templates/project-skill-template.md  ← 프로젝트 SKILL.md 생성 템플릿
 ### How It Works
 
 ```
-migrate-to-nextjs skill my-app
+migrate-2-plan --skill my-app
     │
     ├─▶ 1. as_is_spec.md 분석
     │
@@ -408,19 +409,19 @@ examples:
 
 ```bash
 # 전체 백서 패키지 생성 (기본 경로: ./whitepaper/)
-/jikime:migrate-analyze "./my-vue-app" --whitepaper --client "ABC Corp" --target nextjs
+/jikime:migrate-1-analyze "./my-vue-app" --whitepaper --client "ABC Corp" --target nextjs
 
 # 영문 백서 생성
-/jikime:migrate-analyze "./my-vue-app" --whitepaper --client "ABC Corp" --target nextjs --lang en
+/jikime:migrate-1-analyze "./my-vue-app" --whitepaper --client "ABC Corp" --target nextjs --lang en
 
 # 일본어 백서 생성
-/jikime:migrate-analyze "./my-vue-app" --whitepaper --client "株式会社ABC" --target nextjs --lang ja
+/jikime:migrate-1-analyze "./my-vue-app" --whitepaper --client "株式会社ABC" --target nextjs --lang ja
 
 # 커스텀 출력 경로 지정
-/jikime:migrate-analyze "./my-vue-app" --whitepaper --client "ABC Corp" --whitepaper-output ./docs/pre-migration
+/jikime:migrate-1-analyze "./my-vue-app" --whitepaper --client "ABC Corp" --whitepaper-output ./docs/pre-migration
 
 # 기본 분석만 실행 (백서 없음)
-/jikime:migrate-analyze "./my-vue-app"
+/jikime:migrate-1-analyze "./my-vue-app"
 ```
 
 ### Whitepaper Options
@@ -476,11 +477,11 @@ examples:
 | Document | Primary Agent | Supporting Agents |
 |----------|---------------|-------------------|
 | Executive Summary | manager-docs | manager-strategy |
-| Feasibility Report | manager-strategy | expert-frontend |
-| Architecture Report | expert-frontend | manager-strategy |
-| Complexity Matrix | expert-frontend | - |
+| Feasibility Report | manager-strategy | frontend |
+| Architecture Report | frontend | manager-strategy |
+| Complexity Matrix | frontend | - |
 | Migration Roadmap | manager-strategy | manager-spec |
-| Baseline Report | expert-security | expert-performance |
+| Baseline Report | security-auditor | optimizer |
 
 ### Quality Checklist
 
@@ -522,16 +523,16 @@ examples:
 
 ```bash
 # 마이그레이션 완료 후 결과 보고서 생성 (기본 경로: ./whitepaper-report/)
-/jikime:migrate-to-nextjs run my-vue-app --whitepaper-report --client "ABC Corp"
+/jikime:migrate-3-execute my-vue-app --whitepaper-report --client "ABC Corp"
 
 # 영문 완료 보고서 생성
-/jikime:migrate-to-nextjs run my-vue-app --whitepaper-report --client "ABC Corp" --lang en
+/jikime:migrate-3-execute my-vue-app --whitepaper-report --client "ABC Corp" --lang en
 
 # 일본어 완료 보고서 생성
-/jikime:migrate-to-nextjs run my-vue-app --whitepaper-report --client "株式会社ABC" --lang ja
+/jikime:migrate-3-execute my-vue-app --whitepaper-report --client "株式会社ABC" --lang ja
 
 # 커스텀 출력 경로 지정
-/jikime:migrate-to-nextjs run my-vue-app --whitepaper-report --client "ABC Corp" --whitepaper-output ./docs/post-migration
+/jikime:migrate-3-execute my-vue-app --whitepaper-report --client "ABC Corp" --whitepaper-output ./docs/post-migration
 ```
 
 ### Whitepaper Report Options
@@ -588,12 +589,12 @@ examples:
 | Document | Primary Agent | Supporting Agents |
 |----------|---------------|-------------------|
 | Executive Summary | manager-docs | manager-strategy |
-| Performance Comparison | expert-performance | expert-frontend |
-| Security Improvement | expert-security | - |
-| Code Quality Report | manager-quality | expert-refactoring |
-| Architecture Evolution | expert-frontend | manager-strategy |
+| Performance Comparison | optimizer | frontend |
+| Security Improvement | security-auditor | - |
+| Code Quality Report | manager-quality | refactorer |
+| Architecture Evolution | frontend | manager-strategy |
 | Cost-Benefit Analysis | manager-strategy | - |
-| Maintenance Guide | manager-docs | expert-devops |
+| Maintenance Guide | manager-docs | devops |
 
 ### Quality Checklist (Post-Migration)
 

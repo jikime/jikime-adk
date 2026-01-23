@@ -109,7 +109,7 @@ Format: kebab-case (lowercase, numbers, hyphens only)
 Length: Maximum 64 characters
 Pattern: `[prefix]-[domain]-[function]`
 Examples:
-- `jikime-cc-commands`
+- `jikime-foundation-claude`
 - `jikime-lang-python`
 - `jikime-domain-backend`
 - `MyAwesomeSkill` (uppercase, spaces)

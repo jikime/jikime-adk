@@ -14,7 +14,7 @@ J.A.R.V.I.S. (Just A Rather Very Intelligent System)는 단순 명령 실행이 
 
 ### 기존 오케스트레이터와의 차별점
 
-| 기능 | 기존 (Alfred) | J.A.R.V.I.S. |
+| 기능 | 기존 오케스트레이터 | J.A.R.V.I.S. |
 |------|--------------|--------------|
 | 탐색 | 3개 에이전트 병렬 | 5개 에이전트 + 의존성 분석 |
 | 계획 | 단일 전략 | 멀티 전략 비교 후 최적 선택 |
@@ -83,13 +83,96 @@ J.A.R.V.I.S. (Just A Rather Very Intelligent System)는 단순 명령 실행이 
 |------|------|
 | `templates/.claude/commands/jikime/jarvis.md` | J.A.R.V.I.S. 슬래시 커맨드 |
 | `templates/CLAUDE.md` | Type B 유틸리티 명령어로 등록 |
+| `docs/migration.md` | 마이그레이션 시스템 문서 |
+
+## Migration Mode
+
+### 개요
+
+J.A.R.V.I.S. 마이그레이션 모드는 레거시 프로젝트를 현대 프레임워크로 전환하는 전체 과정을 자동화합니다.
+
+### 마이그레이션 워크플로우
+
+```
+Phase 0: Source Discovery
+  ├── 기술 스택 분석 (프레임워크, 라이브러리)
+  ├── 아키텍처 패턴 파악
+  ├── 복잡도 점수 계산
+  └── 타겟 프레임워크 제안
+        ↓
+Phase 1: Detailed Analysis
+  ├── as_is_spec.md 생성
+  ├── 비즈니스 로직 문서화
+  ├── 라우트/컴포넌트 매핑
+  └── .migrate-config.yaml 생성
+        ↓
+Phase 2: Migration Planning
+  ├── 마이그레이션 전략 비교 (점진적 vs 빅뱅)
+  ├── 모듈별 우선순위 결정
+  ├── 리스크 평가
+  └── migration_plan.md 생성
+        ↓
+Phase 3: DDD Execution
+  ├── 모듈별 ANALYZE-PRESERVE-IMPROVE
+  ├── 전문가 에이전트 위임
+  ├── 자가 진단 및 피봇
+  └── 코드 마이그레이션
+        ↓
+Phase 4: Verification
+  ├── 동작 비교 테스트
+  ├── E2E 테스트
+  ├── 성능 비교
+  └── 검증 보고서 생성
+```
+
+### 마이그레이션 에이전트 위임
+
+| Phase | 에이전트 | 역할 |
+|-------|---------|------|
+| Phase 0 | Explore, Research | 소스 코드 분석, 기술 조사 |
+| Phase 1 | manager-spec | as_is_spec.md 생성 |
+| Phase 2 | manager-strategy | 마이그레이션 전략 수립 |
+| Phase 3 | backend, frontend | 코드 마이그레이션 |
+| Phase 4 | test-guide | 검증 및 테스트 |
+
+### 산출물 흐름
+
+```
+./legacy-project/
+    │
+    ▼ (Phase 0-1)
+./migrations/{project}/
+    ├── as_is_spec.md
+    └── .migrate-config.yaml
+    │
+    ▼ (Phase 2)
+./migrations/{project}/
+    └── migration_plan.md
+    │
+    ▼ (Phase 3)
+./migrations/{project}/out/
+    └── (마이그레이션된 프로젝트)
+    │
+    ▼ (Phase 4)
+검증 보고서 + 완료
+```
+
+### 지원 마이그레이션
+
+| 소스 | 타겟 옵션 |
+|------|----------|
+| Vue 2/3 | Next.js (App Router) |
+| React (CRA) | Next.js (App Router) |
+| Angular | Next.js, SvelteKit |
+| jQuery | React, Vue, Svelte |
+| PHP | Next.js, FastAPI, Go |
 
 ## Usage
 
 ### 기본 사용법
 
 ```bash
-# 지능형 자율 실행 (기본)
+# 지능형 자율 실행 (개발 모드 - 기본)
 /jikime:jarvis "Add JWT authentication"
 
 # 안전 전략 (보수적 접근)
@@ -103,18 +186,41 @@ J.A.R.V.I.S. (Just A Rather Very Intelligent System)는 단순 명령 실행이 
 
 # 이전 작업 재개
 /jikime:jarvis resume SPEC-AUTH-001
+
+# === 마이그레이션 모드 ===
+# 레거시 프로젝트를 현대 프레임워크로 마이그레이션
+/jikime:jarvis "Migrate Vue app to Next.js" --mode migrate
+
+# 자동 모드 감지 (.migrate-config.yaml 확인)
+/jikime:jarvis "Continue migration" --mode auto
+
+# 안전 전략으로 마이그레이션
+/jikime:jarvis @./legacy-app/ "Migrate to Next.js 16" --mode migrate --strategy safe
 ```
 
 ### 명령어 옵션
 
 | 옵션 | 설명 | 기본값 |
 |------|------|--------|
+| `--mode` | 워크플로우 모드: dev, migrate, auto | auto |
 | `--strategy` | 실행 전략: auto, safe, fast | auto |
 | `--loop` | 에러 자동 수정 반복 활성화 | config |
 | `--max N` | 최대 반복 횟수 | 50 |
 | `--branch` | 피처 브랜치 자동 생성 | config |
 | `--pr` | 완료 시 PR 자동 생성 | config |
 | `--resume SPEC` | 이전 작업 재개 | - |
+
+### 모드 자동 감지 (--mode auto)
+
+J.A.R.V.I.S.는 다음 기준으로 워크플로우 모드를 자동 감지합니다:
+
+| 지표 | 감지 모드 |
+|------|----------|
+| `.migrate-config.yaml` 존재 | migrate |
+| `migrations/*/as_is_spec.md` 존재 | migrate |
+| 키워드: "migrate", "migration", "convert" | migrate |
+| `spec.md` 또는 `.jikime/project/` 존재 | dev |
+| 기본값 | dev |
 
 ## Intelligence Features
 
@@ -242,13 +348,13 @@ J.A.R.V.I.S.가 작업 복잡도를 분석하여 최적 전략을 자동 선택:
 
 | 작업 유형 | 담당 에이전트 |
 |-----------|--------------|
-| 백엔드 로직 | expert-backend |
-| 프론트엔드 컴포넌트 | expert-frontend |
-| 테스트 생성 | expert-testing |
-| 버그 수정 | expert-debug |
-| 리팩토링 | expert-refactoring |
-| 보안 수정 | expert-security |
-| 성능 최적화 | expert-performance |
+| 백엔드 로직 | backend |
+| 프론트엔드 컴포넌트 | frontend |
+| 테스트 생성 | test-guide |
+| 버그 수정 | debugger |
+| 리팩토링 | refactorer |
+| 보안 수정 | security-auditor |
+| 성능 최적화 | optimizer |
 
 ## Output Format
 
@@ -308,24 +414,37 @@ Fixing...
 
 ## Workflow Integration
 
-### JikiME 워크플로우와의 관계
+### 개발 워크플로우와의 관계
 
 J.A.R.V.I.S.는 개별 워크플로우 명령어들을 **통합 자동화**합니다:
 
 ```
-개별 실행:
-  /jikime:0-project → /jikime:1-plan → /jikime:2-run → /jikime:3-sync
+개발 모드 (--mode dev):
+  개별:  /jikime:0-project → /jikime:1-plan → /jikime:2-run → /jikime:3-sync
+  통합:  /jikime:jarvis "task" → 전체 자동 실행
 
-J.A.R.V.I.S. 통합:
-  /jikime:jarvis "task" → 전체 자동 실행 + 지능적 의사결정
+마이그레이션 모드 (--mode migrate):
+  개별:  /jikime:migrate-0-discover → 1-analyze → 2-plan → 3-execute → 4-verify
+  통합:  /jikime:jarvis "migrate to X" --mode migrate → 전체 자동 실행
 ```
 
 ### 명령어 체계
 
 | 타입 | 명령어 | 용도 |
 |------|--------|------|
-| **Workflow (Type A)** | 0-project, 1-plan, 2-run, 3-sync | 단계별 세밀한 제어 |
+| **Workflow (Type A)** | 0-project, 1-plan, 2-run, 3-sync | 개발 단계별 세밀한 제어 |
+| **Migration** | migrate-0 ~ migrate-4 | 마이그레이션 단계별 제어 |
 | **Utility (Type B)** | **jarvis**, test, loop, fix | 빠른 실행 및 자동화 |
+
+### 워크플로우 모드 비교
+
+| 측면 | 개발 모드 (dev) | 마이그레이션 모드 (migrate) |
+|------|----------------|---------------------------|
+| **목적** | 새 기능 구현, 개선 | 레거시 → 현대 프레임워크 전환 |
+| **입력** | 작업 설명, SPEC | 레거시 소스 코드 |
+| **단계** | 4단계 (0-project ~ 3-sync) | 5단계 (0-discover ~ 4-verify) |
+| **산출물** | 코드, 문서 | 마이그레이션된 프로젝트, 검증 보고서 |
+| **방법론** | DDD | DDD + 동작 비교 검증 |
 
 ## Limitations & Safety
 
@@ -377,7 +496,10 @@ J.A.R.V.I.S. 통합:
 
 ---
 
-Version: 1.0.0
-Last Updated: 2026-01-22
+Version: 2.0.0
+Last Updated: 2026-01-23
 Codename: J.A.R.V.I.S. (Just A Rather Very Intelligent System)
 Inspiration: Iron Man's AI Assistant
+Changelog:
+- v2.0.0: Added Migration Mode (--mode migrate), unified workflow orchestration
+- v1.0.0: Initial release with Development Mode

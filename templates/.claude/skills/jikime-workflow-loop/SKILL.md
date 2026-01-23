@@ -30,8 +30,8 @@ triggers:
     - implement
   agents:
     - manager-ddd
-    - expert-debug
-    - expert-refactoring
+    - debugger
+    - refactorer
 
 user-invocable: true
 context: fork
@@ -66,7 +66,7 @@ jikime hooks start-loop --task "Fix all TypeScript errors" --max-iterations 10
 Output one of these when done:
 - `<jikime:done />`
 - `<jikime:complete />`
-- `<promise>DONE</promise>`
+- `<jikime>DONE</jikime>`
 
 ## Execution Protocol
 

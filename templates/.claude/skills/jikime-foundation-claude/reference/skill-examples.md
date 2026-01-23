@@ -103,9 +103,9 @@ xargs python extract_docs.py --output ./docs/api/
 
 ## Works Well With
 
-- [`jikime-docs-toolkit`](../jikime-docs-toolkit/SKILL.md) - General documentation patterns
+- [`jikime-docs-generation`](../jikime-docs-generation/SKILL.md) - General documentation patterns
 - [`jikime-domain-backend`](../jikime-domain-backend/SKILL.md) - Backend API expertise
-- [`jikime-context7-integration`](../jikime-context7-integration/SKILL.md) - Latest framework docs
+- [`jikime-workflow-jit-docs`](../jikime-workflow-jit-docs/SKILL.md) - Latest framework docs
 
 ## Advanced Features
 
@@ -235,8 +235,8 @@ def calculate_coverage(docstrings, total_elements):
 ## Works Well With
 
 - [`jikime-lang-python`](../jikime-lang-python/SKILL.md) - Python-specific patterns
-- [`jikime-code-quality`](../jikime-code-quality/SKILL.md) - General code quality assessment
-- [`jikime-cc-claude-md`](../jikime-cc-claude-md/SKILL.md) - Documentation generation
+- [`jikime-foundation-quality`](../jikime-foundation-quality/SKILL.md) - General code quality assessment
+- [`jikime-foundation-claude`](../jikime-foundation-claude/SKILL.md) - Documentation generation
 
 ## Advanced Features
 
@@ -426,7 +426,7 @@ pytest --cov=src --cov-report=html # With coverage report
 
 - [`jikime-lang-python`](../jikime-lang-python/SKILL.md) - Python language patterns
 - [`jikime-workflow-ddd`](../jikime-workflow-ddd/SKILL.md) - DDD methodology
-- [`jikime-quality-gate`](../jikime-quality-gate/SKILL.md) - Quality validation
+- [`jikime-foundation-quality`](../jikime-foundation-quality/SKILL.md) - Quality validation
 
 ## Advanced Features
 
@@ -701,8 +701,8 @@ const sum = doubled.reduce((acc, n) => acc + n, 0); // 24
 ## Works Well With
 
 - [`jikime-domain-frontend`](../jikime-domain-frontend/SKILL.md) - Frontend development patterns
-- [`jikime-context7-integration`](../jikime-context7-integration/SKILL.md) - Latest framework docs
-- [`jikime-web-performance`](../jikime-web-performance/SKILL.md) - Performance optimization
+- [`jikime-workflow-jit-docs`](../jikime-workflow-jit-docs/SKILL.md) - Latest framework docs
+- [`jikime-foundation-quality`](../jikime-foundation-quality/SKILL.md) - Quality and performance optimization
 
 ## Advanced Features
 
@@ -1056,8 +1056,8 @@ def get_user_by_id(user_id: int) -> Optional[User]:
 
 ## Works Well With
 
-- [`jikime-cc-security`](../jikime-cc-security/SKILL.md) - General security patterns
-- [`jikime-quality-gate`](../jikime-quality-gate/SKILL.md) - Quality validation
+- [`jikime-workflow-testing`](../jikime-workflow-testing/SKILL.md) - General security patterns
+- [`jikime-foundation-quality`](../jikime-foundation-quality/SKILL.md) - Quality validation
 - [`jikime-domain-backend`](../jikime-domain-backend/SKILL.md) - Backend security
 
 ## Advanced Features
@@ -1454,9 +1454,9 @@ resource "aws_appautoscaling_policy" "ecs_policy_cpu" {
 
 ## Works Well With
 
-- [`jikime-devops-expert`](../jikime-devops-expert/SKILL.md) - DevOps best practices
-- [`jikime-monitoring-expert`](../jikime-monitoring-expert/SKILL.md) - Monitoring strategies
-- [`jikime-security-expert`](../jikime-security-expert/SKILL.md) - Security automation
+- [`jikime-workflow-project`](../jikime-workflow-project/SKILL.md) - DevOps best practices
+- [`jikime-workflow-project`](../jikime-workflow-project/SKILL.md) - Monitoring strategies
+- [`jikime-workflow-testing`](../jikime-workflow-testing/SKILL.md) - Security automation
 
 ## Advanced Features
 

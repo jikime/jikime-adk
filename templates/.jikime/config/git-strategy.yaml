@@ -3,7 +3,7 @@
 # Complete field coverage for all Git workflow modes
 
 git_strategy:
-  mode: manual                # manual, personal, team
+  mode: {{GIT_MODE}}                # manual, personal, team
 
   # Manual Mode Settings (Local Git)
   manual:

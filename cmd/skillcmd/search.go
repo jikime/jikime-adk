@@ -29,7 +29,7 @@ Examples:
   jikime-adk skill search nextjs           # Search by text
   jikime-adk skill search --tags framework,nextjs  # Filter by tags
   jikime-adk skill search --phases run     # Filter by phases
-  jikime-adk skill search --agents expert-frontend  # Filter by agents
+  jikime-adk skill search --agents frontend  # Filter by agents
   jikime-adk skill search "react components" --limit 5  # Text search with limit`,
 		RunE: runSearch,
 	}

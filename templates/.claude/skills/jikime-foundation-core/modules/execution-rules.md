@@ -9,7 +9,7 @@ Version: 2.0.0
 
 ## Quick Reference (30 seconds)
 
-Alfred operates under strict execution rules:
+The orchestrator operates under strict execution rules:
 
 Core Constraints:
 - Agent-First: ALWAYS delegate via Task(), NEVER execute directly
@@ -51,7 +51,7 @@ REQUIRED Pattern:
 ```python
 # CORRECT - Agent delegation
 result = await Task(
- subagent_type="code-backend",
+ subagent_type="backend",
  prompt="Process user data from data.txt",
  context={"file_path": "data.txt"}
 )
@@ -71,7 +71,7 @@ Allowed Tools (4 categories):
 
 | Tool | Purpose | Example |
 |------|---------|---------|
-| `Task()` | Agent delegation | `Task("code-backend", "Implement API")` |
+| `Task()` | Agent delegation | `Task("backend", "Implement API")` |
 | `AskUserQuestion()` | User interaction | `AskUserQuestion(questions=[...])` |
 | `Skill()` | Knowledge invocation | `Skill("jikime-foundation-core")` |
 | `MCP Servers` | External integrations | Context7, Playwright, Figma |
@@ -147,9 +147,9 @@ Data Protection Rules:
 | Level | Name | Access | Use Case |
 |-------|------|--------|----------|
 | 1 | Read-only | File exploration, code analysis | `Explore`, `Plan` |
-| 2 | Validated Write | File creation with validation | `workflow-ddd`, `workflow-docs` |
-| 3 | System | Limited system operations | `infra-devops`, `core-git` |
-| 4 | Security | Security analysis and enforcement | `security-expert`, `core-quality` |
+| 2 | Validated Write | File creation with validation | `manager-ddd`, `manager-docs` |
+| 3 | System | Limited system operations | `devops`, `manager-git` |
+| 4 | Security | Security analysis and enforcement | `security-auditor`, `manager-quality` |
 
 Agent Permissions:
 - Read Agents: File system exploration, code analysis
@@ -171,7 +171,7 @@ MCP Server Permissions:
 
 ### Git Strategy 3-Mode System
 
-Alfred automatically adjusts Git workflow based on `config.json` settings.
+The orchestrator automatically adjusts Git workflow based on `config.json` settings.
 
 Key Configuration Fields:
 - `git_strategy.mode`: Git mode selection (manual, personal, team)
@@ -203,7 +203,7 @@ Configuration (default):
 }
 ```
 
-Alfred's Behavior (prompt_always=true):
+Orchestrator's Behavior (prompt_always=true):
 1. When running `/jikime:1-plan`, user prompted: "Create branch?"
  - Auto create → Creates feature/SPEC-001
  - Use current branch → Continues on current branch
@@ -223,7 +223,7 @@ Configuration (auto skip):
 }
 ```
 
-Alfred's Behavior (prompt_always=false):
+Orchestrator's Behavior (prompt_always=false):
 - All SPECs automatically work on current branch (no branch creation)
 - No user prompts
 
@@ -246,7 +246,7 @@ Configuration (default - prompt each time):
 }
 ```
 
-Alfred's Behavior (prompt_always=true):
+Orchestrator's Behavior (prompt_always=true):
 1. When running `/jikime:1-plan`, user prompted: "Create branch?"
  - Auto create → Creates feature/SPEC-002 + auto push
  - Use current branch → Commits directly on current branch
@@ -266,7 +266,7 @@ Configuration (auto after approval):
 }
 ```
 
-Alfred's Behavior (prompt_always=false, auto_enabled=false):
+Orchestrator's Behavior (prompt_always=false, auto_enabled=false):
 1. When running `/jikime:1-plan`, user prompted once: "Enable automatic branch creation?"
  - Yes → Auto updates config.json with `auto_enabled=true` → Creates feature/SPEC
  - No → Works on current branch, no config change
@@ -285,7 +285,7 @@ Configuration (full automation):
 }
 ```
 
-Alfred's Behavior (prompt_always=false, auto_enabled=true):
+Orchestrator's Behavior (prompt_always=false, auto_enabled=true):
 - Automatically creates feature/SPEC-XXX branch for every SPEC
 - No user prompts (full automation)
 - All DDD and documentation commits auto-pushed to feature branch
@@ -309,7 +309,7 @@ Configuration (default - prompt each time):
 }
 ```
 
-Alfred's Behavior (prompt_always=true):
+Orchestrator's Behavior (prompt_always=true):
 1. When running `/jikime:1-plan`, user prompted: "Create branch?"
  - Auto create → Creates feature/SPEC-003 + auto create Draft PR
  - Use current branch → Proceeds on current branch (not recommended)
@@ -331,7 +331,7 @@ Configuration (auto after approval):
 }
 ```
 
-Alfred's Behavior (prompt_always=false, auto_enabled=false):
+Orchestrator's Behavior (prompt_always=false, auto_enabled=false):
 1. When running `/jikime:1-plan`, user prompted once: "Enable automatic branch creation and Draft PR creation?"
  - Yes → Auto updates config.json with `auto_enabled=true` → Creates feature/SPEC + Draft PR
  - No → Works on current branch, no config change
@@ -350,7 +350,7 @@ Configuration (full automation):
 }
 ```
 
-Alfred's Behavior (prompt_always=false, auto_enabled=true):
+Orchestrator's Behavior (prompt_always=false, auto_enabled=true):
 - Automatically creates feature/SPEC-XXX branch + Draft PR for every SPEC
 - No user prompts (full automation)
 - All DDD and documentation commits auto-pushed to feature branch
@@ -398,7 +398,7 @@ Unified:
 - Consistent documentation format
 
 Secured:
-- Security validation through security-expert
+- Security validation through security-auditor
 - OWASP compliance checking
 - Input sanitization and validation
 - Secure coding practices
@@ -451,7 +451,7 @@ Required Log Entries:
 ```python
 {
  "timestamp": "2025-11-25T07:30:00Z",
- "agent": "security-expert",
+ "agent": "security-auditor",
  "action": "code_review",
  "files_accessed": ["src/auth.py", "tests/test_auth.py"],
  "token_usage": 5230,
@@ -675,9 +675,9 @@ Other Modules:
 - [agents-reference.md](agents-reference.md) - Agent permission levels
 
 Agents:
-- [security-expert](agents-reference.md#tier-3-domain-experts) - Security validation
-- [core-quality](agents-reference.md#tier-2-orchestration--quality) - TRUST 5 enforcement
-- [core-git](agents-reference.md#tier-2-orchestration--quality) - Git workflow management
+- [security-auditor](agents-reference.md#tier-3-domain-experts) - Security validation
+- [manager-quality](agents-reference.md#tier-2-orchestration--quality) - TRUST 5 enforcement
+- [manager-git](agents-reference.md#tier-2-orchestration--quality) - Git workflow management
 
 ---
 

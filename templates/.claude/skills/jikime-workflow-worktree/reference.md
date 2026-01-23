@@ -52,15 +52,15 @@ Last Updated: 2025-11-29
 ### JikiME-ADK Skills
 
 - jikime-foundation-core: Foundation principles and delegation patterns
- - Reference: [jikime-foundation-core modules](jikime-foundation-core/modules/)
+ - Reference: [jikime-foundation-core modules](../jikime-foundation-core/modules/)
  - Integration: Worktree creation follows foundation delegation patterns
 
 - jikime-workflow-project: Project management and configuration
- - Reference: [jikime-workflow-project modules](jikime-workflow-project/modules/)
+ - Reference: [jikime-workflow-project](../jikime-workflow-project/SKILL.md)
  - Integration: Project setup with worktree support
 
 - jikime-foundation-claude: Claude Code execution patterns
- - Reference: [jikime-foundation-claude modules](jikime-foundation-claude/modules/)
+ - Reference: [jikime-foundation-claude reference](../jikime-foundation-claude/reference/)
  - Integration: Command and agent execution patterns
 
 ### Complementary Tools

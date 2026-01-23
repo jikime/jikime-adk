@@ -50,7 +50,7 @@ JikiME-ADK는 세 가지 타입의 명령어를 제공합니다:
 
 ## Type A: Workflow Commands
 
-핵심 JikiME 개발 워크플로우를 구성하는 명령어들입니다.
+핵심 개발 워크플로우를 구성하는 명령어들입니다.
 
 ### /jikime:0-project
 

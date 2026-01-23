@@ -88,10 +88,10 @@ Usage:
 delegator = ResilientDelegation()
 
 result = await delegator.delegate_with_retry(
-    agent_type="code-backend",
+    agent_type="backend",
     prompt="Implement complex feature",
     context=large_context,
-    fallback_agent="support-debug"
+    fallback_agent="debugger"
 )
 ```
 
@@ -107,12 +107,12 @@ async def hybrid_workflow(spec_id: str):
 
     # Phase 1: Sequential (SPEC → Design)
     spec = await Task(
-        subagent_type="workflow-spec",
+        subagent_type="manager-spec",
         prompt=f"Generate SPEC {spec_id}"
     )
 
     design = await Task(
-        subagent_type="api-designer",
+        subagent_type="backend",
         prompt="Design API",
         context={"spec_id": spec.id}
     )
@@ -122,17 +122,17 @@ async def hybrid_workflow(spec_id: str):
     # Phase 2: Parallel (Implementation)
     impl_results = await Promise.all([
         Task(
-            subagent_type="code-backend",
+            subagent_type="backend",
             prompt="Backend",
             context={"spec_id": spec.id, "api": design}
         ),
         Task(
-            subagent_type="code-frontend",
+            subagent_type="frontend",
             prompt="Frontend",
             context={"spec_id": spec.id, "api": design}
         ),
         Task(
-            subagent_type="data-database",
+            subagent_type="backend",
             prompt="Database",
             context={"spec_id": spec.id, "api": design}
         )
@@ -142,7 +142,7 @@ async def hybrid_workflow(spec_id: str):
 
     # Phase 3: Sequential (Testing → QA)
     tests = await Task(
-        subagent_type="core-quality",
+        subagent_type="manager-quality",
         prompt="Integration tests",
         context={
             "spec_id": spec.id,
@@ -153,7 +153,7 @@ async def hybrid_workflow(spec_id: str):
     )
 
     qa = await Task(
-        subagent_type="core-quality",
+        subagent_type="manager-quality",
         prompt="Quality validation",
         context={
             "spec_id": spec.id,
@@ -184,7 +184,7 @@ async def conditional_parallel_workflow(requests: list):
     # Phase 1: Parallel analysis
     analyses = await Promise.all([
         Task(
-            subagent_type="plan",
+            subagent_type="planner",
             prompt=f"Analyze request",
             context={"request": req}
         )
@@ -200,7 +200,7 @@ async def conditional_parallel_workflow(requests: list):
         if analysis.category == "security":
             security_tasks.append(
                 Task(
-                    subagent_type="security-expert",
+                    subagent_type="security-auditor",
                     prompt="Handle security issue",
                     context={"analysis": analysis}
                 )
@@ -208,7 +208,7 @@ async def conditional_parallel_workflow(requests: list):
         elif analysis.category == "feature":
             feature_tasks.append(
                 Task(
-                    subagent_type="code-backend",
+                    subagent_type="backend",
                     prompt="Implement feature",
                     context={"analysis": analysis}
                 )
@@ -216,7 +216,7 @@ async def conditional_parallel_workflow(requests: list):
         elif analysis.category == "bug":
             bug_tasks.append(
                 Task(
-                    subagent_type="support-debug",
+                    subagent_type="debugger",
                     prompt="Debug issue",
                     context={"analysis": analysis}
                 )

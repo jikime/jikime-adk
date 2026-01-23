@@ -1,11 +1,12 @@
 ---
 name: jikime-library-shadcn
-description: Moai Lib Shadcn Ui - Professional implementation guide
+description: Shadcn UI - Professional implementation guide
+version: 1.0.0
 tags: ["library", "shadcn", "ui", "components", "tailwind", "radix", "accessibility"]
 triggers:
   keywords: ["shadcn", "radix", "tailwind", "ui-components", "design-system"]
   phases: ["run"]
-  agents: ["expert-frontend"]
+  agents: ["frontend"]
   languages: ["typescript"]
 user-invocable: false
 allowed-tools:
@@ -142,7 +143,7 @@ The Zod and React Hook Form integration pattern involves importing useForm from 
 - shadcn-theming.md module for theme system and customization strategies
 - jikime-domain-uiux for design system architecture and principles
 - jikime-lang-typescript for TypeScript best practices
-- code-frontend for frontend development patterns
+- frontend for frontend development patterns
 
 ---
 

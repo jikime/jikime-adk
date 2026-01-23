@@ -15,12 +15,16 @@ Claude Code → stdin (JSON) → jikime statusline → stdout (상태 문자열)
 | 아이콘 | 항목 | 설명 |
 |--------|------|------|
 | 🤖 | Model | AI 모델명 (예: Opus 4.5) |
-| 💰 | Context | 컨텍스트 윈도우 사용량 (예: 15K/200K) |
-| 💬 | Style | 출력 스타일 이름 |
+| ▰▱ | Progress | 컨텍스트 윈도우 사용량 (Progress Bar) |
+| 💵 | Cost | 예상 토큰 비용 (예: $0.23) |
+| 💬 | OutputStyle | 응답 스타일/페르소나 (예: J.A.R.V.I.S.) |
 | 📁 | Directory | 현재 프로젝트 디렉토리 |
-| 📊 | GitStatus | Git 변경사항 (+staged M수정 ?추적안됨) |
+| 🔀 | Branch | Git 브랜치 및 상태 |
 | 💾 | Memory | 메모리 사용량 |
-| 🔀 | Branch | Git 브랜치명 |
+| ⚡ | CPU | 시스템 CPU 부하 |
+| 💿 | Disk | 디스크 사용량 |
+| 🌐 | Network | API 응답 지연 |
+| 🌤️ | Weather | 현재 날씨 (선택적) |
 | ⏱️ | Duration | 세션 지속 시간 |
 | 🎯 | Task | 활성 작업 표시 |
 | 📦 | Version | JikiME-ADK 버전 |
@@ -29,12 +33,13 @@ Claude Code → stdin (JSON) → jikime statusline → stdout (상태 문자열)
 ## 사용법
 
 ```bash
-# 기본 사용 (extended 모드)
+# 기본 사용 (extended 모드, progress bar 포함)
 jikime statusline
 
 # 특정 모드로 표시
 jikime statusline --mode compact
 jikime statusline --mode minimal
+jikime statusline --mode geek
 
 # 데모 보기
 jikime statusline --demo
@@ -45,29 +50,52 @@ jikime statusline --pretty
 
 ## 디스플레이 모드
 
-### Extended (기본)
+### Minimal
 
-모든 정보를 표시합니다.
+모델과 컨텍스트만 표시합니다.
 
 ```
-🤖 Opus 4.5 │ 💰 15K/200K │ 💬 Mr.Alfred │ 📁 jikime-adk │ 📊 +0 M5 ?5 │ 💾 128MB │ 🔀 main │ ⏱️ 45m │ 🎯 IMPLEMENT │ 📦 v2.0.0
+🤖 Opus 4.5 ┃ ▰▱▱▱▱▱▱▱▱▱ 7%
 ```
 
 ### Compact
 
-80자 이내로 핵심 정보만 표시합니다.
+핵심 정보를 압축해서 표시합니다.
 
 ```
-🤖 Opus 4.5 │ 💰 15K/200K │ 💬 Mr.Alfred │ 📁 jikime-adk │ 📊 +0 M5 ?5 │ 💾 128MB │ 🔀 main
+🤖 Opus 4.5 ┃ ▰▱▱▱▱▱▱▱▱▱ 15K/200K 7% ┃ 💵 $0.23 ┃ 💬 J.A.R.V.I.S. ┃ 🔀 main +0 M5 ?5 ┃ 💾 128MB ┃ ⚡ 45% ┃ ☀️ +12°C
 ```
 
-### Minimal
+### Extended (기본)
 
-40자 이내, 가장 핵심적인 정보만 표시합니다.
+균형 잡힌 정보를 progress bar와 함께 표시합니다.
 
 ```
-🤖 Opus 4.5 │ 💰 15K/200K
+🤖 Opus 4.5 ┃ ▰▱▱▱▱▱▱▱▱▱ 15K/200K ┃ 💵 $0.23 ┃ 💬 J.A.R.V.I.S. ┃ 📁 jikime-adk ┃ 🔀 main +0 M5 ?5 ┃ 💾 128MB ┃ ⚡ 45% ┃ ☀️ +12°C ┃ ⏱️ 45m ┃ 🎯 IMPLEMENT ┃ 📦 v2.0.0
 ```
+
+### Geek (전체 기능)
+
+모든 기능을 포함한 개발자 모드입니다. 색상 코딩된 progress bar와 모든 시스템 정보를 표시합니다.
+
+```
+🤖 Opus 4.5 ┃ ▰▱▱▱▱▱▱▱▱▱ 15K/200K (7%) ┃ 💵 $0.23 ┃ 💬 J.A.R.V.I.S. ┃ 📁 jikime-adk ┃ 🔀 main +0 M5 ?5 ┃ 💾 128MB ┃ ⚡ 45% ┃ 💿 120GB (65%) ┃ 🌐 120ms ┃ ☀️ +12°C ┃ ⏱️ 45m ┃ 📦 v2.0.0
+```
+
+## Progress Bar
+
+컨텍스트 사용량을 시각적으로 표시합니다:
+
+```
+▱▱▱▱▱▱▱▱▱▱ = 0%
+▰▰▰▰▰▱▱▱▱▱ = 50%
+▰▰▰▰▰▰▰▰▰▰ = 100%
+```
+
+색상 코딩 (Geek 모드):
+- 🟢 초록: 0-49% (정상)
+- 🟡 노랑: 50-79% (주의)
+- 🔴 빨강: 80-100% (경고)
 
 ## Claude Code 설정
 
@@ -89,7 +117,7 @@ Claude Code의 `settings.json`에서 statusline을 활성화합니다:
 ```yaml
 statusline:
   enabled: true
-  mode: extended  # extended | compact | minimal
+  mode: extended  # extended | compact | minimal | geek
   refresh_interval_ms: 1000
 
   display:
@@ -98,76 +126,65 @@ statusline:
     context_window: true
     output_style: true
     memory_usage: true
-    todo_count: true
     branch: true
     git_status: true
     duration: true
     directory: true
     active_task: true
     update_indicator: true
+    # New features
+    token_cost: true
+    cpu_load: true
+    disk_usage: false    # opt-in
+    network_latency: false # opt-in
+    weather: false       # opt-in
+    progress_bar: true
+
+  weather:
+    enabled: false
+    location: ""  # Empty = auto-detect by IP
+    unit: "celsius"  # celsius | fahrenheit
+
+  token_cost:
+    input_price_per_mtok: 15.0   # $15 per 1M input tokens
+    output_price_per_mtok: 75.0  # $75 per 1M output tokens
 
   format:
     max_branch_length: 30
     truncate_with: "..."
-    separator: " │ "
-    icons:
-      git: "🔀"
-      git_status: "📊"
-      model: "🤖"
-      claude_version: "🤖"
-      context_window: "💰"
-      output_style: "💬"
-      duration: "⏱️"
-      update: "🔄"
-      project: "📁"
+    separator: " ┃ "
 
   cache:
     git_ttl_seconds: 10
     update_ttl_seconds: 600
 ```
 
-## 세션 컨텍스트 구조
+## 새로운 기능
 
-Claude Code가 전달하는 JSON 구조:
+### Token Cost (💵)
 
-```json
-{
-  "model": {
-    "display_name": "Opus 4.5",
-    "name": "claude-opus-4-5-20251101"
-  },
-  "version": "2.0.46",
-  "cwd": "/path/to/project",
-  "output_style": {
-    "name": "Mr.Alfred"
-  },
-  "context_window": {
-    "context_window_size": 200000,
-    "total_input_tokens": 15000,
-    "current_usage": {
-      "input_tokens": 10000,
-      "cache_creation_input_tokens": 3000,
-      "cache_read_input_tokens": 2000
-    }
-  },
-  "statusline": {
-    "mode": "extended"
-  }
-}
-```
+현재 세션의 예상 API 비용을 표시합니다. Claude Opus 기준으로 계산됩니다:
+- Input: $15 / 1M tokens
+- Output: $75 / 1M tokens
+
+### System Status
+
+시스템 상태 정보를 표시합니다:
+- **CPU Load (⚡)**: `uptime` 명령어로 시스템 부하 측정
+- **Disk Usage (💿)**: `df` 명령어로 현재 디렉토리 디스크 사용량
+- **Network Latency (🌐)**: Anthropic API 응답 지연 시간 (60초 캐시)
+
+### Weather (🌤️)
+
+현재 날씨를 표시합니다 (wttr.in API 사용, 30분 캐시):
+- 위치 자동 감지 또는 수동 설정
+- 섭씨/화씨 단위 선택 가능
 
 ## 환경 변수
 
 | 변수 | 설명 | 기본값 |
 |------|------|--------|
 | `JIKIME_STATUSLINE_MODE` | 디스플레이 모드 | `extended` |
-
-## 업데이트 확인
-
-statusline은 GitHub Releases API를 통해 JikiME-ADK의 새 버전을 확인합니다:
-
-- 캐시 TTL: 10분 (설정 가능)
-- 새 버전이 있으면 `🔄 x.x.x available` 표시
 
 ## 관련 파일
 

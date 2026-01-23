@@ -1,11 +1,12 @@
 ---
 name: jikime-platform-supabase
 description: Supabase specialist covering PostgreSQL 16, pgvector, RLS, real-time subscriptions, and Edge Functions. Use when building full-stack apps with Supabase backend.
+version: 1.0.0
 tags: ["platform", "supabase", "postgresql", "realtime", "auth", "pgvector"]
 triggers:
   keywords: ["supabase", "postgresql", "RLS", "realtime", "pgvector", "수파베이스"]
   phases: ["run"]
-  agents: ["expert-backend"]
+  agents: ["backend"]
   languages: ["typescript", "sql"]
 user-invocable: false
 ---

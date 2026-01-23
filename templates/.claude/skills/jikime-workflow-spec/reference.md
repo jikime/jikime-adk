@@ -146,7 +146,7 @@ Security:
 Created: YYYY-MM-DD
 Status: Planned
 Priority: Medium
-Assigned: expert-backend
+Assigned: backend
 
 ## API Definition
 
@@ -271,9 +271,9 @@ Technical:
 **Assigned Agents**:
 - manager-ddd: DDD-based implementation
 - manager-spec: SPEC refinement and updates
-- expert-backend: Backend-specific features
-- expert-frontend: Frontend-specific features
-- expert-database: Database schema changes
+- backend: Backend-specific features
+- frontend: Frontend-specific features
+- backend: Database schema changes
 
 ### Extended Fields
 

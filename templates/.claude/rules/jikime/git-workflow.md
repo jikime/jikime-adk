@@ -147,4 +147,4 @@ Before merging PR:
 ---
 
 Version: 1.0.0
-Source: Adapted from everything-claude-code/rules/git-workflow.md (TDD → DDD)
+Source: JikiME-ADK git-workflow rules

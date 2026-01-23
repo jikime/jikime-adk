@@ -17,9 +17,9 @@ SPEC-First DDD is JikiME-ADK's development methodology combining:
 
 Three-Phase Workflow:
 ```
-Phase 1: SPEC → spec-builder → .jikime/specs/SPEC-XXX/spec.md
-Phase 2: DDD  → ddd-implementer → Code + Tests (≥85% coverage)
-Phase 3: Docs → docs-manager → API docs + diagrams
+Phase 1: SPEC → manager-spec → .jikime/specs/SPEC-XXX/spec.md
+Phase 2: DDD  → manager-ddd → Code + Tests (≥85% coverage)
+Phase 3: Docs → manager-docs → API docs + diagrams
 ```
 
 Token Budget: SPEC 30K | DDD 180K | Docs 40K | Total 250K
@@ -50,7 +50,7 @@ Workflow:
 # 1. Generate SPEC
 /jikime:1-plan "Implement user authentication with JWT tokens"
 
-# 2. spec-builder creates:
+# 2. manager-spec creates:
 .jikime/specs/SPEC-001/
     spec.md           # EARS format requirements
     acceptance.md     # Acceptance criteria
@@ -135,7 +135,7 @@ Workflow:
 # 1. Generate documentation
 /jikime:3-sync SPEC-001
 
-# 2. docs-manager creates:
+# 2. manager-docs creates:
 .jikime/specs/SPEC-001/
     docs/
         api.md           # API reference
@@ -158,10 +158,10 @@ For comprehensive implementation patterns including MFA examples, iterative SPEC
 ## Works Well With
 
 Agents:
-- spec-builder - EARS format SPEC generation
-- ddd-implementer - ANALYZE-PRESERVE-IMPROVE execution
-- quality-gate - TRUST 5 validation
-- docs-manager - Documentation generation
+- manager-spec - EARS format SPEC generation
+- manager-ddd - ANALYZE-PRESERVE-IMPROVE execution
+- manager-quality - TRUST 5 validation
+- manager-docs - Documentation generation
 
 Skills:
 - jikime-workflow-testing - Test frameworks

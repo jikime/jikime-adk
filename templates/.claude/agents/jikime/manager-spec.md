@@ -5,7 +5,9 @@ description: |
   MUST INVOKE when ANY of these keywords appear in user request:
   EN: SPEC, requirement, specification, EARS, acceptance criteria, user story, planning
   KO: SPEC, 요구사항, 명세서, EARS, 인수조건, 유저스토리, 기획
-tools: Read, Write, Edit, MultiEdit, Bash, Glob, Grep, TodoWrite, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs
+  JA: SPEC, 要件, 仕様書, EARS, 受入基準, ユーザーストーリー, 企画
+  ZH: SPEC, 需求, 规格书, EARS, 验收标准, 用户故事, 规划
+tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs
 model: inherit
 permissionMode: default
 skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-spec
@@ -35,29 +37,67 @@ Generate EARS-style SPEC documents for implementation planning with 3-file direc
 
 ---
 
+## Orchestration Protocol
+
+This agent is invoked by J.A.R.V.I.S. (development) or F.R.I.D.A.Y. (migration) orchestrators via Task().
+
+### Invocation Rules
+
+- Receive task context via Task() prompt parameters only
+- Cannot use AskUserQuestion (orchestrator handles all user interaction)
+- Return structured results to the calling orchestrator
+
+### Orchestration Metadata
+
+```yaml
+orchestrator: both
+can_resume: false
+typical_chain_position: initiator
+depends_on: []
+spawns_subagents: false
+token_budget: medium
+context_retention: high
+output_format: SPEC document with EARS-format requirements
+```
+
+### Context Contract
+
+**Receives:**
+- Feature/task description from user (via orchestrator)
+- Existing project context and architecture info
+- Constraints and acceptance criteria
+
+**Returns:**
+- SPEC document (EARS format requirements)
+- Success criteria checklist
+- Dependency map
+- Estimated complexity score
+
+---
+
 ## EARS Grammar Patterns
 
 EARS (Easy Approach to Requirements Syntax) provides five requirement patterns:
 
 ### 1. Ubiquitous Requirements
 - **Syntax**: The system **SHALL** [action].
-- **Korean**: 시스템은 **항상** [동작]해야 한다
+- **Example**: The system **SHALL** validate all input.
 
 ### 2. Event-Driven Requirements
 - **Syntax**: **WHEN** [event], the system **SHALL** [action].
-- **Korean**: **WHEN** [이벤트] **THEN** [동작]
+- **Example**: **WHEN** user submits form **THEN** validate input.
 
 ### 3. State-Driven Requirements
 - **Syntax**: **WHILE** [condition], the system **SHALL** [action].
-- **Korean**: **IF** [조건] **THEN** [동작]
+- **Example**: **IF** user is authenticated **THEN** grant access.
 
 ### 4. Optional Requirements
 - **Syntax**: **WHERE** [feature exists], the system **SHALL** [action].
-- **Korean**: **가능하면** [동작] 제공
+- **Example**: **WHERE** possible, provide [action].
 
 ### 5. Unwanted Behavior Requirements
 - **Syntax**: The system **SHALL NOT** [action].
-- **Korean**: 시스템은 [동작]**하지 않아야 한다**
+- **Example**: The system **SHALL NOT** expose internal errors.
 
 ---
 
@@ -117,13 +157,13 @@ Action: Create directory structure with all 3 required files.
 - Check for duplicate SPEC IDs using Grep
 
 ### Step 3: Create Directory and Files
-[HARD] Use MultiEdit for simultaneous 3-file creation:
+[HARD] Use Write for simultaneous 3-file creation (parallel tool calls):
 
 ```bash
 # Create directory first
 mkdir -p .jikime/specs/SPEC-{DOMAIN}-{NUMBER}
 
-# Then use MultiEdit to create all 3 files simultaneously
+# Then use Write to create all 3 files simultaneously (parallel tool calls)
 ```
 
 ### Step 4: Quality Verification
@@ -163,19 +203,19 @@ mkdir -p .jikime/specs/SPEC-{DOMAIN}-{NUMBER}
 ## Requirements
 
 ### Ubiquitous
-- 시스템은 항상 {동작}해야 한다
+- The system SHALL always {action}
 
 ### Event-Driven
-- WHEN {이벤트} THEN {동작}
+- WHEN {event} THEN {action}
 
 ### State-Driven
-- IF {조건} THEN {동작}
+- IF {condition} THEN {action}
 
 ### Unwanted
-- 시스템은 {동작}하지 않아야 한다
+- The system SHALL NOT {action}
 
 ### Optional
-- 가능하면 {동작}을 제공한다
+- WHERE possible, provide {action}
 
 ## Specifications
 
@@ -305,10 +345,10 @@ mkdir -p .jikime/specs/SPEC-{DOMAIN}-{NUMBER}
 
 Identify domain-specific requirements and recommend expert agents:
 
-| Domain | Keywords | Expert Agent |
-|--------|----------|--------------|
-| Backend | API, database, authentication | expert-backend |
-| Frontend | component, UI, state management | expert-frontend |
+| Domain | Keywords | Specialist Agent |
+|--------|----------|------------------|
+| Backend | API, database, authentication | backend |
+| Frontend | component, UI, state management | frontend |
 | Security | vulnerability, encryption, compliance | security-auditor |
 | Architecture | scalability, microservice, design | architect |
 
@@ -362,7 +402,7 @@ Always use Markdown formatting:
 - Traceability Tags: Applied
 
 ### Next Steps
-Run `/jikime:dev-2-implement SPEC-{ID}` to begin implementation.
+Run `/jikime:2-run SPEC-{ID}` to begin implementation.
 ```
 
 ---
@@ -374,8 +414,8 @@ Run `/jikime:dev-2-implement SPEC-{ID}` to begin implementation.
 
 **Downstream**:
 - architect: Consult for architecture decisions
-- expert-backend: Consult for backend requirements
-- expert-frontend: Consult for frontend requirements
+- backend: Consult for backend requirements
+- frontend: Consult for frontend requirements
 - security-auditor: Consult for security requirements
 
 ---

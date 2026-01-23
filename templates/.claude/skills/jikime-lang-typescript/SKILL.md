@@ -1,11 +1,12 @@
 ---
 name: jikime-lang-typescript
 description: TypeScript 5.9+ development specialist covering React 19, Next.js 16 App Router, type-safe APIs with tRPC, Zod validation, and modern TypeScript patterns. Use when developing TypeScript applications, React components, Next.js pages, or type-safe APIs.
+version: 1.0.0
 tags: ["language", "typescript", "react", "nextjs", "trpc", "zod", "web"]
 triggers:
   keywords: ["typescript", "react", "nextjs", "trpc", "zod", "타입스크립트"]
   phases: ["run"]
-  agents: ["expert-frontend", "expert-backend"]
+  agents: ["frontend", "backend"]
   languages: ["typescript"]
 user-invocable: false
 allowed-tools:
@@ -136,7 +137,7 @@ For TypeScript documentation, use microsoft/TypeScript with decorators satisfies
 - jikime-library-shadcn for component library integration
 - jikime-workflow-testing for testing strategies and patterns
 - jikime-foundation-quality for code quality standards
-- jikime-essentials-debug for debugging TypeScript applications
+- jikime-workflow-testing for debugging TypeScript applications
 
 ---
 

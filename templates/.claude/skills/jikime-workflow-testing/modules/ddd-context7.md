@@ -322,8 +322,8 @@ Implement watch mode for automatic test execution:
 | Agent | DDD Role |
 |-------|----------|
 | manager-ddd | Orchestrates DDD cycle |
-| expert-testing | Creates characterization tests |
-| expert-refactoring | Implements improvements |
+| test-guide | Creates characterization tests |
+| refactorer | Implements improvements |
 | manager-quality | Validates behavior preservation |
 
 ---

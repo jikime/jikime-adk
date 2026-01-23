@@ -1,11 +1,12 @@
 ---
 name: jikime-workflow-testing
 description: Comprehensive development workflow specialist combining DDD, debugging, performance optimization, code review, PR review, and quality assurance into unified development workflows
+version: 1.0.0
 tags: ["workflow", "testing", "quality", "coverage", "vitest", "playwright"]
 triggers:
   keywords: ["test", "testing", "coverage", "vitest", "playwright", "jest", "테스트", "QA"]
   phases: ["run", "sync"]
-  agents: ["expert-testing", "manager-quality"]
+  agents: ["test-guide", "manager-quality"]
   languages: []
 user-invocable: false
 allowed-tools:

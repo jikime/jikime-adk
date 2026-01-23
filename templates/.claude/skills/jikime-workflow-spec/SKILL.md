@@ -1,6 +1,7 @@
 ---
 name: jikime-workflow-spec
 description: SPEC workflow orchestration with EARS format, requirement clarification, and Plan-Run-Sync integration for JikiME-ADK development methodology
+version: 1.0.0
 tags: ["workflow", "spec", "ears", "requirements", "planning"]
 triggers:
   keywords: ["SPEC", "requirement", "EARS", "specification", "planning", "요구사항"]
@@ -49,11 +50,11 @@ When to Use:
 - Quality assurance and validation planning
 
 Quick Commands:
-- Create new SPEC: /jikime:dev-1-plan "user authentication system"
-- Create SPEC with domain: /jikime:dev-1-plan --domain AUTH "JWT login"
-- Create parallel SPECs with Worktrees: /jikime:dev-1-plan "login feature" "signup feature" --worktree
-- Create SPEC with new branch: /jikime:dev-1-plan "payment processing" --branch
-- Use existing SPEC: /jikime:dev-1-plan SPEC-AUTH-001
+- Create new SPEC: /jikime:1-plan "user authentication system"
+- Create SPEC with domain: /jikime:1-plan --domain AUTH "JWT login"
+- Create parallel SPECs with Worktrees: /jikime:1-plan "login feature" "signup feature" --worktree
+- Create SPEC with new branch: /jikime:1-plan "payment processing" --branch
+- Use existing SPEC: /jikime:1-plan SPEC-AUTH-001
 
 ---
 
@@ -178,9 +179,9 @@ Step 4 - Test Scenario Creation:
 - Edge Cases: Boundary conditions and corner cases
 - Security Cases: Injection attacks, privilege escalation attempts
 
-### Plan-Implement-Test-Review Workflow Integration
+### Plan-Implement-Test-Sync Workflow Integration
 
-PLAN Phase (/jikime:dev-1-plan):
+PLAN Phase (/jikime:1-plan):
 - manager-spec agent analyzes user input
 - EARS format requirements generation
 - Requirement clarification with user interaction
@@ -188,24 +189,24 @@ PLAN Phase (/jikime:dev-1-plan):
 - Git branch creation (optional --branch flag)
 - Git Worktree setup (optional --worktree flag)
 
-IMPLEMENT Phase (/jikime:dev-2-implement):
+IMPLEMENT Phase (/jikime:2-run):
 - manager-ddd agent loads SPEC document
 - ANALYZE-PRESERVE-IMPROVE DDD cycle execution
 - jikime-workflow-testing skill reference for test patterns
-- Domain Expert agent delegation (expert-backend, expert-frontend, etc.)
+- Domain Expert agent delegation (backend, frontend, etc.)
 - Quality validation through manager-quality agent
 
-TEST Phase (/jikime:dev-3-test):
+TEST Phase (/jikime:test):
 - Test execution based on acceptance.md criteria
 - Given-When-Then scenario verification
 - Quality gate validation
 - Coverage and performance checks
 
-REVIEW Phase (/jikime:dev-4-review):
-- Code review against spec.md requirements
+SYNC Phase (/jikime:3-sync):
 - Documentation updates and synchronization
 - CHANGELOG entry creation
 - Version control commit with SPEC reference
+- SPEC status update and closure
 
 ### Parallel Development with Git Worktree
 
@@ -324,7 +325,7 @@ Validation Checklist:
 - jikime-foundation-core: SPEC-First DDD methodology and TRUST 5 framework
 - jikime-workflow-testing: DDD implementation and test automation
 - jikime-workflow-project: Project initialization and configuration
-- jikime-worktree: Git Worktree management for parallel development
+- jikime-workflow-worktree: Git Worktree management for parallel development
 - manager-spec: SPEC creation and requirement analysis agent
 - manager-ddd: DDD implementation based on SPEC requirements
 - manager-quality: TRUST 5 quality validation and gate enforcement
@@ -332,16 +333,16 @@ Validation Checklist:
 ### Integration Examples
 
 Sequential Workflow:
-- Step 1 PLAN: /jikime:dev-1-plan "user authentication system"
-- Step 2 IMPLEMENT: /jikime:dev-2-implement SPEC-AUTH-001
-- Step 3 TEST: /jikime:dev-3-test SPEC-AUTH-001
-- Step 4 REVIEW: /jikime:dev-4-review SPEC-AUTH-001
+- Step 1 PLAN: /jikime:1-plan "user authentication system"
+- Step 2 IMPLEMENT: /jikime:2-run SPEC-AUTH-001
+- Step 3 TEST: /jikime:test SPEC-AUTH-001
+- Step 4 SYNC: /jikime:3-sync SPEC-AUTH-001
 
 Parallel Workflow:
-- Create multiple SPECs: /jikime:dev-1-plan "backend API" "frontend UI" "database schema" --worktree
-- Session 1: /jikime:dev-2-implement SPEC-API-001 (backend API)
-- Session 2: /jikime:dev-2-implement SPEC-UI-001 (frontend UI)
-- Session 3: /jikime:dev-2-implement SPEC-DB-001 (database schema)
+- Create multiple SPECs: /jikime:1-plan "backend API" "frontend UI" "database schema" --worktree
+- Session 1: /jikime:2-run SPEC-API-001 (backend API)
+- Session 2: /jikime:2-run SPEC-UI-001 (frontend UI)
+- Session 3: /jikime:2-run SPEC-DB-001 (database schema)
 
 ### Token Management
 
@@ -360,4 +361,4 @@ Context Optimization:
 
 Version: 2.0.0 (3-File SPEC Structure)
 Last Updated: 2026-01-22
-Integration Status: Complete - Full Plan-Implement-Test-Review workflow with 3-file SPEC structure
+Integration Status: Complete - Full Plan-Implement-Test-Sync workflow with 3-file SPEC structure

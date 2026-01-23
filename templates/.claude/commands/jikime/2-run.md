@@ -16,7 +16,7 @@ model: inherit
 ## Essential Files
 
 @.jikime/config/config.yaml
-@.jikime/config/sections/quality.yaml
+@.jikime/config/quality.yaml
 @.jikime/project/product.md
 @.jikime/project/structure.md
 @.jikime/project/tech.md

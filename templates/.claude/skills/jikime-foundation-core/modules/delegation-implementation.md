@@ -24,11 +24,11 @@ class ContextManager:
         """Prepare optimized context for specific agent."""
 
         context_requirements = {
-            "code-backend": ["spec_id", "api_design", "database_schema"],
-            "code-frontend": ["spec_id", "api_endpoints", "ui_requirements"],
-            "security-expert": ["spec_id", "threat_model", "security_requirements"],
-            "core-quality": ["spec_id", "code_summary", "test_strategy"],
-            "workflow-docs": ["spec_id", "api_spec", "code_summary"]
+            "backend": ["spec_id", "api_design", "database_schema"],
+            "frontend": ["spec_id", "api_endpoints", "ui_requirements"],
+            "security-auditor": ["spec_id", "threat_model", "security_requirements"],
+            "manager-quality": ["spec_id", "code_summary", "test_strategy"],
+            "manager-docs": ["spec_id", "api_spec", "code_summary"]
         }
 
         required_fields = context_requirements.get(agent_type, [])
@@ -75,11 +75,11 @@ full_data = {
     "database_schema": {...}
 }
 
-backend_context = context_manager.prepare_context(full_data, "code-backend")
+backend_context = context_manager.prepare_context(full_data, "backend")
 # Result: Only spec_id, api_design, database_schema (~25K tokens)
 
 result = await Task(
-    subagent_type="code-backend",
+    subagent_type="backend",
     prompt="Implement backend",
     context=backend_context
 )
@@ -95,7 +95,7 @@ async def implement_feature_sequential(feature_description: str):
 
     # Phase 1: SPEC Generation
     spec_result = await Task(
-        subagent_type="workflow-spec",
+        subagent_type="manager-spec",
         prompt=f"Generate SPEC for: {feature_description}",
         context={
             "feature": feature_description,
@@ -107,7 +107,7 @@ async def implement_feature_sequential(feature_description: str):
 
     # Phase 2: API Design
     api_result = await Task(
-        subagent_type="api-designer",
+        subagent_type="backend",
         prompt="Design REST API for feature",
         context={
             "spec_id": spec_result.spec_id,
@@ -118,7 +118,7 @@ async def implement_feature_sequential(feature_description: str):
 
     # Phase 3: Backend Implementation
     backend_result = await Task(
-        subagent_type="code-backend",
+        subagent_type="backend",
         prompt="Implement backend with DDD",
         context={
             "spec_id": spec_result.spec_id,
@@ -129,7 +129,7 @@ async def implement_feature_sequential(feature_description: str):
 
     # Phase 4: Frontend Implementation
     frontend_result = await Task(
-        subagent_type="code-frontend",
+        subagent_type="frontend",
         prompt="Implement UI components",
         context={
             "spec_id": spec_result.spec_id,
@@ -140,7 +140,7 @@ async def implement_feature_sequential(feature_description: str):
 
     # Phase 5: Integration Testing
     integration_result = await Task(
-        subagent_type="core-quality",
+        subagent_type="manager-quality",
         prompt="Run integration tests",
         context={
             "spec_id": spec_result.spec_id,
@@ -151,7 +151,7 @@ async def implement_feature_sequential(feature_description: str):
 
     # Phase 6: Documentation
     docs_result = await Task(
-        subagent_type="workflow-docs",
+        subagent_type="manager-docs",
         prompt="Generate comprehensive documentation",
         context={
             "spec_id": spec_result.spec_id,
@@ -181,18 +181,18 @@ def sequential_with_token_management():
     """Sequential flow with strategic /clear execution."""
 
     # Phase 1: Heavy context (SPEC generation)
-    spec = Task(subagent_type="workflow-spec", ...)  # ~30K tokens
+    spec = Task(subagent_type="manager-spec", ...)  # ~30K tokens
     execute_clear()  # Save 45-50K tokens
 
     # Phase 2: Fresh context (implementation)
     impl = Task(
-        subagent_type="workflow-ddd",
+        subagent_type="manager-ddd",
         context={"spec_id": spec.id}  # Minimal context
     )  # ~80K tokens
 
     # Phase 3: Final phase
     docs = Task(
-        subagent_type="workflow-docs",
+        subagent_type="manager-docs",
         context={"spec_id": spec.id, "summary": impl.summary}
     )  # ~25K tokens
 
@@ -208,7 +208,7 @@ async def advanced_conditional_routing(request: dict):
     """Multi-criteria conditional routing."""
 
     analysis = await Task(
-        subagent_type="plan",
+        subagent_type="planner",
         prompt="Analyze request complexity",
         context=request
     )
@@ -231,18 +231,18 @@ async def advanced_conditional_routing(request: dict):
 async def sequential_secure_workflow(analysis):
     """High-complexity security workflow."""
     security_review = await Task(
-        subagent_type="security-expert",
+        subagent_type="security-auditor",
         prompt="Security architecture review"
     )
 
     implementation = await Task(
-        subagent_type="code-backend",
+        subagent_type="backend",
         prompt="Implement with security controls",
         context={"security_requirements": security_review}
     )
 
     penetration_test = await Task(
-        subagent_type="security-expert",
+        subagent_type="security-auditor",
         prompt="Penetration testing",
         context={"implementation": implementation}
     )

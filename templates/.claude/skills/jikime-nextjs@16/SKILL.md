@@ -5,7 +5,7 @@ tags: ["framework", "nextjs", "version", "use-cache", "ppr", "updateTag"]
 triggers:
   keywords: ["nextjs 16", "next.js 16", "use cache", "PPR", "updateTag", "cacheLife", "cacheTag"]
   phases: ["run"]
-  agents: ["expert-frontend"]
+  agents: ["frontend"]
   languages: ["typescript"]
 type: version
 framework: nextjs

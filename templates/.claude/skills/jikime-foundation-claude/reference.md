@@ -22,15 +22,15 @@ Task Invocation:
 - Returns structured result object for chaining
 
 Available Sub-agent Types:
-- `spec-builder`: EARS format specification generation
-- `ddd-implementer`: ANALYZE-PRESERVE-IMPROVE DDD execution
-- `backend-expert`: Backend architecture and API development
-- `frontend-expert`: Frontend UI implementation
-- `security-expert`: Security analysis and validation
-- `docs-manager`: Technical documentation generation
-- `quality-gate`: TRUST 5 validation
-- `agent-factory`: Create new sub-agents
-- `skill-factory`: Create compliant skills
+- `manager-spec`: EARS format specification generation
+- `manager-ddd`: ANALYZE-PRESERVE-IMPROVE DDD execution
+- `backend`: Backend architecture and API development
+- `frontend`: Frontend UI implementation
+- `security-auditor`: Security analysis and validation
+- `manager-docs`: Technical documentation generation
+- `manager-quality`: TRUST 5 validation
+- `agent-builder`: Create new sub-agents
+- `skill-builder`: Create compliant skills
 
 ### Command Parameter API
 
@@ -201,7 +201,7 @@ Solutions:
 - `jikime-foundation-core`: Core execution patterns and SPEC workflow
 - `jikime-foundation-context`: Token budget and session management
 - `jikime-workflow-project`: Project initialization and configuration
-- `jikime-docs-generation`: Documentation automation
+- `jikime-docs-generation`: Documentation generation
 
 ---
 

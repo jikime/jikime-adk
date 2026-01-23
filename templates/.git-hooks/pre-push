@@ -226,10 +226,10 @@ echo -e "${GREEN}✅ Security check passed${NC}"
 
 echo "🔄 [Phase 2] Checking GitFlow Rules..."
 
-# Check team mode from .moai/config.json
+# Check team mode from .jikime/config.json
 is_team_mode() {
-    if [ -f ".moai/config.json" ]; then
-        grep -q '"mode".*:.*"team"' ".moai/config.json" 2>/dev/null
+    if [ -f ".jikime/config.json" ]; then
+        grep -q '"mode".*:.*"team"' ".jikime/config.json" 2>/dev/null
         return $?
     fi
     return 1

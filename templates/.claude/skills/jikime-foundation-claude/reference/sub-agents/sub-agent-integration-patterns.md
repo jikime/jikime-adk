@@ -35,13 +35,13 @@ def sequential_workflow(user_request):
 
  # Phase 1: Specification
  spec_result = Task(
- subagent_type="workflow-spec",
+ subagent_type="manager-spec",
  prompt=f"Create specification for: {user_request}"
  )
 
  # Phase 2: Implementation (passes spec as context)
  implementation_result = Task(
- subagent_type="workflow-ddd",
+ subagent_type="manager-ddd",
  prompt="Implement from specification",
  context={
  "specification": spec_result,
@@ -51,7 +51,7 @@ def sequential_workflow(user_request):
 
  # Phase 3: Quality Validation
  quality_result = Task(
- subagent_type="core-quality",
+ subagent_type="manager-quality",
  prompt="Validate implementation quality",
  context={
  "implementation": implementation_result,
@@ -61,7 +61,7 @@ def sequential_workflow(user_request):
 
  # Phase 4: Documentation
  docs_result = Task(
- subagent_type="workflow-docs",
+ subagent_type="manager-docs",
  prompt="Generate documentation",
  context={
  "implementation": implementation_result,
@@ -117,25 +117,25 @@ def parallel_workflow(project_requirements):
  # Call multiple Task() for automatic parallel execution
  # Claude Code executes up to 10 Tasks concurrently
  frontend_design = Task(
- subagent_type="code-frontend",
+ subagent_type="frontend",
  prompt="Design frontend architecture",
  context={"requirements": project_requirements}
  )
 
  backend_design = Task(
- subagent_type="code-backend",
+ subagent_type="backend",
  prompt="Design backend architecture",
  context={"requirements": project_requirements}
  )
 
  database_design = Task(
- subagent_type="data-database",
+ subagent_type="backend",
  prompt="Design database schema",
  context={"requirements": project_requirements}
  )
 
  security_analysis = Task(
- subagent_type="security-expert",
+ subagent_type="security-auditor",
  prompt="Security threat modeling",
  context={"requirements": project_requirements}
  )
@@ -145,7 +145,7 @@ def parallel_workflow(project_requirements):
 
  # Integration phase (runs after parallel tasks complete)
  integration_result = Task(
- subagent_type="integration-specialist",
+ subagent_type="manager-quality",
  prompt="Integrate component designs",
  context={
  "frontend_design": frontend_design,
@@ -197,16 +197,16 @@ class ConditionalWorkflow:
  def __init__(self):
  self.analysis_agents = {
  "code_analysis": "code-analyst",
- "security_analysis": "security-expert",
- "performance_analysis": "performance-engineer"
+ "security_analysis": "security-auditor",
+ "performance_analysis": "optimizer"
  }
 
  self.resolution_agents = {
- "syntax_error": "format-expert",
- "logic_error": "support-debug",
- "security_vulnerability": "security-expert",
- "performance_issue": "performance-engineer",
- "integration_error": "integration-specialist"
+ "syntax_error": "debugger",
+ "logic_error": "debugger",
+ "security_vulnerability": "security-auditor",
+ "performance_issue": "optimizer",
+ "integration_error": "manager-quality"
  }
 
  def analyze_and_resolve(self, error_context):
@@ -214,7 +214,7 @@ class ConditionalWorkflow:
 
  # Phase 1: Analysis
  analysis_result = Task(
- subagent_type="error-analyst",
+ subagent_type="debugger",
  prompt="Analyze error and classify problem type",
  context={"error": error_context}
  )
@@ -246,7 +246,7 @@ class ConditionalWorkflow:
  """Select appropriate resolution agent based on problem type."""
  return self.resolution_agents.get(
  problem_type,
- "support-debug" # Default fallback
+ "debugger" # Default fallback
  )
 
 # Usage example
@@ -283,7 +283,7 @@ name: development-orchestrator
 description: Orchestrate complete software development workflow from specification to deployment. Use PROACTIVELY for complex multi-component projects requiring coordination across multiple phases and teams.
 tools: Read, Write, Edit, Task
 model: sonnet
-skills: jikime-core-workflow, jikime-project-manager, jikime-foundation-quality
+skills: jikime-foundation-core, jikime-workflow-project, jikime-foundation-quality
 ---
 
 # Development Orchestrator
@@ -305,14 +305,14 @@ Focus Areas: End-to-end process automation, team coordination, quality assurance
 4. Configure quality gates and validation
 
 ### Phase 2: Development Coordination
-1. Coordinate specification creation with workflow-spec
-2. Manage implementation with workflow-ddd
-3. Oversee quality validation with core-quality
-4. Handle documentation generation with workflow-docs
+1. Coordinate specification creation with manager-spec
+2. Manage implementation with manager-ddd
+3. Oversee quality validation with manager-quality
+4. Handle documentation generation with manager-docs
 
 ### Phase 3: Integration and Deployment
 1. Coordinate component integration
-2. Manage deployment processes with devops-expert
+2. Manage deployment processes with devops
 3. Handle testing and validation
 4. Monitor production deployment
 
@@ -341,25 +341,25 @@ class DevelopmentOrchestrator:
  def __init__(self):
  self.workflow_phases = {
  'specification': {
- 'agent': 'workflow-spec',
+ 'agent': 'manager-spec',
  'inputs': ['requirements', 'stakeholders'],
  'outputs': ['specification', 'acceptance_criteria'],
  'dependencies': []
  },
  'implementation': {
- 'agent': 'workflow-ddd',
+ 'agent': 'manager-ddd',
  'inputs': ['specification'],
  'outputs': ['code', 'tests'],
  'dependencies': ['specification']
  },
  'validation': {
- 'agent': 'core-quality',
+ 'agent': 'manager-quality',
  'inputs': ['code', 'tests', 'specification'],
  'outputs': ['quality_report'],
  'dependencies': ['implementation']
  },
  'documentation': {
- 'agent': 'workflow-docs',
+ 'agent': 'manager-docs',
  'inputs': ['code', 'specification', 'quality_report'],
  'outputs': ['documentation'],
  'dependencies': ['validation']
@@ -434,9 +434,9 @@ class ErrorHandler:
  'strategy': 'retry_with_alternative',
  'max_retries': 3,
  'fallback_agents': {
- 'workflow-spec': 'requirements-analyst',
- 'workflow-ddd': 'code-developer',
- 'core-quality': 'manual-review'
+ 'manager-spec': 'requirements-analyst',
+ 'manager-ddd': 'code-developer',
+ 'manager-quality': 'manual-review'
  }
  },
  'dependency_failure': {
@@ -767,7 +767,7 @@ name: full-stack-specialist
 description: Combine frontend, backend, database, and DevOps expertise for end-to-end application development. Use PROACTIVELY for complete application development requiring multiple domain expertise.
 tools: Read, Write, Edit, Bash, Grep, Glob, Task, MultiEdit, WebFetch
 model: sonnet
-skills: jikime-domain-backend, jikime-domain-frontend, jikime-domain-database, jikime-devops-expert
+skills: jikime-domain-backend, jikime-domain-frontend, jikime-domain-database, jikime-workflow-project
 ---
 
 # Full-Stack Development Specialist
@@ -783,11 +783,11 @@ Integration Strategy: Coordinate specialized agents for domain-specific tasks
 ## Agent Delegation Patterns
 
 ### When to Delegate
-- Frontend Complexity: Delegate to code-frontend
-- Backend Architecture: Delegate to code-backend
-- Database Design: Delegate to data-database
-- Security Analysis: Delegate to security-expert
-- Performance Optimization: Delegate to performance-engineer
+- Frontend Complexity: Delegate to frontend
+- Backend Architecture: Delegate to backend
+- Database Design: Delegate to backend
+- Security Analysis: Delegate to security-auditor
+- Performance Optimization: Delegate to optimizer
 
 ### Delegation Examples
 ```python
@@ -803,28 +803,28 @@ def handle_full_stack_request(request):
 
  if domain_analysis['frontend_required']:
  results['frontend'] = Task(
- subagent_type="code-frontend",
+ subagent_type="frontend",
  prompt="Design and implement frontend components",
  context={"request": request, "analysis": domain_analysis}
  )
 
  if domain_analysis['backend_required']:
  results['backend'] = Task(
- subagent_type="code-backend",
+ subagent_type="backend",
  prompt="Design and implement backend API",
  context={"request": request, "analysis": domain_analysis, "frontend": results.get('frontend')}
  )
 
  if domain_analysis['database_required']:
  results['database'] = Task(
- subagent_type="data-database",
+ subagent_type="backend",
  prompt="Design database schema and optimization",
  context={"request": request, "analysis": domain_analysis, "frontend": results.get('frontend'), "backend": results.get('backend')}
  )
 
  # Integrate results
  integration_result = Task(
- subagent_type="integration-specialist",
+ subagent_type="manager-quality",
  prompt="Integrate all components into cohesive application",
  context={"results": results, "request": request}
  )
@@ -844,15 +844,15 @@ Dynamic Agent Selection:
 class AdaptiveWorkflowAgent:
  def __init__(self):
  self.agent_capabilities = {
- 'workflow-spec': {
+ 'manager-spec': {
  'complexity_threshold': 7,
  'task_types': ['specification', 'requirements', 'planning']
  },
- 'workflow-ddd': {
+ 'manager-ddd': {
  'complexity_threshold': 5,
  'task_types': ['implementation', 'development', 'coding']
  },
- 'core-quality': {
+ 'manager-quality': {
  'complexity_threshold': 3,
  'task_types': ['validation', 'testing', 'quality']
  }

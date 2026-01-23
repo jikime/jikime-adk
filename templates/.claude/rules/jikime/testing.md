@@ -261,4 +261,4 @@ Before committing:
 
 Version: 1.0.0
 Methodology: DDD (ANALYZE-PRESERVE-IMPROVE)
-Source: Adapted from everything-claude-code (TDD → DDD)
+Source: JikiME-ADK testing rules (DDD methodology)

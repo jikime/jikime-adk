@@ -5,7 +5,7 @@ tags: ["framework", "nextjs", "version", "async-params", "turbopack", "react-19"
 triggers:
   keywords: ["nextjs 15", "next.js 15", "async params", "turbopack", "react 19"]
   phases: ["run"]
-  agents: ["expert-frontend"]
+  agents: ["frontend"]
   languages: ["typescript"]
 type: version
 framework: nextjs

@@ -8,16 +8,16 @@ React → Next.js 16 마이그레이션 빠른 참조 가이드입니다.
 
 ```bash
 # 1단계: 분석
-/jikime:migrate-analyze "./my-app"
+/jikime:migrate-1-analyze "./my-app"
 
 # 2단계: 계획
-/jikime:migrate-to-nextjs plan my-app
+/jikime:migrate-2-plan my-app
 
 # 3단계: 스킬
-/jikime:migrate-to-nextjs skill my-app
+/jikime:migrate-2-plan --skill my-app
 
 # 4단계: 실행
-/jikime:migrate-to-nextjs run my-app --output ./out
+/jikime:migrate-3-execute my-app --output ./out
 ```
 
 ---
@@ -237,13 +237,13 @@ Fix: Add 'use client' at the top of the file
 
 ```bash
 # 백서 생성 (사전 분석)
-/jikime:migrate-analyze "./app" --whitepaper --client "Company"
+/jikime:migrate-1-analyze "./app" --whitepaper --client "Company"
 
 # 완료 보고서
-/jikime:migrate-to-nextjs run app --whitepaper-report --client "Company"
+/jikime:migrate-3-execute app --whitepaper-report --client "Company"
 
 # 커스텀 출력 경로
-/jikime:migrate-to-nextjs run app --output ./custom/path
+/jikime:migrate-3-execute app --output ./custom/path
 
 # 특정 언어로 문서 생성
 --lang ko  # 한국어

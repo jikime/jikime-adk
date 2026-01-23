@@ -1,11 +1,12 @@
 ---
 name: jikime-foundation-claude
 description: Canonical Claude Code authoring kit covering Skills, sub-agents, plugins, slash commands, hooks, memory, settings, sandboxing, headless mode, and advanced agent patterns. Use when creating Claude Code extensions or configuring Claude Code features.
+version: 1.0.0
 tags: ["foundation", "claude-code", "skills", "agents", "plugins", "hooks", "commands"]
 triggers:
   keywords: ["Claude Code", "skill", "agent", "plugin", "hook", "command", "스킬", "에이전트"]
   phases: ["plan", "run"]
-  agents: ["builder-skill", "builder-agent", "builder-command", "manager-claude-code"]
+  agents: ["skill-builder", "agent-builder", "command-builder", "manager-claude-code"]
   languages: []
 user-invocable: false
 allowed-tools:
@@ -172,11 +173,11 @@ Phase 4 Commit: Descriptive messages, logical groupings, clean history
 
 ### Essential Sub-agents
 
-- spec-builder: EARS specifications
+- manager-spec: EARS specifications
 - manager-ddd: DDD execution
-- expert-security: Security analysis
-- expert-backend: API development
-- expert-frontend: UI implementation
+- security-auditor: Security analysis
+- backend: API development
+- frontend: UI implementation
 
 ## Security Features
 

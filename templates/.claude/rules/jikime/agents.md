@@ -10,11 +10,12 @@ Commands: `/jikime:0-project`, `/jikime:1-plan`, `/jikime:2-run`, `/jikime:3-syn
 
 - Agent delegation **recommended** for complex tasks requiring specialized expertise
 - Direct tool usage **permitted** for simpler operations
-- User interaction only through Alfred using `AskUserQuestion`
+- User interaction only through J.A.R.V.I.S./F.R.I.D.A.Y. using `AskUserQuestion`
 
 ### Type B: Utility Commands
 
-Commands: `/jikime:alfred`, `/jikime:fix`, `/jikime:loop`
+**J.A.R.V.I.S. (Development)**: `/jikime:jarvis`, `/jikime:build-fix`, `/jikime:loop`, `/jikime:test`
+**F.R.I.D.A.Y. (Migration)**: `/jikime:friday`, `/jikime:migrate-*`
 
 - [HARD] **Agent delegation MANDATORY** for all implementation/fix tasks
 - Direct tool access permitted **ONLY** for diagnostics (LSP, tests, linters)
@@ -22,13 +23,6 @@ Commands: `/jikime:alfred`, `/jikime:fix`, `/jikime:loop`
 - This rule applies even after auto compact or session recovery
 
 **WHY**: Prevents quality degradation when session context is lost.
-
-### Type C: Feedback Commands
-
-Commands: `/jikime:9-feedback`
-
-- No restrictions on tool usage
-- Quality gates are optional
 
 ## Selection Decision Tree
 
@@ -40,7 +34,7 @@ Commands: `/jikime:9-feedback`
    → Use WebSearch, WebFetch, Context7 MCP tools
 
 3. Domain expertise needed?
-   → Use the expert-[domain] subagent
+   → Use the specialist subagent (backend, frontend, debugger, etc.)
 
 4. Workflow coordination needed?
    → Use the manager-[workflow] subagent
@@ -62,15 +56,15 @@ When delegating to agents:
 ### Sequential Chaining
 
 ```
-expert-debug → expert-refactoring → expert-testing
-(identify)      (implement)          (validate)
+debugger → refactorer → test-guide
+(identify)  (implement)  (validate)
 ```
 
 ### Parallel Execution
 
 ```
-expert-backend ─┬─→ Results
-expert-frontend ─┘   (simultaneous)
+backend ─┬─→ Results
+frontend ─┘  (simultaneous)
 ```
 
 ## Checklist

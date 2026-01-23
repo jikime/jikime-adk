@@ -1,11 +1,12 @@
 ---
 name: jikime-library-vercel-ai-sdk
 description: Vercel AI SDK v5/v6 implementation guide with useChat, tool(), streamText, AI Elements, and ToolLoopAgent patterns. Use when building AI-powered applications with Next.js.
+version: 1.0.0
 tags: ["library", "ai", "vercel", "llm", "streaming", "useChat", "tools"]
 triggers:
   keywords: ["ai-sdk", "useChat", "streamText", "tool()", "LLM", "AI 애플리케이션"]
   phases: ["run"]
-  agents: ["expert-backend", "expert-frontend"]
+  agents: ["backend", "frontend"]
   languages: ["typescript"]
 user-invocable: false
 context: fork

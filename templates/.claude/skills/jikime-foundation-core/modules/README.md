@@ -139,8 +139,6 @@ Quick Access:
 - /jikime:1-plan (SPEC generation)
 - /jikime:2-run (DDD implementation)
 - /jikime:3-sync (Documentation)
-- /jikime:9-feedback (Improvement)
-- /jikime:99-release (Deployment)
 
 Use Cases:
 - Command workflow execution
@@ -275,13 +273,13 @@ Detailed Reference: [TRUST 5 Framework Module](modules/trust-5-framework.md)
 
 Skills:
 - jikime-foundation-core (parent skill)
-- jikime-cc-skill-factory (skill creation)
-- jikime-core-agent-factory (agent creation)
+- jikime-foundation-claude (skill creation)
+- jikime-foundation-claude (agent creation)
 
 Agents:
-- skill-factory (module generation)
-- docs-manager (documentation)
-- quality-gate (validation)
+- skill-builder (module generation)
+- manager-docs (documentation)
+- manager-quality (validation)
 
 Commands:
 - /jikime:1-plan (SPEC-First DDD)

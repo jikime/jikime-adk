@@ -126,4 +126,4 @@ Before marking work complete:
 ---
 
 Version: 1.0.0
-Source: Adapted from everything-claude-code/rules/coding-style.md
+Source: JikiME-ADK coding style rules

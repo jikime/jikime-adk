@@ -7,27 +7,27 @@ import (
 // PreviewBanners shows different banner style options
 func PreviewBanners() {
 	// Option 1: Neon Gradient Style
-	fmt.Println("\n=== Option 1: Neon Gradient Style ===\n")
+	fmt.Println("\n=== Option 1: Neon Gradient Style ===")
 	printNeonGradient()
 
 	// Option 2: Isometric 3D Style
-	fmt.Println("\n=== Option 2: Isometric 3D Style ===\n")
+	fmt.Println("\n=== Option 2: Isometric 3D Style ===")
 	printIsometric3D()
 
 	// Option 3: Glitch/Corrupted Style
-	fmt.Println("\n=== Option 3: Glitch/Corrupted Style ===\n")
+	fmt.Println("\n=== Option 3: Glitch/Corrupted Style ===")
 	printGlitch()
 
 	// Option 4: Circuit Board Style
-	fmt.Println("\n=== Option 4: Circuit Board Style ===\n")
+	fmt.Println("\n=== Option 4: Circuit Board Style ===")
 	printCircuitBoard()
 
 	// Option 5: Synthwave Retro Style
-	fmt.Println("\n=== Option 5: Synthwave Retro Style ===\n")
+	fmt.Println("\n=== Option 5: Synthwave Retro Style ===")
 	printSynthwave()
 
 	// Option 6: Matrix Digital Rain Style
-	fmt.Println("\n=== Option 6: Matrix Digital Style ===\n")
+	fmt.Println("\n=== Option 6: Matrix Digital Style ===")
 	printMatrixStyle()
 }
 

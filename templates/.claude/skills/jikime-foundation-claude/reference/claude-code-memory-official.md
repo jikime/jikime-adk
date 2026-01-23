@@ -101,13 +101,13 @@ Agent Catalog (`memory/agents.md`):
 # Agent Reference Catalog
 
 ## Planning & Specification
-- spec-builder: SPEC generation in EARS format
+- manager-spec: SPEC generation in EARS format
 - plan: Decompose complex tasks step-by-step
 
 ## Implementation
-- ddd-implementer: Execute DDD cycle (ANALYZE-PRESERVE-IMPROVE)
-- backend-expert: Backend architecture and API development
-- frontend-expert: Frontend UI component development
+- manager-ddd: Execute DDD cycle (ANALYZE-PRESERVE-IMPROVE)
+- backend: Backend architecture and API development
+- frontend: Frontend UI component development
 
 ## Usage Patterns
 - Simple tasks (1-2 files): Sequential execution
@@ -156,12 +156,11 @@ Command References (`memory/commands.md`):
 - /jikime:1-plan: Generate SPEC document
 - /jikime:2-run: Execute DDD implementation
 - /jikime:3-sync: Generate documentation
-- /jikime:9-feedback: Collect improvement feedback
 
 ## Command Execution Rules
 - After /jikime:1-plan: Execute /clear (mandatory)
 - Token threshold: Execute /clear at >150K tokens
-- Error handling: Use /jikime:9-feedback for all issues
+- Error handling: Report issues to user with details
 ```
 
 ## Memory Management Strategies

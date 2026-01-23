@@ -1,11 +1,12 @@
 ---
 name: jikime-migration-patterns-auth
 description: Authentication migration patterns for Next.js applications. Covers NextAuth v4→v5, Clerk, Auth0, Firebase Auth, and custom JWT migration.
+version: 1.0.0
 tags: ["migration", "auth", "nextauth", "clerk", "oauth", "jwt", "security"]
 triggers:
   keywords: ["auth migration", "nextauth", "clerk", "auth0", "firebase auth", "인증 마이그레이션"]
   phases: ["run"]
-  agents: ["expert-security", "expert-backend"]
+  agents: ["security-auditor", "backend"]
   languages: ["typescript"]
 type: domain
 domain: auth

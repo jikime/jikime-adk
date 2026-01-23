@@ -7,7 +7,7 @@ context: dev
 
 **Context**: @.claude/contexts/dev.md (Auto-loaded)
 
-DDD 방법론으로 코드 품질을 개선합니다.
+Improve code quality using DDD methodology.
 
 ## Usage
 

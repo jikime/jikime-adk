@@ -17,8 +17,6 @@ JikiME-ADK provides 6 core commands for SPEC-First DDD execution:
 | `/jikime:1-plan`     | SPEC generation        | Planning      |
 | `/jikime:2-run`      | DDD implementation     | Development   |
 | `/jikime:3-sync`     | Documentation sync     | Documentation |
-| `/jikime:9-feedback` | Feedback collection    | Improvement   |
-| `/jikime:99-release` | Production deployment  | Release       |
 
 Required Workflow:
 ```
@@ -27,7 +25,6 @@ Required Workflow:
 3. /clear # Clear context (REQUIRED)
 4. /jikime:2-run SPEC-001 # Implement
 5. /jikime:3-sync SPEC-001 # Document
-6. /jikime:9-feedback # Improve
 ```
 
 Critical Rule: Execute `/clear` after `/jikime:1-plan` (saves 45-50K tokens)
@@ -40,7 +37,7 @@ Critical Rule: Execute `/clear` after `/jikime:1-plan` (saves 45-50K tokens)
 
 Purpose: Initialize project structure and generate configuration
 
-Agent Delegation: `workflow-project`
+Agent Delegation: `manager-project`
 
 Usage:
 ```bash
@@ -65,7 +62,7 @@ Next Step: Ready for SPEC generation via `/jikime:1-plan`
 Example:
 ```
 User: /jikime:0-project
-Alfred: Project initialized successfully.
+Orchestrator: Project initialized successfully.
  - .jikime/config/config.yaml created
  - Git workflow set to 'manual' mode
  Ready for SPEC generation.
@@ -77,7 +74,7 @@ Alfred: Project initialized successfully.
 
 Purpose: Generate SPEC document in EARS format
 
-Agent Delegation: `workflow-spec`
+Agent Delegation: `manager-spec`
 
 Usage:
 ```bash
@@ -109,7 +106,7 @@ CRITICAL: Execute `/clear` immediately after completion
 Example:
 ```
 User: /jikime:1-plan "Implement user authentication endpoint (JWT)"
-Alfred: SPEC-001 generated successfully.
+Orchestrator: SPEC-001 generated successfully.
  Location: .jikime/specs/SPEC-001/spec.md
 
  IMPORTANT: Execute /clear now to free 45-50K tokens.
@@ -121,7 +118,7 @@ Alfred: SPEC-001 generated successfully.
 
 Purpose: Execute ANALYZE-PRESERVE-IMPROVE cycle
 
-Agent Delegation: `workflow-ddd`
+Agent Delegation: `manager-ddd`
 
 Usage:
 ```bash
@@ -165,7 +162,7 @@ Requirement: Test coverage ≥ 85% (TRUST 5)
 Example:
 ```
 User: /jikime:2-run SPEC-001
-Alfred: DDD implementation cycle started for SPEC-001.
+Orchestrator: DDD implementation cycle started for SPEC-001.
 
  RED: 12 failing tests written
  GREEN: Implementation complete, all tests passing
@@ -181,7 +178,7 @@ Alfred: DDD implementation cycle started for SPEC-001.
 
 Purpose: Auto-generate API documentation and project artifacts
 
-Agent Delegation: `workflow-docs`
+Agent Delegation: `manager-docs`
 
 Usage:
 ```bash
@@ -204,70 +201,13 @@ Output:
 Example:
 ```
 User: /jikime:3-sync SPEC-001
-Alfred: Documentation synchronized for SPEC-001.
+Orchestrator: Documentation synchronized for SPEC-001.
 
  Generated:
  - API documentation: .jikime/docs/SPEC-001/api.yaml
  - Architecture diagram: .jikime/docs/SPEC-001/architecture.md
  - Completion report: .jikime/docs/SPEC-001/report.md
 ```
-
----
-
-### `/jikime:9-feedback` - Improvement Feedback Collection
-
-Purpose: Error analysis and improvement suggestions
-
-Agent Delegation: `core-quality`
-
-Usage:
-```bash
-/jikime:9-feedback
-/jikime:9-feedback --analyze SPEC-001
-```
-
-What It Does:
-1. Analyzes errors encountered during workflow
-2. Collects improvement suggestions
-3. Reports to JikiME-ADK development team
-4. Proposes error recovery strategies
-
-Use Cases:
-- Errors: When errors occur during any workflow phase
-- Improvements: When JikiME-ADK enhancements are identified
-- Analysis: Post-implementation review
-
-Example:
-```
-User: /jikime:9-feedback
-Alfred: Collecting feedback for recent session.
-
- Errors: 2 permission issues detected
- Improvements: 1 token optimization suggestion
-
- Feedback submitted to JikiME-ADK development team.
-```
-
----
-
-### `/jikime:99-release` - Production Deployment
-
-Purpose: Production deployment workflow
-
-Agent Delegation: `infra-devops`
-
-Usage:
-```bash
-/jikime:99-release
-```
-
-What It Does:
-1. Validates all TRUST 5 quality gates
-2. Runs full test suite
-3. Builds production artifacts
-4. Deploys to production environment
-
-Note: This command is local-only and NOT synchronized to the package template. It's for local development and testing.
 
 ---
 
@@ -310,18 +250,16 @@ Each command delegates to a specific agent:
 
 | Command            | Agent              | Agent Type              |
 | ------------------ | ------------------ | ----------------------- |
-| `/jikime:0-project`  | `workflow-project` | Tier 1 (Always Active)  |
-| `/jikime:1-plan`     | `workflow-spec`    | Tier 1 (Always Active)  |
-| `/jikime:2-run`      | `workflow-ddd`     | Tier 1 (Always Active)  |
-| `/jikime:3-sync`     | `workflow-docs`    | Tier 1 (Always Active)  |
-| `/jikime:9-feedback` | `core-quality`     | Tier 2 (Auto-triggered) |
-| `/jikime:99-release` | `infra-devops`     | Tier 3 (Lazy-loaded)    |
+| `/jikime:0-project`  | `manager-project` | Tier 1 (Always Active)  |
+| `/jikime:1-plan`     | `manager-spec`    | Tier 1 (Always Active)  |
+| `/jikime:2-run`      | `manager-ddd`     | Tier 1 (Always Active)  |
+| `/jikime:3-sync`     | `manager-docs`    | Tier 1 (Always Active)  |
 
 Delegation Flow:
 ```
 User executes command
  ↓
-Alfred receives command
+Orchestrator receives command
  ↓
 Command processor agent invoked
  ↓
@@ -357,7 +295,7 @@ Common Errors:
 | "Project not initialized" | `/jikime:1-plan`         | Run `/jikime:0-project` first                 |
 | "SPEC not found"          | `/jikime:2-run SPEC-999` | Verify SPEC ID exists                       |
 | "Token limit exceeded"    | Any                    | Execute `/clear` immediately                |
-| "Test coverage < 85%"     | `/jikime:2-run`          | `core-quality` auto-generates missing tests |
+| "Test coverage < 85%"     | `/jikime:2-run`          | `manager-quality` auto-generates missing tests |
 
 Recovery Pattern:
 ```bash
@@ -421,10 +359,10 @@ Other Modules:
 - [agents-reference.md](agents-reference.md) - Agent catalog
 
 Agents:
-- [workflow-project](agents-reference.md#tier-1-command-processors) - `/jikime:0-project`
-- [workflow-spec](agents-reference.md#tier-1-command-processors) - `/jikime:1-plan`
-- [workflow-ddd](agents-reference.md#tier-1-command-processors) - `/jikime:2-run`
-- [workflow-docs](agents-reference.md#tier-1-command-processors) - `/jikime:3-sync`
+- [manager-project](agents-reference.md#tier-1-command-processors) - `/jikime:0-project`
+- [manager-spec](agents-reference.md#tier-1-command-processors) - `/jikime:1-plan`
+- [manager-ddd](agents-reference.md#tier-1-command-processors) - `/jikime:2-run`
+- [manager-docs](agents-reference.md#tier-1-command-processors) - `/jikime:3-sync`
 
 ---
 

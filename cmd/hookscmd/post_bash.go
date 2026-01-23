@@ -20,7 +20,7 @@ Features:
 - Provide review command after PR creation
 - Log CI/CD status hints
 
-Based on everything-claude-code patterns.`,
+Based on JikiME-ADK hook patterns.`,
 	RunE: runPostBash,
 }
 

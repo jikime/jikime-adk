@@ -14,6 +14,30 @@ user_welcome:
   other: "환영합니다: {{.Name}}"
 user_name_label:
   other: "사용자 이름"
+honorific_prompt:
+  other: "선호하는 호칭을 입력하세요 (선택사항, 예: 님, 선생님)"
+honorific_label:
+  other: "호칭"
+tone_preset_help:
+  other: "응답 톤 선택: [↑↓] 이동  [Enter] 선택"
+tone_preset_label:
+  other: "응답 톤"
+tone_friendly_display:
+  other: "friendly (친근)"
+tone_friendly_desc:
+  other: "따뜻하고 격려하는 말투"
+tone_professional_display:
+  other: "professional (전문)"
+tone_professional_desc:
+  other: "격식있고 간결한 비즈니스 말투"
+tone_casual_display:
+  other: "casual (캐주얼)"
+tone_casual_desc:
+  other: "편안하고 대화체 말투"
+tone_mentor_display:
+  other: "mentor (멘토)"
+tone_mentor_desc:
+  other: "교육적이고 상세한 설명"
 project_prompt:
   other: "프로젝트 이름"
 project_name_label:

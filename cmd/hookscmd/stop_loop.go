@@ -35,13 +35,10 @@ const (
 	disableEnvVar = "JIKIME_DISABLE_LOOP_CONTROLLER"
 )
 
-// Completion promise markers
+// Completion markers
 var completionMarkers = []string{
-	"<promise>DONE</promise>",
-	"<promise>COMPLETE</promise>",
-	"<ralph:done />",
-	"<ralph:complete />",
-	"<alfred:complete />",
+	"<jikime>DONE</jikime>",
+	"<jikime>COMPLETE</jikime>",
 	"<jikime:done />",
 	"<jikime:complete />",
 }
@@ -83,15 +80,15 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// PRIORITY CHECK: Completion promise marker - always check first
-	if checkCompletionPromise(conversationText) {
+	// PRIORITY CHECK: Completion marker - always check first
+	if checkCompletionMarker(conversationText) {
 		// Clear any active loop state
 		ClearEnhancedLoopState()
 
 		output := stopLoopOutput{
 			HookSpecificOutput: &stopLoopHookOutput{
 				HookEventName:     "Stop",
-				AdditionalContext: "Ralph Loop: COMPLETE - Completion promise detected",
+				AdditionalContext: "Ralph Loop: COMPLETE - Completion marker detected",
 			},
 		}
 		encoder := json.NewEncoder(os.Stdout)
@@ -192,7 +189,7 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func checkCompletionPromise(text string) bool {
+func checkCompletionMarker(text string) bool {
 	if text == "" {
 		return false
 	}

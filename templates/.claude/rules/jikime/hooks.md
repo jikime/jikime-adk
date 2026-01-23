@@ -28,13 +28,28 @@ Claude Code hooks for automated workflows and quality enforcement.
       {
         "matcher": "Write",
         "condition": "\\.md$|\\.txt$",
-        "command": "echo 'Blocked' && exit 1",
-        "message": "Do not create documentation files unless explicitly requested"
+        "command": "jikime hooks pre-write",
+        "message": "Documentation file creation restricted to allowed paths"
       }
     ]
   }
 }
 ```
+
+### Documentation File Allowed Paths
+
+The `pre-write` hook restricts `.md` and `.txt` file creation to these paths:
+
+| Pattern | Purpose |
+|---------|---------|
+| `README.md` | Project README |
+| `CLAUDE.md` | Claude Code instructions |
+| `CHANGELOG.md` | Version history |
+| `docs/*.md` | Documentation folder |
+| `.jikime/*.md` | JikiME configuration |
+| `.claude/*.md` | Claude Code configuration |
+| `migrations/*.md` | Migration artifacts (as_is_spec.md, migration_plan.md) |
+| `SKILL.md` | Skill definitions |
 
 ### PostToolUse Hooks
 
@@ -165,4 +180,4 @@ Stop:
 ---
 
 Version: 1.0.0
-Source: Adapted from everything-claude-code + jikime enhancements
+Source: JikiME-ADK hooks specification

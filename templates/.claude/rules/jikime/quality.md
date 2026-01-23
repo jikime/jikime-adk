@@ -28,13 +28,28 @@ The following actions constitute violations:
 
 | Violation | Description |
 |-----------|-------------|
-| **No Agent Consideration** | Alfred responds to complex implementation requests without considering agent delegation |
-| **Skipped Validation** | Alfred skips quality validation for critical changes |
-| **Language Mismatch** | Alfred ignores user's `conversation_language` preference |
+| **No Agent Consideration** | J.A.R.V.I.S./F.R.I.D.A.Y. responds to complex implementation requests without considering agent delegation |
+| **Skipped Validation** | J.A.R.V.I.S./F.R.I.D.A.Y. skips quality validation for critical changes |
+| **Language Mismatch** | J.A.R.V.I.S./F.R.I.D.A.Y. ignores user's `conversation_language` preference |
+| **Wrong Orchestrator** | Migration request routed to J.A.R.V.I.S. instead of F.R.I.D.A.Y. (or vice versa) |
 
 ## Enforcement
 
-When specialized expertise is needed, Alfred **SHOULD** invoke corresponding agent for optimal results.
+When specialized expertise is needed, J.A.R.V.I.S./F.R.I.D.A.Y. **SHOULD** invoke corresponding agent for optimal results.
+
+## Domain-Specific Quality Focus
+
+### J.A.R.V.I.S. (Development)
+- Code quality and maintainability
+- Test coverage and test quality
+- Security vulnerability prevention
+- Performance optimization
+
+### F.R.I.D.A.Y. (Migration)
+- Behavior preservation (characterization tests)
+- Migration completeness (all modules migrated)
+- Framework convention adherence (target framework patterns)
+- Build success and type safety
 
 ## DDD Quality Standards
 

@@ -13,7 +13,7 @@ jikime-adk skill list
 # Filter by tag, phase, agent, or language
 jikime-adk skill list --tag framework
 jikime-adk skill list --phase run
-jikime-adk skill list --agent expert-frontend
+jikime-adk skill list --agent frontend
 jikime-adk skill list --language typescript
 
 # Search skills by keyword
@@ -50,7 +50,7 @@ Skills are automatically loaded when triggers match:
 triggers:
   keywords: ["react", "component"]     # User input contains these words
   phases: ["run"]                      # Current development phase
-  agents: ["expert-frontend"]          # Agent being used
+  agents: ["frontend"]          # Agent being used
   languages: ["typescript", "javascript"]  # Project language
 ```
 
@@ -88,7 +88,6 @@ Programming language specialists:
 Platform integration specialists:
 - `jikime-platform-vercel` - Vercel deployment
 - `jikime-platform-supabase` - Supabase backend
-- `jikime-platform-firebase-auth` - Firebase authentication
 - etc.
 
 ### Domain Skills (`jikime-domain-*`)
@@ -136,7 +135,7 @@ Agents can specify required skills in their frontmatter:
 
 ```yaml
 ---
-name: expert-frontend
+name: frontend
 skills: jikime-domain-frontend, jikime-lang-typescript
 ---
 ```

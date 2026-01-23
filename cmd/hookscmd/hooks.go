@@ -15,28 +15,31 @@ func NewHooks() *cobra.Command {
 	hooks.AddCommand(SessionEndRankCmd)
 	hooks.AddCommand(SessionEndCleanupCmd)
 
-	// PreCompact hooks (from everything-claude-code)
+	// PreCompact hooks
 	hooks.AddCommand(PreCompactCmd)
 
 	// PreToolUse hooks
 	hooks.AddCommand(PreToolSecurityCmd)
-	hooks.AddCommand(PreBashCmd)  // from everything-claude-code
-	hooks.AddCommand(PreWriteCmd) // from everything-claude-code
+	hooks.AddCommand(PreBashCmd)
+	hooks.AddCommand(PreWriteCmd)
 
 	// PostToolUse hooks
 	hooks.AddCommand(PostToolFormatterCmd)
 	hooks.AddCommand(PostToolLinterCmd)
 	hooks.AddCommand(PostToolAstGrepCmd)
 	hooks.AddCommand(PostToolLspCmd)
-	hooks.AddCommand(PostBashCmd) // from everything-claude-code
+	hooks.AddCommand(PostBashCmd)
 
 	// Stop hooks
 	hooks.AddCommand(StopLoopCmd)
-	hooks.AddCommand(StopAuditCmd) // from everything-claude-code
+	hooks.AddCommand(StopAuditCmd)
 
 	// Loop control hooks
 	hooks.AddCommand(StartLoopCmd)
 	hooks.AddCommand(CancelLoopCmd)
+
+	// Orchestrator routing hooks
+	hooks.AddCommand(OrchestratorRouteCmd)
 
 	return hooks
 }

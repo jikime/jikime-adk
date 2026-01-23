@@ -35,7 +35,10 @@ type HookResponse struct {
 // ConfigSection represents a section of the configuration
 type ConfigSection struct {
 	User struct {
-		Name string `yaml:"name"`
+		Name              string `yaml:"name"`
+		Honorific         string `yaml:"honorific"`
+		TonePreset        string `yaml:"tone_preset"`
+		OrchestratorStyle string `yaml:"orchestrator_style"`
 	} `yaml:"user"`
 	Language struct {
 		ConversationLanguage     string `yaml:"conversation_language"`
@@ -68,6 +71,11 @@ func runSessionStart(cmd *cobra.Command, args []string) error {
 	var input map[string]interface{}
 	decoder := json.NewDecoder(os.Stdin)
 	_ = decoder.Decode(&input) // Ignore input for now
+
+	// Initialize orchestrator state to J.A.R.V.I.S. (default)
+	if root, err := findProjectRoot(); err == nil {
+		writeOrchestratorState(root, OrchestratorJARVIS)
+	}
 
 	// Generate session output
 	output, err := formatSessionOutput()
@@ -205,7 +213,7 @@ func findProjectRoot() (string, error) {
 func loadConfig(projectRoot string) (*ConfigSection, error) {
 	config := &ConfigSection{}
 
-	sectionsDir := filepath.Join(projectRoot, ".jikime", "config", "sections")
+	sectionsDir := filepath.Join(projectRoot, ".jikime", "config")
 
 	// Load section files
 	sectionFiles := []string{

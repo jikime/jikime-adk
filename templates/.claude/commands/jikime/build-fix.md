@@ -7,7 +7,7 @@ context: debug
 
 **Context**: @.claude/contexts/debug.md (Auto-loaded)
 
-빌드 및 타입 에러를 점진적으로 수정합니다.
+Fix build and type errors incrementally.
 
 ## Usage
 
@@ -56,9 +56,9 @@ context: debug
 
 ## Safety Rules
 
-- **One error at a time** - 안전 우선
-- **Verify after each fix** - 새 에러 감지 시 중단
-- **Minimal changes** - 필요한 최소 수정만
+- **One error at a time** - Safety first
+- **Verify after each fix** - Stop if new errors detected
+- **Minimal changes** - Only the minimum necessary modifications
 
 ## Output
 

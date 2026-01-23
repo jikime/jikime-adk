@@ -1,5 +1,5 @@
 # ============================================
-# MoAI-ADK Package Distribution .gitignore
+# JikiME-ADK Package Distribution .gitignore
 # ============================================
 # Version: 0.33.0
 # Updated: 2026-01-10
@@ -99,7 +99,7 @@ logs/
 # ===========================================
 # Backups
 # ===========================================
-.moai-backups/
+.jikime-backups/
 *.backup/
 *-backup/
 *_backup_*/

@@ -24,7 +24,7 @@ Features:
 - Warn about console.log statements that should be removed
 - Help maintain clean production code
 
-Based on everything-claude-code patterns.`,
+Based on JikiME-ADK hook patterns.`,
 	RunE: runStopAudit,
 }
 

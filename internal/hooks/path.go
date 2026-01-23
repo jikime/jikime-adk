@@ -54,13 +54,10 @@ func FindConfigDir() (string, error) {
 	return filepath.Join(jikimeDir, "config"), nil
 }
 
-// FindSectionsDir returns the .jikime/config/sections directory path
+// FindSectionsDir returns the .jikime/config directory path
+// Note: "sections" subdirectory is no longer used, config files are stored directly in config/
 func FindSectionsDir() (string, error) {
-	configDir, err := FindConfigDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(configDir, "sections"), nil
+	return FindConfigDir()
 }
 
 // FindCacheDir returns the .jikime/cache directory path

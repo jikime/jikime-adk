@@ -100,7 +100,7 @@ JikiME-ADK는 13개의 규칙 파일을 통해 일관된 개발 표준을 제공
 
 - 에이전트 위임 **권장** (복잡한 작업에 전문성 필요 시)
 - 직접 도구 사용 **허용** (단순 작업에)
-- 사용자 상호작용은 Alfred의 `AskUserQuestion`만 사용
+- 사용자 상호작용은 오케스트레이터의 `AskUserQuestion`만 사용
 
 ##### Type B: Utility Commands
 
@@ -123,7 +123,7 @@ JikiME-ADK는 13개의 규칙 파일을 통해 일관된 개발 표준을 제공
    → WebSearch, WebFetch, Context7 MCP 도구 사용
 
 3. 도메인 전문성 필요?
-   → expert-[domain] subagent 사용
+   → specialist subagent 사용 (backend, frontend, debugger 등)
 
 4. 워크플로우 조율 필요?
    → manager-[workflow] subagent 사용
@@ -203,20 +203,20 @@ Domain-Driven Development 사용 시:
 
 > Task()로 호출된 서브에이전트는 격리된 상태 없는 컨텍스트에서 작동하며 사용자와 직접 상호작용할 수 없습니다.
 
-**Alfred만 AskUserQuestion 사용 가능** - 서브에이전트는 불가
+**오케스트레이터만 AskUserQuestion 사용 가능** - 서브에이전트는 불가
 
 #### 올바른 워크플로우 패턴
 
 ```
-Step 1: Alfred가 AskUserQuestion으로 사용자 선호도 수집
+Step 1: 오케스트레이터가 AskUserQuestion으로 사용자 선호도 수집
         ↓
-Step 2: Alfred가 사용자 선택을 프롬프트에 포함하여 Task() 호출
+Step 2: 오케스트레이터가 사용자 선택을 프롬프트에 포함하여 Task() 호출
         ↓
 Step 3: 서브에이전트가 제공된 매개변수로 실행 (사용자 상호작용 없음)
         ↓
 Step 4: 서브에이전트가 결과와 함께 구조화된 응답 반환
         ↓
-Step 5: Alfred가 에이전트 응답에 따라 다음 결정을 위해 AskUserQuestion 사용
+Step 5: 오케스트레이터가 에이전트 응답에 따라 다음 결정을 위해 AskUserQuestion 사용
 ```
 
 #### AskUserQuestion 제약
@@ -689,7 +689,7 @@ jikime-adk skill info <skill-name> --body
 triggers:
   keywords: ["react", "component"]     # 사용자 입력에 포함 시
   phases: ["run"]                      # 현재 개발 단계
-  agents: ["expert-frontend"]          # 사용 중인 에이전트
+  agents: ["frontend"]                 # 사용 중인 에이전트
   languages: ["typescript"]            # 프로젝트 언어
 ```
 
@@ -789,7 +789,7 @@ WebSearch 사용 시 항상 포함:
 | core.md | HARD 규칙 | 모든 작업 |
 | agents.md | 에이전트 위임 | 명령 실행 |
 | quality.md | 품질 게이트 | 코드 변경 |
-| interaction.md | 사용자 상호작용 | Alfred 응답 |
+| interaction.md | 사용자 상호작용 | 오케스트레이터 응답 |
 | coding-style.md | 코딩 스타일 | 코드 작성 |
 | git-workflow.md | Git 컨벤션 | 버전 관리 |
 | testing.md | 테스트 가이드 | 테스트 작성 |

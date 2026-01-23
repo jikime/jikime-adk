@@ -37,13 +37,12 @@
 ## Works Well With
 
 - `jikime-domain-frontend` (Frontend development patterns)
-- `jikime-baas-foundation` (Enterprise UI architecture)
-- `jikime-security-api` (UI security implementation)
-- `jikime-essentials-perf` (Performance optimization)
-- `jikime-foundation-trust` (Accessibility and compliance)
+- `jikime-foundation-core` (Enterprise UI architecture)
+- `jikime-workflow-testing` (UI security and testing)
+- `jikime-foundation-quality` (Performance and accessibility)
 - `jikime-domain-backend` (Backend integration)
-- `jikime-baas-vercel-ext` (Frontend deployment)
-- `jikime-domain-testing` (Component testing strategies)
+- `jikime-platform-vercel` (Frontend deployment)
+- `jikime-workflow-testing` (Component testing strategies)
 
 ## Changelog
 

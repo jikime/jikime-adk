@@ -1,11 +1,12 @@
 ---
 name: jikime-lang-flutter
 description: Flutter 3.24+ / Dart 3.5+ development specialist covering Riverpod, go_router, and cross-platform patterns. Use when building cross-platform mobile apps, desktop apps, or web applications with Flutter.
+version: 1.0.0
 tags: ["language", "dart", "flutter", "mobile", "cross-platform", "riverpod"]
 triggers:
   keywords: ["flutter", "dart", "riverpod", "widget", "플러터", "모바일"]
   phases: ["run"]
-  agents: ["expert-frontend"]
+  agents: ["frontend"]
   languages: ["dart"]
 user-invocable: false
 ---

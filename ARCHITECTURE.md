@@ -3,7 +3,7 @@
 ## Overview
 
 JikiME-ADK v2.0은 **레거시 코드 마이그레이션에 특화된 Agent Development Kit**입니다.
-everything-claude-code의 검증된 구조를 기반으로 하면서, 마이그레이션 워크플로우를 핵심 기능으로 강화합니다.
+검증된 Agent Development Kit 구조를 기반으로 하면서, 마이그레이션 워크플로우를 핵심 기능으로 강화합니다.
 
 ### Core Concept: Source → Target Migration
 
@@ -40,7 +40,7 @@ jikime-adk-v2/
 │   │   │   ├── planner.md
 │   │   │   ├── code-reviewer.md
 │   │   │   ├── security-reviewer.md
-│   │   │   ├── tdd-guide.md
+│   │   │   ├── test-guide.md
 │   │   │   ├── build-error-resolver.md
 │   │   │   ├── refactor-cleaner.md
 │   │   │   ├── doc-updater.md
@@ -52,7 +52,7 @@ jikime-adk-v2/
 │   │       └── migration-orchestrator.md
 │   │
 │   ├── commands/                  # 슬래시 커맨드
-│   │   ├── core/                  # 핵심 커맨드 (everything 기반)
+│   │   ├── core/                  # 핵심 커맨드
 │   │   │   ├── analyze.md
 │   │   │   ├── plan.md
 │   │   │   ├── build-fix.md
@@ -149,7 +149,7 @@ jikime-adk-v2/
 
 ## 2. Agent Architecture
 
-### 2.1 Core Agents (everything-claude-code 기반)
+### 2.1 Core Agents
 
 | Agent | Purpose | Tools |
 |-------|---------|-------|
@@ -157,7 +157,7 @@ jikime-adk-v2/
 | `planner` | 작업 계획, 태스크 분해 | Read, TodoWrite, Task |
 | `code-reviewer` | 코드 품질 검토, 피드백 | Read, Grep, Glob |
 | `security-reviewer` | 보안 취약점 분석, OWASP | Read, Grep, Bash |
-| `tdd-guide` | TDD 워크플로우 가이드 | Read, Write, Bash |
+| `test-guide` | Test strategy and workflow guide | Read, Write, Bash |
 | `build-error-resolver` | 빌드 에러 분석/해결 | Bash, Read, Edit |
 | `refactor-cleaner` | 코드 리팩토링, 정리 | Read, Edit, Grep |
 | `doc-updater` | 문서 업데이트, 동기화 | Read, Write, Glob |
@@ -186,7 +186,7 @@ jikime-adk-v2/
 │ PHASE 1      │    │ PHASE 2      │    │ PHASE 3      │
 │ ANALYZE      │    │ PRESERVE     │    │ IMPROVE      │
 ├──────────────┤    ├──────────────┤    ├──────────────┤
-│ source-      │ →  │ tdd-guide    │ →  │ target-      │
+│ source-      │ →  │ test-guide   │ →  │ target-      │
 │ analyzer     │    │ (특성 테스트) │    │ generator    │
 └──────────────┘    └──────────────┘    └──────────────┘
                                                 │
@@ -214,8 +214,8 @@ jikime-adk-v2/
 | `/build-fix` | 빌드 에러 해결 | build-error-resolver |
 | `/code-review` | 코드 리뷰 | code-reviewer |
 | `/refactor-clean` | 리팩토링 | refactor-cleaner |
-| `/tdd` | TDD 워크플로우 | tdd-guide |
-| `/test-coverage` | 테스트 커버리지 | tdd-guide |
+| `/tdd` | TDD workflow | test-guide |
+| `/test-coverage` | Test coverage | test-guide |
 | `/e2e` | E2E 테스트 | e2e-runner |
 | `/update-docs` | 문서 업데이트 | doc-updater |
 | `/learn` | 코드베이스 학습 | - |
@@ -382,7 +382,7 @@ jikime-adk skill list
 # 태그, 페이즈, 에이전트, 언어로 필터링
 jikime-adk skill list --tag framework
 jikime-adk skill list --phase run
-jikime-adk skill list --agent expert-frontend
+jikime-adk skill list --agent frontend
 jikime-adk skill list --language typescript
 
 # 출력 형식 지정
@@ -404,7 +404,7 @@ jikime-adk skill info jikime-lang-typescript
 jikime-adk skill info jikime-platform-vercel --body  # 마크다운 본문 포함
 ```
 
-### 4.6 Triggers Structure (moai-adk compatible)
+### 4.6 Triggers Structure
 
 스킬 발견을 위한 트리거 구조:
 
@@ -570,7 +570,7 @@ func main() {
 
 ### 7.1 Identity
 
-Mr.Jikime는 Alfred의 업그레이드 버전으로, **마이그레이션 전문 오케스트레이터**입니다.
+Mr.Jikime는 JikiME-ADK의 **마이그레이션 전문 오케스트레이터**입니다.
 
 ```yaml
 identity:
@@ -617,7 +617,7 @@ capabilities:
 
 ### 7.3 Wellness Protocol
 
-Alfred의 Wellness Protocol을 계승하여 장시간 세션 관리:
+Wellness Protocol을 활용한 장시간 세션 관리:
 
 ```yaml
 wellness_protocol:
@@ -667,7 +667,7 @@ wellness_protocol:
    /migrate source:php target:nextjs --incremental
 
    → source-analyzer: PHP 코드 분석
-   → tdd-guide: 특성 테스트 생성
+   → test-guide: Characterization test generation
    → target-generator: Next.js 코드 생성
    → behavior-validator: 동작 비교
 

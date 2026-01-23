@@ -10,7 +10,7 @@
       "env": {},
       "usage": {
         "purpose": "프레임워크/라이브러리 공식 문서 조회",
-        "commands": ["/jikime:1-discover", "/jikime:3-migrate"],
+        "commands": ["/jikime:migrate-0-discover", "/jikime:migrate-3-execute"],
         "examples": [
           "Next.js App Router 패턴 조회",
           "Prisma 스키마 작성법",
@@ -28,7 +28,7 @@
       },
       "usage": {
         "purpose": "E2E 테스트 및 브라우저 자동화",
-        "commands": ["/jikime:4-verify", "/jikime:test"],
+        "commands": ["/jikime:migrate-4-verify", "/jikime:test"],
         "examples": [
           "마이그레이션된 페이지 렌더링 검증",
           "사용자 플로우 테스트",
@@ -63,7 +63,7 @@
       "description": "Git operations and version control",
       "usage": {
         "purpose": "Git 작업 자동화",
-        "commands": ["/jikime:3-migrate", "/jikime:4-verify"],
+        "commands": ["/jikime:migrate-3-execute", "/jikime:migrate-4-verify"],
         "examples": [
           "마이그레이션 진행 커밋",
           "브랜치 관리",
@@ -114,12 +114,12 @@
         "reason": "프론트엔드 프레임워크 문서 필요"
       },
       {
-        "trigger": "/jikime:4-verify, e2e, test",
+        "trigger": "/jikime:migrate-4-verify, e2e, test",
         "activate": ["playwright"],
         "reason": "E2E 테스트 실행"
       },
       {
-        "trigger": "/jikime:1-discover, /jikime:3-migrate",
+        "trigger": "/jikime:migrate-0-discover, /jikime:migrate-3-execute",
         "activate": ["context7", "git"],
         "reason": "마이그레이션 워크플로우"
       }

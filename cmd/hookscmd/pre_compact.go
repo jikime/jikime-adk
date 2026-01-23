@@ -20,7 +20,7 @@ Features:
 - Preserve important context markers
 - Create checkpoint for recovery
 
-Based on everything-claude-code memory-persistence pattern.`,
+Based on JikiME-ADK memory-persistence pattern.`,
 	RunE: runPreCompact,
 }
 

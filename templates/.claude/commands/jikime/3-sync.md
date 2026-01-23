@@ -16,7 +16,7 @@ model: inherit
 ## Essential Files
 
 @.jikime/config/config.yaml
-@.jikime/config/sections/language.yaml
+@.jikime/config/language.yaml
 @.jikime/project/product.md
 @.jikime/project/structure.md
 @.jikime/project/tech.md
@@ -27,7 +27,7 @@ model: inherit
 
 User Interaction Architecture: AskUserQuestion must be used at COMMAND level only. Subagents invoked via Task() operate in isolated, stateless contexts.
 
-Workflow Integration: This command implements the final step of JikiME's workflow (Project → Plan → Run → Sync).
+Workflow Integration: This command implements the final step of the development workflow (Project → Plan → Run → Sync).
 
 ---
 

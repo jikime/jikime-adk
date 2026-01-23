@@ -14,6 +14,30 @@ user_welcome:
   other: "ようこそ: {{.Name}}"
 user_name_label:
   other: "ユーザー名"
+honorific_prompt:
+  other: "好みの敬称を入力してください（任意、例：さん、様）"
+honorific_label:
+  other: "敬称"
+tone_preset_help:
+  other: "応答トーンを選択: [↑↓] 移動  [Enter] 選択"
+tone_preset_label:
+  other: "応答トーン"
+tone_friendly_display:
+  other: "friendly（親しみやすい）"
+tone_friendly_desc:
+  other: "温かく、励ましのある口調"
+tone_professional_display:
+  other: "professional（プロフェッショナル）"
+tone_professional_desc:
+  other: "フォーマルで簡潔なビジネス口調"
+tone_casual_display:
+  other: "casual（カジュアル）"
+tone_casual_desc:
+  other: "リラックスした会話的な口調"
+tone_mentor_display:
+  other: "mentor（メンター）"
+tone_mentor_desc:
+  other: "教育的で詳細な説明"
 project_prompt:
   other: "プロジェクト名"
 project_name_label:

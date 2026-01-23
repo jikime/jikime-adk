@@ -1,6 +1,7 @@
 ---
 name: jikime-workflow-sync
 description: Documentation synchronization workflow specialist for code-to-docs sync, quality verification, and git operations
+version: 1.0.0
 tags: ["workflow", "sync", "documentation", "quality", "git", "living-docs"]
 triggers:
   keywords: ["sync", "동기화", "documentation", "문서", "CODEMAP", "README", "commit"]

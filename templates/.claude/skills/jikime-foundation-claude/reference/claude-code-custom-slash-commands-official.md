@@ -47,7 +47,7 @@ Directory Structure:
 IMPORTANT: Command name is automatically derived from file path structure:
 - `.claude/commands/{namespace}/{command-name}.md` → `/{namespace}:{command-name}`
 - `.claude/commands/my-command.md` → `/my-command`
-- Example: `.claude/commands/jikime/fix.md` → `/jikime:fix`
+- Example: `.claude/commands/jikime/build-fix.md` → `/jikime:build-fix`
 
 DO NOT include a `name` field in frontmatter - it is not officially supported.
 
@@ -111,14 +111,14 @@ target="$2"
 case "$action" in
  "create")
  Task(
- subagent_type="spec-builder",
+ subagent_type="manager-spec",
  prompt="Create specification for $target",
  context={"user_input": "$ARGUMENTS"}
  )
  ;;
  "validate")
  Task(
- subagent_type="quality-gate",
+ subagent_type="manager-quality",
  prompt="Validate configuration in $target",
  context={"config_file": "$target"}
  )
@@ -257,21 +257,21 @@ Linear Execution Pattern:
 ```python
 # Phase 1: Analysis
 analysis = Task(
- subagent_type="spec-builder",
+ subagent_type="manager-spec",
  prompt="Analyze requirements for $ARGUMENTS",
  context={"user_input": "$ARGUMENTS"}
 )
 
 # Phase 2: Implementation (passes analysis results)
 implementation = Task(
- subagent_type="ddd-implementer",
+ subagent_type="manager-ddd",
  prompt="Implement based on analysis",
  context={"analysis": analysis, "spec_id": analysis.spec_id}
 )
 
 # Phase 3: Quality Validation
 validation = Task(
- subagent_type="quality-gate",
+ subagent_type="manager-quality",
  prompt="Validate implementation",
  context={"implementation": implementation}
 )
@@ -284,22 +284,22 @@ Concurrent Execution Pattern:
 # Independent parallel execution
 results = await Promise.all([
  Task(
- subagent_type="backend-expert",
+ subagent_type="backend",
  prompt="Backend implementation for $1"
  ),
  Task(
- subagent_type="frontend-expert",
+ subagent_type="frontend",
  prompt="Frontend implementation for $1"
  ),
  Task(
- subagent_type="docs-manager",
+ subagent_type="manager-docs",
  prompt="Documentation for $1"
  )
 ])
 
 # Integration phase
 integration = Task(
- subagent_type="quality-gate",
+ subagent_type="manager-quality",
  prompt="Integrate all components",
  context={"components": results}
 )
@@ -312,19 +312,19 @@ Dynamic Agent Selection:
 # Route based on analysis results
 if analysis.has_database_issues:
  result = Task(
- subagent_type="database-expert",
+ subagent_type="backend",
  prompt="Optimize database",
  context={"issues": analysis.database_issues}
  )
 elif analysis.has_api_issues:
  result = Task(
- subagent_type="backend-expert",
+ subagent_type="backend",
  prompt="Fix API issues",
  context={"issues": analysis.api_issues}
  )
 else:
  result = Task(
- subagent_type="quality-gate",
+ subagent_type="manager-quality",
  prompt="General quality check",
  context={"analysis": analysis}
  )
@@ -395,7 +395,7 @@ fi
 
 # Execute validation
 Task(
- subagent_type="quality-gate",
+ subagent_type="manager-quality",
  prompt="Validate $config_file using $validator" +
  (" --strict" if strict_mode else ""),
  context={
@@ -448,7 +448,7 @@ Complete DDD-based feature implementation from specification to deployment.
 ```python
 # Generate comprehensive specification
 spec_result = Task(
- subagent_type="spec-builder",
+ subagent_type="manager-spec",
  prompt="Create detailed specification for: $1",
  context={
  "feature_description": "$1",
@@ -464,7 +464,7 @@ echo "Specification created: $spec_id"
 ```python
 # Plan implementation approach
 plan_result = Task(
- subagent_type="plan",
+ subagent_type="planner",
  prompt="Create implementation plan for $spec_id",
  context={
  "spec_id": spec_id,
@@ -478,7 +478,7 @@ plan_result = Task(
 if [ "$2" != "--skip-tests" ]; then
  # RED phase: Write failing tests
  test_result = Task(
- subagent_type="test-engineer",
+ subagent_type="test-guide",
  prompt="Write comprehensive tests for $spec_id",
  context={"spec_id": spec_id}
  )
@@ -489,7 +489,7 @@ fi
 ```python
 # GREEN phase: Implement feature
 implementation_result = Task(
- subagent_type="ddd-implementer",
+ subagent_type="manager-ddd",
  prompt="Implement feature for $spec_id",
  context={
  "spec_id": spec_id,
@@ -502,7 +502,7 @@ implementation_result = Task(
 ```python
 # REFACTOR and validation
 quality_result = Task(
- subagent_type="quality-gate",
+ subagent_type="manager-quality",
  prompt="Validate implementation for $spec_id",
  context={
  "implementation": implementation_result,
@@ -515,7 +515,7 @@ quality_result = Task(
 ```python
 # Generate documentation
 docs_result = Task(
- subagent_type="docs-manager",
+ subagent_type="manager-docs",
  prompt="Create documentation for $spec_id",
  context={"spec_id": spec_id}
 )
@@ -573,14 +573,14 @@ Safe deployment with validation, testing, and rollback capabilities.
 ```python
 # Environment validation
 env_result = Task(
- subagent_type="devops-expert",
+ subagent_type="devops",
  prompt="Validate $1 environment configuration",
  context={"environment": "$1"}
 )
 
 # Security validation
 security_result = Task(
- subagent_type="security-expert",
+ subagent_type="security-auditor",
  prompt="Perform security pre-deployment check",
  context={"environment": "$1"}
 )
@@ -591,7 +591,7 @@ security_result = Task(
 if [ "$2" != "--skip-tests" ]; then
  # Run comprehensive test suite
  test_result = Task(
- subagent_type="test-engineer",
+ subagent_type="test-guide",
  prompt="Execute deployment test suite",
  context={"environment": "$1"}
  )
@@ -603,7 +603,7 @@ fi
 if [ "$3" != "--dry-run" ]; then
  # Actual deployment
  deploy_result = Task(
- subagent_type="devops-expert",
+ subagent_type="devops",
  prompt="Deploy to $1 environment",
  context={
  "environment": "$1",
@@ -620,14 +620,14 @@ fi
 ```python
 # Health check and validation
 health_result = Task(
- subagent_type="monitoring-expert",
+ subagent_type="devops",
  prompt="Validate deployment health in $1",
  context={"environment": "$1"}
 )
 
 # Generate deployment report
 report_result = Task(
- subagent_type="docs-manager",
+ subagent_type="manager-docs",
  prompt="Generate deployment report",
  context={
  "environment": "$1",

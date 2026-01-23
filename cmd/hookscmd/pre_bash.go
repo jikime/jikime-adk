@@ -20,7 +20,7 @@ Features:
 - Warn about long-running commands without tmux
 - Suggest tmux usage for session persistence
 
-Based on everything-claude-code patterns.`,
+Based on JikiME-ADK hook patterns.`,
 	RunE: runPreBash,
 }
 

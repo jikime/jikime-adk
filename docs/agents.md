@@ -6,9 +6,10 @@ JikiME-ADK의 전문화된 에이전트 카탈로그입니다.
 
 ## 개요
 
-JikiME-ADK는 17개의 전문화된 에이전트를 제공합니다:
-- **Manager Agents (7개)**: 워크플로우 조율 및 프로세스 관리
-- **Expert Agents (10개)**: 도메인별 전문 작업 수행
+JikiME-ADK는 26개의 전문화된 에이전트를 제공합니다:
+- **Manager Agents (8개)**: 워크플로우 조율 및 프로세스 관리
+- **Specialist Agents (14개)**: 도메인별 전문 작업 수행
+- **Builder Agents (4개)**: 새로운 에이전트/커맨드/스킬/플러그인 생성
 
 ### 에이전트 맵
 
@@ -19,28 +20,42 @@ JikiME-ADK는 17개의 전문화된 에이전트를 제공합니다:
 │                                                                  │
 │  ┌─ Manager Agents (워크플로우 조율) ─────────────────────────┐  │
 │  │                                                              │
-│  │  manager-spec      SPEC 문서 생성 (EARS 형식)              │
-│  │  manager-strategy  구현 전략 수립                           │
-│  │  manager-ddd       DDD 구현 (ANALYZE-PRESERVE-IMPROVE)      │
-│  │  manager-project   프로젝트 초기화 및 설정                   │
-│  │  manager-docs      문서 동기화                              │
-│  │  manager-quality   품질 검증 (TRUST 5)                      │
-│  │  manager-git       Git 워크플로우                           │
+│  │  manager-spec        SPEC 문서 생성 (EARS 형식)            │
+│  │  manager-strategy    구현 전략 수립                         │
+│  │  manager-ddd         DDD 구현 (ANALYZE-PRESERVE-IMPROVE)    │
+│  │  manager-project     프로젝트 초기화 및 설정                 │
+│  │  manager-docs        문서 동기화                            │
+│  │  manager-quality     품질 검증 (TRUST 5)                    │
+│  │  manager-git         Git 워크플로우                         │
+│  │  manager-claude-code Claude Code 설정 관리                  │
 │  │                                                              │
 │  └──────────────────────────────────────────────────────────────┘
 │                                                                  │
-│  ┌─ Expert Agents (도메인 전문가) ──────────────────────────────┐
+│  ┌─ Specialist Agents (도메인 전문가) ────────────────────────┐  │
 │  │                                                              │
 │  │  architect         시스템 아키텍처 설계                      │
-│  │  planner           구현 계획 수립                            │
-│  │  build-fixer       빌드/타입 에러 수정                       │
-│  │  reviewer          코드 리뷰                                │
-│  │  refactorer        리팩토링/클린업                          │
-│  │  security-auditor  보안 감사                                │
-│  │  test-guide        테스트 가이드                            │
+│  │  backend           API 개발, 서버 로직                      │
+│  │  frontend          React 컴포넌트, UI 구현                   │
+│  │  security-auditor  보안 감사 (OWASP)                        │
+│  │  devops            CI/CD, 인프라, 배포 자동화                │
+│  │  optimizer         성능 최적화, 병목 분석                    │
+│  │  debugger          디버깅, 에러 분석                        │
 │  │  e2e-tester        E2E 테스트 (Playwright)                  │
-│  │  documenter        문서화                                   │
-│  │  migrator          Next.js 마이그레이션                      │
+│  │  test-guide        테스트 전략 및 가이드                    │
+│  │  refactorer        리팩토링/클린업                          │
+│  │  build-fixer       빌드/타입 에러 수정                       │
+│  │  reviewer          코드 리뷰, PR 리뷰                       │
+│  │  documenter        API/코드 문서화                          │
+│  │  planner           구현 계획 수립                            │
+│  │                                                              │
+│  └──────────────────────────────────────────────────────────────┘
+│                                                                  │
+│  ┌─ Builder Agents (생성 도구) ───────────────────────────────┐  │
+│  │                                                              │
+│  │  agent-builder     새 에이전트 정의 생성                     │
+│  │  command-builder   새 슬래시 커맨드 생성                     │
+│  │  skill-builder     새 스킬 정의 생성                        │
+│  │  plugin-builder    새 플러그인 패키지 생성                   │
 │  │                                                              │
 │  └──────────────────────────────────────────────────────────────┘
 │                                                                  │
@@ -538,36 +553,6 @@ docs/
 
 ---
 
-### migrator
-
-**역할**: Next.js 마이그레이션 전문가
-
-| 속성 | 값 |
-|------|-----|
-| Model | opus |
-| Tools | Read, Write, Edit, Bash, Glob, Grep, TodoWrite |
-| Skills | jikime-migrate-to-nextjs |
-
-**Target Stack**:
-
-| 기술 | 버전 |
-|------|------|
-| Next.js | 16 |
-| TypeScript | 5.x |
-| Tailwind CSS | 4.x |
-| shadcn/ui | latest |
-| Zustand | latest |
-
-**마이그레이션 단계**:
-1. **Phase 0: Analyze** - 소스 프레임워크 감지, 컴포넌트 인벤토리
-2. **Phase 1: Plan** - 마이그레이션 계획, 컴포넌트 매핑
-3. **Phase 2: Migrate** - 컴포넌트/라우팅/상태 변환
-4. **Phase 3: Validate** - 빌드/테스트 검증
-
-**호출 시점**:
-- 레거시 프로젝트 마이그레이션 시
-- `/jikime:migrate` 명령 실행 시
-
 ---
 
 ## 에이전트 선택 가이드
@@ -582,7 +567,7 @@ docs/
    → WebSearch, WebFetch, Context7 MCP 도구 사용
 
 3. 도메인 전문성 필요?
-   → expert-[domain] subagent 사용
+   → specialist subagent 사용 (backend, frontend, debugger 등)
 
 4. 워크플로우 조율 필요?
    → manager-[workflow] subagent 사용
@@ -599,12 +584,18 @@ docs/
 | `/jikime:1-plan` | manager-spec |
 | `/jikime:2-run` | manager-strategy → manager-ddd |
 | `/jikime:3-sync` | manager-docs → manager-git |
+| `/jikime:jarvis` | (J.A.R.V.I.S. orchestration) |
 | `/jikime:build-fix` | build-fixer |
+| `/jikime:loop` | debugger → refactorer |
 | `/jikime:architect` | architect |
+| `/jikime:docs` | manager-docs |
 | `/jikime:security` | security-auditor |
 | `/jikime:test` | test-guide |
 | `/jikime:e2e` | e2e-tester |
-| `/jikime:migrate` | migrator |
+| `/jikime:learn` | (Explore subagent) |
+| `/jikime:refactor` | refactorer |
+| `/jikime:friday` | (F.R.I.D.A.Y. orchestration) |
+| `/jikime:migrate-*` | (F.R.I.D.A.Y. orchestration) |
 
 ---
 
@@ -620,8 +611,8 @@ manager-spec → manager-strategy → manager-ddd → manager-quality → manage
 ### Parallel Execution
 
 ```
-expert-backend ─┬─→ 결과 통합
-expert-frontend ─┘   (동시 작업)
+backend ─┬─→ 결과 통합
+frontend ─┘   (동시 작업)
 ```
 
 ### Consultation Pattern
@@ -634,5 +625,5 @@ manager-ddd ─→ architect (아키텍처 자문)
 
 ---
 
-Version: 2.0.0
-Last Updated: 2026-01-22
+Version: 3.0.0
+Last Updated: 2026-01-23

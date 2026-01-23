@@ -1,11 +1,12 @@
 ---
 name: jikime-workflow-ddd
 description: Domain-Driven Development workflow specialist using ANALYZE-PRESERVE-IMPROVE cycle for behavior-preserving code transformation
+version: 1.0.0
 tags: ["workflow", "ddd", "refactoring", "testing", "behavior-preservation", "quality"]
 triggers:
   keywords: ["DDD", "refactor", "리팩토링", "behavior", "characterization", "ANALYZE", "PRESERVE", "IMPROVE"]
   phases: ["run"]
-  agents: ["manager-ddd", "expert-refactoring"]
+  agents: ["manager-ddd", "refactorer"]
   languages: []
 user-invocable: false
 context: fork

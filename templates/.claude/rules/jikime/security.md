@@ -226,4 +226,4 @@ npm outdated
 ---
 
 Version: 1.0.0
-Source: Adapted from everything-claude-code + OWASP guidelines
+Source: JikiME-ADK security rules

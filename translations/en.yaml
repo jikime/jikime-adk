@@ -14,6 +14,30 @@ user_welcome:
   other: "Welcome: {{.Name}}"
 user_name_label:
   other: "User Name"
+honorific_prompt:
+  other: "Enter preferred honorific (optional, e.g., sir, Mr.)"
+honorific_label:
+  other: "Honorific"
+tone_preset_help:
+  other: "Select response tone: [↑↓] Navigate  [Enter] Select"
+tone_preset_label:
+  other: "Tone Preset"
+tone_friendly_display:
+  other: "friendly"
+tone_friendly_desc:
+  other: "Warm, supportive, encouraging"
+tone_professional_display:
+  other: "professional"
+tone_professional_desc:
+  other: "Formal, concise, business-like"
+tone_casual_display:
+  other: "casual"
+tone_casual_desc:
+  other: "Relaxed, conversational, brief"
+tone_mentor_display:
+  other: "mentor"
+tone_mentor_desc:
+  other: "Educational, detailed, growth-focused"
 project_prompt:
   other: "Project name"
 project_name_label:

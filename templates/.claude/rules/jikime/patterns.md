@@ -243,4 +243,4 @@ When implementing new features:
 ---
 
 Version: 1.0.0
-Source: Adapted from everything-claude-code + expanded patterns
+Source: JikiME-ADK pattern library

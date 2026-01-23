@@ -4,7 +4,7 @@ description: "Generate and run E2E tests with Playwright. Create test journeys, 
 
 # E2E
 
-Playwright로 E2E 테스트를 생성하고 실행합니다.
+Generate and run E2E tests with Playwright.
 
 ## Usage
 
@@ -59,20 +59,20 @@ test.describe('Login Flow', () => {
 ## Best Practices
 
 ### DO ✅
-- `data-testid` 속성 사용
-- API 응답 대기 (timeout 아님)
-- Page Object Model 패턴
-- 핵심 사용자 여정 테스트
+- Use `data-testid` attributes
+- Wait for API responses (not timeouts)
+- Page Object Model pattern
+- Test critical user journeys
 
 ### DON'T ❌
-- CSS 클래스로 선택 (변경됨)
-- 구현 세부사항 테스트
-- 프로덕션 환경 테스트
-- 모든 엣지케이스 E2E로 (유닛 테스트 사용)
+- Select by CSS class (changes frequently)
+- Test implementation details
+- Test on production environment
+- E2E for all edge cases (use unit tests instead)
 
 ## Artifacts
 
-테스트 실패 시 자동 캡처:
+Auto-captured on test failure:
 - 📸 Screenshot
 - 📹 Video recording
 - 🔍 Trace file (step-by-step)
@@ -125,21 +125,21 @@ npx playwright codegen http://localhost:3000
 
 ## Critical Flows to Test
 
-**필수 (반드시 통과):**
-1. 로그인/로그아웃
-2. 회원가입
-3. 핵심 기능 flow
+**Critical (Must Pass):**
+1. Login/Logout
+2. Sign up
+3. Core feature flow
 
-**중요:**
-1. 사용자 프로필
-2. 설정 변경
-3. 반응형 레이아웃
+**Important:**
+1. User profile
+2. Settings changes
+3. Responsive layout
 
 ## Related Commands
 
 - `/jikime:test` - Unit/Integration tests
-- `/jikime:plan` - Identify flows to test
-- `/jikime:review` - Review test code
+- `/jikime:1-plan` - Identify flows to test
+- `/jikime:security` - Review test code
 
 ---
 

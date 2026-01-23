@@ -1,6 +1,6 @@
 # Project Migration Skill Template
 
-이 템플릿은 `/jikime:migrate-to-nextjs skill {project}` 명령어 실행 시 생성되는 프로젝트별 SKILL.md의 기본 구조입니다.
+이 템플릿은 `/jikime:migrate-2-plan --skill {project}` 명령어 실행 시 생성되는 프로젝트별 SKILL.md의 기본 구조입니다.
 
 ---
 

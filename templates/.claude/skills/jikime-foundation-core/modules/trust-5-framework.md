@@ -20,7 +20,7 @@ TRUST 5 is JikiME-ADK's comprehensive quality assurance framework enforcing five
 Integration Points:
 - Pre-commit hooks - Automated validation
 - CI/CD pipelines - Quality gate enforcement
-- quality-gate agent - TRUST 5 validation
+- manager-quality agent - TRUST 5 validation
 - /jikime:2-run - Enforces ≥85% coverage
 
 Quick Validation:
@@ -219,18 +219,17 @@ For comprehensive implementation patterns including CI/CD integration, validatio
 ## Works Well With
 
 Agents:
-- quality-gate - Automated TRUST 5 validation
-- ddd-implementer - ANALYZE-PRESERVE-IMPROVE enforcement
-- security-expert - OWASP compliance checking
-- test-engineer - Test generation and coverage
+- manager-quality - Automated TRUST 5 validation
+- manager-ddd - ANALYZE-PRESERVE-IMPROVE enforcement
+- security-auditor - OWASP compliance checking
+- test-guide - Test generation and coverage
 
 Skills:
 - jikime-workflow-testing - Test framework setup
-- jikime-domain-security - Security patterns
+- jikime-workflow-testing - Security patterns
 
 Commands:
 - /jikime:2-run - Enforces ≥85% coverage requirement
-- /jikime:9-feedback - Quality improvement suggestions
 
 ---
 

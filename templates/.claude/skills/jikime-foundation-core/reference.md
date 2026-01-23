@@ -22,7 +22,7 @@ SPEC-First DDD:
 
 Delegation Patterns:
 - Purpose: Task orchestration via specialized agents
-- Core Principle: Alfred delegates all work through Task() calls
+- Core Principle: Orchestrator delegates all work through Task() calls
 - Patterns: Sequential, Parallel, Conditional delegation
 - Agent Selection: Complexity-based agent matching
 
@@ -131,19 +131,19 @@ agent_selection:
 
   by_domain:
     backend:
-      primary: "backend-expert"
-      supporting: ["database-expert", "api-designer"]
+      primary: "backend"
+      supporting: ["backend", "backend"]
 
     frontend:
-      primary: "frontend-expert"
+      primary: "frontend"
       supporting: ["ui-specialist", "accessibility-checker"]
 
     security:
-      primary: "security-expert"
+      primary: "security-auditor"
       supporting: ["compliance-checker", "penetration-tester"]
 
     infrastructure:
-      primary: "devops-expert"
+      primary: "devops"
       supporting: ["cloud-architect", "monitoring-specialist"]
 ```
 
@@ -278,7 +278,7 @@ async def delegate_task(task_description: str, context: dict):
 
         # Integration phase
         result = await Task(
-            subagent_type="integration-specialist",
+            subagent_type="manager-quality",
             prompt="Integrate all components",
             context={"results": parallel_results}
         )

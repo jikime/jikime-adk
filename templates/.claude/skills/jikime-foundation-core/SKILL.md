@@ -1,6 +1,7 @@
 ---
 name: jikime-foundation-core
 description: JikiME-ADK's foundational principles - TRUST 5, SPEC-First DDD, delegation patterns, token optimization, progressive disclosure, modular architecture, agent catalog, command reference, and execution rules for building AI-powered development workflows
+version: 1.0.0
 tags: ["foundation", "trust-5", "spec", "ddd", "delegation", "token-optimization", "patterns"]
 triggers:
   keywords: ["TRUST", "foundation", "principle", "architecture", "delegation", "token", "원칙"]
@@ -72,11 +73,11 @@ Readable Pillar: Use clear and descriptive naming conventions. Execute ruff lint
 
 Unified Pillar: Apply consistent formatting and import patterns. Execute black formatter and isort checks. Auto-format code or issue warning on failure. Consistency eliminates style debates and merge conflicts. Reduces code review time by 30 percent and improves readability.
 
-Secured Pillar: Comply with OWASP security standards. Execute security-expert agent analysis. Block merge and require security review on failure. Security vulnerabilities create critical business and legal risks. Prevents 95+ percent of common security vulnerabilities.
+Secured Pillar: Comply with OWASP security standards. Execute security-auditor agent analysis. Block merge and require security review on failure. Security vulnerabilities create critical business and legal risks. Prevents 95+ percent of common security vulnerabilities.
 
 Trackable Pillar: Write clear and structured commit messages. Match Git commit message regex patterns. Suggest proper commit message format on failure. Clear history enables debugging, auditing, and collaboration. Reduces issue investigation time by 50 percent.
 
-Integration Points: Pre-commit hooks for automated validation, CI/CD pipelines for quality gate enforcement, Agent workflows for core-quality validation, Documentation for quality metrics.
+Integration Points: Pre-commit hooks for automated validation, CI/CD pipelines for quality gate enforcement, Agent workflows for manager-quality validation, Documentation for quality metrics.
 
 Detailed Reference: modules/trust-5-framework.md
 
@@ -88,7 +89,7 @@ Purpose: Specification-driven development ensuring clear requirements before imp
 
 Three-Phase Workflow:
 
-Phase 1 SPEC (/jikime:1-plan): workflow-spec generates EARS format. Output is .jikime/specs/SPEC-XXX/spec.md. Execute /clear to save 45-50K tokens.
+Phase 1 SPEC (/jikime:1-plan): manager-spec generates EARS format. Output is .jikime/specs/SPEC-XXX/spec.md. Execute /clear to save 45-50K tokens.
 
 Phase 2 DDD (/jikime:2-run): RED for failing tests, GREEN for passing code, REFACTOR for optimization. Validate with at least 85% coverage.
 
@@ -108,17 +109,17 @@ Detailed Reference: modules/spec-first-ddd.md
 
 Purpose: Task delegation to specialized agents, avoiding direct execution.
 
-Core Principle: Alfred must delegate all work through Task() to specialized agents. Direct execution bypasses specialization, quality gates, and token optimization. Proper delegation improves task success rate by 40 percent and enables parallel execution.
+Core Principle: The orchestrator must delegate all work through Task() to specialized agents. Direct execution bypasses specialization, quality gates, and token optimization. Proper delegation improves task success rate by 40 percent and enables parallel execution.
 
 Delegation Syntax: Call Task with subagent_type parameter for specialized agent, prompt parameter for clear specific task, and context parameter with relevant data dictionary.
 
 Three Patterns:
 
-Sequential for dependencies: Call Task to api-designer for design, then Task to backend-expert for implementation with design context.
+Sequential for dependencies: Call Task to backend for design, then Task to backend for implementation with design context.
 
-Parallel for independent work: Call Promise.all with Task to backend-expert and Task to frontend-expert simultaneously.
+Parallel for independent work: Call Promise.all with Task to backend and Task to frontend simultaneously.
 
-Conditional for analysis-based: Call Task to debug-helper for analysis, then based on analysis.type, call Task to security-expert or other appropriate agent.
+Conditional for analysis-based: Call Task to debugger for analysis, then based on analysis.type, call Task to security-auditor or other appropriate agent.
 
 Agent Selection: Simple tasks with 1 file use 1-2 agents sequential. Medium tasks with 3-5 files use 2-3 agents sequential. Complex tasks with 10+ files use 5+ agents mixed.
 
@@ -210,13 +211,13 @@ Detailed Reference: examples.md for working code samples
 
 ## Works Well With
 
-Agents: agent-factory for creating agents with foundation principles, skill-factory for generating skills with modular architecture, core-quality for automated TRUST 5 validation, workflow-spec for EARS format specification, workflow-ddd for ANALYZE-PRESERVE-IMPROVE execution, workflow-docs for documentation with progressive disclosure.
+Agents: agent-builder for creating agents with foundation principles, skill-builder for generating skills with modular architecture, manager-quality for automated TRUST 5 validation, manager-spec for EARS format specification, manager-ddd for ANALYZE-PRESERVE-IMPROVE execution, manager-docs for documentation with progressive disclosure.
 
-Skills: jikime-cc-claude-md for CLAUDE.md with foundation patterns, jikime-cc-configuration for config with TRUST 5, jikime-cc-memory for token optimization, jikime-context7-integration for MCP integration.
+Skills: jikime-foundation-claude for CLAUDE.md with foundation patterns, jikime-foundation-claude for config with TRUST 5, jikime-foundation-context for token optimization, jikime-workflow-jit-docs for MCP integration.
 
 Tools: AskUserQuestion for direct user interaction and clarification needs.
 
-Commands: /jikime:1-plan for SPEC-First Phase 1, /jikime:2-run for DDD Phase 2, /jikime:3-sync for Documentation Phase 3, /jikime:9-feedback for continuous improvement, /clear for token management.
+Commands: /jikime:1-plan for SPEC-First Phase 1, /jikime:2-run for DDD Phase 2, /jikime:3-sync for Documentation Phase 3, /clear for token management.
 
 Foundation Modules (Extended Documentation): modules/agents-reference.md for 26-agent catalog with 7-tier hierarchy, modules/commands-reference.md for 6 core commands workflow, modules/execution-rules.md for security, Git strategy, and compliance.
 

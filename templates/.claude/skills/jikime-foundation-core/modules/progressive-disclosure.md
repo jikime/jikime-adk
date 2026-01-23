@@ -91,7 +91,7 @@ TRUST 5 is JikiME-ADK's comprehensive quality assurance framework enforcing five
 Integration Points:
 - Pre-commit hooks → Automated validation
 - CI/CD pipelines → Quality gate enforcement
-- quality-gate agent → TRUST 5 validation
+- manager-quality agent → TRUST 5 validation
 - /jikime:2-run → Enforces ≥85% coverage
 
 Quick Validation:
@@ -188,7 +188,7 @@ Workflow:
 # 1. Generate SPEC
 /jikime:1-plan "Implement user authentication with JWT tokens"
 
-# 2. spec-builder creates:
+# 2. manager-spec creates:
 .jikime/specs/SPEC-001/
  spec.md # EARS format requirements
  acceptance.md # Acceptance criteria
@@ -630,13 +630,13 @@ Available Modules:
 ## Works Well With
 
 Skills:
-- jikime-foundation-modular-system - File organization patterns
-- jikime-foundation-token-optimization - Content efficiency
-- jikime-cc-skill-factory - Skill creation with progressive structure
+- jikime-foundation-core - Modular system and file organization patterns
+- jikime-foundation-context - Token budget management and content efficiency
+- jikime-foundation-claude - Skill creation with progressive structure
 
 Agents:
-- skill-factory - Create skills with progressive disclosure
-- docs-manager - Generate documentation with layered structure
+- skill-builder - Create skills with progressive disclosure
+- manager-docs - Generate documentation with layered structure
 
 Commands:
 - /jikime:1-plan - Generate SPEC with progressive detail

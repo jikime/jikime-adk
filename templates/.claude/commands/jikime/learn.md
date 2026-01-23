@@ -7,7 +7,7 @@ context: research
 
 **Context**: @.claude/contexts/research.md (Auto-loaded)
 
-코드베이스를 탐색하고 학습합니다.
+Explore and learn about the codebase.
 
 ## Usage
 

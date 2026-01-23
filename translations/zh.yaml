@@ -14,6 +14,30 @@ user_welcome:
   other: "欢迎: {{.Name}}"
 user_name_label:
   other: "用户名"
+honorific_prompt:
+  other: "输入你喜欢的称呼（可选，例如：先生、女士）"
+honorific_label:
+  other: "称呼"
+tone_preset_help:
+  other: "选择回复语气: [↑↓] 导航  [Enter] 选择"
+tone_preset_label:
+  other: "回复语气"
+tone_friendly_display:
+  other: "friendly（友好）"
+tone_friendly_desc:
+  other: "温暖、支持、鼓励的语气"
+tone_professional_display:
+  other: "professional（专业）"
+tone_professional_desc:
+  other: "正式、简洁的商务语气"
+tone_casual_display:
+  other: "casual（随意）"
+tone_casual_desc:
+  other: "轻松、对话式的语气"
+tone_mentor_display:
+  other: "mentor（导师）"
+tone_mentor_desc:
+  other: "教育性、详细的解释"
 project_prompt:
   other: "项目名称"
 project_name_label:

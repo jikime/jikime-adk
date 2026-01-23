@@ -208,4 +208,4 @@ Before committing:
 ---
 
 Version: 1.0.0
-Source: Adapted from everything-claude-code + expanded guidelines
+Source: JikiME-ADK performance guidelines

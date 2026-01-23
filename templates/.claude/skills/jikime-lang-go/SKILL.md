@@ -1,11 +1,12 @@
 ---
 name: jikime-lang-go
 description: Go 1.23+ development specialist covering Fiber, Gin, GORM, and concurrent programming patterns. Use when building high-performance microservices, CLI tools, or cloud-native applications.
+version: 1.0.0
 tags: ["language", "go", "fiber", "gin", "gorm", "microservices", "cloud-native"]
 triggers:
   keywords: ["go", "golang", "fiber", "gin", "gorm", "goroutine", "고랭"]
   phases: ["run"]
-  agents: ["expert-backend"]
+  agents: ["backend"]
   languages: ["go"]
 user-invocable: false
 ---

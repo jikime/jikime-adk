@@ -7,7 +7,7 @@ context: planning
 
 **Context**: @.claude/contexts/planning.md (Auto-loaded)
 
-시스템 아키텍처 설계 및 리뷰. 트레이드오프 분석, ADR 생성.
+System architecture design and review. Trade-off analysis, ADR creation.
 
 ## Usage
 
@@ -149,7 +149,7 @@ Monolith-first approach with modular boundaries.
 
 ## Related Commands
 
-- `/jikime:plan` - Implementation planning
+- `/jikime:1-plan` - Implementation planning
 - `/jikime:refactor` - Code restructuring
 - `/jikime:docs` - Document architecture
 

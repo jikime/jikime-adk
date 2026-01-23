@@ -6,20 +6,20 @@ Rules for user interaction and AskUserQuestion usage.
 
 > Subagents invoked via Task() operate in isolated, stateless contexts and cannot interact with users directly.
 
-**Only Alfred can use AskUserQuestion** - subagents cannot.
+**Only J.A.R.V.I.S. or F.R.I.D.A.Y. can use AskUserQuestion** - subagents cannot.
 
 ## Correct Workflow Pattern
 
 ```
-Step 1: Alfred uses AskUserQuestion to collect user preferences
+Step 1: J.A.R.V.I.S./F.R.I.D.A.Y. uses AskUserQuestion to collect user preferences
         ↓
-Step 2: Alfred invokes Task() with user choices in the prompt
+Step 2: J.A.R.V.I.S./F.R.I.D.A.Y. invokes Task() with user choices in the prompt
         ↓
 Step 3: Subagent executes based on provided parameters (no user interaction)
         ↓
 Step 4: Subagent returns structured response with results
         ↓
-Step 5: Alfred uses AskUserQuestion for next decision based on agent response
+Step 5: J.A.R.V.I.S./F.R.I.D.A.Y. uses AskUserQuestion for next decision based on agent response
 ```
 
 ## AskUserQuestion Constraints
@@ -44,16 +44,16 @@ Step 5: Alfred uses AskUserQuestion for next decision based on agent response
 AskUserQuestion(...)  # WILL FAIL - subagents cannot interact with users
 ```
 
-**DO** (Alfred handling user interaction):
+**DO** (J.A.R.V.I.S./F.R.I.D.A.Y. handling user interaction):
 ```
-Alfred: AskUserQuestion("Which approach do you prefer?", options=[...])
+J.A.R.V.I.S.: AskUserQuestion("Which approach do you prefer?", options=[...])
 User: "Option A"
-Alfred: Task("expert-backend", "Implement using approach A as user requested")
+J.A.R.V.I.S.: Task("backend", "Implement using approach A as user requested")
 ```
 
 ## Checklist
 
-- [ ] Only Alfred uses AskUserQuestion
+- [ ] Only J.A.R.V.I.S./F.R.I.D.A.Y. uses AskUserQuestion
 - [ ] Questions have max 4 options
 - [ ] No emoji in questions
 - [ ] Questions in user's conversation_language

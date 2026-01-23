@@ -1,9 +1,7 @@
 package project
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -11,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v3"
 	"jikime-adk/templates"
+	"jikime-adk/version"
 )
 
 // ProjectInitializer orchestrates project scaffolding.
@@ -40,7 +38,7 @@ func (pi *ProjectInitializer) Initialize(answers SetupAnswers, force bool) (Init
 	start := time.Now()
 	created := []string{}
 	caretDir := filepath.Join(pi.path, ".jikime")
-	sectionsDir := filepath.Join(caretDir, "config", "sections")
+	configDir := filepath.Join(caretDir, "config")
 
 	reinitialized := false
 	if exists(caretDir) {
@@ -51,7 +49,7 @@ func (pi *ProjectInitializer) Initialize(answers SetupAnswers, force bool) (Init
 	}
 
 	// Phase 1: Create directory structure
-	if err := os.MkdirAll(sectionsDir, 0o755); err != nil {
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		return InitializeResult{}, err
 	}
 
@@ -78,6 +76,7 @@ func (pi *ProjectInitializer) Initialize(answers SetupAnswers, force bool) (Init
 
 	// Prepare variable substitution context
 	conversationLanguageName := languageCodeToName(answers.Locale)
+	locale := languageCodeToLocale(answers.Locale)
 	context := map[string]string{
 		"PROJECT_NAME":               answers.ProjectName,
 		"CONVERSATION_LANGUAGE":      answers.Locale,
@@ -87,6 +86,11 @@ func (pi *ProjectInitializer) Initialize(answers SetupAnswers, force bool) (Init
 		"DOCUMENTATION_LANG":         answers.DocLang,
 		"GIT_MODE":                   answers.GitMode,
 		"GITHUB_USER":                answers.GitHubUser,
+		"USER_NAME":                  answers.UserName,
+		"HONORIFIC":                  answers.Honorific,
+		"TONE_PRESET":                answers.TonePreset,
+		"LOCALE":                     locale,
+		"JIKIME_VERSION":             version.String(),
 	}
 
 	// Copy template directories and files
@@ -116,42 +120,8 @@ func (pi *ProjectInitializer) Initialize(answers SetupAnswers, force bool) (Init
 		}
 	}
 
-	// Phase 3: Update configuration section files
-	entries := []struct {
-		filename string
-		content  map[string]interface{}
-	}{
-		{"language.yaml", map[string]interface{}{"language": map[string]string{"conversation_language": answers.Locale, "conversation_language_name": conversationLanguageName, "git_commit_messages": answers.GitCommitLang, "code_comments": answers.CodeCommentLang, "documentation": answers.DocLang}}},
-		{"git-strategy.yaml", map[string]interface{}{"git_strategy": map[string]string{"mode": answers.GitMode}}},
-		{"project.yaml", map[string]interface{}{"project": map[string]string{"name": answers.ProjectName}, "github": map[string]string{"profile_name": answers.GitHubUser}}},
-		{"user.yaml", map[string]interface{}{"user": map[string]string{"name": answers.UserName}}},
-	}
-
-	for _, entry := range entries {
-		if entry.filename == "project.yaml" && answers.GitHubUser == "" {
-			delete(entry.content, "github")
-		}
-		filePath := filepath.Join(sectionsDir, entry.filename)
-
-		// Skip if file already exists (preserve user customizations)
-		if exists(filePath) {
-			continue
-		}
-
-		if err := writeYAML(filePath, entry.content); err != nil {
-			return InitializeResult{}, err
-		}
-		created = append(created, filePath)
-	}
-
-	// Phase 4: Initialize git repository (if not already initialized)
+	// Phase 3: Initialize git repository (if not already initialized)
 	initializeGit(pi.path)
-
-	// Phase 5: Update settings.json with companyAnnouncements
-	if err := updateSettingsWithAnnouncements(pi.path, templateRoot, answers.Locale); err != nil {
-		// Non-fatal error - continue even if announcements update fails
-		fmt.Fprintf(os.Stderr, "Warning: Failed to update announcements: %v\n", err)
-	}
 
 	return InitializeResult{
 		ProjectPath:   pi.path,
@@ -161,14 +131,6 @@ func (pi *ProjectInitializer) Initialize(answers SetupAnswers, force bool) (Init
 		Duration:      time.Since(start),
 		Reinitialized: reinitialized,
 	}, nil
-}
-
-func writeYAML(path string, content map[string]interface{}) error {
-	data, err := yaml.Marshal(content)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, 0o644)
 }
 
 // languageCodeToName converts a language code to its display name
@@ -186,6 +148,23 @@ func languageCodeToName(code string) string {
 		return name
 	}
 	return "English"
+}
+
+// languageCodeToLocale converts a language code to its full locale
+func languageCodeToLocale(code string) string {
+	locales := map[string]string{
+		"en": "en_US",
+		"ko": "ko_KR",
+		"ja": "ja_JP",
+		"zh": "zh_CN",
+		"es": "es_ES",
+		"fr": "fr_FR",
+		"de": "de_DE",
+	}
+	if locale, ok := locales[code]; ok {
+		return locale
+	}
+	return "en_US"
 }
 
 func exists(path string) bool {
@@ -342,29 +321,6 @@ func copyFileWithSubstitution(src, dst string, context map[string]string) error 
 	return os.WriteFile(dst, []byte(text), perm)
 }
 
-// copyFile copies a file without modification
-func copyFile(src, dst string) error {
-	sourceFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer sourceFile.Close()
-
-	// Create parent directory if not exists
-	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
-		return err
-	}
-
-	destFile, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer destFile.Close()
-
-	_, err = io.Copy(destFile, sourceFile)
-	return err
-}
-
 // initializeGit initializes a git repository if not already initialized
 func initializeGit(projectPath string) {
 	// Check if .git directory already exists
@@ -383,47 +339,3 @@ func initializeGit(projectPath string) {
 	_ = cmd.Run()
 }
 
-// updateSettingsWithAnnouncements updates .claude/settings.json with companyAnnouncements
-func updateSettingsWithAnnouncements(projectPath, templateRoot, locale string) error {
-	settingsPath := filepath.Join(projectPath, ".claude", "settings.json")
-
-	// Check if settings.json exists
-	if !exists(settingsPath) {
-		return fmt.Errorf("settings.json not found")
-	}
-
-	// Read current settings
-	data, err := os.ReadFile(settingsPath)
-	if err != nil {
-		return fmt.Errorf("failed to read settings.json: %w", err)
-	}
-
-	// Parse JSON
-	var settings map[string]interface{}
-	if err := json.Unmarshal(data, &settings); err != nil {
-		return fmt.Errorf("failed to parse settings.json: %w", err)
-	}
-
-	// Load announcements for the specified language
-	announcements, err := LoadAnnouncements(templateRoot, locale)
-	if err != nil {
-		// Use default announcements on error
-		announcements = getDefaultAnnouncements()
-	}
-
-	// Update companyAnnouncements
-	settings["companyAnnouncements"] = announcements
-
-	// Marshal back to JSON with indentation
-	updatedData, err := json.MarshalIndent(settings, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal settings.json: %w", err)
-	}
-
-	// Write back to file
-	if err := os.WriteFile(settingsPath, updatedData, 0o644); err != nil {
-		return fmt.Errorf("failed to write settings.json: %w", err)
-	}
-
-	return nil
-}

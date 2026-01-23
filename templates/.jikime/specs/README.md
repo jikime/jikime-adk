@@ -29,17 +29,17 @@ SPEC-API-003/    # API endpoint feature
 
 ## Creating a New SPEC
 
-Use the `/jikime:dev-1-plan` command:
+Use the `/jikime:1-plan` command:
 
 ```bash
 # Create new SPEC
-/jikime:dev-1-plan Add user authentication
+/jikime:1-plan Add user authentication
 
 # Specify domain
-/jikime:dev-1-plan --domain AUTH Add JWT login
+/jikime:1-plan --domain AUTH Add JWT login
 
 # Use existing SPEC
-/jikime:dev-1-plan SPEC-AUTH-001
+/jikime:1-plan SPEC-AUTH-001
 ```
 
 ## 3-File Structure
@@ -77,13 +77,13 @@ EARS format specification:
 ## Workflow
 
 ```
-/jikime:dev-1-plan  → Creates SPEC in this directory
+/jikime:1-plan  → Creates SPEC in this directory
         ↓
-/jikime:dev-2-implement SPEC-XXX → Implements based on SPEC
+/jikime:2-run SPEC-XXX → Implements based on SPEC
         ↓
-/jikime:dev-3-test SPEC-XXX → Tests implementation
+/jikime:test SPEC-XXX → Tests implementation
         ↓
-/jikime:dev-4-review SPEC-XXX → Reviews code
+/jikime:3-sync SPEC-XXX → Syncs documentation
 ```
 
 ## Important Rules

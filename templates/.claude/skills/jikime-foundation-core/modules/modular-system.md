@@ -642,13 +642,13 @@ for result in results:
 ## Works Well With
 
 Skills:
-- jikime-foundation-progressive-disclosure - Content structuring
-- jikime-cc-skill-factory - Skill creation with modular structure
-- jikime-foundation-token-optimization - File loading efficiency
+- jikime-foundation-core - Progressive disclosure and content structuring
+- jikime-foundation-claude - Skill creation with modular structure
+- jikime-foundation-context - Token budget management and file loading efficiency
 
 Agents:
-- skill-factory - Create skills with standard file structure
-- docs-manager - Generate documentation following modular pattern
+- skill-builder - Create skills with standard file structure
+- manager-docs - Generate documentation following modular pattern
 
 Commands:
 - /jikime:1-plan - SPEC generation with modular docs

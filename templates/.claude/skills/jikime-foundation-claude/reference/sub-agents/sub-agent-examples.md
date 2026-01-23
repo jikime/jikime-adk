@@ -23,11 +23,11 @@ Examples Cover: Domain experts, tool specialists, process orchestrators, quality
 
 ```yaml
 ---
-name: code-backend
+name: backend
 description: Use PROACTIVELY for backend architecture, API design, server implementation, database integration, or microservices architecture. Called from /jikime:1-plan architecture design and task delegation workflows.
 tools: Read, Write, Edit, Bash, WebFetch, Grep, Glob, MultiEdit, TodoWrite, AskUserQuestion, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: sonnet
-skills: jikime-domain-backend, jikime-essentials-perf, jikime-context7-integration, jikime-lang-python
+skills: jikime-domain-backend, jikime-foundation-quality, jikime-workflow-jit-docs, jikime-lang-python
 ---
 
 # Backend Expert 
@@ -115,10 +115,10 @@ When to Use:
 - Conducting backend security audits
 
 Delegation Targets:
-- `data-database` for complex database schema design
-- `security-expert` for advanced security analysis
-- `performance-engineer` for performance optimization
-- `api-designer` for detailed API specification
+- `backend` for complex database schema design
+- `security-auditor` for advanced security analysis
+- `optimizer` for performance optimization
+- `backend` for detailed API specification
 
 ## Quality Standards
 
@@ -181,11 +181,11 @@ database_selection:
 
 ```yaml
 ---
-name: code-frontend
+name: frontend
 description: Use PROACTIVELY for frontend UI development, React/Vue/Angular components, responsive design, user experience optimization, or web application architecture. Called from /jikime:2-run implementation and task delegation workflows.
 tools: Read, Write, Edit, Grep, Glob, MultiEdit, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: sonnet
-skills: jikime-domain-frontend, jikime-cc-configuration, jikime-context7-integration, jikime-ui-ux-expert
+skills: jikime-domain-frontend, jikime-foundation-claude, jikime-workflow-jit-docs, jikime-domain-uiux
 ---
 
 # Frontend Expert 
@@ -276,9 +276,9 @@ When to Use:
 
 Delegation Targets:
 - `ui-ux-expert` for user experience design
-- `component-designer` for component architecture
-- `performance-engineer` for optimization strategies
-- `accessibility-expert` for WCAG compliance
+- `frontend` for component architecture
+- `optimizer` for optimization strategies
+- `frontend` for WCAG compliance
 
 ## Technology Stack Patterns
 
@@ -407,11 +407,11 @@ module.exports = {
 
 ```yaml
 ---
-name: format-expert
+name: documenter
 description: Use PROACTIVELY for code formatting, style consistency, linting configuration, and automated code quality improvements. Called from /jikime:2-run quality gates and task delegation workflows.
 tools: Read, Write, Edit, Bash, Grep, Glob, MultiEdit
 model: haiku
-skills: jikime-code-quality, jikime-cc-configuration, jikime-lang-python
+skills: jikime-foundation-quality, jikime-foundation-claude, jikime-lang-python
 ---
 
 # Code Format Expert
@@ -499,9 +499,9 @@ When to Use:
 - Pre-commit hook configuration
 
 Delegation Targets:
-- `core-quality` for comprehensive quality validation
-- `workflow-docs` for formatting documentation
-- `git-manager` for pre-commit hook setup
+- `manager-quality` for comprehensive quality validation
+- `manager-docs` for formatting documentation
+- `manager-git` for pre-commit hook setup
 
 ## Language-Specific Patterns
 
@@ -578,11 +578,11 @@ rust_formatting:
 
 ```yaml
 ---
-name: support-debug
+name: debugger
 description: Use PROACTIVELY for error analysis, debugging assistance, troubleshooting guidance, and problem resolution. Use when encountering runtime errors, logic issues, or unexpected behavior that needs investigation.
 tools: Read, Write, Edit, Grep, Glob, Bash, WebFetch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: sonnet
-skills: jikime-essentials-debug, jikime-core-code-reviewer, jikime-context7-integration
+skills: jikime-workflow-testing, jikime-foundation-quality, jikime-workflow-jit-docs
 ---
 
 # Debug Helper Expert 
@@ -668,9 +668,9 @@ When to Use:
 - Providing systematic debugging methodologies
 
 Delegation Targets:
-- `core-quality` for comprehensive code review
-- `security-expert` for security-related issues
-- `performance-engineer` for performance debugging
+- `manager-quality` for comprehensive code review
+- `security-auditor` for security-related issues
+- `optimizer` for performance debugging
 
 ## Debugging Methodologies
 
@@ -871,11 +871,11 @@ class DebuggingKnowledgeBase:
 
 ```yaml
 ---
-name: workflow-ddd
+name: manager-ddd
 description: Execute ANALYZE-PRESERVE-IMPROVE DDD cycle for implementing features with comprehensive test coverage. Called from /jikime:2-run SPEC implementation and task delegation workflows.
 tools: Read, Write, Edit, Bash, Grep, Glob, MultiEdit, TodoWrite
 model: sonnet
-skills: jikime-lang-python, jikime-domain-testing, jikime-foundation-quality, jikime-core-spec-authoring
+skills: jikime-lang-python, jikime-workflow-testing, jikime-foundation-quality, jikime-workflow-spec
 ---
 
 # DDD Implementation Expert
@@ -986,9 +986,9 @@ When to Use:
 - Ensuring code quality through systematic testing
 
 Delegation Targets:
-- `core-quality` for comprehensive validation
-- `core-quality` for advanced testing strategies
-- `security-expert` for security-focused testing
+- `manager-quality` for comprehensive validation
+- `manager-quality` for advanced testing strategies
+- `security-auditor` for security-focused testing
 
 ## DDD Best Practices
 
@@ -1176,11 +1176,11 @@ tdd_pipeline:
 
 ```yaml
 ---
-name: security-expert
+name: security-auditor
 description: Use PROACTIVELY for security audits, vulnerability assessment, OWASP Top 10 analysis, and secure code review. Use when conducting security analysis, implementing security controls, or validating security measures.
 tools: Read, Write, Edit, Grep, Glob, Bash, WebFetch, mcp__context7__resolve-library-id, mcp__context7__get-library-docs
 model: sonnet
-skills: jikime-domain-security, jikime-cc-security, jikime-foundation-quality, jikime-core-workflow
+skills: jikime-workflow-testing, jikime-workflow-testing, jikime-foundation-quality, jikime-foundation-core
 ---
 
 # Security Auditor Expert 
@@ -1303,9 +1303,9 @@ When to Use:
 - Responding to security incidents and breaches
 
 Delegation Targets:
-- `code-backend` for backend security implementation
-- `code-frontend` for frontend security validation
-- `data-database` for database security assessment
+- `backend` for backend security implementation
+- `frontend` for frontend security validation
+- `backend` for database security assessment
 
 ## Security Analysis Framework
 

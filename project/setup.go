@@ -5,6 +5,8 @@ type SetupAnswers struct {
 	ProjectName     string
 	Locale          string
 	UserName        string
+	Honorific       string // User's preferred honorific (e.g., "sir", "님", "さん")
+	TonePreset      string // Tone preset: friendly, professional, casual, mentor
 	GitMode         string
 	GitHubUser      string
 	GitCommitLang   string

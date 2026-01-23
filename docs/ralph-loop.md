@@ -324,12 +324,10 @@ jikime hooks cancel-loop
 Claude가 작업 완료를 선언할 때 사용하는 마커입니다.
 
 ```
+<jikime>DONE</jikime>
+<jikime>COMPLETE</jikime>
 <jikime:done />
 <jikime:complete />
-<promise>DONE</promise>
-<ralph:done />
-<ralph:complete />
-<alfred:complete />
 ```
 
 이 마커 중 하나가 감지되면 에러 유무와 관계없이 **즉시 종료**됩니다.

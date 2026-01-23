@@ -1,111 +1,286 @@
 ---
-description: "[Step 2/4] 마이그레이션 계획 수립. 단계 정의, 작업량 추정, 위험 식별. 승인 후 진행."
+description: "[Step 2/4] Migration plan creation. Phase definition, effort estimation, risk identification. Proceeds after approval."
+argument-hint: '[--modules auth,users,orders] [--incremental]'
+type: workflow
+allowed-tools: Task, AskUserQuestion, TodoWrite, Bash, Read, Write, Glob, Grep
+model: inherit
 ---
 
 # Migration Step 2: Plan
 
-**계획 단계**: 마이그레이션 계획을 수립합니다.
+**Planning Phase**: Creates migration plan based on analysis results from previous phases (Discover, Analyze).
+
+## CRITICAL: Input Sources
+
+**DO NOT analyze source code directly.** Only use outputs from previous phases.
+
+### Required Inputs (from Phase 1: Analyze)
+
+1. **`.migrate-config.yaml`** - Project settings and artifacts path
+2. **`as_is_spec.md`** - Full analysis results (components, routing, state, dependencies, etc.)
+
+### Input Loading Flow
+
+```
+Step 1: Read `.migrate-config.yaml` from project root
+        → Extract `artifacts_dir` path
+
+Step 2: Read `{artifacts_dir}/as_is_spec.md`
+        → This contains ALL analysis from Phase 1
+
+Step 3: Create plan ONLY from as_is_spec.md content
+        → DO NOT read source code files
+        → DO NOT re-analyze the codebase
+```
+
+### Error Handling
+
+If `.migrate-config.yaml` or `as_is_spec.md` is not found:
+- Inform user that Phase 1 (Analyze) must be completed first
+- Suggest running `/jikime:migrate-1-analyze` before this command
+- DO NOT attempt to analyze source code as a fallback
+
+## Dynamic Skill Discovery (MUST Execute)
+
+Before creating the plan, you MUST **dynamically discover and load** relevant skills based on analysis results.
+Do NOT assume a specific framework. Always read the target from analysis data and find skills accordingly.
+
+### Skill Discovery Flow
+
+```
+Step 1: Read target_framework from .migrate-config.yaml
+        → e.g., "nextjs16", "fastapi", "go-fiber"
+
+Step 2: Search for migration skill
+        → jikime-adk skill search "{target_framework}"
+        → jikime-adk skill search "migrate {target_framework}"
+
+Step 3: Search for target language/framework skill
+        → jikime-adk skill search "{target_language}"
+        → e.g., "typescript", "python", "go"
+
+Step 4: Search for library/platform skills (from as_is_spec.md)
+        → Detected libraries → jikime-adk skill search "{library}"
+        → e.g., "shadcn", "supabase", "auth"
+
+Step 5: Load discovered skills
+        → Skill("{found-migration-skill}")
+        → Skill("{found-framework-skill}")
+        → Skill("{found-library-skills}")
+```
+
+### Discovery Examples
+
+| target_framework | Discovered Skills |
+|------------------|-------------------|
+| nextjs16 | jikime-migrate-to-nextjs, jikime-nextjs@16, jikime-library-shadcn |
+| fastapi | jikime-lang-python (+ related) |
+| go-fiber | jikime-lang-go (+ related) |
+| flutter | jikime-lang-flutter (+ related) |
+
+### What to Extract from Loaded Skills
+
+Rules that MUST be extracted from loaded skills and reflected in the Plan:
+
+1. **Project structure** - Recommended directory structure for target framework
+2. **Project initialization** - Project creation commands, required packages
+3. **File/directory naming** - Target's file naming conventions (kebab-case, snake_case, etc.)
+4. **Component/module mapping** - Source → target pattern transformation rules
+5. **State management** - Target's recommended state management approach
+6. **Routing** - Target's routing structure and rules
+7. **UI library** - Target's UI component handling approach
+
+### Fallback (Skill Not Found)
+
+When no relevant skill is found:
+- Query target framework official docs via Context7 MCP
+- `mcp__context7__resolve-library-id` → `mcp__context7__query-docs`
+- Reflect discovered patterns in the Plan
 
 ## What This Command Does
 
-1. **Phase Definition** - 단계별 마이그레이션 계획
-2. **Effort Estimation** - 작업량 및 기간 추정
-3. **Risk Assessment** - 잠재적 위험 요소 식별
-4. **Wait for Approval** - 사용자 승인 후 진행
+1. **Load Skills** - Load migration-related skill rules
+2. **Load Analysis Results** - Load analysis data from as_is_spec.md
+3. **Phase Definition** - Create phased plan based on skill rules + analysis results
+4. **Effort Estimation** - Estimate effort based on component complexity
+5. **Risk Assessment** - Leverage risk factors from as_is_spec.md
+6. **Wait for Approval** - Proceed after user approval
 
 ## Usage
 
 ```bash
-# Create plan based on analysis
+# Create plan from analysis results (reads .migrate-config.yaml automatically)
 /jikime:migrate-2-plan
-
-# Plan with specific source and target
-/jikime:migrate-2-plan source:php target:nextjs
 
 # Plan specific modules only
 /jikime:migrate-2-plan --modules auth,users,orders
+
+# Plan for incremental migration
+/jikime:migrate-2-plan --incremental
 ```
 
 ## Options
 
 | Option | Description |
 |--------|-------------|
-| `source:<lang>` | Source language/framework |
-| `target:<lang>` | Target language/framework |
-| `--modules` | Specific modules to migrate |
+| `--modules` | Specific modules to migrate (from as_is_spec.md) |
 | `--incremental` | Plan for incremental migration |
+
+## Execution Flow
+
+### Step 0: Load Config & Discover Skills
+
+```
+Read(".migrate-config.yaml")
+→ Extract: source_path, artifacts_dir, target_framework
+
+jikime-adk skill search "{target_framework}"
+jikime-adk skill search "{detected_language}"
+jikime-adk skill search "{detected_libraries}"
+→ Load all discovered relevant skills
+```
+
+### Step 1: Load Previous Phase Results
+
+```
+Read("{artifacts_dir}/as_is_spec.md")
+→ Contains: components, routing, state, dependencies, risks
+```
+
+### Step 2: Create Migration Plan (Skills + Analysis)
+
+Using `as_is_spec.md` data + **loaded skill conventions**, create:
+
+1. **Project setup** - Follow skill initialization rules
+   - Project creation commands, required packages
+2. **Directory structure** - Apply skill's recommended structure
+3. **File/directory naming** - Apply skill's naming conventions
+4. **Component/module mapping** - Based on skill's mapping tables
+   - Source pattern → Target equivalent
+5. **State migration** - Skill's state management decision tree
+6. **Routing migration** - Target's routing rules
+7. **Effort estimates** - Based on component complexity scores
+8. **Risk assessment** - Leverage risk factors from as_is_spec.md
+
+### Step 3: Write Plan & Wait for Approval
+
+Write plan to `{artifacts_dir}/migration_plan.md` and present to user.
+
+Plan must include:
+- Target project structure (from discovered skills)
+- Component migration order (from dependency graph in as_is_spec.md)
+- File naming convention examples (from skill rules)
+- Project initialization commands (from skill modules)
+- Package/dependency list (from skill conventions)
 
 ## Output
 
 ```markdown
-# Migration Plan: PHP → Next.js
+# Migration Plan: {source_framework} → {target_framework}
 
-## Phase 1: Database Layer (3 days)
-- PDO → Prisma ORM
-- MySQL schema migration
-- Data validation with Zod
+## Input Sources
+- Analysis: {artifacts_dir}/as_is_spec.md
+- Components: {count} total
+- Risks identified: {count}
 
-## Phase 2: API Endpoints (5 days)
-- Laravel Controllers → API Routes
-- Authentication → NextAuth.js
-- Middleware migration
+## Loaded Skills & Conventions
+- Migration: {discovered_migration_skill}
+- Framework: {discovered_framework_skill}
+- Libraries: {discovered_library_skills}
 
-## Phase 3: Frontend (4 days)
-- Blade + jQuery → React Components
-- Asset pipeline migration
-- Styling to Tailwind CSS
+## Target Conventions (from Skills)
+- Project structure: {skill-defined directory layout}
+- File naming: {skill-defined naming convention}
+- State management: {skill-defined state approach}
+- Routing: {skill-defined routing pattern}
+- UI library: {skill-defined UI approach}
 
-## Phase 4: Testing & Verification (2 days)
+## Project Initialization
+{Commands from skill's project-initialization guide}
+
+## Phase 1: Foundation ({days} days)
+- Project scaffolding (skill conventions)
+- Core configuration setup
+- {framework-specific foundation tasks}
+
+## Phase 2: Core Features ({days} days)
+- {component_group_1} migration
+- {component_group_2} migration
+- API/data layer migration
+
+## Phase 3: UI & Frontend ({days} days)
+- Component migration (by complexity order from as_is_spec.md)
+- Styling migration
+- Asset pipeline
+
+## Phase 4: Testing & Verification ({days} days)
 - Characterization tests
-- E2E comparison tests
+- Integration tests
 - Performance validation
 
-## Total Estimated: 14 days
+## Total Estimated: {total} days
 
-## Risks
-- HIGH: Payment integration complexity
-- MEDIUM: Session handling differences
+## Risks (from Analysis)
+- HIGH: {risk from as_is_spec.md}
+- MEDIUM: {risk from as_is_spec.md}
 
 **WAITING FOR CONFIRMATION**: Proceed? (yes/no/modify)
 ```
 
 ## Important
 
-**승인 전까지 코드를 작성하지 않습니다.**
+**No code will be written until approval is received.**
 
-응답 방법:
-- `yes` - 계획대로 진행
-- `modify: [변경사항]` - 계획 수정
-- `no` - 취소
+Response options:
+- `yes` - Proceed as planned
+- `modify: [changes]` - Modify the plan
+- `no` - Cancel
 
 ## Agent Delegation
 
 | Phase | Agent | Purpose |
 |-------|-------|---------|
-| Planning | `planner` | Migration strategy |
-| Architecture | `architect` | System design |
+| Planning | `manager-strategy` | Migration strategy from analysis data |
+| Architecture | `frontend` | Component migration order |
 
-## Workflow
+## Workflow (Data Flow)
 
 ```
 /jikime:migrate-0-discover
-        ↓
+        ↓ (Discovery Report)
 /jikime:migrate-1-analyze
-        ↓
-/jikime:migrate-2-plan  ← 현재
-        ↓
+        ↓ (as_is_spec.md + .migrate-config.yaml)
+/jikime:migrate-2-plan  ← current
+        │
+        ├─ .migrate-config.yaml → Verify target_framework
+        ├─ jikime-adk skill search → Discover relevant skills
+        ├─ Skill() load → Extract rules/structure/naming
+        ├─ as_is_spec.md → Reference analysis data
+        │
+        ↓ (migration_plan.md - includes skill conventions)
 /jikime:migrate-3-execute
         ↓
 /jikime:migrate-4-verify
 ```
 
+## Constraints
+
+- **DO NOT** read or analyze source code files directly
+- **DO NOT** use Glob/Grep on the source project directory
+- **ONLY** read from `{artifacts_dir}/` for analysis data
+- All planning decisions must reference data from `as_is_spec.md`
+
 ## Next Step
 
-승인 후 다음 단계로:
+After approval, proceed to next step:
 ```bash
 /jikime:migrate-3-execute
 ```
 
 ---
 
-Version: 2.1.0
+Version: 2.3.0
+Changelog:
+- v2.3.0: Added dynamic skill discovery based on target_framework; Framework-agnostic plan generation
+- v2.2.0: Added explicit input loading from Phase 1 outputs; Prohibited source code re-analysis
+- v2.1.0: Initial structured plan command

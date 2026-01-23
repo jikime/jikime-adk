@@ -9,13 +9,13 @@ Version: 2.0.0
 
 ## Quick Reference (30 seconds)
 
-Alfred delegates ALL tasks to specialized agents. 26 agents organized in 7 tiers:
+The orchestrator delegates ALL tasks to specialized agents. 26 agents organized in 7 tiers:
 
-Tier 1: `workflow-*` (Command Processors) - Always Active
-Tier 2: `core-*` (Orchestration & Quality) - Auto-triggered
-Tier 3: `{domain}-*` (Domain Experts) - Lazy-loaded
+Tier 1: `manager-*` (Command Processors) - Always Active
+Tier 2: `manager-*` (Orchestration & Quality) - Auto-triggered
+Tier 3: `{specialist}` (Domain Experts) - Lazy-loaded
 Tier 4: `mcp-*` (MCP Integrators) - Resume-enabled
-Tier 5: `factory-*` (Factory Agents) - Meta-development
+Tier 5: `*-builder` (Builder Agents) - Meta-development
 Tier 6: `support-*` (Support Services) - On-demand
 Tier 7: `ai-*` (AI & Specialized) - Specialized tasks
 
@@ -26,7 +26,7 @@ Agent Selection:
 
 All agents use Task() delegation:
 ```python
-result = Task(subagent_type="code-backend", prompt="...", context={...})
+result = Task(subagent_type="backend", prompt="...", context={...})
 ```
 
 ---
@@ -39,17 +39,10 @@ All JikiME-ADK agents follow consistent naming:
 
 | Domain | Purpose | Examples |
 |--------|---------|----------|
-| `workflow` | Core workflow command processors | workflow-spec, workflow-ddd |
-| `core` | Orchestration & quality management | core-planner, core-quality |
-| `code` | Code implementation experts | code-backend, code-frontend |
-| `data` | Data-related experts | data-database |
-| `infra` | Infrastructure/DevOps experts | infra-devops |
-| `design` | Design/UX experts | design-uiux |
-| `security` | Security experts | security-expert |
-| `mcp` | MCP server integrations | mcp-context7, mcp-sequential-thinking |
-| `factory` | Meta-generation agents | factory-agent, factory-skill |
-| `support` | Support services | support-debug, support-claude |
-| `ai` | AI model integrations | ai-codex, ai-gemini |
+| `manager-*` | Core workflow command processors & orchestration | manager-spec, manager-ddd, manager-quality |
+| (no prefix) | Domain implementation experts | backend, frontend, architect, devops |
+| (no prefix) | Security experts | security-auditor |
+| `*-builder` | Meta-generation agents | agent-builder, skill-builder |
 
 ---
 
@@ -59,10 +52,10 @@ Core command processors directly bound to JikiME commands.
 
 | Agent | Command | Purpose |
 |-------|---------|---------|
-| `workflow-project` | `/jikime:0-project` | Project initialization and setup |
-| `workflow-spec` | `/jikime:1-plan` | EARS SPEC generation and planning |
-| `workflow-ddd` | `/jikime:2-run` | DDD ANALYZE-PRESERVE-IMPROVE execution |
-| `workflow-docs` | `/jikime:3-sync` | Documentation generation and synchronization |
+| `manager-project` | `/jikime:0-project` | Project initialization and setup |
+| `manager-spec` | `/jikime:1-plan` | EARS SPEC generation and planning |
+| `manager-ddd` | `/jikime:2-run` | DDD ANALYZE-PRESERVE-IMPROVE execution |
+| `manager-docs` | `/jikime:3-sync` | Documentation generation and synchronization |
 
 Loading: Always active (loaded on command invocation)
 
@@ -74,9 +67,9 @@ Orchestration and quality management agents.
 
 | Agent | Trigger | Purpose |
 |-------|---------|---------|
-| `core-planner` | `/jikime:2-run` Phase 1 | SPEC analysis and execution strategy |
-| `core-quality` | Post-implementation | TRUST 5 validation |
-| `core-git` | Git operations | Branch, commit, and PR management |
+| `planner` | `/jikime:2-run` Phase 1 | SPEC analysis and execution strategy |
+| `manager-quality` | Post-implementation | TRUST 5 validation |
+| `manager-git` | Git operations | Branch, commit, and PR management |
 
 Loading: Auto-triggered based on workflow phase
 
@@ -88,45 +81,36 @@ Domain-specific implementation experts.
 
 | Agent | Domain | Purpose |
 |-------|--------|---------|
-| `code-backend` | Backend | Backend architecture and API design |
-| `code-frontend` | Frontend | Frontend UI/UX implementation |
-| `data-database` | Data | Database schema design and migration |
-| `infra-devops` | Infrastructure | DevOps, monitoring, and performance |
-| `security-expert` | Security | Security analysis and OWASP validation |
-| `design-uiux` | Design | UI/UX, components, and accessibility |
+| `backend` | Backend | Backend architecture and API design |
+| `frontend` | Frontend | Frontend UI/UX implementation |
+| `devops` | Infrastructure | DevOps, monitoring, and performance |
+| `security-auditor` | Security | Security analysis and OWASP validation |
+| `architect` | Design | UI/UX, components, and accessibility |
 
 Loading: Lazy-loaded based on keyword detection or SPEC requirements
 
 Trigger Keywords:
-- `code-backend`: "backend", "api", "server", "endpoint"
-- `code-frontend`: "frontend", "ui", "component", "page"
-- `data-database`: "database", "schema", "migration", "query"
-- `infra-devops`: "deploy", "ci/cd", "performance", "monitoring"
-- `security-expert`: "security", "auth", "encryption", "owasp"
-- `design-uiux`: "design", "ux", "accessibility", "component"
+- `backend`: "backend", "api", "server", "endpoint", "database", "schema", "migration", "query"
+- `frontend`: "frontend", "ui", "component", "page"
+- `devops`: "deploy", "ci/cd", "performance", "monitoring"
+- `security-auditor`: "security", "auth", "encryption", "owasp"
+- `architect`: "design", "ux", "accessibility", "component"
 
 ---
 
-### Tier 4: MCP Integrators (Resume-enabled)
+### MCP Tool Integration (Not Agents)
 
-External MCP server integrations with context continuity support.
+MCP tools are accessed directly via tool calls, not through agent delegation.
+Available MCP tools: Context7, Sequential-Thinking, Playwright, etc.
 
-| Agent | MCP Server | Purpose |
-|-------|------------|---------|
-| `mcp-context7` | Context7 | Documentation research and API reference |
-| `mcp-figma` | Figma | Design system integration |
-| `mcp-notion` | Notion | Knowledge base integration |
-| `mcp-playwright` | Playwright | Browser automation and E2E testing |
-| `mcp-sequential-thinking` | Sequential-Thinking | Complex reasoning and strategic analysis |
-
-Resume Pattern (40-60% token savings):
+Resume Pattern for Explore agent (40-60% token savings):
 ```python
 # Initial call
-result = Task(subagent_type="mcp-context7", prompt="Research React 19 APIs")
+result = Task(subagent_type="Explore", prompt="Research React 19 APIs")
 agent_id = result.agent_id
 
 # Resume with context
-result2 = Task(subagent_type="mcp-context7", prompt="Compare with React 18", resume=agent_id)
+result2 = Task(subagent_type="Explore", prompt="Compare with React 18", resume=agent_id)
 ```
 
 Benefits:
@@ -142,9 +126,9 @@ Meta-generation agents for JikiME-ADK development.
 
 | Agent | Purpose |
 |-------|---------|
-| `factory-agent` | New agent creation and configuration |
-| `factory-skill` | Skill definition creation and management |
-| `factory-command` | Custom slash command creation and optimization |
+| `agent-builder` | New agent creation and configuration |
+| `skill-builder` | Skill definition creation and management |
+| `command-builder` | Custom slash command creation and optimization |
 
 Use Case: When developing JikiME-ADK itself (not for end-user projects)
 
@@ -156,24 +140,11 @@ Support and utility services.
 
 | Agent | Purpose |
 |-------|---------|
-| `support-debug` | Error analysis and diagnostic support |
-| `support-claude` | Claude Code configuration management |
+| `debugger` | Error analysis and diagnostic support |
 
 Loading: On-demand when errors occur or configuration changes needed
 
 ---
-
-### Tier 7: AI & Specialized
-
-AI model integrations and specialized services.
-
-| Agent | Purpose |
-|-------|---------|
-| `ai-codex` | OpenAI Codex CLI integration |
-| `ai-gemini` | Google Gemini API integration |
-| `ai-banana` | Gemini 3 image generation |
-
-Loading: On-demand when AI model integration required
 
 ---
 
@@ -212,7 +183,7 @@ Is this a new feature or architecture change?
 
 ### Delegation Principles
 
-1. Agent-First: Alfred NEVER executes tasks directly. ALWAYS delegates via Task()
+1. Agent-First: The orchestrator NEVER executes tasks directly. ALWAYS delegates via Task()
 
 2. Naming Consistency: All agents follow `{domain}-{role}` pattern
  - Lowercase only
@@ -221,8 +192,8 @@ Is this a new feature or architecture change?
 
 3. Context Passing: Pass each agent's results as context to the next agent
  ```python
- result1 = Task("code-backend", "Design API")
- result2 = Task("code-frontend", "Implement UI", context={"api_design": result1})
+ result1 = Task("backend", "Design API")
+ result2 = Task("frontend", "Implement UI", context={"api_design": result1})
  ```
 
 4. Sequential vs Parallel:
@@ -237,14 +208,14 @@ The following agents were merged to reduce complexity:
 
 | Old Agent | Merged Into | Reason |
 |-----------|-------------|--------|
-| doc-syncer | workflow-docs | Documentation consolidation |
-| trust-checker | core-quality | Quality gate unification |
-| api-designer | code-backend | Backend expertise consolidation |
-| migration-expert | data-database | Data operations unification |
+| doc-syncer | manager-docs | Documentation consolidation |
+| trust-checker | manager-quality | Quality gate unification |
+| api-designer | backend | Backend expertise consolidation |
+| migration-expert | backend | Data operations unification |
 | monitoring-expert | infra-devops | Infrastructure consolidation |
 | performance-engineer | infra-devops | Infrastructure consolidation |
-| component-designer | design-uiux | Design system unification |
-| accessibility-expert | design-uiux | Design system unification |
+| component-designer | architect | Design system unification |
+| accessibility-expert | architect | Design system unification |
 
 Total Agents: 26 (down from 35, -26% reduction)
 
@@ -255,7 +226,7 @@ Total Agents: 26 (down from 35, -26% reduction)
 | Agent | Reason |
 |-------|--------|
 | format-expert | Replaced by direct linter usage (ruff, prettier) |
-| sync-manager | Redundant with workflow-docs |
+| sync-manager | Redundant with manager-docs |
 
 ---
 
@@ -265,9 +236,10 @@ The following skills are organized for token efficiency and domain specializatio
 
 | Category | Skills | Purpose |
 |----------|--------|---------|
-| Language (Separated) | jikime-lang-python, jikime-lang-typescript, jikime-lang-systems, jikime-lang-jvm, jikime-lang-mobile | Domain-specific language skills for 40-60% token savings |
-| Platform (Separated) | jikime-platform-auth, jikime-platform-database, jikime-platform-deploy | Domain-specific platform skills for 30-50% token savings |
+| Language (Separated) | jikime-lang-python, jikime-lang-typescript, jikime-lang-go, jikime-lang-java, jikime-lang-javascript, jikime-lang-flutter, jikime-lang-php | Domain-specific language skills for 40-60% token savings |
+| Platform (Separated) | jikime-platform-clerk, jikime-platform-supabase, jikime-platform-vercel | Domain-specific platform skills for 30-50% token savings |
 | Foundation | jikime-foundation-core, jikime-foundation-claude, jikime-foundation-context, jikime-foundation-quality | Core principles and quality gates |
+
 | Workflow | jikime-workflow-spec, jikime-workflow-project, jikime-workflow-testing, jikime-workflow-jit-docs | Workflow automation and testing |
 | Domain | jikime-domain-backend, jikime-domain-frontend, jikime-domain-database, jikime-domain-uiux | Domain expertise patterns |
 
@@ -277,17 +249,19 @@ Language Skills Selection Guide:
 |----------------|----------|----------|
 | jikime-lang-python | Python 3.13, FastAPI, Django, pytest | Backend APIs, data science, automation |
 | jikime-lang-typescript | TypeScript 5.9, React 19, Next.js 16, tRPC | Frontend, full-stack web development |
-| jikime-lang-systems | Go 1.23, Rust 1.91, Fiber, Axum | Microservices, CLI tools, systems programming |
-| jikime-lang-jvm | Java 21, Kotlin 2.0, Scala 3.4, Spring | Enterprise applications, big data |
-| jikime-lang-mobile | Swift 6, Kotlin Android, Flutter 3.24 | iOS, Android, cross-platform mobile |
+| jikime-lang-go | Go 1.23, Fiber, Gin, GORM | Microservices, CLI tools, cloud-native |
+| jikime-lang-java | Java 21, Spring Boot 3.3, virtual threads | Enterprise applications, microservices |
+| jikime-lang-javascript | Node.js 22, Bun, Deno, Express, Fastify | Backend services, scripting |
+| jikime-lang-flutter | Flutter 3.24, Dart 3.5, Riverpod | Cross-platform mobile and desktop apps |
+| jikime-lang-php | PHP 8.3, Laravel 11, Symfony 7 | Web applications, CMS development |
 
 Platform Skills Selection Guide:
 
 | Platform Skill | Providers | Use When |
 |----------------|-----------|----------|
-| jikime-platform-auth | Auth0, Clerk, Firebase Auth | Authentication implementation |
-| jikime-platform-database | Supabase, Neon, Convex, Firestore | Database platform integration |
-| jikime-platform-deploy | Vercel, Railway | Deployment and CI/CD |
+| jikime-platform-clerk | Clerk | Modern authentication, WebAuthn, passkeys |
+| jikime-platform-supabase | Supabase | PostgreSQL, real-time, RLS, Edge Functions |
+| jikime-platform-vercel | Vercel | Edge deployment, Next.js hosting, ISR |
 
 Note: Agents now use specific skills based on their domain. Cross-language agents include jikime-lang-python and jikime-lang-typescript by default.
 
@@ -323,13 +297,13 @@ Common Errors:
 Error Recovery Pattern:
 ```python
 try:
- result = Task("code-backend", "Implement feature")
+ result = Task("backend", "Implement feature")
 except AgentNotFoundError:
  # Check agent name format
- result = Task("code-backend", "Implement feature") # Corrected name
+ result = Task("backend", "Implement feature") # Corrected name
 except PermissionError:
  # Update settings.json IAM rules
- result = Task("code-backend", "Implement feature", permissions=["write"])
+ result = Task("backend", "Implement feature", permissions=["write"])
 ```
 
 ---
@@ -347,10 +321,10 @@ Other Modules:
 - [execution-rules.md](execution-rules.md) - Security and permissions
 
 Commands:
-- `/jikime:0-project` → `workflow-project`
-- `/jikime:1-plan` → `workflow-spec`
-- `/jikime:2-run` → `workflow-ddd`
-- `/jikime:3-sync` → `workflow-docs`
+- `/jikime:0-project` → `manager-project`
+- `/jikime:1-plan` → `manager-spec`
+- `/jikime:2-run` → `manager-ddd`
+- `/jikime:3-sync` → `manager-docs`
 
 ---
 

@@ -1,11 +1,12 @@
 ---
 name: jikime-lang-javascript
 description: JavaScript ES2024+ development specialist covering Node.js 22 LTS, Bun 1.x (serve, SQLite, S3, shell, test), Deno 2.x, testing (Vitest, Jest), linting (ESLint 9, Biome), and backend frameworks (Express, Fastify, Hono). Use when developing JavaScript APIs, web applications, or Node.js projects.
+version: 1.0.0
 tags: ["language", "javascript", "nodejs", "bun", "deno", "express", "fastify", "vitest"]
 triggers:
   keywords: ["javascript", "nodejs", "bun", "deno", "express", "fastify", "자바스크립트"]
   phases: ["run"]
-  agents: ["expert-backend", "expert-frontend"]
+  agents: ["backend", "frontend"]
   languages: ["javascript"]
 user-invocable: false
 ---

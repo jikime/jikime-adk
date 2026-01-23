@@ -97,7 +97,7 @@ Agent Usage: Project initialization with worktree support
 
 ```python
 # In manager-project agent context
-Skill("jikime worktree") # Load worktree patterns
+Skill("jikime-workflow-worktree") # Load worktree patterns
 
 # Setup project with worktree support
 project_config = {
@@ -128,7 +128,7 @@ Agent Usage: Git operations with worktree awareness
 
 ```python
 # In manager-git agent context
-Skill("jikime worktree") # Load worktree patterns
+Skill("jikime-workflow-worktree") # Load worktree patterns
 
 def create_feature_branch_with_worktree(spec_id: str, branch_name: str = None):
  """Create feature branch and associated worktree."""

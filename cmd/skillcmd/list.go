@@ -31,7 +31,7 @@ Examples:
   jikime-adk skill list                    # List all skills
   jikime-adk skill list --tag framework    # Filter by tag
   jikime-adk skill list --phase run        # Filter by phase
-  jikime-adk skill list --agent expert-frontend  # Filter by agent
+  jikime-adk skill list --agent frontend  # Filter by agent
   jikime-adk skill list --format json      # Output as JSON`,
 		RunE: runList,
 	}

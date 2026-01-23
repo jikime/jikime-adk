@@ -8,16 +8,16 @@ React → Next.js 16 마이그레이션의 실제 명령어 사용 흐름을 단
 
 ```bash
 # 1. 분석
-/jikime:migrate-analyze "./my-react-app"
+/jikime:migrate-1-analyze "./my-react-app"
 
 # 2. 계획 수립
-/jikime:migrate-to-nextjs plan my-react-app
+/jikime:migrate-2-plan my-react-app
 
 # 3. 프로젝트별 스킬 생성
-/jikime:migrate-to-nextjs skill my-react-app
+/jikime:migrate-2-plan --skill my-react-app
 
 # 4. 마이그레이션 실행
-/jikime:migrate-to-nextjs run my-react-app --output ./migrated
+/jikime:migrate-3-execute my-react-app --output ./migrated
 ```
 
 ---
@@ -71,7 +71,7 @@ taskflow/
 ### 명령어
 
 ```bash
-/jikime:migrate-analyze "./taskflow"
+/jikime:migrate-1-analyze "./taskflow"
 ```
 
 ### 실행 결과
@@ -156,7 +156,7 @@ Claude가 다음을 수행합니다:
 ### 명령어
 
 ```bash
-/jikime:migrate-to-nextjs plan taskflow
+/jikime:migrate-2-plan taskflow
 ```
 
 ### 실행 결과
@@ -245,7 +245,7 @@ Claude가 다음을 수행합니다:
 ### 명령어
 
 ```bash
-/jikime:migrate-to-nextjs skill taskflow
+/jikime:migrate-2-plan --skill taskflow
 ```
 
 ### 실행 결과
@@ -414,7 +414,7 @@ export function TaskItem({ task }: { task: Task }) {
 ### 명령어
 
 ```bash
-/jikime:migrate-to-nextjs run taskflow --output ./migrated
+/jikime:migrate-3-execute taskflow --output ./migrated
 ```
 
 ### 실행 중 진행 상황
@@ -798,7 +798,7 @@ export function TaskItem({ task }: TaskItemProps) {
 클라이언트 제출용 백서가 필요한 경우:
 
 ```bash
-/jikime:migrate-analyze "./taskflow" --whitepaper --client "ABC Corp" --lang ko
+/jikime:migrate-1-analyze "./taskflow" --whitepaper --client "ABC Corp" --lang ko
 ```
 
 생성되는 파일:
@@ -818,7 +818,7 @@ export function TaskItem({ task }: TaskItemProps) {
 마이그레이션 완료 후:
 
 ```bash
-/jikime:migrate-to-nextjs run taskflow --whitepaper-report --client "ABC Corp"
+/jikime:migrate-3-execute taskflow --whitepaper-report --client "ABC Corp"
 ```
 
 생성되는 파일:
@@ -932,10 +932,10 @@ export function ClientOnlyComponent() {
 
 | 단계 | 명령어 | 설명 |
 |------|--------|------|
-| 분석 | `/jikime:migrate-analyze "./path"` | AS-IS 분석 |
-| 계획 | `/jikime:migrate-to-nextjs plan {name}` | 마이그레이션 계획 |
-| 스킬 | `/jikime:migrate-to-nextjs skill {name}` | 프로젝트별 규칙 |
-| 실행 | `/jikime:migrate-to-nextjs run {name}` | 마이그레이션 수행 |
+| 분석 | `/jikime:migrate-1-analyze "./path"` | AS-IS 분석 |
+| 계획 | `/jikime:migrate-2-plan {name}` | 마이그레이션 계획 |
+| 스킬 | `/jikime:migrate-2-plan --skill {name}` | 프로젝트별 규칙 생성 |
+| 실행 | `/jikime:migrate-3-execute {name}` | 마이그레이션 수행 |
 | 백서 | `--whitepaper --client "Name"` | 사전 분석 백서 |
 | 보고 | `--whitepaper-report --client "Name"` | 완료 보고서 |
 

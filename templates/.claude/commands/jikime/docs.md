@@ -4,7 +4,7 @@ description: "Update documentation. Sync README, API docs, and code comments wit
 
 # Docs
 
-문서를 코드 변경사항과 동기화합니다.
+Synchronize documentation with code changes.
 
 ## Usage
 

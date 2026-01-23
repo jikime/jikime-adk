@@ -1,11 +1,12 @@
 ---
 name: jikime-migration-ast-grep
 description: AST-based code transformation skill using ast-grep. Structural code search and automated migration patterns for legacy code conversion.
+version: 1.0.0
 tags: ["migration", "ast", "code-transformation", "legacy", "refactoring"]
 triggers:
   keywords: ["ast-grep", "sg", "code transformation", "migration pattern", "리팩토링"]
   phases: ["run"]
-  agents: ["expert-refactoring"]
+  agents: ["refactorer"]
   languages: []
 user-invocable: false
 context: fork
@@ -304,8 +305,8 @@ rule:
 
 | Command | ast-grep Usage |
 |---------|----------------|
-| `/jikime:1-discover` | 코드 패턴 분석 및 변환 대상 식별 |
-| `/jikime:3-migrate` | 자동 코드 변환 실행 |
+| `/jikime:migrate-0-discover` | 코드 패턴 분석 및 변환 대상 식별 |
+| `/jikime:migrate-3-execute` | 자동 코드 변환 실행 |
 | `/jikime:refactor` | 리팩토링 패턴 적용 |
 
 ### Discover Phase
