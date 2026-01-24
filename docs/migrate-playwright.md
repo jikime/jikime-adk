@@ -13,69 +13,119 @@ After migration execution (`migrate-3-execute`) completes, this system automatic
 
 ---
 
-## Phase 1: Infrastructure (Dev Server Lifecycle)
+## Phase 1: Infrastructure (Dev Server Lifecycle) - COMPLETED
 
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 1.1 | Dev Server Manager Logic | Target framework detection → dev command extraction → start/wait/stop pipeline | `migrate-4-verify.md` |
-| 1.2 | Framework Dev Command Mapping | Auto-detect dev commands for Next.js, Vite, CRA, Nuxt, Angular, etc. | `migrate-4-verify.md` |
-| 1.3 | Health Check Pattern | Port listening detection + HTTP 200 confirmation + timeout/retry logic | `migrate-4-verify.md` |
-| 1.4 | Dual Server Mode | When `--source-url` not provided, auto-start source too (separate ports) | `migrate-4-verify.md` |
+**Status**: Completed (2026-01-24)
+**File Modified**: `templates/.claude/commands/jikime/migrate-4-verify.md` (v3.0.0 → v4.0.0)
 
-### Framework Dev Command Reference
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 1.1 | Dev Server Manager Logic | Config read → framework detect → start/wait/stop pipeline | Done |
+| 1.2 | Framework Dev Command Mapping | 16 frameworks mapped with port flag detection | Done |
+| 1.3 | Health Check Pattern | 30s timeout, 1s interval, HTTP status < 500 check | Done |
+| 1.4 | Dual Server Mode | Source (port 3000) + Target (port 3001) simultaneous startup | Done |
+
+### Implementation Details
+
+**Step 1.1**: Config read from `.migrate-config.yaml` - extracts source_dir, output_dir, framework names, verification settings
+
+**Step 1.2**: 16 frameworks supported with detection algorithm:
+- Detection priority: config override → package.json scripts → framework fallback
+- Lockfile detection: pnpm-lock.yaml / yarn.lock / package-lock.json / bun.lockb
 
 ```yaml
+# Full framework mapping (16 frameworks)
 next: "npx next dev --port {port}"
 vite: "npx vite --port {port}"
-cra: "npx react-scripts start"  # PORT env var
+cra: "npx react-scripts start"       # PORT={port} (env)
 nuxt: "npx nuxt dev --port {port}"
 angular: "npx ng serve --port {port}"
 remix: "npx remix dev --port {port}"
-svelte: "npx vite dev --port {port}"
+gatsby: "npx gatsby develop -p {port}"
+astro: "npx astro dev --port {port}"
+sveltekit: "npx vite dev --port {port}"
+express: "node server.js"             # PORT={port} (env)
+django: "python manage.py runserver 0.0.0.0:{port}"
+flask: "flask run --port {port}"
+spring: "./mvnw spring-boot:run -Dserver.port={port}"
+rails: "rails server -p {port}"
+laravel: "php artisan serve --port={port}"
+go: "go run ."                        # PORT={port} (env)
 ```
 
-### Health Check Flow
+**Step 1.3**: Dependency installation before server startup (npm/pnpm/yarn/bun/pip/go mod)
 
-```
-Start server (background)
-  → Wait 1s
-  → HTTP GET http://localhost:{port}
-  → If 200: Ready
-  → If fail: Retry (max 30s, 1s interval)
-  → If timeout: Abort with error
-```
+**Step 1.4-1.5**: Background process with PID tracking + health check algorithm
+
+**Step 1.6**: Mandatory cleanup (SIGTERM → 5s wait → SIGKILL)
+
+**Step 1.7**: URL resolution (auto-detected or --source-url/--target-url override)
+
+### Additional Changes in v4.0.0
+
+- **8 new flags**: `--visual`, `--cross-browser`, `--a11y`, `--port`, `--source-port`, `--headless`, `--threshold`, `--depth`
+- **`.migrate-config.yaml` verification schema**: dev_command, ports, threshold, routes, masks, performance budget
+- **allowed-tools**: Added `Edit`
+- **ultrathink block**: Added for deep verification strategy analysis
+- **10-step workflow**: Expanded from 5 to 10 verification types
+- **Agent delegation table**: Updated with route discovery + optimizer
 
 ---
 
-## Phase 2: Route Auto-Discovery & Test Generation
+## Phase 2: Route Auto-Discovery & Test Generation - COMPLETED
 
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 2.1 | Route Discovery Engine | Extract routes/pages from `as_is_spec.md` + source code | `migrate-4-verify.md` |
-| 2.2 | Dynamic Route Handling | `/users/[id]` style routes → generate sample test URLs | `migrate-4-verify.md` |
-| 2.3 | Test Case Auto-Generation | Per-route basic verification code (200 response, no errors, key elements) | New skill or agent |
-| 2.4 | User Flow Extraction | Identify critical user flows from `migration_plan.md` → E2E scenarios | `migrate-4-verify.md` |
+**Status**: Completed (2026-01-24)
+**File Modified**: `templates/.claude/commands/jikime/migrate-4-verify.md`
 
-### Route Discovery Sources
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 2.1 | Route Discovery Engine | 5-priority source discovery (config → artifacts → file-based → router → crawl) | Done |
+| 2.2 | Dynamic Route Handling | 7 framework patterns + sample URL generation + exclusion rules | Done |
+| 2.3 | Test Case Auto-Generation | Page load test + behavior comparison test templates | Done |
+| 2.4 | User Flow Extraction | Common flow templates (6 types) + flow detection algorithm | Done |
+| 2.5 | Route Registry Output | YAML registry format for passing to Phase 3-7 (bonus) | Done |
 
-```
-Priority 1: as_is_spec.md (routes section)
-Priority 2: File-based routing (pages/, app/ directories)
-Priority 3: Router configuration files (react-router, vue-router, etc.)
-Priority 4: Sitemap or navigation components
-```
+### Implementation Details
+
+**Step 2.1 - Route Discovery Engine**:
+- 5-level priority discovery: manual override → migration artifacts → file-based routing → router config → navigation crawl
+- File-based routing support: Next.js (Pages/App), Nuxt, SvelteKit, Remix, Angular
+- Router config parsing: react-router, vue-router, angular, express
+- Navigation crawl with configurable depth (--depth flag)
+- Deduplication and sorting of discovered routes
+
+**Step 2.2 - Dynamic Route Handling**:
+- Pattern recognition for 7 frameworks: `[param]`, `[...slug]`, `:param`
+- Sample URL generation: `:id` → `1`, `:slug` → `example-page`, `:category` → `general`
+- Exclusion rules: `/api/*`, `/_next/*`, `/_nuxt/*`, static assets, admin routes
+
+**Step 2.3 - Test Case Auto-Generation**:
+- Per-route verification: HTTP status < 400, no console.error, no pageerror, content not blank
+- Network error collection: response status >= 400 tracking
+- Behavior comparison: Source vs Target heading/navigation matching
+- `waitUntil: 'networkidle'` for reliable page load detection
+
+**Step 2.4 - User Flow Extraction**:
+- 3 detection sources: migration_plan.md, existing E2E files, auto-detection
+- 6 common flow templates: Authentication, Navigation, Search, Form Submit, CRUD, Pagination
+- Generated E2E flow tests with smart selector patterns (`[name="email"], [type="email"], #email`)
+
+**Step 2.5 - Route Registry (Bonus)**:
+- YAML output format with static_routes, dynamic_routes, user_flows, excluded_routes, stats
+- Priority classification: critical / high / medium / low
+- Source tracking for each discovered route
 
 ### Auto-Generated Test Template
 
 ```typescript
 // Per-route verification
-test('GET /dashboard - page loads correctly', async ({ page }) => {
+test('{route} - page loads without errors', async ({ page }) => {
   const errors: string[] = []
   page.on('pageerror', err => errors.push(err.message))
   page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()) })
 
-  const response = await page.goto('/dashboard')
-  expect(response?.status()).toBe(200)
+  const response = await page.goto('{target_url}{route}', { waitUntil: 'networkidle' })
+  expect(response?.status()).toBeLessThan(400)
   expect(errors).toHaveLength(0)
 
   // Key element verification
@@ -85,317 +135,489 @@ test('GET /dashboard - page loads correctly', async ({ page }) => {
 
 ---
 
-## Phase 3: Visual Regression (Core Feature)
+## Phase 3: Visual Regression (Core Feature) - COMPLETED
 
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 3.1 | Screenshot Capture Engine | Full-page + viewport screenshots per route | Skill reference |
-| 3.2 | Source vs Target Comparison | Pixel-by-pixel comparison + diff image generation | Skill reference |
-| 3.3 | Responsive Verification | Desktop(1920), Tablet(768), Mobile(375) - 3 viewports auto-verified | `migrate-4-verify.md` |
-| 3.4 | Threshold Configuration | Allowed diff ratio (default 5%), dynamic content area masking | `migrate-4-verify.md` |
-| 3.5 | Visual Report Generation | HTML report with before/after/diff side-by-side | `migrate-4-verify.md` |
+**Status**: Completed (2026-01-24)
+**File Modified**: `templates/.claude/commands/jikime/migrate-4-verify.md`
 
-### Visual Comparison Flow
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 3.1 | Screenshot Capture Engine | Full-page + viewport screenshots with dynamic content masking | Done |
+| 3.2 | Pixel Comparison Engine | ComparisonResult interface, color matching with tolerance (10) | Done |
+| 3.3 | Responsive Viewport Matrix | 5 viewports (Desktop/Laptop/Tablet/Mobile/Mobile Small) | Done |
+| 3.4 | Threshold & Masking Configuration | 4 levels (Strict/Normal/Relaxed/Loose) + per-route overrides | Done |
+| 3.5 | Visual Report Generation | HTML template with grid layout (source/target/diff side-by-side) | Done |
+| 3.6 | Diff Analysis & Categorization | 6 diff categories with detection logic (bonus) | Done |
 
-```
-For each discovered route:
-  1. Navigate source server → screenshot (source_{route}_{viewport}.png)
-  2. Navigate target server → screenshot (target_{route}_{viewport}.png)
-  3. Pixel compare → diff image (diff_{route}_{viewport}.png)
-  4. Calculate diff percentage
-  5. Pass/Fail based on threshold
-```
+### Implementation Details
 
-### Viewport Matrix
+**Step 3.1 - Screenshot Capture Engine**:
+- `capturePageScreenshot()` function with viewport, masking, and networkidle wait
+- Storage structure: `{artifacts_dir}/screenshots/{source|target|diff}/{viewport}/{route}.png`
+- Dynamic content masking via `visibility: hidden` before capture
+- 1000ms animation settle wait after networkidle
 
-| Viewport | Width | Height | Device |
-|----------|-------|--------|--------|
+**Step 3.2 - Pixel Comparison Engine**:
+- `ComparisonResult` interface: route, viewport, diffPercentage, diffPixels, totalPixels, passed, diffImagePath
+- `compareScreenshots()` function with configurable threshold
+- Color tolerance: `colorsMatch()` with per-channel tolerance (default: 10)
+- Size difference handling: uses max dimensions for comparison
+- Diff image: red pixels for differences, dimmed original for matches
+
+**Step 3.3 - Responsive Viewport Matrix (5 viewports)**:
+
+| Viewport | Width | Height | Represents |
+|----------|-------|--------|------------|
 | Desktop | 1920 | 1080 | Standard monitor |
-| Tablet | 768 | 1024 | iPad |
-| Mobile | 375 | 812 | iPhone X |
+| Laptop | 1366 | 768 | Common laptop |
+| Tablet | 768 | 1024 | iPad portrait |
+| Mobile | 375 | 812 | iPhone X/12/13 |
+| Mobile Small | 320 | 568 | iPhone SE |
 
-### Masking Strategy (Dynamic Content)
+- `--full`: All 5 viewports
+- `--visual` (no cross-browser): Desktop + Tablet + Mobile (3)
+- Default: Desktop only (1)
+- Responsive-specific checks: horizontal overflow detection, element overlap detection
+
+**Step 3.4 - Threshold & Masking Configuration**:
+
+| Level | Percentage | Use Case |
+|-------|-----------|----------|
+| Strict | 1% | Pixel-perfect (same CSS framework) |
+| Normal | 5% | Default - minor rendering differences allowed |
+| Relaxed | 10% | Framework changes with known visual diffs |
+| Loose | 20% | Major redesigns where layout is similar |
+
+- Per-route threshold override via `verification.route_thresholds` in config
+- Enhanced mask_selectors: timestamps, random IDs, ads, avatars, skeletons, spinners, `<time>` elements
+
+**Step 3.5 - Visual Report Generation**:
+- HTML report at `{artifacts_dir}/visual-report.html`
+- Grid layout: 3-column (Source | Target | Diff)
+- Summary table with route, viewport, diff %, status
+- Color-coded borders: green (pass), red (fail), orange (warn)
+- WARN threshold: 80-100% of configured threshold
+
+**Step 3.6 - Diff Analysis & Categorization (Bonus)**:
+
+| Category | Detection Method | Severity |
+|----------|-----------------|----------|
+| Layout Shift | Large contiguous diff regions (100x100+) | High |
+| Color Change | Scattered diffs with consistent color offset | Medium |
+| Font Rendering | Text-area-only diffs with similar shapes | Low |
+| Missing Element | Target has blank where source has content | Critical |
+| Extra Element | Target has content not in source | Medium |
+| Size Difference | Page height/width mismatch | High |
+
+- `categorizeDiff()` function with cascading detection logic
+- Actionable feedback per category for developer guidance
+
+---
+
+## Phase 4: Behavioral Testing (Functional Verification) - COMPLETED
+
+**Status**: Completed (2026-01-24)
+**File Modified**: `templates/.claude/commands/jikime/migrate-4-verify.md`
+
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 4.1 | Page Load Verification | HTTP < 400, no pageerror, content present, network error tracking | Done |
+| 4.2 | Navigation Verification | Link crawl with depth, broken link detection, URL resolution | Done |
+| 4.3 | Form Interaction Verification | Form type detection (5 types), auto-fill, submit verification | Done |
+| 4.4 | API Call Verification | Capture/ignore patterns, source vs target comparison (strict/relaxed) | Done |
+| 4.5 | JavaScript Error Collection | 6 error categories, 4 severity levels, deduplication, summary | Done |
+| 4.6 | Behavioral Comparison | Source vs Target heading/navigation/content matching (bonus) | Done |
+
+### Implementation Details
+
+**Step 4.1 - Page Load Verification**:
+- `PageLoadResult` interface: status, loadTime, consoleErrors, pageErrors, networkErrors, hasContent, passed
+- `NetworkError` interface: url, status, method, resourceType
+- 5 verification criteria with severity levels (Critical → Medium)
+- Cookie clearing between routes for clean state
+
+**Step 4.2 - Navigation Verification**:
+- BFS crawl with configurable depth (`--depth` flag, default: 3)
+- `NavigationResult` with status: success/broken/redirect/external
+- External link detection (mailto:, tel:, javascript:, #, different host)
+- Relative URL resolution (/, ./, ../)
+- Broken link report with source page and link text
+
+**Step 4.3 - Form Interaction Verification**:
+- 5 form types auto-detected: login, signup, search, contact, generic
+- Smart test data generation by field name + type fallback
+- Submit strategies: button[type="submit"] → Enter key
+- Result states: success, error, no-response, validation-shown
+- Validation error detection via `[class*="error"], [role="alert"], .invalid-feedback`
+
+**Step 4.4 - API Call Verification**:
+- `ApiMonitorConfig` with capture/ignore patterns
+- Default captures: `/api/*`, `/graphql`, `*/rest/*`
+- Default ignores: analytics, tracking, hotjar, sentry, google-analytics, facebook
+- Source vs Target comparison modes: strict (exact status) / relaxed (success class match)
+- Missing/Extra API call detection between source and target
+
+**Step 4.5 - JavaScript Error Collection**:
+- `CategorizedError` with source, category, severity, stack, count
+- 6 categories: runtime, network, framework, third-party, deprecation, security
+- 4 severity levels: critical, high, medium, low
+- Deduplication via `addOrIncrementError()` (same message + source)
+- Summary with totalErrors, severity breakdown, top 5 errors
+- Event listeners: pageerror, console.error, requestfailed
+
+**Step 4.6 - Behavioral Comparison (Bonus)**:
+- Source vs Target simultaneous page load
+- Heading comparison (h1, h2, h3)
+- Navigation link comparison (nav a, [role="navigation"] a)
+- Content length comparison (main, [role="main"], #content) with 30% tolerance
+- Detailed differences array for actionable feedback
+
+---
+
+## Phase 5: Cross-Browser Verification - COMPLETED
+
+**Status**: Completed (2026-01-24)
+**File Modified**: `templates/.claude/commands/jikime/migrate-4-verify.md`
+
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 5.1 | Multi-Browser Execution Engine | 3 browsers parallel launch + per-route testing | Done |
+| 5.2 | Cross-Browser Consistency Analysis | 4-factor scoring (status/errors/visual/performance) | Done |
+| 5.3 | Mobile Device Emulation | 6 devices (iPhone 14 Pro, SE, Pixel 7, Galaxy S23, iPad Pro, iPad Mini) | Done |
+| 5.4 | Cross-Browser Report Generation | Desktop + Mobile results table + issue summary | Done |
+| 5.5 | Known Issues Filter | Browser-specific acceptable differences registry (bonus) | Done |
+
+### Implementation Details
+
+**Step 5.1 - Multi-Browser Execution Engine**:
+- `BrowserConfig` interface with name, displayName, viewport, launchOptions
+- 3 desktop browsers: Chromium (Chrome/Edge), Firefox, WebKit (Safari)
+- All browsers launched in parallel via `Promise.all()`
+- Per-route testing across all browsers simultaneously
+- `CrossBrowserResult` with results array + consistencyScore + issues
+
+**Step 5.2 - Cross-Browser Consistency Analysis**:
+- 4-factor consistency scoring (starts at 100, deductions per issue):
+  - HTTP status difference: -30 (critical)
+  - JS error inconsistency: -15 (high)
+  - Visual diff > 8%: -10 per pair (medium)
+  - Render time deviation > 50%: -5 (low)
+- `CrossBrowserIssue` with type: visual/functional/performance/error
+- Screenshot comparison between browsers (threshold: 8%)
+
+**Step 5.3 - Mobile Device Emulation (6 devices)**:
+
+| Device | Viewport | Scale | Browser |
+|--------|----------|-------|---------|
+| iPhone 14 Pro | 393x852 | 3x | WebKit |
+| iPhone SE | 375x667 | 2x | WebKit |
+| Pixel 7 | 412x915 | 2.625x | Chromium |
+| Galaxy S23 | 360x780 | 3x | Chromium |
+| iPad Pro 12.9 | 1024x1366 | 2x | WebKit |
+| iPad Mini | 768x1024 | 2x | WebKit |
+
+- 5 mobile-specific checks per device:
+  1. Viewport meta tag (width=device-width)
+  2. No horizontal overflow
+  3. Touch target size (44x44px WCAG minimum)
+  4. Font readability (12px minimum)
+  5. Fixed/sticky element count
+
+**Step 5.4 - Cross-Browser Report**:
+- Desktop results: route × browser matrix with consistency score
+- Mobile results: route × device matrix with issue counts
+- Issue summary with severity and likely cause
+- Overall consistency score (0-100)
+
+**Step 5.5 - Known Issues Filter (Bonus)**:
+- Per-browser known differences registry (YAML config)
+- Severity levels: ignore, low, medium, high
+- Examples: WebKit font-smoothing, Firefox focus-ring, date picker rendering
+- Filter function removes "ignore" severity from final report
+
+### Execution Mode
+
+| Flag | Desktop Browsers | Mobile Devices |
+|------|-----------------|----------------|
+| `--full` | All 3 | All 6 |
+| `--cross-browser` | All 3 | 2 (iPhone 14, Pixel 7) |
+| Default | Chromium only | None |
+
+---
+
+## Phase 6: Performance Comparison - COMPLETED
+
+**Status**: Completed (2026-01-24)
+**File Modified**: `templates/.claude/commands/jikime/migrate-4-verify.md`
+
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 6.1 | Core Web Vitals Collection | LCP, CLS, INP, FCP, TTFB via PerformanceObserver injection | Done |
+| 6.2 | Navigation Timing Collection | 10-phase breakdown (DNS→PageLoad) + 3-run median | Done |
+| 6.3 | Resource & Bundle Size Analysis | JS/CSS/Image/Font/ThirdParty sizes + top 5 largest | Done |
+| 6.4 | Performance Budget Validation | 10 absolute + 5 regression checks with configurable thresholds | Done |
+| 6.5 | Performance Comparison Report | Per-route table + aggregated summary + recommendations | Done |
+| 6.6 | Performance Test Execution Flow | Multi-run median, retry, cache-clear between runs (bonus) | Done |
+
+### Implementation Details
+
+**Step 6.1 - Core Web Vitals**:
+- `addInitScript()` injection before navigation for accurate PerformanceObserver setup
+- 5 metrics: LCP, CLS, INP (replacing FID), FCP, TTFB
+- CLS: `hadRecentInput` filtering for accurate shift calculation
+- LCP: 3-second stabilization wait post-networkidle
+- INP: Mouse click trigger for interaction measurement
+
+**Step 6.2 - Navigation Timing (10 phases)**:
+- DNS Lookup, TCP Connection, TLS Negotiation
+- TTFB, Content Download
+- DOM Parsing, DOM Content Loaded, DOM Complete
+- Page Load, Total Time
+- 3-run median averaging with cache clearing between runs
+
+**Step 6.3 - Resource Analysis**:
+- `ResourceMetrics` interface: 7 size categories + request counts + top 5 largest
+- Dual collection: Network interception + Performance API (more accurate)
+- Third-party size isolation via host comparison
+- Resource type detection: script, css, img, font, other
+
+**Step 6.4 - Performance Budget**:
+- 10 absolute thresholds (LCP, CLS, INP, FCP, TTFB, PageLoad, JS, CSS, Total, Requests)
+- 5 regression thresholds (LCP, CLS, Load Time, JS Size, Request Count)
+- 3 severity levels: pass (under budget), warn (regression but within budget), fail (over budget)
+- Configurable via `verification.performance_budget` in `.migrate-config.yaml`
+
+**Step 6.5 - Performance Report**:
+- Per-route table: Source vs Target with % change
+- `PerformanceSummary`: improvements, regressions, violations, recommendations
+- Auto-generated recommendations based on detected issues
+- Overall score: 0-100 (deductions per violation/regression)
+
+**Step 6.6 - Execution Flow (Bonus)**:
+- 3-run median for stability (not average)
+- Cache clearing between runs (cookies + Cache API)
+- Fresh browser instance per run for isolation
+- Error handling with retry (failed runs logged, remaining used)
+
+### Performance Budget Configuration
 
 ```yaml
-mask_selectors:
-  - "[data-testid='timestamp']"
-  - "[data-testid='random-content']"
-  - ".ad-banner"
-  - ".user-avatar"
-  - "[class*='skeleton']"
+verification:
+  performance_budget:
+    # Absolute thresholds
+    lcp_max_ms: 2500
+    cls_max: 0.1
+    inp_max_ms: 200
+    fcp_max_ms: 1800
+    ttfb_max_ms: 800
+    page_load_max_ms: 3000
+    js_bundle_max_kb: 500
+    css_bundle_max_kb: 150
+    total_transfer_max_kb: 2000
+    request_count_max: 80
+
+    # Regression thresholds (vs source)
+    lcp_regression_pct: 20
+    cls_regression_pct: 50
+    load_time_regression_pct: 25
+    js_size_regression_pct: 30
+    request_count_regression_pct: 50
 ```
 
 ---
 
-## Phase 4: Behavioral Testing (Functional Verification)
+## Phase 7: Accessibility Verification - COMPLETED
 
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 4.1 | Page Load Verification | All pages return 200 + no console.error + no uncaught exceptions | `migrate-4-verify.md` |
-| 4.2 | Navigation Verification | Internal link clicks → correct page transitions (broken link detection) | `migrate-4-verify.md` |
-| 4.3 | Form Interaction Verification | Login, signup, search - core form behavior confirmation | `migrate-4-verify.md` |
-| 4.4 | API Call Verification | Network tab monitoring → API request/response status code validation | `migrate-4-verify.md` |
-| 4.5 | JavaScript Error Collection | `page.on('pageerror')` + `console.error` full capture and reporting | `migrate-4-verify.md` |
+**Status**: Completed (2026-01-24)
+**File Modified**: `templates/.claude/commands/jikime/migrate-4-verify.md`
 
-### Error Collection Pattern
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 7.1 | axe-core Integration | AxeBuilder + WCAG tag selection + score calculation | Done |
+| 7.2 | Regression Comparison | Source vs Target violation diff (new/resolved/persistent) | Done |
+| 7.3 | Violation Categorization | 8 categories with priority + effort estimates (bonus) | Done |
+| 7.4 | Report Generation | Per-route scores + category breakdown + recommendations | Done |
+| 7.5 | Configuration | WCAG level, fail conditions, exclusions, threshold (bonus) | Done |
 
-```typescript
-interface PageErrors {
-  route: string
-  jsErrors: string[]       // page.on('pageerror')
-  consoleErrors: string[]  // console.error messages
-  networkErrors: {         // Failed network requests
-    url: string
-    status: number
-    method: string
-  }[]
-  uncaughtExceptions: string[]
-}
-```
+### Implementation Details
 
-### Navigation Crawl Strategy
+**Step 7.1 - axe-core Integration**:
+- `@axe-core/playwright` 패키지 활용
+- `AccessibilityResult` interface: violations, passes, incomplete, inapplicable, score
+- `AxeViolation` with impact, nodes (html + target selector + failureSummary), tags
+- WCAG level-based tag selection: A → AA → AAA (누적)
+- Dynamic content exclusion support
 
-```
-1. Start at root (/)
-2. Find all <a href="..."> with internal links
-3. Click each → verify page loads without error
-4. Recurse (max depth: 3)
-5. Report broken links
-```
+**Step 7.2 - Regression Comparison**:
+- Source와 Target 양쪽 모두 스캔 후 violation ID 기반 비교
+- 3개 분류: newViolations (타겟만), resolvedViolations (소스만), persistentViolations (양쪽)
+- `regressionDetected`: critical/serious 새 위반 시 true
+- Score delta 계산: 양수 = 개선, 음수 = 회귀
 
----
+**Step 7.3 - Violation Categorization (8 categories)**:
 
-## Phase 5: Cross-Browser Verification
+| Category | Priority | Effort | Example Rules |
+|----------|----------|--------|---------------|
+| Color & Contrast | high | quick | color-contrast |
+| Keyboard Navigation | critical | moderate | keyboard, tabindex |
+| Images & Media | high | quick | image-alt, video-caption |
+| Form Labels | high | quick | label, select-name |
+| Document Structure | medium | moderate | landmark-one-main, heading-order |
+| ARIA Usage | medium | moderate | aria-valid-attr, aria-roles |
+| Links & Buttons | high | quick | link-name, button-name |
+| Tables & Lists | medium | moderate | td-headers-attr, list |
 
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 5.1 | Multi-Browser Execution | Chromium + Firefox + WebKit parallel execution | `migrate-4-verify.md` |
-| 5.2 | Browser Diff Report | Rendering differences between browsers detected and reported | `migrate-4-verify.md` |
-| 5.3 | Mobile Emulation | iPhone, Android device emulation testing | `migrate-4-verify.md` |
+**Step 7.4 - Report Generation**:
+- Overall summary: avg score, violations, critical count, routes passed
+- Per-route table: source score vs target score with status
+- New violation details: affected elements + fix suggestions + help URL
+- Category breakdown table with priority and effort
+- `determineOverallStatus()`: fail (critical/serious new) / warn (score drop) / pass
 
-### Browser Matrix
-
+**Step 7.5 - Configuration (Bonus)**:
 ```yaml
-browsers:
-  - name: chromium
-    viewport: { width: 1920, height: 1080 }
-  - name: firefox
-    viewport: { width: 1920, height: 1080 }
-  - name: webkit
-    viewport: { width: 1920, height: 1080 }
-
-mobile_devices:
-  - name: "iPhone 14"
-    userAgent: "..."
-    viewport: { width: 390, height: 844 }
-  - name: "Pixel 7"
-    userAgent: "..."
-    viewport: { width: 412, height: 915 }
+verification:
+  accessibility:
+    wcag_level: "AA"
+    fail_on_serious: true
+    fail_on_regression: true
+    score_threshold: 80
+    exclude_rules: []
+    exclude_selectors: ["[data-testid='dynamic']", ".third-party-widget"]
+    include_best_practices: true
 ```
 
 ---
 
-## Phase 6: Performance Comparison
+## Phase 8: Agent & Skill Implementation - COMPLETED
 
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 6.1 | Core Web Vitals Collection | LCP, FID/INP, CLS metrics source vs target comparison | `migrate-4-verify.md` |
-| 6.2 | Page Load Time | Navigation Timing API per-page load time measurement | `migrate-4-verify.md` |
-| 6.3 | Bundle Size Comparison | JS/CSS transfer size comparison from network requests | `migrate-4-verify.md` |
-| 6.4 | Performance Budget | Degradation threshold vs source (e.g., LCP within +20%) | `migrate-4-verify.md` |
+**Status**: Completed (2026-01-24)
+**File Modified**: `templates/.claude/commands/jikime/migrate-4-verify.md`
 
-### Performance Metrics Collection
+| # | Task | Description | Status |
+|---|------|-------------|--------|
+| 8.1 | Enhanced `e2e-tester` Agent Spec | Migration mode context contract + execution flow | Done |
+| 8.2 | Playwright Migration Skill Structure | SKILL.md frontmatter + reference.md + 7 modules | Done |
+| 8.3 | Example Code Templates (3) | visual-comparison.ts, route-crawler.ts, cross-browser-verify.ts | Done |
+| 8.4 | Module Documentation Pattern | Consistent module template + coverage table | Done |
 
-```typescript
-const metrics = await page.evaluate(() => ({
-  // Navigation Timing
-  loadTime: performance.timing.loadEventEnd - performance.timing.navigationStart,
-  domContentLoaded: performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart,
-  firstPaint: performance.getEntriesByName('first-paint')[0]?.startTime,
+### Implementation Details
 
-  // Core Web Vitals
-  lcp: /* PerformanceObserver LCP */,
-  cls: /* Layout Shift accumulation */,
-  fid: /* First Input Delay */,
+**Step 8.1 - Enhanced e2e-tester Agent**:
+- Dual mode support: Development (J.A.R.V.I.S.) + Migration (F.R.I.D.A.Y.)
+- `MigrationVerificationContext` input interface: config, verification settings, flags, routes
+- `MigrationVerificationResult` output interface: status, summary, categories, failedTests, recommendations
+- Migration execution flow: servers → routes → phases (conditional) → report → cleanup
+- Mode comparison table: trigger, input, server, focus, output, failure differences
 
-  // Resource metrics
-  totalTransferSize: performance.getEntriesByType('resource')
-    .reduce((sum, r) => sum + r.transferSize, 0),
-  jsSize: performance.getEntriesByType('resource')
-    .filter(r => r.name.endsWith('.js'))
-    .reduce((sum, r) => sum + r.transferSize, 0),
-}))
-```
+**Step 8.2 - Playwright Migration Skill**:
+- Directory: `.claude/skills/jikime-workflow-playwright-migration/`
+- SKILL.md: triggers on `migration verify`, `visual regression`, `playwright migration`
+- reference.md: Dual-server architecture, threshold selection, multi-viewport strategy, performance/a11y guidelines
+- 7 modules covering all 7 verification phases (~2-4K tokens each)
+- Progressive disclosure: Level 1 ~120 tokens, Level 2 ~6K tokens
 
-### Performance Budget Template
+**Step 8.3 - Example Code (3 files)**:
+- `visual-comparison.ts`: Full pipeline with pixelmatch, multi-viewport, mask selectors, image normalization
+- `route-crawler.ts`: Artifact parsing + BFS crawl + merge/dedup + route registry JSON output
+- `cross-browser-verify.ts`: Parallel Chromium/Firefox/WebKit, consistency scoring (4 factors), JSON report
 
-```yaml
-performance_budget:
-  lcp_max_ms: 2500           # Absolute max
-  lcp_regression_pct: 20     # Max regression vs source
-  cls_max: 0.1
-  fid_max_ms: 100
-  total_js_kb: 500
-  total_css_kb: 100
-  page_load_max_ms: 3000
-```
-
----
-
-## Phase 7: Accessibility Verification (Bonus)
-
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 7.1 | axe-core Integration | Playwright + @axe-core/playwright for WCAG violation auto-detection | `migrate-4-verify.md` |
-| 7.2 | Accessibility Regression Comparison | Pre/post migration accessibility score comparison | `migrate-4-verify.md` |
-
-### axe-core Integration Pattern
-
-```typescript
-import AxeBuilder from '@axe-core/playwright'
-
-test('accessibility check', async ({ page }) => {
-  await page.goto('/dashboard')
-
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa'])
-    .analyze()
-
-  expect(results.violations).toHaveLength(0)
-})
-```
-
-### Accessibility Report Format
-
-```markdown
-| Route | Violations | Impact | Source Score | Target Score |
-|-------|-----------|--------|-------------|-------------|
-| / | 0 | - | 95 | 98 |
-| /dashboard | 2 | minor | 88 | 85 |
-| /settings | 0 | - | 92 | 94 |
-```
-
----
-
-## Phase 8: Agent & Skill Implementation
-
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 8.1 | Enhance `e2e-tester` Agent | Add migration verification workflow | `agents/jikime/e2e-tester.md` |
-| 8.2 | Create Playwright Migration Skill | Migration-specific Playwright pattern reference | New skill directory |
-| 8.3 | Visual Regression Example Code | Python/TypeScript examples (based on moai-adk + extensions) | skill `examples/` |
-
-### New Skill Structure
-
+**New Skill Structure (expanded)**:
 ```
 .claude/skills/jikime-workflow-playwright-migration/
-├── SKILL.md                    # Frontmatter + triggers
-├── reference.md                # Best practices for migration testing
+├── SKILL.md                    # Frontmatter + triggers + dependency list
+├── reference.md                # Best practices (dual-server, thresholds, caching, a11y)
 ├── modules/
-│   ├── visual-regression.md    # Screenshot comparison patterns
-│   ├── route-discovery.md      # Auto-route detection patterns
-│   └── server-lifecycle.md     # Dev server management patterns
+│   ├── server-lifecycle.md     # Phase 1: Framework detection + health check
+│   ├── route-discovery.md      # Phase 2: Artifact parse + BFS crawl
+│   ├── visual-regression.md    # Phase 3: pixelmatch + threshold + viewports
+│   ├── behavioral-testing.md   # Phase 4: Page load + nav + forms + API + errors
+│   ├── cross-browser.md        # Phase 5: Parallel browsers + mobile emulation
+│   ├── performance.md          # Phase 6: Web Vitals + timing + budgets
+│   └── accessibility.md        # Phase 7: axe-core + regression + categorization
 └── examples/
-    ├── visual-comparison.ts    # TypeScript visual regression example
-    ├── route-crawler.ts        # Route auto-discovery example
-    └── cross-browser-verify.ts # Cross-browser verification example
+    ├── visual-comparison.ts    # Complete visual regression pipeline
+    ├── route-crawler.ts        # Route auto-discovery with artifact merge
+    └── cross-browser-verify.ts # Multi-browser parallel verification
 ```
 
 ---
 
-## Phase 9: Command & Configuration Updates
+## Phase 9: Command & Configuration Updates (COMPLETED)
 
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 9.1 | Overhaul `migrate-4-verify.md` | Integrate Phase 1-7 workflows into command | `commands/jikime/migrate-4-verify.md` |
-| 9.2 | Add New Flags | `--visual`, `--cross-browser`, `--a11y`, `--port`, `--headless` | `migrate-4-verify.md` |
-| 9.3 | Update `allowed-tools` | Add Playwright MCP tools | `migrate-4-verify.md` |
-| 9.4 | Extend `.migrate-config.yaml` Schema | Add dev_command, port, test_routes, visual_threshold fields | Config schema docs |
+| # | Step | Description | Status |
+|---|------|-------------|--------|
+| 9.1 | Unified Execution Engine | `VerificationPipeline` interface with dependency graph, `executeVerification()` master flow | Done |
+| 9.2 | Flag Validation & Conflict Resolution | 7 validation rules, auto-correction, `validateFlags()` algorithm | Done |
+| 9.3 | Tool & Dependency Requirements | 4 required packages, pre-flight check script, version matrix | Done |
+| 9.4 | CI/CD Configuration | GitHub Actions workflow + GitLab CI pipeline templates (headless) | Done |
+| 9.5 | Error Handling & Graceful Degradation | 3 severity levels, 14 error types, 4 recovery actions | Done |
+| 9.6 | Extended Configuration Schema | Complete `.migrate-config.yaml` with all 7 phase settings + pipeline config | Done |
 
-### New Flags
+### Key Deliverables
 
-```yaml
-flags:
-  --visual:        "Enable visual regression comparison (screenshots)"
-  --cross-browser: "Run verification across Chromium, Firefox, WebKit"
-  --a11y:          "Include accessibility (axe-core) checks"
-  --port:          "Custom port for target dev server (default: 3001)"
-  --source-port:   "Custom port for source dev server (default: 3000)"
-  --headless:      "Run browsers in headless mode (default: true)"
-  --threshold:     "Visual diff threshold percentage (default: 5)"
-  --depth:         "Navigation crawl depth (default: 3)"
-  --full:          "Run ALL verification types (visual + cross-browser + a11y + performance)"
-```
+**Unified Execution Engine** (`VerificationPipeline` interface):
+- Dependency graph: route-discovery → page-load → visual/cross-browser/a11y/perf (parallel) → report
+- Master `executeVerification()` flow with pre-flight checks
+- Phase result aggregation into unified `PipelineResult`
 
-### Extended `.migrate-config.yaml` Schema
+**Flag Validation** (7 rules):
+- `--full` expands to all verification types
+- `--threshold` requires `--visual`
+- `--depth` requires route-discovery phase enabled
+- Port conflict detection and auto-correction
 
-```yaml
-# Existing fields...
-source_framework: react
-target_framework: nextjs
+**CI/CD Templates**:
+- GitHub Actions: `migration-verify.yml` with Playwright container, artifact upload, PR comment
+- GitLab CI: `.gitlab-ci.yml` with stages (setup/verify/report), Docker-in-Docker runner
 
-# NEW: Playwright verification fields
-verification:
-  dev_command: "npm run dev"           # Override auto-detection
-  source_port: 3000                    # Source dev server port
-  target_port: 3001                    # Target dev server port
-  visual_threshold: 5                  # Allowed diff percentage
-  crawl_depth: 3                       # Navigation link depth
-  test_routes:                         # Manual route overrides
-    - "/"
-    - "/dashboard"
-    - "/users"
-  mask_selectors:                      # Dynamic content to ignore
-    - "[data-testid='timestamp']"
-  performance_budget:
-    lcp_regression_pct: 20
-    page_load_max_ms: 3000
-```
+**Error Handling** (3 severity levels):
+- Fatal: dependency missing, port conflict, build failure → abort pipeline
+- Degraded: browser unavailable, timeout → skip phase, continue
+- Warning: threshold exceeded, flaky test → log, include in report
+
+**Configuration Schema** (`.migrate-config.yaml`):
+- 7 phase sections: route_discovery, page_load, visual_regression, cross_browser, accessibility, performance, state_integrity
+- Pipeline settings: parallel_phases, timeout, retry, artifacts directory
+- CI integration: headless mode, reporter format, failure threshold
 
 ---
 
-## Phase 10: Reports & Artifacts
+## Phase 10: Reports & Artifacts (COMPLETED)
 
-| # | Task | Description | Target File |
-|---|------|-------------|-------------|
-| 10.1 | Unified Verification Report Template | All verification results in one markdown | `migrate-4-verify.md` |
-| 10.2 | HTML Visual Report Template | Screenshot comparison visualization (viewable in browser) | Skill reference |
-| 10.3 | CI/CD Integration Guide | GitHub Actions/GitLab CI headless execution guide | Skill reference |
+| # | Step | Description | Status |
+|---|------|-------------|--------|
+| 10.1 | Unified Verification Report | `VerificationReport` data model, markdown template with 7 phase sections, verdict algorithm | Done |
+| 10.2 | HTML Visual Report | Interactive comparison viewer (3-panel/side-by-side/overlay/slider), filter controls, diff generation | Done |
+| 10.3 | CI/CD Artifact Integration | GitHub Actions artifact upload + PR comment, GitLab CI artifacts + JUnit + Pages deploy | Done |
+| 10.4 | Report Generation Engine | `generateReports()` algorithm, summary calculation, recommendation engine, console output | Done |
 
-### Unified Report Template
+### Key Deliverables
 
-```markdown
-# Migration Verification Report
+**Unified Report** (`VerificationReport` interface):
+- Full data model: metadata, environment, 7 phase results, summary, recommendations
+- Markdown template with Handlebars-style placeholders for all sections
+- `determineVerdict()`: 4-rule algorithm (critical → pass_rate → high_severity → warnings)
+- `collectBlockingFailures()`: visual/performance/accessibility/page_load checks
 
-## Environment
-- Source: {source_framework} @ localhost:{source_port}
-- Target: {target_framework} @ localhost:{target_port}
-- Date: {timestamp}
-- Duration: {total_time}
+**HTML Visual Report** (interactive browser viewer):
+- 4 view modes: 3-panel (source/target/diff), side-by-side, overlay, slider
+- Filter controls: status, viewport, route search
+- Dark theme with responsive layout (mobile/tablet/desktop)
+- `generateDiffImage()`: pixelmatch + flood-fill region detection
+- Per-comparison metrics: pixel count, diff percentage, threshold, regions
 
-## Summary
-| Category | Passed | Failed | Rate |
-|----------|--------|--------|------|
-| Page Load | 25 | 0 | 100% |
-| Visual Regression | 72 | 3 | 95.8% |
-| Navigation | 45 | 1 | 97.8% |
-| API Calls | 30 | 0 | 100% |
-| Performance | 25 | 2 | 92% |
-| Accessibility | 25 | 0 | 100% |
-| Cross-Browser | 75 | 0 | 100% |
-| **TOTAL** | **297** | **6** | **98.0%** |
+**CI/CD Artifacts**:
+- Directory structure: `screenshots/{source,target,diff}/`, `traces/`, `a11y/`, reports
+- GitHub Actions: `upload-artifact@v4`, PR comment with summary table, conditional full upload on failure
+- GitLab CI: JUnit report generation for test visualization, GitLab Pages deployment for visual report
+- Retention: 30 days for reports, 14 days for screenshots/traces
 
-## Visual Regression Details
-[Link to HTML visual report]
-
-## Failed Tests
-1. /settings - visual diff 7.2% (threshold: 5%)
-2. /dashboard - LCP regression 25% (budget: 20%)
-...
-
-## Recommendation
-[PASSED/FAILED] - Ready for production / Needs attention
-```
+**Report Generation Engine** (`generateReports()`):
+- 7-step pipeline: collect → calculate → verdict → recommendations → compose → render → write
+- Parallel format generation: markdown + HTML + JSON simultaneously
+- `generateRecommendations()`: priority-sorted advice for visual/perf/a11y/cross-browser issues
+- Console output: box-formatted summary with phase status indicators
 
 ---
 
@@ -411,20 +633,121 @@ Phase 6 (Performance) → Phase 7 (Accessibility)
 Phase 8 (Agent/Skill) → Phase 9 (Command) → Phase 10 (Reports)
 ```
 
+## Execution Architecture
+
+### 3-Layer System
+
+이 시스템은 **AI 오케스트레이션 방식**으로 동작합니다. `migrate-4-verify.md`는 독립 실행 스크립트가 아닌 Claude Code 슬래시 커맨드(AI 지시서)입니다.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ Layer 1: Command (migrate-4-verify.md)                  │
+│ - AI에게 "무엇을 어떻게" 수행할지 지시                     │
+│ - 10개 Phase의 워크플로우, 인터페이스, 알고리즘 정의        │
+│ - 슬래시 커맨드: /jikime:migrate-4-verify               │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│ Layer 2: Agent (e2e-tester)                             │
+│ - F.R.I.D.A.Y.가 위임하는 전문 서브에이전트               │
+│ - 커맨드 지시서를 해석하여 Playwright 코드 생성            │
+│ - Bash tool로 실제 명령 실행                             │
+└──────────────────────┬──────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────────┐
+│ Layer 3: Playwright (실제 브라우저 자동화)                │
+│ - 브라우저 실행, 스크린샷, 성능 측정, 접근성 검사          │
+│ - npm 패키지로 프로젝트에 설치 필요                       │
+│ - npx playwright test 등으로 실행                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 실행 흐름
+
+```
+사용자: /jikime:migrate-4-verify --visual --cross-browser
+     ↓
+F.R.I.D.A.Y. (오케스트레이터):
+  1. 커맨드 지시서 읽기
+  2. 플래그 검증 (Step 9.2)
+  3. Pre-flight 의존성 체크 (Step 9.3)
+     ↓
+e2e-tester 에이전트:
+  4. .migrate-config.yaml 로드
+  5. Dev server 시작 (Phase 1)
+  6. Route discovery (Phase 2)
+  7. Playwright 테스트 코드 생성 & 실행 (Phase 3-7)
+  8. 결과 수집
+     ↓
+F.R.I.D.A.Y.:
+  9. 리포트 생성 (Phase 10)
+  10. 사용자에게 결과 보고
+```
+
+### Required Packages
+
+| 패키지 | 버전 | 필수 | 용도 | 설치 커맨드 |
+|--------|------|------|------|-------------|
+| `@playwright/test` | ^1.40.0 | Yes | 전체 브라우저 자동화 | `npm install -D @playwright/test` |
+| `pixelmatch` | ^5.3.0 | No | Visual Regression (Phase 3) | `npm install -D pixelmatch` |
+| `pngjs` | ^7.0.0 | No | 스크린샷 PNG 처리 (Phase 3) | `npm install -D pngjs` |
+| `@axe-core/playwright` | ^4.8.0 | No | Accessibility 검사 (Phase 7) | `npm install -D @axe-core/playwright` |
+
+**전체 설치 (한 번에):**
+
+```bash
+# 필수 + 선택 패키지 모두 설치
+npm install -D @playwright/test pixelmatch pngjs @axe-core/playwright
+
+# Playwright 브라우저 바이너리 설치
+npx playwright install
+
+# Cross-browser 테스트 시 모든 브라우저 설치
+npx playwright install chromium firefox webkit
+```
+
+### Pre-flight Check
+
+에이전트는 실행 전에 의존성을 자동으로 확인합니다:
+
+| 상황 | 동작 |
+|------|------|
+| 필수 패키지 미설치 (`@playwright/test`) | 에러 출력 + 설치 커맨드 안내 + 파이프라인 중단 |
+| 선택 패키지 미설치 (`pixelmatch` 등) | 경고 출력 + 해당 Phase 건너뛰기 |
+| 브라우저 미설치 | 자동 설치 시도 (`npx playwright install`) |
+
+### Prerequisites (사전 요구사항)
+
+커맨드 실행 전 확인 사항:
+
+- [ ] Node.js 18+ 설치
+- [ ] 프로젝트에 `@playwright/test` 설치 완료
+- [ ] Playwright 브라우저 바이너리 설치 (`npx playwright install`)
+- [ ] Source 프로젝트 dev server 실행 가능 (`npm run dev` 등)
+- [ ] Target 프로젝트 dev server 실행 가능
+- [ ] `.migrate-config.yaml` 파일 존재 (migrate-2-plan에서 생성됨)
+- [ ] Port 3000, 3001 사용 가능 (또는 `--port`, `--source-port`로 변경)
+
+---
+
 ## Deliverables Summary
 
 | Type | Count | Content |
 |------|-------|---------|
-| Command Modified | 1 | `migrate-4-verify.md` overhaul |
-| Agent Modified | 1 | `e2e-tester.md` enhancement |
-| New Skill | 1 | `jikime-workflow-playwright-migration/` |
-| Example Code | 3-5 | Visual Regression, Cross-Browser, Route Discovery |
-| Config Schema | 1 | `.migrate-config.yaml` extension |
+| Command Modified | 1 | `migrate-4-verify.md` complete overhaul (10 phases) |
+| Agent Modified | 1 | `e2e-tester.md` dual-mode enhancement |
+| New Skill | 1 | `jikime-workflow-playwright-migration/` (7 modules + 3 examples) |
+| Example Code | 3 | Visual Comparison, Route Crawler, Cross-Browser Verify |
+| Config Schema | 1 | `.migrate-config.yaml` full verification schema |
+| Report Templates | 3 | Markdown, HTML Visual, JSON machine-readable |
+| CI/CD Templates | 2 | GitHub Actions workflow, GitLab CI pipeline |
+| TypeScript Interfaces | 15+ | Pipeline, Report, Flags, Config, Phase results |
 
-## Total Tasks: 37
+## Total Steps: 44 (across 10 phases)
 
 ---
 
-Version: 1.0.0
+Version: 2.0.0
 Created: 2026-01-24
-Status: Planning
+Last Updated: 2026-01-24
+Status: Complete (All 10 Phases Implemented)
