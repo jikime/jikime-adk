@@ -2,6 +2,9 @@
 package updatecmd
 
 import (
+	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -43,9 +46,10 @@ func NewUpdate() *cobra.Command {
 
 Includes:
 - Version check against GitHub releases
-- Automatic installer detection (go install, brew)
+- Automatic installer detection (binary, go install, brew)
+- Atomic binary update with SHA256 checksum verification
 - Template and configuration updates
-- Backup before update`,
+- Backup before update with automatic rollback on failure`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runUpdate(checkOnly, forceUpdate, skipBackup, syncTemplates)
 		},
@@ -59,13 +63,20 @@ Includes:
 	return cmd
 }
 
+// GitHubAsset represents a release asset
+type GitHubAsset struct {
+	Name               string `json:"name"`
+	BrowserDownloadURL string `json:"browser_download_url"`
+}
+
 // GitHubRelease represents a GitHub release response
 type GitHubRelease struct {
-	TagName     string `json:"tag_name"`
-	Name        string `json:"name"`
-	PublishedAt string `json:"published_at"`
-	HTMLURL     string `json:"html_url"`
-	Body        string `json:"body"`
+	TagName     string        `json:"tag_name"`
+	Name        string        `json:"name"`
+	PublishedAt string        `json:"published_at"`
+	HTMLURL     string        `json:"html_url"`
+	Body        string        `json:"body"`
+	Assets      []GitHubAsset `json:"assets"`
 }
 
 func runUpdate(checkOnly, forceUpdate, skipBackup, syncTemplates bool) error {
@@ -160,7 +171,7 @@ func runUpdate(checkOnly, forceUpdate, skipBackup, syncTemplates bool) error {
 
 	// Perform update
 	fmt.Println("Updating jikime-adk...")
-	if err := performUpdate(installer); err != nil {
+	if err := performUpdate(installer, latestRelease); err != nil {
 		red.Printf("Update failed: %v\n", err)
 		return err
 	}
@@ -245,17 +256,30 @@ func compareVersions(v1, v2 string) int {
 }
 
 func detectInstaller() string {
-	// Check if installed via go install
+	execPath, err := os.Executable()
+	if err != nil {
+		return "binary"
+	}
+
+	// Resolve symlinks to get real path
+	realPath, err := filepath.EvalSymlinks(execPath)
+	if err != nil {
+		realPath = execPath
+	}
+
+	// Check if installed via go install (GOPATH/bin or GOBIN)
+	gobin := os.Getenv("GOBIN")
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		home, _ := os.UserHomeDir()
 		gopath = filepath.Join(home, "go")
 	}
-	goBin := filepath.Join(gopath, "bin", "jikime-adk")
-	if runtime.GOOS == "windows" {
-		goBin += ".exe"
+
+	gopathBin := filepath.Join(gopath, "bin")
+	if gobin != "" && strings.HasPrefix(realPath, gobin) {
+		return "go install"
 	}
-	if _, err := os.Stat(goBin); err == nil {
+	if strings.HasPrefix(realPath, gopathBin) {
 		return "go install"
 	}
 
@@ -267,26 +291,228 @@ func detectInstaller() string {
 		}
 	}
 
-	// Default to go install
-	return "go install"
+	// Otherwise it's a standalone binary (from GitHub Releases)
+	return "binary"
 }
 
-func performUpdate(installer string) error {
-	var cmd *exec.Cmd
-
+func performUpdate(installer string, release *GitHubRelease) error {
 	switch installer {
 	case "go install":
-		cmd = exec.Command("go", "install", "github.com/jikime/jikime-adk@latest")
+		cmd := exec.Command("go", "install", "github.com/jikime/jikime-adk@latest")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
 	case "brew":
-		cmd = exec.Command("brew", "upgrade", "jikime-adk")
+		cmd := exec.Command("brew", "upgrade", "jikime-adk")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		return cmd.Run()
+	case "binary":
+		return performBinaryUpdate(release)
 	default:
 		return fmt.Errorf("unknown installer: %s", installer)
 	}
+}
 
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+func performBinaryUpdate(release *GitHubRelease) error {
+	dim := color.New(color.Faint)
 
-	return cmd.Run()
+	// Find the matching asset for current platform
+	assetName := fmt.Sprintf("jikime-adk-%s-%s", runtime.GOOS, runtime.GOARCH)
+	var assetURL string
+	for _, asset := range release.Assets {
+		if asset.Name == assetName {
+			assetURL = asset.BrowserDownloadURL
+			break
+		}
+	}
+	if assetURL == "" {
+		return fmt.Errorf("no binary available for %s/%s", runtime.GOOS, runtime.GOARCH)
+	}
+
+	// Get current executable path
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("cannot determine executable path: %w", err)
+	}
+	execPath, err = filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return fmt.Errorf("cannot resolve executable path: %w", err)
+	}
+
+	// Download to temp file
+	tmpDir, err := os.MkdirTemp("", "jikime-adk-update-*")
+	if err != nil {
+		return fmt.Errorf("cannot create temp directory: %w", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	tmpPath := filepath.Join(tmpDir, assetName)
+	dim.Printf("  Downloading %s...\n", assetName)
+	if err := downloadFile(assetURL, tmpPath); err != nil {
+		return fmt.Errorf("download failed: %w", err)
+	}
+
+	// Verify checksum
+	checksumURL := findChecksumAssetURL(release.Assets)
+	if checksumURL != "" {
+		dim.Println("  Verifying checksum...")
+		if err := verifyChecksum(tmpPath, assetName, checksumURL); err != nil {
+			return fmt.Errorf("checksum verification failed: %w", err)
+		}
+	}
+
+	// Make downloaded file executable
+	if err := os.Chmod(tmpPath, 0755); err != nil {
+		return fmt.Errorf("cannot set executable permission: %w", err)
+	}
+
+	// Atomic replace: current → .bak, new → current
+	backupPath := execPath + ".bak"
+
+	// Remove existing backup if present
+	os.Remove(backupPath)
+
+	// Rename current binary to .bak
+	if err := os.Rename(execPath, backupPath); err != nil {
+		return fmt.Errorf("cannot backup current binary: %w", err)
+	}
+
+	// Copy new binary to target path
+	if err := copyFile(tmpPath, execPath); err != nil {
+		// Rollback on failure
+		os.Rename(backupPath, execPath)
+		return fmt.Errorf("cannot install new binary: %w", err)
+	}
+
+	// Verify the new binary works
+	cmd := exec.Command(execPath, "--version")
+	if err := cmd.Run(); err != nil {
+		// Rollback on failure
+		os.Remove(execPath)
+		os.Rename(backupPath, execPath)
+		return fmt.Errorf("new binary verification failed, rolled back: %w", err)
+	}
+
+	// Remove backup
+	os.Remove(backupPath)
+
+	return nil
+}
+
+func downloadFile(url, destPath string) error {
+	client := &http.Client{Timeout: 5 * time.Minute}
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "jikime-adk/"+version.String())
+
+	// Support GITHUB_TOKEN for rate limiting
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
+	}
+
+	out, err := os.Create(destPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	_, err = io.Copy(out, resp.Body)
+	return err
+}
+
+func verifyChecksum(filePath, fileName, checksumURL string) error {
+	// Download checksums.txt
+	client := &http.Client{Timeout: httpTimeout}
+
+	req, err := http.NewRequest("GET", checksumURL, nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", "jikime-adk/"+version.String())
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("cannot download checksums: HTTP %d", resp.StatusCode)
+	}
+
+	// Parse checksums.txt to find expected hash
+	var expectedHash string
+	scanner := bufio.NewScanner(resp.Body)
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Fields(line)
+		if len(parts) == 2 && parts[1] == fileName {
+			expectedHash = parts[0]
+			break
+		}
+	}
+	if expectedHash == "" {
+		return fmt.Errorf("checksum not found for %s", fileName)
+	}
+
+	// Calculate actual hash
+	f, err := os.Open(filePath)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return err
+	}
+	actualHash := hex.EncodeToString(h.Sum(nil))
+
+	if actualHash != expectedHash {
+		return fmt.Errorf("hash mismatch: expected %s, got %s", expectedHash, actualHash)
+	}
+
+	return nil
+}
+
+func findChecksumAssetURL(assets []GitHubAsset) string {
+	for _, asset := range assets {
+		if asset.Name == "checksums.txt" {
+			return asset.BrowserDownloadURL
+		}
+	}
+	return ""
+}
+
+func copyFile(src, dst string) error {
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+
+	srcInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(dst, data, srcInfo.Mode())
 }
 
 // createBackup creates a backup using the backup package.
@@ -325,31 +551,6 @@ func createBackup() (string, error) {
 	return backupPath, nil
 }
 
-func copyDir(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-
-		relPath, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-
-		dstPath := filepath.Join(dst, relPath)
-
-		if info.IsDir() {
-			return os.MkdirAll(dstPath, info.Mode())
-		}
-
-		data, err := os.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		return os.WriteFile(dstPath, data, info.Mode())
-	})
-}
 
 func syncProjectTemplates() error {
 	cyan := color.New(color.FgCyan)
