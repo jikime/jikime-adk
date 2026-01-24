@@ -3,7 +3,7 @@
 **AI-Powered Agentic Development Kit for Legacy Modernization**
 
 [![Go](https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go)](https://go.dev/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](./LICENSE)
+[![License: Copyleft](https://img.shields.io/badge/License-Copyleft--3.0-blue.svg)](./LICENSE)
 [![Release](https://img.shields.io/github/v/release/jikime/jikime-adk)](https://github.com/jikime/jikime-adk/releases)
 
 > **"레거시 코드에 담긴 본질과 가치를 끝까지 보존하면서, 이를 현대화된 코드로 안전하게 탈바꿈시킨다."**
@@ -77,12 +77,29 @@ go install github.com/jikime/jikime-adk@latest
 
 [GitHub Releases](https://github.com/jikime/jikime-adk/releases)에서 플랫폼에 맞는 바이너리를 다운로드합니다.
 
-| Platform | Architecture | File |
-|----------|-------------|------|
-| macOS | Apple Silicon | `jikime-adk-darwin-arm64` |
-| macOS | Intel | `jikime-adk-darwin-amd64` |
-| Linux | x86_64 | `jikime-adk-linux-amd64` |
-| Linux | ARM64 | `jikime-adk-linux-arm64` |
+| Platform | Architecture | jikime-adk | jikime-wt |
+|----------|-------------|------------|-----------|
+| macOS | Apple Silicon | `jikime-adk-darwin-arm64` | `jikime-wt-darwin-arm64` |
+| macOS | Intel | `jikime-adk-darwin-amd64` | `jikime-wt-darwin-amd64` |
+| Linux | x86_64 | `jikime-adk-linux-amd64` | `jikime-wt-linux-amd64` |
+| Linux | ARM64 | `jikime-adk-linux-arm64` | `jikime-wt-linux-arm64` |
+
+### 설치 후 디렉토리 구성
+
+```
+~/.local/bin/
+├── jikime-adk          # 메인 바이너리
+├── jikime → jikime-adk # 심볼릭 링크 (단축 명령어)
+└── jikime-wt           # Worktree 전용 바이너리
+```
+
+`jikime`는 `jikime-adk`의 심볼릭 링크로, 더 짧은 명령어를 제공합니다:
+
+```bash
+jikime init        # = jikime-adk init
+jikime update      # = jikime-adk update
+jikime-wt new auth # = jikime-adk worktree new auth
+```
 
 ---
 
@@ -152,6 +169,7 @@ jikime-adk init
 | 명령어 | 설명 |
 |--------|------|
 | `/jikime:jarvis` | J.A.R.V.I.S. 자율 개발 오케스트레이션 |
+| `/jikime:friday` | F.R.I.D.A.Y. 자율 마이그레이션 오케스트레이션 |
 | `/jikime:test` | 단위/통합 테스트 실행 |
 | `/jikime:loop` | LSP/AST-grep 피드백 기반 반복 개선 |
 
@@ -175,7 +193,7 @@ jikime-adk init
 
 | 명령어 | 설명 |
 |--------|------|
-| `/jikime:migrate` | 마이그레이션 통합 명령어 (전체 자동화) |
+| `/jikime:friday` | 마이그레이션 통합 명령어 (전체 자동화) |
 | `/jikime:migrate-0-discover` | Step 0: 소스 탐색 |
 | `/jikime:migrate-1-analyze` | Step 1: 상세 분석 |
 | `/jikime:migrate-2-plan` | Step 2: 마이그레이션 계획 수립 |
@@ -196,13 +214,131 @@ jikime-adk init
 
 `jikime-adk` 바이너리가 제공하는 CLI 명령어입니다.
 
+### 기본 명령어
+
 | 명령어 | 설명 |
 |--------|------|
-| `jikime-adk init` | 프로젝트에 템플릿 설치 |
+| `jikime-adk init [path] [name]` | 프로젝트에 템플릿 설치 |
+| `jikime-adk status` | 프로젝트 상태 및 설정 확인 |
+| `jikime-adk doctor` | 시스템 진단 (의존성, 설정 검증) |
 | `jikime-adk update` | 바이너리 자동 업데이트 |
-| `jikime-adk update --check` | 새 버전 확인 |
-| `jikime-adk update --sync-templates` | 프로젝트 템플릿 동기화 |
+| `jikime-adk statusline` | Claude Code 상태줄 렌더링 |
 | `jikime-adk --version` | 버전 확인 |
+
+### init
+
+프로젝트에 에이전트, 스킬, 커맨드 템플릿을 설치합니다.
+
+```bash
+jikime-adk init [path] [project-name]
+```
+
+| 플래그 | 설명 |
+|--------|------|
+| `-y, --non-interactive` | 대화형 프롬프트 없이 기본값으로 진행 |
+| `--mode <mode>` | 프로젝트 모드 설정 |
+| `--locale <locale>` | 로케일 설정 |
+| `--language <lang>` | 대화 언어 설정 |
+| `--force` | 기존 파일 덮어쓰기 |
+
+### doctor
+
+시스템 환경을 진단하고 문제를 감지합니다.
+
+```bash
+jikime-adk doctor
+```
+
+| 플래그 | 설명 |
+|--------|------|
+| `-v, --verbose` | 상세 출력 |
+| `--fix` | 발견된 문제 자동 수정 시도 |
+| `--export` | 진단 결과 파일로 내보내기 |
+| `--check-commands` | 명령어 가용성 검사 |
+
+### update
+
+바이너리 업데이트 및 템플릿 동기화를 수행합니다.
+
+```bash
+jikime-adk update
+```
+
+| 플래그 | 설명 |
+|--------|------|
+| `--check` | 새 버전 존재 여부만 확인 |
+| `-f, --force` | 강제 업데이트 |
+| `--skip-backup` | 백업 생성 건너뛰기 |
+| `--sync-templates` | 프로젝트 템플릿을 최신 버전으로 동기화 |
+
+### language
+
+대화 언어를 관리합니다. (en, ko, ja, zh, es, fr, de, pt, it, ru)
+
+| 서브커맨드 | 설명 |
+|-----------|------|
+| `language list` | 지원 언어 목록 |
+| `language info` | 현재 언어 설정 정보 |
+| `language set <lang>` | 언어 변경 |
+| `language validate` | 언어 설정 유효성 검사 |
+
+### worktree (별칭: wt) / jikime-wt
+
+Git Worktree 기반 병렬 개발 환경을 관리합니다.
+
+`jikime-wt`는 `jikime-adk worktree`의 독립 실행 바이너리로, 더 짧은 명령어를 제공합니다.
+
+```bash
+# 아래 두 명령은 동일합니다
+jikime-adk worktree new feature/auth
+jikime-wt new feature/auth
+```
+
+| 서브커맨드 | 설명 |
+|-----------|------|
+| `worktree new <branch>` | 새 worktree 생성 |
+| `worktree list` | worktree 목록 |
+| `worktree go <branch>` | worktree로 이동 |
+| `worktree remove <branch>` | worktree 제거 |
+| `worktree status` | 전체 worktree 상태 |
+| `worktree sync` | worktree 간 동기화 |
+| `worktree clean` | 불필요한 worktree 정리 |
+| `worktree recover` | 깨진 worktree 복구 |
+| `worktree done` | 작업 완료 및 정리 |
+| `worktree config` | worktree 설정 관리 |
+
+공통 플래그: `--repo <path>`, `--worktree-root <path>`
+
+### tag
+
+TAG System v2.0 - SPEC과 코드 간 추적성을 관리합니다.
+
+| 서브커맨드 | 설명 |
+|-----------|------|
+| `tag validate` | 태그 형식 유효성 검사 |
+| `tag scan` | 코드베이스 태그 스캔 |
+| `tag linkage` | SPEC↔CODE 연결 상태 확인 |
+
+### skill
+
+스킬 시스템을 탐색하고 관리합니다.
+
+| 서브커맨드 | 설명 |
+|-----------|------|
+| `skill list` | 등록된 스킬 목록 |
+| `skill search <query>` | 스킬 검색 |
+| `skill related <skill>` | 관련 스킬 탐색 |
+| `skill info <skill>` | 스킬 상세 정보 |
+
+### hooks
+
+Claude Code 통합 훅을 관리합니다.
+
+```bash
+jikime-adk hooks <hook-name>
+```
+
+주요 훅: `session-start`, `pre-tool-security`, `pre-bash`, `pre-write`, `post-tool-formatter`, `post-tool-linter`, `post-tool-ast-grep`, `post-tool-lsp`, `stop-loop`, `orchestrator-route` 등
 
 ---
 
@@ -282,8 +418,16 @@ JiKiME-ADK는 모든 개발에 **ANALYZE-PRESERVE-IMPROVE** 사이클을 적용�
 ```
 jikime-adk/
 ├── cmd/                    # CLI 명령어 구현
-│   ├── initcmd/           # init 명령어
-│   └── updatecmd/         # update 명령어
+│   ├── initcmd/           # init - 프로젝트 초기화
+│   ├── statuscmd/         # status - 프로젝트 상태
+│   ├── doctorcmd/         # doctor - 시스템 진단
+│   ├── updatecmd/         # update - 자동 업데이트
+│   ├── languagecmd/       # language - 언어 관리
+│   ├── worktreecmd/       # worktree - Git Worktree 관리
+│   ├── tagcmd/            # tag - TAG System
+│   ├── skillcmd/          # skill - 스킬 시스템
+│   ├── hookscmd/          # hooks - Claude Code 훅
+│   └── statuslinecmd/     # statusline - 상태줄 렌더링
 ├── templates/             # 임베디드 프로젝트 템플릿
 │   ├── .claude/           # Claude Code 설정
 │   │   ├── agents/        # 에이전트 정의
@@ -330,4 +474,4 @@ JiKiME-ADK의 발전 과정을 꾸준히 공유하겠습니다. 수많은 시행
 
 ## License
 
-MIT License - See [LICENSE](./LICENSE) for details.
+Copyleft License (COPYLEFT-3.0) - See [LICENSE](./LICENSE) for details.

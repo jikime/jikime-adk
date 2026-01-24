@@ -40,7 +40,7 @@ jobs:
         id: version
         run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
-      - name: Build binary
+      - name: Build jikime-adk binary
         env:
           GOOS: ${{ matrix.os }}
           GOARCH: ${{ matrix.arch }}
@@ -52,11 +52,25 @@ jobs:
             -o "jikime-adk-${{ matrix.os }}-${{ matrix.arch }}" \
             .
 
-      - name: Upload artifact
+      - name: Build jikime-wt binary
+        env:
+          GOOS: ${{ matrix.os }}
+          GOARCH: ${{ matrix.arch }}
+          CGO_ENABLED: '0'
+        run: |
+          go build \
+            -trimpath \
+            -ldflags "-s -w -X 'jikime-adk/version.buildVersion=${{ steps.version.outputs.VERSION }}'" \
+            -o "jikime-wt-${{ matrix.os }}-${{ matrix.arch }}" \
+            ./cmd/jikime-wt
+
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: binary-${{ matrix.os }}-${{ matrix.arch }}
-          path: jikime-adk-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            jikime-adk-${{ matrix.os }}-${{ matrix.arch }}
+            jikime-wt-${{ matrix.os }}-${{ matrix.arch }}
           retention-days: 1
 
   release:
@@ -77,7 +91,7 @@ jobs:
       - name: Generate checksums
         working-directory: dist
         run: |
-          sha256sum jikime-adk-* > checksums.txt
+          sha256sum jikime-adk-* jikime-wt-* > checksums.txt
           echo "=== checksums.txt ==="
           cat checksums.txt
 
@@ -87,4 +101,5 @@ jobs:
           generate_release_notes: true
           files: |
             dist/jikime-adk-*
+            dist/jikime-wt-*
             dist/checksums.txt

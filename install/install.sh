@@ -15,6 +15,8 @@ set -euo pipefail
 # Configuration
 readonly REPO="jikime/jikime-adk"
 readonly BINARY_NAME="jikime-adk"
+readonly WT_BINARY_NAME="jikime-wt"
+readonly SYMLINK_NAME="jikime"
 readonly DEFAULT_INSTALL_DIR="${HOME}/.local/bin"
 readonly GLOBAL_INSTALL_DIR="/usr/local/bin"
 readonly RELEASES_URL="https://api.github.com/repos/${REPO}/releases"
@@ -188,8 +190,9 @@ download_binary() {
     local platform="$2"
     local arch="$3"
     local dest="$4"
+    local binary_name="${5:-$BINARY_NAME}"
 
-    local asset_name="${BINARY_NAME}-${platform}-${arch}"
+    local asset_name="${binary_name}-${platform}-${arch}"
     local download_url="${DOWNLOAD_BASE}/v${version}/${asset_name}"
 
     local attempt=0
@@ -215,8 +218,9 @@ verify_checksum() {
     local version="$2"
     local platform="$3"
     local arch="$4"
+    local binary_name="${5:-$BINARY_NAME}"
 
-    local asset_name="${BINARY_NAME}-${platform}-${arch}"
+    local asset_name="${binary_name}-${platform}-${arch}"
     local checksums_url="${DOWNLOAD_BASE}/v${version}/checksums.txt"
 
     # Download checksums.txt
@@ -256,15 +260,31 @@ verify_checksum() {
 install_binary() {
     local src="$1"
     local install_dir="$2"
+    local target_name="${3:-$BINARY_NAME}"
 
     if [ "$USE_SUDO" = true ]; then
         sudo mkdir -p "$install_dir"
-        sudo cp "$src" "${install_dir}/${BINARY_NAME}"
-        sudo chmod 755 "${install_dir}/${BINARY_NAME}"
+        sudo cp "$src" "${install_dir}/${target_name}"
+        sudo chmod 755 "${install_dir}/${target_name}"
     else
         mkdir -p "$install_dir"
-        cp "$src" "${install_dir}/${BINARY_NAME}"
-        chmod 755 "${install_dir}/${BINARY_NAME}"
+        cp "$src" "${install_dir}/${target_name}"
+        chmod 755 "${install_dir}/${target_name}"
+    fi
+}
+
+create_symlink() {
+    local install_dir="$1"
+    local target="${install_dir}/${BINARY_NAME}"
+    local link="${install_dir}/${SYMLINK_NAME}"
+
+    # Remove existing symlink or file
+    if [ "$USE_SUDO" = true ]; then
+        sudo rm -f "$link"
+        sudo ln -s "$target" "$link"
+    else
+        rm -f "$link"
+        ln -s "$target" "$link"
     fi
 }
 
@@ -329,9 +349,13 @@ print_success() {
         echo -e "  ${NEON_GREEN}${BOLD}Installation complete!${NC}"
     fi
     echo ""
-    dim "Binary: ${install_dir}/${BINARY_NAME}"
-    dim "Run 'jikime-adk --help' to get started."
-    dim "Run 'jikime-adk update --check' to check for updates."
+    dim "Installed:"
+    dim "  ${install_dir}/${BINARY_NAME}"
+    dim "  ${install_dir}/${WT_BINARY_NAME}"
+    dim "  ${install_dir}/${SYMLINK_NAME} -> ${BINARY_NAME}"
+    echo ""
+    dim "Run 'jikime --help' to get started."
+    dim "Run 'jikime update --check' to check for updates."
     echo ""
 }
 
@@ -413,35 +437,52 @@ main() {
 
     # Step 4: Create temp directory
     TMP_DIR=$(mktemp -d)
-    local tmp_binary="${TMP_DIR}/${BINARY_NAME}-${platform}-${arch}"
+    local tmp_adk="${TMP_DIR}/${BINARY_NAME}-${platform}-${arch}"
+    local tmp_wt="${TMP_DIR}/${WT_BINARY_NAME}-${platform}-${arch}"
 
-    # Step 5: Download binary
+    # Step 5: Download binaries
     info "Downloading ${BINARY_NAME} v${version}..."
-    if ! download_binary "$version" "$platform" "$arch" "$tmp_binary"; then
+    if ! download_binary "$version" "$platform" "$arch" "$tmp_adk" "$BINARY_NAME"; then
         exit 1
     fi
-    success "Download complete"
+    success "${BINARY_NAME} downloaded"
 
-    # Step 6: Verify checksum
-    info "Verifying checksum..."
-    if ! verify_checksum "$tmp_binary" "$version" "$platform" "$arch"; then
-        error "Checksum verification failed. Aborting installation."
+    info "Downloading ${WT_BINARY_NAME} v${version}..."
+    if ! download_binary "$version" "$platform" "$arch" "$tmp_wt" "$WT_BINARY_NAME"; then
         exit 1
     fi
-    success "Checksum verified"
+    success "${WT_BINARY_NAME} downloaded"
 
-    # Step 7: Install binary
+    # Step 6: Verify checksums
+    info "Verifying checksums..."
+    if ! verify_checksum "$tmp_adk" "$version" "$platform" "$arch" "$BINARY_NAME"; then
+        error "Checksum verification failed for ${BINARY_NAME}. Aborting."
+        exit 1
+    fi
+    if ! verify_checksum "$tmp_wt" "$version" "$platform" "$arch" "$WT_BINARY_NAME"; then
+        error "Checksum verification failed for ${WT_BINARY_NAME}. Aborting."
+        exit 1
+    fi
+    success "Checksums verified"
+
+    # Step 7: Install binaries
     info "Installing to ${INSTALL_DIR}..."
     if [ "$USE_SUDO" = true ]; then
         dim "Sudo access required for /usr/local/bin installation"
     fi
-    install_binary "$tmp_binary" "$INSTALL_DIR"
-    success "Binary installed"
+    install_binary "$tmp_adk" "$INSTALL_DIR" "$BINARY_NAME"
+    install_binary "$tmp_wt" "$INSTALL_DIR" "$WT_BINARY_NAME"
+    success "Binaries installed"
 
-    # Step 8: Verify PATH
+    # Step 8: Create symlink (jikime -> jikime-adk)
+    info "Creating symlink: ${SYMLINK_NAME} -> ${BINARY_NAME}..."
+    create_symlink "$INSTALL_DIR"
+    success "Symlink created"
+
+    # Step 9: Verify PATH
     verify_path "$INSTALL_DIR"
 
-    # Step 9: Verify installation
+    # Step 10: Verify installation
     verify_installation "$INSTALL_DIR"
 
     # Done

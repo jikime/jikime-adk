@@ -317,19 +317,7 @@ func performUpdate(installer string, release *GitHubRelease) error {
 
 func performBinaryUpdate(release *GitHubRelease) error {
 	dim := color.New(color.Faint)
-
-	// Find the matching asset for current platform
-	assetName := fmt.Sprintf("jikime-adk-%s-%s", runtime.GOOS, runtime.GOARCH)
-	var assetURL string
-	for _, asset := range release.Assets {
-		if asset.Name == assetName {
-			assetURL = asset.BrowserDownloadURL
-			break
-		}
-	}
-	if assetURL == "" {
-		return fmt.Errorf("no binary available for %s/%s", runtime.GOOS, runtime.GOARCH)
-	}
+	green := color.New(color.FgGreen)
 
 	// Get current executable path
 	execPath, err := os.Executable()
@@ -341,13 +329,52 @@ func performBinaryUpdate(release *GitHubRelease) error {
 		return fmt.Errorf("cannot resolve executable path: %w", err)
 	}
 
-	// Download to temp file
+	installDir := filepath.Dir(execPath)
+
+	// Download to temp directory
 	tmpDir, err := os.MkdirTemp("", "jikime-adk-update-*")
 	if err != nil {
 		return fmt.Errorf("cannot create temp directory: %w", err)
 	}
 	defer os.RemoveAll(tmpDir)
 
+	checksumURL := findChecksumAssetURL(release.Assets)
+
+	// Update jikime-adk binary
+	if err := updateSingleBinary(release, "jikime-adk", execPath, tmpDir, checksumURL, dim); err != nil {
+		return err
+	}
+	green.Println("  jikime-adk updated")
+
+	// Update jikime-wt binary
+	wtPath := filepath.Join(installDir, "jikime-wt")
+	if err := updateSingleBinary(release, "jikime-wt", wtPath, tmpDir, checksumURL, dim); err != nil {
+		dim.Printf("  Warning: jikime-wt update failed: %v\n", err)
+	} else {
+		green.Println("  jikime-wt updated")
+	}
+
+	// Ensure jikime symlink
+	ensureSymlink(installDir, dim)
+
+	return nil
+}
+
+func updateSingleBinary(release *GitHubRelease, binaryName, targetPath, tmpDir, checksumURL string, dim *color.Color) error {
+	// Find the matching asset for current platform
+	assetName := fmt.Sprintf("%s-%s-%s", binaryName, runtime.GOOS, runtime.GOARCH)
+	var assetURL string
+	for _, asset := range release.Assets {
+		if asset.Name == assetName {
+			assetURL = asset.BrowserDownloadURL
+			break
+		}
+	}
+	if assetURL == "" {
+		return fmt.Errorf("no %s binary available for %s/%s", binaryName, runtime.GOOS, runtime.GOARCH)
+	}
+
+	// Download
 	tmpPath := filepath.Join(tmpDir, assetName)
 	dim.Printf("  Downloading %s...\n", assetName)
 	if err := downloadFile(assetURL, tmpPath); err != nil {
@@ -355,9 +382,8 @@ func performBinaryUpdate(release *GitHubRelease) error {
 	}
 
 	// Verify checksum
-	checksumURL := findChecksumAssetURL(release.Assets)
 	if checksumURL != "" {
-		dim.Println("  Verifying checksum...")
+		dim.Printf("  Verifying %s checksum...\n", binaryName)
 		if err := verifyChecksum(tmpPath, assetName, checksumURL); err != nil {
 			return fmt.Errorf("checksum verification failed: %w", err)
 		}
@@ -369,36 +395,72 @@ func performBinaryUpdate(release *GitHubRelease) error {
 	}
 
 	// Atomic replace: current → .bak, new → current
-	backupPath := execPath + ".bak"
+	backupPath := targetPath + ".bak"
 
 	// Remove existing backup if present
 	os.Remove(backupPath)
 
-	// Rename current binary to .bak
-	if err := os.Rename(execPath, backupPath); err != nil {
-		return fmt.Errorf("cannot backup current binary: %w", err)
+	// Check if target exists (jikime-wt might not exist yet)
+	targetExists := true
+	if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+		targetExists = false
+	}
+
+	if targetExists {
+		// Rename current binary to .bak
+		if err := os.Rename(targetPath, backupPath); err != nil {
+			return fmt.Errorf("cannot backup current binary: %w", err)
+		}
 	}
 
 	// Copy new binary to target path
-	if err := copyFile(tmpPath, execPath); err != nil {
+	if err := copyFile(tmpPath, targetPath); err != nil {
 		// Rollback on failure
-		os.Rename(backupPath, execPath)
+		if targetExists {
+			os.Rename(backupPath, targetPath)
+		}
 		return fmt.Errorf("cannot install new binary: %w", err)
 	}
 
 	// Verify the new binary works
-	cmd := exec.Command(execPath, "--version")
+	cmd := exec.Command(targetPath, "--version")
 	if err := cmd.Run(); err != nil {
 		// Rollback on failure
-		os.Remove(execPath)
-		os.Rename(backupPath, execPath)
+		os.Remove(targetPath)
+		if targetExists {
+			os.Rename(backupPath, targetPath)
+		}
 		return fmt.Errorf("new binary verification failed, rolled back: %w", err)
 	}
 
 	// Remove backup
-	os.Remove(backupPath)
+	if targetExists {
+		os.Remove(backupPath)
+	}
 
 	return nil
+}
+
+func ensureSymlink(installDir string, dim *color.Color) {
+	symlinkPath := filepath.Join(installDir, "jikime")
+	targetPath := filepath.Join(installDir, "jikime-adk")
+
+	// Check if symlink already exists and points to correct target
+	existingTarget, err := os.Readlink(symlinkPath)
+	if err == nil && (existingTarget == targetPath || existingTarget == "jikime-adk") {
+		return // Already correct
+	}
+
+	// Remove existing file/symlink
+	os.Remove(symlinkPath)
+
+	// Create relative symlink
+	if err := os.Symlink("jikime-adk", symlinkPath); err != nil {
+		dim.Printf("  Warning: could not create jikime symlink: %v\n", err)
+		return
+	}
+
+	dim.Println("  Symlink: jikime -> jikime-adk")
 }
 
 func downloadFile(url, destPath string) error {

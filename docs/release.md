@@ -88,7 +88,7 @@ git push --tags
 
 1. **Release Workflow**: GitHub → Actions → "Release" 워크플로우 성공 확인
 2. **Releases 탭**: GitHub → Releases → `v0.0.2` 릴리스 생성 확인
-3. **Assets 확인**: 4개 바이너리 + checksums.txt 존재 확인
+3. **Assets 확인**: 8개 바이너리 (jikime-adk 4 + jikime-wt 4) + checksums.txt 존재 확인
 4. **Install Script**: `deploy-install.yml` 워크플로우 성공 확인
 
 ```bash
@@ -111,21 +111,42 @@ curl -fsSL https://jikime.github.io/jikime-adk/install.sh | head -5
 | `jikime-adk-darwin-arm64` | macOS | Apple Silicon |
 | `jikime-adk-linux-amd64` | Linux | x86_64 |
 | `jikime-adk-linux-arm64` | Linux | ARM64 |
+| `jikime-wt-darwin-amd64` | macOS | Intel |
+| `jikime-wt-darwin-arm64` | macOS | Apple Silicon |
+| `jikime-wt-linux-amd64` | Linux | x86_64 |
+| `jikime-wt-linux-arm64` | Linux | ARM64 |
 | `checksums.txt` | - | SHA256 체크섬 |
 
 ### Binary Naming Convention
 
 ```
-jikime-adk-{GOOS}-{GOARCH}
+jikime-adk-{GOOS}-{GOARCH}    # 메인 바이너리
+jikime-wt-{GOOS}-{GOARCH}     # Worktree 전용 바이너리
+```
+
+### 설치 시 구성
+
+```
+~/.local/bin/
+├── jikime-adk          # 메인 바이너리
+├── jikime → jikime-adk # 심볼릭 링크 (단축 명령어)
+└── jikime-wt           # Worktree 전용 독립 바이너리
 ```
 
 ### Build Flags
 
 ```bash
+# jikime-adk (메인)
 CGO_ENABLED=0 go build \
   -trimpath \
   -ldflags "-s -w -X 'jikime-adk/version.buildVersion=${VERSION}'" \
   -o "jikime-adk-${GOOS}-${GOARCH}" .
+
+# jikime-wt (worktree 전용)
+CGO_ENABLED=0 go build \
+  -trimpath \
+  -ldflags "-s -w -X 'jikime-adk/version.buildVersion=${VERSION}'" \
+  -o "jikime-wt-${GOOS}-${GOARCH}" ./cmd/jikime-wt
 ```
 
 | Flag | Purpose |
@@ -145,7 +166,7 @@ CGO_ENABLED=0 go build \
 **Trigger**: `push: tags: ['v*']`
 
 **Jobs**:
-1. **build**: 4개 플랫폼 매트릭스 빌드 (darwin/linux × amd64/arm64)
+1. **build**: 4개 플랫폼 매트릭스 빌드 (darwin/linux × amd64/arm64) × 2 바이너리 (jikime-adk + jikime-wt)
 2. **release**: 아티팩트 수집 → checksums.txt 생성 → GitHub Release 발행
 
 **Permissions**: `contents: write` (Release 생성에 필요)
@@ -350,6 +371,69 @@ jikime-adk --version
 
 ---
 
+## Release 초기화 (태그/릴리스 전체 삭제 후 재시작)
+
+기존 릴리스와 태그를 모두 삭제하고 처음부터 다시 시작할 때 사용합니다.
+
+### Step 1: GitHub Releases 삭제
+
+```bash
+# 현재 릴리스 목록 확인
+gh release list
+
+# 각 릴리스 삭제
+gh release delete v0.0.1 --yes
+gh release delete v0.0.2 --yes
+# ... 존재하는 모든 릴리스에 대해 반복
+```
+
+### Step 2: 원격 태그 삭제
+
+```bash
+# 개별 삭제
+git push origin --delete v0.0.1
+git push origin --delete v0.0.2
+
+# 또는 모든 원격 태그 한번에 삭제
+git tag -l | xargs -I {} git push origin --delete {}
+```
+
+### Step 3: 로컬 태그 삭제
+
+```bash
+# 개별 삭제
+git tag -d v0.0.1
+git tag -d v0.0.2
+
+# 또는 모든 로컬 태그 한번에 삭제
+git tag -l | xargs git tag -d
+```
+
+### Step 4: 확인
+
+```bash
+git tag -l          # 로컬 태그 없음 확인
+gh release list     # 릴리스 없음 확인
+```
+
+### Step 5: 새로 시작
+
+```bash
+# 버전 설정
+.github/scripts/sync-versions.sh 0.0.1
+
+# 커밋 & 푸시
+git add version/version.go
+git commit -m "chore: set version to 0.0.1"
+git push origin main
+
+# 태그 생성 & 릴리스 트리거
+git tag v0.0.1
+git push --tags
+```
+
+---
+
 ## Quick Reference
 
 ### 릴리스 체크리스트
@@ -361,7 +445,7 @@ jikime-adk --version
 - [ ] `git tag vX.Y.Z` 생성
 - [ ] `git push --tags`로 태그 푸시
 - [ ] GitHub Actions → Release 워크플로우 성공 확인
-- [ ] GitHub Releases 탭에서 바이너리 4개 + checksums.txt 확인
+- [ ] GitHub Releases 탭에서 바이너리 8개 (jikime-adk 4 + jikime-wt 4) + checksums.txt 확인
 - [ ] Deploy Install Script 워크플로우 성공 확인
 - [ ] `curl ... | bash`로 설치 테스트
 
