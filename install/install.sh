@@ -178,7 +178,7 @@ get_latest_version() {
 
     if [ -z "${response:-}" ]; then
         error "Failed to fetch latest version from GitHub API"
-        dim "Check your network connection or set GITHUB_TOKEN for higher rate limits."
+        dim "For private repos, set GITHUB_TOKEN: export GITHUB_TOKEN=\$(gh auth token)"
         exit 1
     fi
 
@@ -204,11 +204,16 @@ download_binary() {
     local asset_name="${BINARY_NAME}-${platform}-${arch}"
     local download_url="https://github.com/${REPO}/releases/download/v${version}/${asset_name}"
 
+    local auth_args=()
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        auth_args=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+    fi
+
     local attempt=0
     while [ $attempt -lt $MAX_RETRIES ]; do
         attempt=$((attempt + 1))
 
-        if curl -fsSL -o "$dest" "$download_url" 2>/dev/null; then
+        if curl -fsSL "${auth_args[@]}" -o "$dest" "$download_url" 2>/dev/null; then
             return 0
         fi
 
@@ -219,6 +224,9 @@ download_binary() {
     done
 
     error "Failed to download binary from: $download_url"
+    if [ -z "${GITHUB_TOKEN:-}" ]; then
+        dim "For private repos, set GITHUB_TOKEN environment variable."
+    fi
     return 1
 }
 
@@ -231,9 +239,14 @@ verify_checksum() {
     local asset_name="${BINARY_NAME}-${platform}-${arch}"
     local checksums_url="https://github.com/${REPO}/releases/download/v${version}/checksums.txt"
 
+    local auth_args=()
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        auth_args=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+    fi
+
     # Download checksums.txt
     local checksums_file="${TMP_DIR}/checksums.txt"
-    if ! curl -fsSL -o "$checksums_file" "$checksums_url" 2>/dev/null; then
+    if ! curl -fsSL "${auth_args[@]}" -o "$checksums_file" "$checksums_url" 2>/dev/null; then
         dim "Warning: Could not download checksums.txt, skipping verification"
         return 0
     fi
