@@ -65,6 +65,29 @@ func PrintIntro(version string) {
 	fmt.Println(versionStyle.Render(fmt.Sprintf("    v%s", version)))
 	fmt.Println()
 
+	// Dual Orchestrator Identity (Option B style)
+	jarvisStyle := lipgloss.NewStyle().
+		Foreground(cyan).
+		Bold(true)
+	fridayStyle := lipgloss.NewStyle().
+		Foreground(magenta).
+		Bold(true)
+	separatorChar := lipgloss.NewStyle().
+		Foreground(dim)
+	roleStyle := lipgloss.NewStyle().
+		Foreground(dim)
+
+	fmt.Println(
+		jarvisStyle.Render("    ◀ J.A.R.V.I.S.") +
+			separatorChar.Render(" ▏ ") +
+			fridayStyle.Render("F.R.I.D.A.Y. ▶"),
+	)
+	fmt.Println(
+		roleStyle.Render("       develop") +
+			roleStyle.Render("        migrate"),
+	)
+	fmt.Println()
+
 	// Cyberpunk separator
 	separatorStyle := lipgloss.NewStyle().Foreground(cyan)
 	fmt.Println(separatorStyle.Render("    ░▒▓████████████████████████████████████████████████████▓▒░"))
