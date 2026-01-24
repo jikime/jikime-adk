@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"jikime-adk/backup"
+	"jikime-adk/templates"
 	"jikime-adk/version"
 )
 
@@ -575,13 +576,13 @@ func syncProjectTemplates() error {
 
 	cyan.Println("Syncing project templates...")
 
-	// Find template source
-	// Templates are typically installed with the package
-	templateSrc := findTemplateSource()
-	if templateSrc == "" {
-		dim.Println("Template source not found - skipping sync")
+	// Extract embedded templates to temp directory
+	templateSrc, err := templates.ExtractTemplates()
+	if err != nil {
+		dim.Printf("Failed to extract templates: %v\n", err)
 		return nil
 	}
+	defer os.RemoveAll(templateSrc)
 
 	// Sync templates (preserving user customizations)
 	// This is a simplified version - full implementation would merge carefully
@@ -611,38 +612,6 @@ func syncProjectTemplates() error {
 	}
 
 	return nil
-}
-
-func findTemplateSource() string {
-	// Check common locations for templates
-
-	// 1. Check JIKIME_TEMPLATE_DIR environment variable
-	if templateDir := os.Getenv("JIKIME_TEMPLATE_DIR"); templateDir != "" {
-		if _, err := os.Stat(templateDir); err == nil {
-			return templateDir
-		}
-	}
-
-	// 2. Check relative to executable
-	execPath, err := os.Executable()
-	if err == nil {
-		execDir := filepath.Dir(execPath)
-		templateDir := filepath.Join(execDir, "templates")
-		if _, err := os.Stat(templateDir); err == nil {
-			return templateDir
-		}
-	}
-
-	// 3. Check home directory
-	home, err := os.UserHomeDir()
-	if err == nil {
-		templateDir := filepath.Join(home, ".jikime", "templates")
-		if _, err := os.Stat(templateDir); err == nil {
-			return templateDir
-		}
-	}
-
-	return ""
 }
 
 func syncTemplateDir(src, dst string) error {
