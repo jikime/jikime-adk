@@ -15,6 +15,27 @@ ralph:
     # Supported languages (auto-detected from file extensions)
     # Configuration loaded from .lsp.json if present
 
+    # Phase-specific Quality Gates
+    # Different thresholds per development phase (plan/run/sync)
+    quality_gates:
+      enabled: true
+      cache_ttl_seconds: 5        # Cache LSP results to avoid redundant checks
+      timeout_seconds: 3          # Quick timeout for quality gate checks
+
+      plan:
+        require_baseline: true    # Capture current error baseline before changes
+
+      run:
+        max_errors: 0             # Zero LSP errors allowed during implementation
+        max_type_errors: 0        # Zero type errors (strict type safety)
+        max_lint_errors: 0        # Zero lint errors
+        allow_regression: false   # No regression from baseline allowed
+
+      sync:
+        max_errors: 0             # Zero errors for sync completion
+        max_warnings: 10          # Allow some warnings in sync phase
+        require_clean_lsp: true   # LSP must report clean state for sync
+
   # AST-grep Security Scanning Configuration
   ast_grep:
     enabled: true

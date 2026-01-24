@@ -292,6 +292,7 @@ jikime-adk init
 | `jikime-adk status` | 프로젝트 상태 및 설정 확인 |
 | `jikime-adk doctor` | 시스템 진단 (의존성, 설정 검증) |
 | `jikime-adk update` | 바이너리 자동 업데이트 |
+| `jikime-adk lsp-setup` | LSP 서버 경로 자동 감지 및 설정 |
 | `jikime-adk statusline` | Claude Code 상태줄 렌더링 |
 | `jikime-adk --version` | 버전 확인 |
 
@@ -497,7 +498,8 @@ jikime-adk/
 │   ├── tagcmd/            # tag - TAG System
 │   ├── skillcmd/          # skill - 스킬 시스템
 │   ├── hookscmd/          # hooks - Claude Code 훅
-│   └── statuslinecmd/     # statusline - 상태줄 렌더링
+│   ├── statuslinecmd/     # statusline - 상태줄 렌더링
+│   └── lspsetupcmd/       # lsp-setup - LSP 서버 경로 설정
 ├── templates/             # 임베디드 프로젝트 템플릿
 │   ├── .claude/           # Claude Code 설정
 │   │   ├── agents/        # 에이전트 정의

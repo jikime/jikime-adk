@@ -10,6 +10,7 @@ import (
 	"jikime-adk/cmd/hookscmd"
 	"jikime-adk/cmd/initcmd"
 	"jikime-adk/cmd/languagecmd"
+	"jikime-adk/cmd/lspsetupcmd"
 	"jikime-adk/cmd/skillcmd"
 	"jikime-adk/cmd/statuscmd"
 	"jikime-adk/cmd/statuslinecmd"
@@ -41,6 +42,9 @@ func NewRoot() *cobra.Command {
 
 	// Language management
 	root.AddCommand(languagecmd.NewLanguage())
+
+	// LSP environment setup
+	root.AddCommand(lspsetupcmd.NewLspSetup())
 
 	// Update command
 	root.AddCommand(updatecmd.NewUpdate())
