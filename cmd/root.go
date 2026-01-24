@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"jikime-adk/cmd/banner"
 	"jikime-adk/cmd/doctorcmd"
+	"jikime-adk/cmd/routercmd"
 	"jikime-adk/cmd/hookscmd"
 	"jikime-adk/cmd/initcmd"
 	"jikime-adk/cmd/languagecmd"
@@ -60,6 +61,9 @@ func NewRoot() *cobra.Command {
 
 	// Skill System (tag-based skill discovery)
 	root.AddCommand(skillcmd.NewSkill())
+
+	// LLM Router proxy
+	root.AddCommand(routercmd.NewRouter())
 
 	// Banner preview (dev tool)
 	root.AddCommand(banner.NewBannerPreview())

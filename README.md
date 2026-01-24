@@ -292,6 +292,7 @@ jikime-adk init
 | `jikime-adk status` | 프로젝트 상태 및 설정 확인 |
 | `jikime-adk doctor` | 시스템 진단 (의존성, 설정 검증) |
 | `jikime-adk update` | 바이너리 자동 업데이트 |
+| `jikime-adk router` | LLM 프로바이더 라우터 관리 |
 | `jikime-adk lsp-setup` | LSP 서버 경로 자동 감지 및 설정 |
 | `jikime-adk statusline` | Claude Code 상태줄 렌더링 |
 | `jikime-adk --version` | 버전 확인 |
@@ -401,6 +402,81 @@ TAG System v2.0 - SPEC과 코드 간 추적성을 관리합니다.
 | `skill related <skill>` | 관련 스킬 탐색 |
 | `skill info <skill>` | 스킬 상세 정보 |
 
+### router
+
+Claude Code의 API 요청을 외부 LLM 프로바이더(OpenAI, Gemini, GLM, Ollama)로 라우팅하는 프록시 시스템입니다.
+
+```bash
+# 프로바이더 전환 (라우터 자동 시작/재시작)
+jikime router switch openai       # OpenAI (프록시 경유)
+jikime router switch gemini       # Gemini (프록시 경유)
+jikime router switch glm          # GLM (직접 연결, 프록시 불필요)
+jikime router switch ollama       # Ollama (프록시 경유)
+jikime router switch claude       # Claude 네이티브로 복원
+
+# 특정 모델 지정 (provider/model 형식)
+jikime router switch openai/gpt-5.1
+jikime router switch gemini/gemini-2.5-pro
+jikime router switch ollama/deepseek-r1
+```
+
+| 서브커맨드 | 설명 |
+|-----------|------|
+| `router switch <provider>` | 프로바이더 전환 (settings.local.json 자동 업데이트) |
+| `router start [-d]` | 라우터 시작 (-d: 백그라운드 데몬) |
+| `router stop` | 라우터 중지 |
+| `router status` | 라우터 상태 확인 |
+| `router test` | 테스트 요청 전송 |
+
+#### 지원 프로바이더
+
+| 프로바이더 | 기본 모델 | 연결 방식 | API 키 환경변수 |
+|-----------|----------|----------|----------------|
+| OpenAI | gpt-5.1 | 프록시 경유 | `OPENAI_API_KEY` |
+| Gemini | gemini-2.5-flash | 프록시 경유 | `GEMINI_API_KEY` |
+| GLM | glm-4.7 | 직접 연결 | `GLM_API_KEY` |
+| Ollama | llama3.1 | 프록시 경유 | 불필요 |
+
+#### 설정
+
+설정 파일: `~/.jikime/router.yaml`
+
+```yaml
+router:
+  port: 8787
+  host: "127.0.0.1"
+  provider: openai
+
+providers:
+  openai:
+    model: gpt-5.1
+    base_url: https://api.openai.com/v1
+  gemini:
+    model: gemini-2.5-flash
+    base_url: https://generativelanguage.googleapis.com
+  glm:
+    model: glm-4.7
+    base_url: https://api.z.ai/api/paas/v4
+    anthropic_url: https://api.z.ai/api/anthropic
+    region: international
+  ollama:
+    model: llama3.1
+    base_url: http://localhost:11434
+```
+
+API 키는 환경변수에서 자동으로 읽습니다 (파일에 저장하지 않음):
+
+```bash
+# ~/.zshrc 또는 ~/.bashrc에 추가
+export OPENAI_API_KEY="sk-..."
+export GEMINI_API_KEY="AI..."
+export GLM_API_KEY="..."
+```
+
+`switch` 후 **Claude Code 재시작**이 필요합니다.
+
+상세 문서: [docs/provider-router.md](./docs/provider-router.md)
+
 ### hooks
 
 Claude Code 통합 훅을 관리합니다.
@@ -495,11 +571,14 @@ jikime-adk/
 │   ├── updatecmd/         # update - 자동 업데이트
 │   ├── languagecmd/       # language - 언어 관리
 │   ├── worktreecmd/       # worktree - Git Worktree 관리
+│   ├── routercmd/         # router - LLM 프로바이더 라우터
 │   ├── tagcmd/            # tag - TAG System
 │   ├── skillcmd/          # skill - 스킬 시스템
 │   ├── hookscmd/          # hooks - Claude Code 훅
 │   ├── statuslinecmd/     # statusline - 상태줄 렌더링
 │   └── lspsetupcmd/       # lsp-setup - LSP 서버 경로 설정
+├── internal/              # 내부 패키지
+│   └── router/            # LLM 라우터 엔진 (서버, 핸들러, 프로바이더)
 ├── templates/             # 임베디드 프로젝트 템플릿
 │   ├── .claude/           # Claude Code 설정
 │   │   ├── agents/        # 에이전트 정의

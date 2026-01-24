@@ -20,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
 
+	router "jikime-adk/internal/router"
 	"jikime-adk/version"
 )
 
@@ -400,8 +401,10 @@ func buildStatuslineData(ctx *SessionContext) *StatuslineData {
 		Version: version.String(),
 	}
 
-	// Extract model name
-	if ctx.Model.DisplayName != "" {
+	// Extract model name — check router state first
+	if state := router.LoadState(); state != nil && state.Active {
+		data.Model = fmt.Sprintf("%s/%s", state.Provider, state.Model)
+	} else if ctx.Model.DisplayName != "" {
 		data.Model = ctx.Model.DisplayName
 	} else if ctx.Model.Name != "" {
 		data.Model = ctx.Model.Name
