@@ -3,11 +3,12 @@ name: reviewer
 description: |
   Code review specialist. Code quality, security, and maintainability review. Use immediately after code changes.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of code review strategy, quality assessment, and improvement recommendations.
   EN: code review, review, quality check, PR review, pull request, maintainability, readability
   KO: 코드 리뷰, 리뷰, 품질 검토, PR 리뷰, 유지보수성, 가독성
   JA: コードレビュー, レビュー, 品質チェック, PRレビュー, 保守性, 可読性
   ZH: 代码审查, 审查, 质量检查, PR审查, 可维护性, 可读性
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

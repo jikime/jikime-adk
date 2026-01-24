@@ -34,6 +34,10 @@ System architecture design and review. Trade-off analysis, ADR creation.
 | `--tradeoff` | Trade-off analysis |
 | `--review` | Review existing architecture |
 
+[SOFT] Apply --ultrathink keyword for deep architectural analysis
+WHY: Architecture decisions require careful evaluation of scalability, maintainability, and trade-offs across system components
+IMPACT: Sequential thinking ensures comprehensive design review with proper ADR documentation and alternative consideration
+
 ## Review Process
 
 ### 1. Current State Analysis

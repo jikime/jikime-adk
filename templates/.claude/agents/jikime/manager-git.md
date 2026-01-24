@@ -4,9 +4,10 @@ description: |
   Git operations specialist. Commit management, branching strategy, and PR workflow.
   Use PROACTIVELY for creating commits, managing branches, and handling pull requests.
   MUST INVOKE when ANY of these keywords appear in user request:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of git workflow decisions, branching strategy, and merge conflict resolution.
   EN: commit, push, branch, merge, PR, pull request, git, version control
   KO: 커밋, 푸시, 브랜치, 머지, PR, 풀리퀘스트, 깃, 버전관리
-tools: Bash, Read, Write, Edit, Grep, Glob, TodoWrite, Task, Skill
+tools: Bash, Read, Write, Edit, Grep, Glob, TodoWrite, Task, Skill, mcp__sequential-thinking__sequentialthinking
 model: haiku
 permissionMode: default
 skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-project

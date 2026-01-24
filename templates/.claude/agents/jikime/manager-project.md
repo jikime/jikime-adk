@@ -3,9 +3,10 @@ name: manager-project
 description: |
   Project initialization and configuration specialist. Use PROACTIVELY for project setup, structure management, and configuration.
   MUST INVOKE when ANY of these keywords appear in user request:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of project structure decisions, configuration strategy, and initialization planning.
   EN: project setup, initialize, configuration, project structure, initialization
   KO: 프로젝트설정, 초기화, 구성, 프로젝트구조
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task, Skill, mcp__context7__resolve-library-id, mcp__context7__query-docs
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task, Skill, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__sequential-thinking__sequentialthinking
 model: opus
 permissionMode: default
 skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-project

@@ -92,6 +92,10 @@ Read SPEC files from `.jikime/specs/SPEC-{ID}/`:
 
 ### Step 1.2: Invoke manager-strategy Agent
 
+[SOFT] Apply --ultrathink keyword for deep implementation strategy analysis
+WHY: Implementation strategy requires careful consideration of architecture patterns, dependency ordering, and parallel execution opportunities
+IMPACT: Sequential thinking ensures optimal agent delegation and task decomposition for SPEC execution
+
 Use the manager-strategy subagent to:
 
 Analyze SPEC and create implementation strategy for: SPEC-{ID}

@@ -302,7 +302,47 @@ Migrated project structure:
 - [ ] Strategy selected and justified
 - [ ] Components prioritized
 - [ ] Risks identified
-- [ ] migration_plan.md generated
+- [ ] migration_plan.md generated (with dynamic initialization section)
+
+#### migration_plan.md 생성 규칙
+
+Plan 생성 시 `.migrate-config.yaml`의 `target_framework`를 확인하여 해당 초기화 절차를 **"Project Initialization"** 섹션으로 포함합니다.
+
+**조건부 섹션 (target_framework 기반)**:
+
+| target_framework | 포함할 초기화 가이드 | 핵심 명령어 |
+|------------------|---------------------|-------------|
+| `nextjs16` | `@modules/project-initialization.md` | `create-next-app` → `shadcn init` |
+
+**migration_plan.md 필수 포함 섹션**:
+
+```markdown
+1. Migration Strategy (전략 선택)
+2. **Project Initialization** ← target_framework에 따라 동적 포함
+   - 프로젝트 생성 명령어
+   - UI 라이브러리 초기화
+   - 필수 패키지 설치
+3. Component Priority (컴포넌트 우선순위)
+4. State Migration (상태 관리 전환)
+5. Risks & Mitigation (리스크 대응)
+6. Timeline (일정)
+```
+
+**nextjs16 초기화 요약** (from `@modules/project-initialization.md`):
+
+```bash
+# 1. Next.js 프로젝트 생성
+npx create-next-app@latest {project-name} \
+  --typescript --tailwind --eslint --app --src-dir --turbopack
+
+# 2. 프로젝트 이동 + shadcn/ui 초기화
+cd {project-name}
+npx shadcn@latest init
+
+# 3. 기본 컴포넌트 + 패키지 설치
+npx shadcn@latest add button card input label form dialog toast
+npm install zustand react-hook-form @hookform/resolvers zod lucide-react
+```
 
 ### Phase 2 (Skill)
 - [ ] Component mappings defined
@@ -311,7 +351,8 @@ Migrated project structure:
 - [ ] Template: `@templates/project-skill-template.md`
 
 ### Phase 3 (Run)
-- [ ] Next.js project created
+- [ ] Next.js project initialized (per Project Initialization in migration_plan.md)
+- [ ] shadcn/ui initialized with New York style
 - [ ] Components migrated
 - [ ] TypeScript compiles
 - [ ] Build successful
@@ -623,9 +664,10 @@ Post-Migration 문서 템플릿 위치:
 
 ---
 
-Version: 1.7.0
-Last Updated: 2026-01-22
+Version: 1.8.0
+Last Updated: 2026-01-23
 Changelog:
+- v1.8.0: Dynamic Project Initialization in migration_plan.md - target_framework 기반 조건부 초기화 섹션 포함
 - v1.7.0: Added project-initialization.md with complete CLI setup guide (create-next-app, shadcn init, packages)
 - v1.6.0: Added Skill Reference System - project SKILL.md now auto-references related skills
 - v1.5.0: Added migration-flow-tutorial.md, cheatsheet.md with real command examples

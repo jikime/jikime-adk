@@ -3,11 +3,12 @@ name: security-auditor
 description: |
   Security audit specialist. Vulnerability detection and remediation. For user input, authentication, API, and sensitive data handling code.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of threat modeling, vulnerability assessment, and security architecture.
   EN: security, vulnerability, audit, OWASP, XSS, injection, authentication, authorization, sensitive data, CVE
   KO: 보안, 취약점, 감사, OWASP, XSS, 인젝션, 인증, 권한, 민감 데이터
   JA: セキュリティ, 脆弱性, 監査, OWASP, XSS, インジェクション, 認証, 認可, 機密データ
   ZH: 安全, 漏洞, 审计, OWASP, XSS, 注入, 认证, 授权, 敏感数据
-tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite
+tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

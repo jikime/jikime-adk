@@ -38,6 +38,10 @@ Run security audit. OWASP Top 10 vulnerability detection, dependency scan, secre
 | `--owasp` | OWASP Top 10 check |
 | `--fix` | Auto-fix where possible |
 
+[SOFT] Apply --ultrathink keyword for deep security analysis
+WHY: Security auditing requires systematic threat modeling, vulnerability assessment, and attack surface analysis
+IMPACT: Sequential thinking ensures comprehensive OWASP coverage and identification of complex multi-vector vulnerabilities
+
 ## OWASP Top 10 Checks
 
 | # | Vulnerability | Detection |

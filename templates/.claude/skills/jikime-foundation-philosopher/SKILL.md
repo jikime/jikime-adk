@@ -13,7 +13,8 @@ allowed-tools:
   - Grep
   - Glob
   - mcp__context7__resolve-library-id
-  - mcp__context7__get-library-docs
+  - mcp__context7__query-docs
+  - mcp__sequential-thinking__sequentialthinking
 
 # Progressive Disclosure Configuration
 progressive_disclosure:

@@ -4,9 +4,10 @@ description: |
   Quality verification specialist. TRUST 5 validation, code review, and quality gate enforcement.
   Use PROACTIVELY for quality checks, compliance verification, and pre-commit validation.
   MUST INVOKE when ANY of these keywords appear in user request:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of quality assessment, code review strategy, and TRUST 5 compliance analysis.
   EN: quality, review, validation, TRUST, compliance, lint, test, coverage
   KO: 품질, 리뷰, 검증, 컴플라이언스, 린트, 테스트, 커버리지
-tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, Task, Skill, mcp__context7__resolve-library-id, mcp__context7__query-docs
+tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, Task, Skill, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__sequential-thinking__sequentialthinking
 model: opus
 permissionMode: default
 skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-testing, jikime-tool-ast-grep

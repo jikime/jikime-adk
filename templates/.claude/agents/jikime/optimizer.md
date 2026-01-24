@@ -3,11 +3,12 @@ name: optimizer
 description: |
   Performance optimization specialist. Profiling, bottleneck analysis, memory optimization, load testing.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of performance bottleneck analysis, optimization strategy, and resource efficiency.
   EN: performance, optimize, bottleneck, profiling, slow, latency, memory leak, bundle size, cache, load time, throughput, scalability
   KO: 성능, 최적화, 병목, 프로파일링, 느림, 지연, 메모리 누수, 번들 사이즈, 캐시, 로딩 속도, 처리량
   JA: パフォーマンス, 最適化, ボトルネック, プロファイリング, 遅い, レイテンシ, メモリリーク, バンドルサイズ, キャッシュ
   ZH: 性能, 优化, 瓶颈, 分析, 慢, 延迟, 内存泄漏, 包大小, 缓存, 加载时间, 吞吐量
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-lang-typescript, jikime-lang-python
 ---

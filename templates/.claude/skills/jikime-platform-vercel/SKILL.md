@@ -4,10 +4,10 @@ description: Vercel edge deployment specialist covering Edge Functions, Next.js 
 version: 1.0.0
 tags: ["platform", "vercel", "deployment", "edge", "nextjs", "isr", "serverless"]
 triggers:
-  keywords: ["vercel", "edge", "ISR", "deployment", "KV", "Blob", "배포"]
+  keywords: ["vercel", "edge", "ISR", "deployment", "KV", "Blob", "배포", "nextjs", "next.js"]
   phases: ["sync"]
-  agents: ["devops"]
-  languages: []
+  agents: ["devops", "frontend"]
+  languages: ["typescript"]
 user-invocable: false
 ---
 
@@ -35,7 +35,7 @@ Vercel + Next.js 배포를 위한 간결한 가이드.
   "framework": "nextjs",
   "regions": ["icn1", "hnd1"],
   "functions": {
-    "app/api/**/*.ts": {
+    "src/app/api/**/*.ts": {
       "memory": 1024,
       "maxDuration": 30
     }
@@ -56,7 +56,7 @@ Vercel + Next.js 배포를 위한 간결한 가이드.
 ### Basic Edge Route
 
 ```typescript
-// app/api/geo/route.ts
+// src/app/api/geo/route.ts
 export const runtime = 'edge';
 export const preferredRegion = ['icn1', 'hnd1'];
 
@@ -75,7 +75,7 @@ export async function GET(request: Request) {
 ### Edge Middleware
 
 ```typescript
-// middleware.ts
+// src/middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -103,7 +103,7 @@ export const config = {
 ### Time-based Revalidation
 
 ```typescript
-// app/posts/page.tsx
+// src/app/posts/page.tsx
 export const revalidate = 60; // 60초마다 재생성
 
 export default async function PostsPage() {
@@ -115,7 +115,7 @@ export default async function PostsPage() {
 ### On-demand Revalidation
 
 ```typescript
-// app/api/revalidate/route.ts
+// src/app/api/revalidate/route.ts
 import { revalidateTag, revalidatePath } from 'next/cache';
 import { NextRequest } from 'next/server';
 
@@ -185,7 +185,7 @@ const task = await kv.rpop('queue:tasks');
 ## Vercel Blob
 
 ```typescript
-// app/api/upload/route.ts
+// src/app/api/upload/route.ts
 import { put, del } from '@vercel/blob';
 
 export async function POST(request: Request) {
@@ -209,7 +209,7 @@ export async function DELETE(request: Request) {
 ## Analytics & Speed Insights
 
 ```typescript
-// app/layout.tsx
+// src/app/layout.tsx
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -257,7 +257,17 @@ vercel --prod       # Production
 - **Region**: 사용자 위치에 가까운 리전 선택
 - **Middleware**: 인증, 리다이렉트에 활용
 
+## Related Skills
+
+| 스킬 | 용도 |
+|------|------|
+| `jikime-nextjs@14` | Next.js 14 App Router 기본 패턴, 프로젝트 구조, 네이밍 규칙 |
+| `jikime-nextjs@15` | Next.js 15 업그레이드 가이드 (async params, fetch caching) |
+| `jikime-nextjs@16` | Next.js 16 업그레이드 가이드 ('use cache', PPR, updateTag) |
+| `jikime-platform-vercel-react` | React/Next.js 성능 최적화 규칙 (Vercel Engineering) |
+| `jikime-library-shadcn` | shadcn/ui 컴포넌트 라이브러리 (Next.js 필수) |
+
 ---
 
-Last Updated: 2026-01-21
-Version: 2.0.0
+Last Updated: 2026-01-23
+Version: 2.1.0

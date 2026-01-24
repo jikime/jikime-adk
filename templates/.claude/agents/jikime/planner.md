@@ -3,11 +3,12 @@ name: planner
 description: |
   Implementation planning specialist. Complex feature and refactoring plan creation. Use for feature implementation requests.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of task decomposition, estimation analysis, and implementation planning.
   EN: plan, implementation plan, feature plan, decompose, breakdown, estimate, architecture plan, roadmap
   KO: 계획, 구현 계획, 기능 계획, 분해, 설계, 추정, 아키텍처 계획, 로드맵
   JA: 計画, 実装計画, 機能計画, 分解, 設計, 見積もり, アーキテクチャ計画, ロードマップ
   ZH: 计划, 实现计划, 功能计划, 分解, 设计, 估算, 架构计划, 路线图
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

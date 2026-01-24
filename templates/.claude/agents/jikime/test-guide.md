@@ -3,11 +3,12 @@ name: test-guide
 description: |
   Test guide specialist. TDD/DDD methodology, test writing guidance. Use for new features, bug fixes, and refactoring.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of test strategy design, coverage planning, and testing architecture.
   EN: test, testing, TDD, DDD, unit test, integration test, coverage, mock, assertion, test strategy
   KO: 테스트, TDD, DDD, 유닛 테스트, 통합 테스트, 커버리지, 목, 어서션, 테스트 전략
   JA: テスト, TDD, DDD, ユニットテスト, 統合テスト, カバレッジ, モック, アサーション, テスト戦略
   ZH: 测试, TDD, DDD, 单元测试, 集成测试, 覆盖率, 模拟, 断言, 测试策略
-tools: Read, Write, Edit, Bash, Grep
+tools: Read, Write, Edit, Bash, Grep, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

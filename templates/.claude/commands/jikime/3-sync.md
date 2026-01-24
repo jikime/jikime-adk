@@ -81,6 +81,10 @@ Verify SPEC-{ID} implementation is complete:
 
 ### Step 0.5.2: Run Quality Validation
 
+[SOFT] Apply --ultrathink keyword for deep quality assessment
+WHY: Quality validation requires systematic analysis of test coverage, code quality metrics, and TRUST 5 compliance
+IMPACT: Sequential thinking ensures comprehensive quality gate evaluation and actionable improvement recommendations
+
 Use the manager-quality subagent to:
 
 Quick validation for: SPEC-{ID}

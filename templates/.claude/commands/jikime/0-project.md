@@ -102,6 +102,8 @@ Goal: Understand the project structure and technology stack.
 ### Step 1: Invoke Explore Agent
 
 [SOFT] Apply --ultrathink keyword for comprehensive codebase analysis
+WHY: Understanding project structure requires systematic analysis of architecture patterns, dependencies, and technology choices
+IMPACT: Sequential thinking enables thorough codebase exploration and accurate technology stack identification
 
 Use the Explore subagent to analyze the codebase with the following objectives:
 

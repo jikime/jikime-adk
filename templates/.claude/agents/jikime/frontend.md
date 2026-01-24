@@ -3,11 +3,12 @@ name: frontend
 description: |
   Frontend architecture and UI implementation specialist. Components, state management, accessibility, performance.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of UI architecture decisions, component design, and user experience patterns.
   EN: frontend, UI, component, React, Vue, Next.js, CSS, responsive, state management, accessibility, WCAG, design system
   KO: 프론트엔드, UI, 컴포넌트, 리액트, 뷰, 넥스트, CSS, 반응형, 상태관리, 접근성, 디자인시스템
   JA: フロントエンド, UI, コンポーネント, リアクト, CSS, レスポンシブ, 状態管理, アクセシビリティ
   ZH: 前端, UI, 组件, React, Vue, CSS, 响应式, 状态管理, 可访问性, 设计系统
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-lang-typescript, jikime-lang-javascript, jikime-domain-frontend, jikime-library-shadcn
 ---

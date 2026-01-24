@@ -40,6 +40,10 @@ If `.migrate-config.yaml` or `as_is_spec.md` is not found:
 - Suggest running `/jikime:migrate-1-analyze` before this command
 - DO NOT attempt to analyze source code as a fallback
 
+[SOFT] Apply --ultrathink keyword for deep migration planning analysis
+WHY: Migration planning requires careful analysis of module dependencies, transformation complexity, and behavioral preservation strategy
+IMPACT: Sequential thinking ensures optimal migration sequencing and risk-aware planning with DDD approach
+
 ## Dynamic Skill Discovery (MUST Execute)
 
 Before creating the plan, you MUST **dynamically discover and load** relevant skills based on analysis results.

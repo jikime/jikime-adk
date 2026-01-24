@@ -34,6 +34,24 @@ var migrationKeywords = []string{
 	"/jikime:migrate",
 }
 
+// Development keywords that explicitly switch back to J.A.R.V.I.S.
+var jarvisKeywords = []string{
+	"/jikime:jarvis",
+	"/jikime:build-fix",
+	"/jikime:loop",
+	"/jikime:test",
+	"/jikime:architect",
+	"/jikime:docs",
+	"/jikime:e2e",
+	"/jikime:learn",
+	"/jikime:refactor",
+	"/jikime:security",
+	"/jikime:0-project",
+	"/jikime:1-plan",
+	"/jikime:2-run",
+	"/jikime:3-sync",
+}
+
 // Orchestrator names
 const (
 	OrchestratorJARVIS = "J.A.R.V.I.S."
@@ -41,6 +59,14 @@ const (
 	StateFileName      = "active-orchestrator"
 	StateDirName       = "state"
 )
+
+// Migration artifact files that indicate an active migration project
+var migrationArtifacts = []string{
+	".migrate-config.yaml",
+	"progress.yaml",
+	"as_is_spec.md",
+	"migration_plan.md",
+}
 
 func runOrchestratorRoute(cmd *cobra.Command, args []string) error {
 	// Get user input from environment variable
@@ -62,23 +88,26 @@ func runOrchestratorRoute(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	// Determine active orchestrator
-	orchestrator := detectOrchestrator(userInput)
-
-	// Find project root and write state
+	// Find project root
 	projectRoot, err := findProjectRoot()
 	if err != nil {
-		// If no project root found, try CWD
 		projectRoot, _ = os.Getwd()
 	}
 
-	if err := writeOrchestratorState(projectRoot, orchestrator); err != nil {
-		// Non-fatal: return success response even if state write fails
-		response := HookResponse{
-			Continue: true,
+	// Priority 1: Command/Keyword-based detection (explicit signal)
+	orchestrator := detectOrchestrator(userInput)
+
+	if orchestrator != "" {
+		// Explicit signal found - update state
+		writeOrchestratorState(projectRoot, orchestrator)
+	} else if !stateFileExists(projectRoot) {
+		// Priority 2: No state file yet - check for migration artifacts
+		if hasMigrationArtifacts(projectRoot) {
+			writeOrchestratorState(projectRoot, OrchestratorFRIDAY)
 		}
-		return writeResponse(response)
+		// If no artifacts either, default J.A.R.V.I.S. (via ReadOrchestratorState)
 	}
+	// Priority 3: State file exists + no explicit signal → sticky state (no write)
 
 	// Return success response
 	response := HookResponse{
@@ -87,20 +116,63 @@ func runOrchestratorRoute(cmd *cobra.Command, args []string) error {
 	return writeResponse(response)
 }
 
-// detectOrchestrator checks user input for migration keywords
+// stateFileExists checks if the orchestrator state file exists
+func stateFileExists(projectRoot string) bool {
+	statePath := filepath.Join(projectRoot, ".jikime", StateDirName, StateFileName)
+	_, err := os.Stat(statePath)
+	return err == nil
+}
+
+// hasMigrationArtifacts checks if migration-related files exist in the project
+func hasMigrationArtifacts(projectRoot string) bool {
+	// Check root-level artifacts
+	for _, artifact := range migrationArtifacts {
+		artifactPath := filepath.Join(projectRoot, artifact)
+		if _, err := os.Stat(artifactPath); err == nil {
+			return true
+		}
+	}
+
+	// Check migrations/ directory
+	migrationsDir := filepath.Join(projectRoot, "migrations")
+	if info, err := os.Stat(migrationsDir); err == nil && info.IsDir() {
+		// Check for migration artifacts inside migrations/
+		for _, artifact := range migrationArtifacts {
+			artifactPath := filepath.Join(migrationsDir, artifact)
+			if _, err := os.Stat(artifactPath); err == nil {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// detectOrchestrator checks user input for explicit orchestrator signals.
+// Returns "" if no explicit signal is found (keep current state).
 func detectOrchestrator(input string) string {
 	if input == "" {
-		return OrchestratorJARVIS
+		return "" // No input, keep current state
 	}
 
 	lower := strings.ToLower(input)
+
+	// Check migration keywords first (FRIDAY activation)
 	for _, keyword := range migrationKeywords {
 		if strings.Contains(lower, keyword) {
 			return OrchestratorFRIDAY
 		}
 	}
 
-	return OrchestratorJARVIS
+	// Check JARVIS keywords (explicit switch back to JARVIS)
+	for _, keyword := range jarvisKeywords {
+		if strings.Contains(lower, keyword) {
+			return OrchestratorJARVIS
+		}
+	}
+
+	// No explicit signal - keep current state (return empty)
+	return ""
 }
 
 // writeOrchestratorState writes the active orchestrator to the state file
@@ -131,4 +203,15 @@ func ReadOrchestratorState(projectRoot string) string {
 	}
 
 	return name
+}
+
+// clearOrchestratorState removes the orchestrator state file (resets to default)
+func clearOrchestratorState() {
+	projectRoot, err := findProjectRoot()
+	if err != nil {
+		projectRoot, _ = os.Getwd()
+	}
+
+	statePath := filepath.Join(projectRoot, ".jikime", StateDirName, StateFileName)
+	os.Remove(statePath) // Ignore errors - file may not exist
 }

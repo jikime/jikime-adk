@@ -3,11 +3,12 @@ name: build-fixer
 description: |
   Build/type error resolution specialist. For build failures and TypeScript errors. Quick fixes with minimal changes.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of build error analysis, dependency resolution, and compilation strategy.
   EN: build error, type error, TypeScript error, compilation, build failure, tsc, compile error, dependency error
   KO: 빌드 에러, 타입 에러, TypeScript 에러, 컴파일, 빌드 실패, 의존성 에러
   JA: ビルドエラー, 型エラー, TypeScriptエラー, コンパイル, ビルド失敗, 依存関係エラー
   ZH: 构建错误, 类型错误, TypeScript错误, 编译, 构建失败, 依赖错误
-tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite
+tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

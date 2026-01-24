@@ -3,11 +3,12 @@ name: devops
 description: |
   DevOps and infrastructure specialist. CI/CD pipelines, containerization, deployment automation, monitoring.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of infrastructure decisions, deployment strategy, and CI/CD pipeline design.
   EN: DevOps, CI/CD, Docker, Kubernetes, deploy, pipeline, infrastructure, monitoring, container, scaling, GitHub Actions, Terraform
   KO: 데브옵스, CI/CD, 도커, 쿠버네티스, 배포, 파이프라인, 인프라, 모니터링, 컨테이너, 스케일링
   JA: DevOps, CI/CD, Docker, Kubernetes, デプロイ, パイプライン, インフラ, モニタリング, コンテナ
   ZH: DevOps, CI/CD, Docker, Kubernetes, 部署, 流水线, 基础设施, 监控, 容器, 扩展
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-platform-vercel
 ---

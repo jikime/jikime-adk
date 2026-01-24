@@ -3,11 +3,12 @@ name: skill-builder
 description: |
   Skill definition factory. Creates new Claude Code skills with Progressive Disclosure and trigger systems.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of skill architecture, trigger design, and progressive disclosure strategy.
   EN: create skill, new skill, skill definition, add skill, build skill, skill template, SKILL.md
   KO: 스킬 생성, 새 스킬, 스킬 정의, 스킬 추가, 스킬 만들기, 스킬 템플릿
   JA: スキル作成, 新しいスキル, スキル定義, スキル追加, スキルテンプレート
   ZH: 创建技能, 新技能, 技能定义, 添加技能, 构建技能, 技能模板
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-foundation-core
 ---

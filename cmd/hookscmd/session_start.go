@@ -72,9 +72,17 @@ func runSessionStart(cmd *cobra.Command, args []string) error {
 	decoder := json.NewDecoder(os.Stdin)
 	_ = decoder.Decode(&input) // Ignore input for now
 
-	// Initialize orchestrator state to J.A.R.V.I.S. (default)
+	// Initialize orchestrator state only if no state file exists (preserve sticky state after compact)
 	if root, err := findProjectRoot(); err == nil {
-		writeOrchestratorState(root, OrchestratorJARVIS)
+		if !stateFileExists(root) {
+			// No state file - apply artifact-based detection or default
+			if hasMigrationArtifacts(root) {
+				writeOrchestratorState(root, OrchestratorFRIDAY)
+			} else {
+				writeOrchestratorState(root, OrchestratorJARVIS)
+			}
+		}
+		// State file exists → preserve current orchestrator (sticky state)
 	}
 
 	// Generate session output

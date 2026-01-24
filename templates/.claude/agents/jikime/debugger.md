@@ -3,11 +3,12 @@ name: debugger
 description: |
   Debugging and troubleshooting specialist. Root cause analysis, error investigation, systematic problem solving.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of root cause analysis, debugging strategy, and error pattern recognition.
   EN: debug, error, bug, fix, crash, exception, stack trace, troubleshoot, investigate, broken, failing, issue, problem
   KO: 디버그, 에러, 버그, 수정, 크래시, 예외, 스택트레이스, 문제해결, 조사, 고장, 실패, 이슈, 문제
   JA: デバッグ, エラー, バグ, 修正, クラッシュ, 例外, スタックトレース, トラブルシューティング, 調査, 問題
   ZH: 调试, 错误, Bug, 修复, 崩溃, 异常, 堆栈跟踪, 排查, 调查, 故障, 失败, 问题
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, LSP
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, LSP, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-lang-typescript, jikime-lang-python
 ---

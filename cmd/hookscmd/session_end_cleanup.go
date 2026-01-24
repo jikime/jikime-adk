@@ -56,6 +56,9 @@ func runSessionEndCleanup(cmd *cobra.Command, args []string) error {
 	stats := cleanupOldFiles()
 	result.CleanupStats = stats
 
+	// P0-1.5: Clear orchestrator state (reset to default for next session)
+	clearOrchestratorState()
+
 	// P0-2: Check for uncommitted Git changes
 	uncommittedWarning := checkGitUncommittedChanges()
 	if uncommittedWarning != "" {

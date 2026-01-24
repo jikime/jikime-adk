@@ -120,6 +120,10 @@ Aggressive execution for simple/urgent tasks:
 
 ---
 
+[SOFT] Apply --ultrathink keyword for deep development orchestration analysis
+WHY: Autonomous development requires careful task decomposition, agent selection, and parallel execution planning
+IMPACT: Sequential thinking ensures optimal multi-agent coordination and adaptive strategy selection
+
 ## Workflow
 
 Standard development workflow for new features and improvements:

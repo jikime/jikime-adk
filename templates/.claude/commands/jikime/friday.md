@@ -87,6 +87,10 @@ Task Description: $ARGUMENTS
 
 ---
 
+[SOFT] Apply --ultrathink keyword for deep migration orchestration analysis
+WHY: Migration orchestration requires systematic analysis of source/target frameworks, dependency mapping, and behavioral preservation strategy
+IMPACT: Sequential thinking ensures comprehensive migration planning with DDD-based incremental transformation
+
 ## Migration Workflow
 
 ```

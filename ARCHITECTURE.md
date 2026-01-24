@@ -107,8 +107,7 @@ jikime-adk-v2/
 │   │   ├── research.md
 │   │   └── migration.md           # 마이그레이션 컨텍스트
 │   │
-│   └── output-styles/             # 출력 스타일
-│       └── mr-jikime.md           # Mr.Jikime 페르소나
+│   └── rules/jikime/tone.md       # Orchestrator personality + response templates
 │
 ├── hooks/                         # 하이브리드 훅 시스템
 │   ├── go/                        # Go 기반 훅 (기존 유지)

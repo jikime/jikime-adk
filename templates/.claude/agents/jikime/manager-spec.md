@@ -3,11 +3,12 @@ name: manager-spec
 description: |
   SPEC creation specialist. Use PROACTIVELY for EARS-format requirements, acceptance criteria, and user story documentation.
   MUST INVOKE when ANY of these keywords appear in user request:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of SPEC requirement analysis, domain classification, and acceptance criteria design.
   EN: SPEC, requirement, specification, EARS, acceptance criteria, user story, planning
   KO: SPEC, 요구사항, 명세서, EARS, 인수조건, 유저스토리, 기획
   JA: SPEC, 要件, 仕様書, EARS, 受入基準, ユーザーストーリー, 企画
   ZH: SPEC, 需求, 规格书, EARS, 验收标准, 用户故事, 规划
-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs
+tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite, WebFetch, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__sequential-thinking__sequentialthinking
 model: inherit
 permissionMode: default
 skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-spec

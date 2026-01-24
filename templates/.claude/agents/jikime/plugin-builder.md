@@ -3,11 +3,12 @@ name: plugin-builder
 description: |
   Plugin package factory. Creates reusable Claude Code plugin packages with agents, commands, skills, and hooks.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of plugin architecture, distribution strategy, and cross-project compatibility.
   EN: create plugin, new plugin, plugin package, add plugin, build plugin, plugin template, .claude-plugin
   KO: 플러그인 생성, 새 플러그인, 플러그인 패키지, 플러그인 추가, 플러그인 만들기, 플러그인 템플릿
   JA: プラグイン作成, 新しいプラグイン, プラグインパッケージ, プラグイン追加, プラグインテンプレート
   ZH: 创建插件, 新插件, 插件包, 添加插件, 构建插件, 插件模板
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-foundation-core
 ---

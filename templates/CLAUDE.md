@@ -24,17 +24,33 @@ All tasks must be delegated to specialized agents through the appropriate orches
 
 ### Orchestrator Identity System
 
-**Routing Logic**:
+**Routing Logic (3-Tier Priority)**:
 
 ```
-IF request contains migration keywords:
-    (migrate, migration, convert, legacy, transform, port, upgrade framework)
-    → Activate F.R.I.D.A.Y. identity
-    → Route to /jikime:friday workflow
+Priority 1: Command/Keyword Detection (Explicit Signal)
+    IF request contains migration keywords/commands:
+        (migrate, migration, convert, legacy, transform, port, upgrade framework,
+         /jikime:friday, /jikime:migrate-*)
+        → Activate F.R.I.D.A.Y. + update state file
 
-ELSE:
-    → Activate J.A.R.V.I.S. identity (default)
-    → Route to /jikime:jarvis workflow OR direct agent delegation
+    ELIF request contains development keywords/commands:
+        (/jikime:jarvis, /jikime:build-fix, /jikime:loop, /jikime:test,
+         /jikime:architect, /jikime:docs, /jikime:e2e, /jikime:learn,
+         /jikime:refactor, /jikime:security, /jikime:0-project,
+         /jikime:1-plan, /jikime:2-run, /jikime:3-sync)
+        → Activate J.A.R.V.I.S. + update state file
+
+Priority 2: Artifact Detection (Initial State)
+    IF no state file exists AND migration artifacts found:
+        (.migrate-config.yaml, progress.yaml, as_is_spec.md, migration_plan.md)
+        → Activate F.R.I.D.A.Y. + create state file
+
+Priority 3: Sticky State (No Signal)
+    IF state file exists AND no explicit signal:
+        → Keep current orchestrator (no state change)
+
+    IF no state file AND no artifacts:
+        → Default to J.A.R.V.I.S.
 ```
 
 **J.A.R.V.I.S. (Development)**:
@@ -55,9 +71,8 @@ ELSE:
 
 **Output Style**:
 
-Load the appropriate output style based on active orchestrator:
-- J.A.R.V.I.S.: @.claude/output-styles/jikime/jarvis.md
-- F.R.I.D.A.Y.: @.claude/output-styles/jikime/friday.md
+Orchestrator personality and response templates are defined in:
+- @.claude/rules/jikime/tone.md (personality traits + response format)
 
 ### Rules Reference
 

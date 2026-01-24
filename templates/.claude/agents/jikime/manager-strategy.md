@@ -3,9 +3,10 @@ name: manager-strategy
 description: |
   Implementation strategy specialist. Use PROACTIVELY for architecture decisions, technology evaluation, and implementation planning.
   MUST INVOKE when ANY of these keywords appear in user request:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of system architecture decisions, technology selection, and trade-off analysis.
   EN: strategy, implementation plan, architecture decision, technology evaluation, planning, system design
   KO: 전략, 구현계획, 아키텍처결정, 기술평가, 계획, 시스템설계
-tools: Read, Write, Edit, Grep, Glob, Bash, WebFetch, WebSearch, TodoWrite, Task, Skill, mcp__context7__resolve-library-id, mcp__context7__query-docs
+tools: Read, Write, Edit, Grep, Glob, Bash, WebFetch, WebSearch, TodoWrite, Task, Skill, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__sequential-thinking__sequentialthinking
 model: opus
 permissionMode: default
 skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-spec, jikime-workflow-project

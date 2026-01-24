@@ -3,11 +3,12 @@ name: documenter
 description: |
   Documentation specialist. README, guides, codemap generation and updates. For document sync after code changes.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of documentation architecture, API documentation strategy, and content structure.
   EN: documentation, document, README, guide, codemap, API docs, doc sync, write docs, update docs
   KO: 문서화, 문서, README, 가이드, 코드맵, API 문서, 문서 동기화, 문서 작성, 문서 업데이트
   JA: ドキュメント, 文書, README, ガイド, コードマップ, APIドキュメント, ドキュメント同期
   ZH: 文档, 文档化, README, 指南, 代码地图, API文档, 文档同步, 编写文档
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

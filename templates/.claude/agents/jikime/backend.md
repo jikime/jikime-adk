@@ -3,11 +3,12 @@ name: backend
 description: |
   Backend architecture and API specialist. Database modeling, authentication, server-side logic.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of backend architecture decisions, database schema design, and API patterns.
   EN: backend, API, server, authentication, database, REST, GraphQL, microservices, JWT, OAuth, SQL, NoSQL, schema, query, endpoint
   KO: 백엔드, API, 서버, 인증, 데이터베이스, 마이크로서비스, 스키마, 쿼리, 엔드포인트
   JA: バックエンド, API, サーバー, 認証, データベース, マイクロサービス, スキーマ, クエリ
   ZH: 后端, API, 服务器, 认证, 数据库, 微服务, 架构, 查询
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-lang-typescript, jikime-lang-python, jikime-domain-backend, jikime-domain-database
 ---

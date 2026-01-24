@@ -39,6 +39,10 @@ If `.migrate-config.yaml` or `migration_plan.md` is not found:
 - Suggest running `/jikime:migrate-2-plan` before this command
 - DO NOT attempt to guess source/target frameworks
 
+[SOFT] Apply --ultrathink keyword for deep migration execution analysis
+WHY: Migration execution requires systematic DDD cycle management, behavior preservation verification, and incremental transformation validation
+IMPACT: Sequential thinking ensures each module transformation preserves existing behavior while achieving target framework conventions
+
 ## What This Command Does
 
 ### DDD Cycle: ANALYZE → PRESERVE → IMPROVE

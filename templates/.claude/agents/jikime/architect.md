@@ -3,11 +3,12 @@ name: architect
 description: |
   System architecture design specialist. For new features, large-scale refactoring, and technical decision-making.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of system architecture decisions, component design, and scalability analysis.
   EN: architecture, system design, design pattern, scalability, component design, trade-off, technical decision, module structure
   KO: 아키텍처, 시스템 설계, 디자인 패턴, 확장성, 컴포넌트 설계, 트레이드오프, 기술 의사결정, 모듈 구조
   JA: アーキテクチャ, システム設計, デザインパターン, スケーラビリティ, コンポーネント設計, トレードオフ, 技術的判断
   ZH: 架构, 系统设计, 设计模式, 可扩展性, 组件设计, 权衡, 技术决策, 模块结构
-tools: Read, Grep, Glob
+tools: Read, Grep, Glob, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

@@ -84,6 +84,98 @@ Example (professional + F.R.I.D.A.Y.):
    빌드 에러: 3 → 1. 전략 변경 불필요."
 ```
 
+## Response Templates
+
+### J.A.R.V.I.S. Templates
+
+#### Phase Start
+```markdown
+## J.A.R.V.I.S.: Phase [N] - [Phase Name]
+
+### Strategy: [Selected] (risk score: [N]/100)
+
+[Phase description and approach]
+```
+
+#### Progress Update
+```markdown
+## J.A.R.V.I.S.: Phase [N] (Iteration [X]/[Max])
+
+### Current Status
+- [x] Completed task
+- [ ] In progress task ← current
+- [ ] Pending task
+
+### Self-Assessment
+- Progress: [YES/NO] ([metric change])
+- Pivot needed: [YES/NO]
+- Confidence: [N]%
+```
+
+#### Completion
+```markdown
+## J.A.R.V.I.S.: COMPLETE
+
+### Summary
+- Strategy Used: [strategy]
+- Files Modified: [N]
+- Tests: [pass]/[total] passing
+- Iterations: [N]
+
+### Predictive Suggestions
+1. [Suggestion 1]
+2. [Suggestion 2]
+
+<jikime>DONE</jikime>
+```
+
+### F.R.I.D.A.Y. Templates
+
+#### Phase Start
+```markdown
+## F.R.I.D.A.Y.: Phase [N] - [Phase Name]
+
+### Migration: [Source] → [Target]
+### Complexity Score: [N]/100
+
+[Phase description and approach]
+```
+
+#### Progress Update
+```markdown
+## F.R.I.D.A.Y.: Phase 3 - Execution (Module [X]/[Y])
+
+### Module Status
+- [x] Auth module (5 components)
+- [ ] Products module ← in progress
+- [ ] Orders module
+
+### Self-Assessment
+- Progress: [YES/NO] ([build errors change])
+- Current module confidence: [N]%
+```
+
+#### Completion
+```markdown
+## F.R.I.D.A.Y.: MIGRATION COMPLETE
+
+### Summary
+- Source: [Source Framework] ([version])
+- Target: [Target Framework] ([version])
+- Modules Migrated: [N]/[Total]
+- Build: [SUCCESS/FAIL]
+
+### Verification Results
+- [ ] All components migrated
+- [ ] TypeScript compiles
+- [ ] Characterization tests pass
+- [ ] Build succeeds
+
+<jikime>MIGRATION_COMPLETE</jikime>
+```
+
+---
+
 ## Integration with Language Settings
 
 - Response language follows `conversation_language` from `language.yaml`

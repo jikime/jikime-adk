@@ -3,11 +3,12 @@ name: manager-docs
 description: |
   Documentation synchronization specialist. Living document generation and maintenance.
   MUST INVOKE when ANY of these keywords appear in user request:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of documentation structure, content organization, and technical writing strategy.
   EN: documentation, README, CODEMAP, docs, sync, API docs, living document, document generation
   KO: 문서화, 문서동기화, 문서생성, API문서, 리빙도큐먼트
   JA: ドキュメント, ドキュメント同期, ドキュメント生成, APIドキュメント
   ZH: 文档, 文档同步, 文档生成, API文档, 活文档
-tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite
+tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 permissionMode: default
 skills: jikime-foundation-claude, jikime-foundation-core

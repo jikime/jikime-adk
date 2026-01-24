@@ -3,11 +3,12 @@ name: command-builder
 description: |
   Slash command factory. Creates new Claude Code slash commands following JikiME-ADK conventions.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of command design, workflow integration, and user experience.
   EN: create command, new command, slash command, add command, build command, command template
   KO: 커맨드 생성, 새 커맨드, 슬래시 커맨드, 커맨드 추가, 커맨드 만들기, 커맨드 템플릿
   JA: コマンド作成, 新しいコマンド, スラッシュコマンド, コマンド追加, コマンドテンプレート
   ZH: 创建命令, 新命令, 斜杠命令, 添加命令, 构建命令, 命令模板
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-foundation-core
 ---

@@ -288,22 +288,28 @@ my-project/
 │   │   ├── layout.tsx
 │   │   ├── page.tsx
 │   │   ├── globals.css
+│   │   ├── api/
+│   │   │   ├── auth/
+│   │   │   │   └── route.ts
+│   │   │   └── health-check/   ← kebab-case
+│   │   │       └── route.ts
 │   │   └── (routes)/
 │   │       ├── dashboard/
 │   │       │   └── page.tsx
-│   │       └── settings/
+│   │       └── user-settings/  ← kebab-case
 │   │           └── page.tsx
 │   ├── components/
 │   │   ├── ui/              ← shadcn 컴포넌트
 │   │   │   ├── button.tsx
 │   │   │   ├── card.tsx
 │   │   │   └── input.tsx
-│   │   ├── Header.tsx       ← 커스텀 컴포넌트
-│   │   └── Footer.tsx
+│   │   └── custom/          ← 커스텀 컴포넌트
+│   │       ├── site-header.tsx  ← kebab-case
+│   │       └── site-footer.tsx
 │   ├── stores/              ← Zustand 스토어
-│   │   └── useAppStore.ts
+│   │   └── use-app-store.ts
 │   ├── hooks/               ← 커스텀 훅
-│   │   └── useAuth.ts
+│   │   └── use-auth.ts
 │   ├── actions/             ← Server Actions
 │   │   └── auth.ts
 │   ├── lib/
@@ -318,6 +324,17 @@ my-project/
 ├── tsconfig.json
 └── next.config.ts
 ```
+
+### 네이밍 규칙 (CRITICAL)
+
+| 대상 | 규칙 | 예시 |
+|------|------|------|
+| 폴더명 | kebab-case | `user-profile/`, `health-check/` |
+| 파일명 | kebab-case | `site-header.tsx`, `use-auth.ts` |
+| route/page 파일 | Next.js 규약 고정 | `route.ts`, `page.tsx`, `layout.tsx` |
+| 컴포넌트 export 이름 | PascalCase | `SiteHeader`, `UserCard` |
+
+**WHY**: URL 경로가 폴더명에서 자동 생성되므로, kebab-case가 웹 표준 URL 규약과 일치합니다.
 
 ---
 

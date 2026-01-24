@@ -3,11 +3,12 @@ name: manager-claude-code
 description: |
   Claude Code configuration specialist. Manages skills, agents, commands, hooks, and settings for Claude Code projects.
   MUST INVOKE when ANY of these keywords appear in user request:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of Claude Code configuration decisions, agent design, and skill architecture.
   EN: claude code config, skill, agent, command, hook, settings, CLAUDE.md, output style
   KO: 클로드코드설정, 스킬, 에이전트, 커맨드, 훅, 설정
   JA: Claude Code設定, スキル, エージェント, コマンド, フック, 設定
   ZH: Claude Code配置, 技能, 代理, 命令, 钩子, 设置
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task, mcp__sequential-thinking__sequentialthinking
 model: inherit
 permissionMode: default
 skills: jikime-foundation-claude, jikime-foundation-core

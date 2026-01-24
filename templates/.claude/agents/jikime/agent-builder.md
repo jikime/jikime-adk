@@ -3,11 +3,12 @@ name: agent-builder
 description: |
   Agent definition factory. Creates new Claude Code subagent definitions following JikiME-ADK conventions.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of agent design decisions, capability mapping, and tool selection.
   EN: create agent, new agent, agent definition, add agent, build agent, agent template
   KO: 에이전트 생성, 새 에이전트, 에이전트 정의, 에이전트 추가, 에이전트 만들기, 에이전트 템플릿
   JA: エージェント作成, 新しいエージェント, エージェント定義, エージェント追加, エージェントテンプレート
   ZH: 创建代理, 新代理, 代理定义, 添加代理, 构建代理, 代理模板
-tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite
+tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 skills: jikime-foundation-claude, jikime-foundation-core
 ---

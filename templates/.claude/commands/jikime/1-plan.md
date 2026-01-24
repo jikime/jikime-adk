@@ -79,6 +79,8 @@ Decision Logic: If user provided clear SPEC title, skip Phase 1A.
 ### PHASE 1B: SPEC Planning (Required)
 
 [SOFT] Apply --ultrathink keyword for deep architectural analysis
+WHY: SPEC planning requires careful consideration of domain classification, technical constraints, and dependency analysis
+IMPACT: Sequential thinking ensures comprehensive requirement analysis and proper EARS structure design
 
 Use the manager-spec subagent to:
 

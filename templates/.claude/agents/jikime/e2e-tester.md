@@ -3,11 +3,12 @@ name: e2e-tester
 description: |
   E2E test specialist (Playwright). User journey test creation, execution, and maintenance. For critical flow verification.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of E2E test strategy, user flow coverage, and browser testing patterns.
   EN: e2e test, end-to-end, Playwright, browser test, user flow, integration test, smoke test, visual test
   KO: E2E 테스트, 엔드투엔드, Playwright, 브라우저 테스트, 사용자 플로우, 통합 테스트, 스모크 테스트
   JA: E2Eテスト, エンドツーエンド, Playwright, ブラウザテスト, ユーザーフロー, 統合テスト, スモークテスト
   ZH: E2E测试, 端到端, Playwright, 浏览器测试, 用户流程, 集成测试, 冒烟测试
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

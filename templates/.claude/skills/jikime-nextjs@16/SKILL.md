@@ -29,6 +29,19 @@ Next.js 15에서 16으로 업그레이드 시 필요한 새로운 기능과 마�
 
 ---
 
+## Base Conventions (from Next.js 14)
+
+다음 규칙은 Next.js 14부터 동일하게 적용됩니다. 상세 내용은 `jikime-nextjs@14`를 참조하세요.
+
+| 규칙 | 요약 |
+|------|------|
+| **프로젝트 구조** | `src/app/` 기반 App Router, `src/app/api/[endpoint]/route.ts` API 라우트 |
+| **네이밍 규칙** | 폴더/파일: kebab-case, 컴포넌트 export: PascalCase |
+| **UI 라이브러리** | shadcn/ui 필수 사용, lucide-react 아이콘 |
+| **스타일링** | Tailwind CSS + CSS variables 기반 테마 |
+
+---
+
 ## New Features Summary
 
 | 기능 | 상태 | 설명 |
@@ -236,7 +249,7 @@ export function ProductEditor({ product }) {
 ### Server Action with updateTag
 
 ```tsx
-// app/actions.ts
+// src/app/actions.ts
 'use server'
 
 import { updateTag } from 'next/cache'
@@ -388,7 +401,7 @@ const nextConfig = {
 ### Cached Data with Immediate Invalidation
 
 ```tsx
-// lib/data.ts
+// src/lib/data.ts
 import { cacheLife, cacheTag } from 'next/cache'
 
 export async function getProducts() {
@@ -406,7 +419,7 @@ export async function getProduct(id: string) {
   return await db.product.findUnique({ where: { id } })
 }
 
-// app/actions.ts
+// src/app/actions.ts
 'use server'
 import { updateTag } from 'next/cache'
 
@@ -425,7 +438,7 @@ export async function updateProduct(id: string, data: Partial<Product>) {
 ### PPR with Auth
 
 ```tsx
-// app/dashboard/page.tsx
+// src/app/dashboard/page.tsx
 import { Suspense } from 'react'
 import { auth } from '@/lib/auth'
 
@@ -459,6 +472,17 @@ async function WelcomeMessage() {
 
 ---
 
-Version: 1.0.0
-Last Updated: 2026-01-22
+## Related Skills
+
+| 스킬 | 용도 |
+|------|------|
+| `jikime-nextjs@14` | Next.js 14 App Router 기본 패턴, 프로젝트 구조, 네이밍 규칙, shadcn/ui |
+| `jikime-nextjs@15` | Next.js 15 업그레이드 가이드 (async params, fetch caching) |
+| `jikime-platform-vercel` | Vercel 배포, Edge Functions, ISR |
+| `jikime-library-shadcn` | shadcn/ui 컴포넌트 라이브러리 (Next.js 필수) |
+
+---
+
+Version: 1.1.0
+Last Updated: 2026-01-23
 Previous Version: See `jikime-nextjs@15`

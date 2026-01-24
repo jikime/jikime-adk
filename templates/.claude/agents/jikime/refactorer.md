@@ -3,11 +3,12 @@ name: refactorer
 description: |
   Refactoring/cleanup specialist. Dead code removal, duplication consolidation, dependency cleanup. For code organization.
   MUST INVOKE when keywords detected:
+  --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of refactoring strategy, code quality improvement, and technical debt reduction.
   EN: refactor, cleanup, dead code, duplication, dependency cleanup, code organization, technical debt, simplify
   KO: 리팩토링, 클린업, 데드 코드, 중복, 의존성 정리, 코드 정리, 기술 부채, 단순화
   JA: リファクタリング, クリーンアップ, デッドコード, 重複, 依存関係整理, コード整理, 技術的負債, 簡素化
   ZH: 重构, 清理, 死代码, 重复, 依赖清理, 代码组织, 技术债务, 简化
-tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite
+tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
 ---
 

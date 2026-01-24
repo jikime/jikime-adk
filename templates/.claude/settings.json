@@ -305,7 +305,6 @@
     "padding": 0,
     "refreshInterval": 300
   },
-  "outputStyle": "J.A.R.V.I.S.",
   "cleanupPeriodDays": 30,
   "env": {
     "JIKIME_CONFIG_SOURCE": "sections",

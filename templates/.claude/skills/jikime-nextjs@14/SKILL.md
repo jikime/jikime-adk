@@ -33,20 +33,52 @@ Next.js 14 App Router의 핵심 패턴과 규칙을 정의합니다. 버전 업�
 ### 1. App Router (Stable)
 
 ```
-app/
-├── layout.tsx          # Root layout (required)
-├── page.tsx            # Home page
-├── loading.tsx         # Loading UI
-├── error.tsx           # Error boundary
-├── not-found.tsx       # 404 page
-└── [slug]/
-    └── page.tsx        # Dynamic route
+src/
+└── app/
+    ├── layout.tsx          # Root layout (required)
+    ├── page.tsx            # Home page
+    ├── loading.tsx         # Loading UI
+    ├── error.tsx           # Error boundary
+    ├── not-found.tsx       # 404 page
+    ├── [slug]/
+    │   └── page.tsx        # Dynamic route
+    └── api/
+        ├── auth/
+        │   └── route.ts    # POST /api/auth
+        ├── users/
+        │   ├── route.ts    # GET, POST /api/users
+        │   └── [id]/
+        │       └── route.ts # GET, PUT, DELETE /api/users/:id
+        └── health-check/
+            └── route.ts    # GET /api/health-check
+```
+
+### Naming Conventions (CRITICAL)
+
+| 대상 | 규칙 | 예시 |
+|------|------|------|
+| 폴더명 | kebab-case | `user-profile/`, `health-check/` |
+| route 파일명 | 고정 (`route.ts`, `page.tsx`) | Next.js 규약 |
+| 컴포넌트 파일 | kebab-case | `user-card.tsx`, `nav-menu.tsx` |
+| 컴포넌트 이름 | PascalCase | `UserCard`, `NavMenu` |
+| 유틸리티 파일 | kebab-case | `format-date.ts`, `use-auth.ts` |
+
+**WHY**: URL 경로가 폴더명에서 자동 생성되므로, kebab-case가 웹 표준 URL 규약과 일치합니다.
+
+```
+# CORRECT
+src/app/user-profile/page.tsx    → /user-profile
+src/app/api/health-check/route.ts → /api/health-check
+
+# WRONG
+src/app/userProfile/page.tsx     → /userProfile (비표준 URL)
+src/app/api/healthCheck/route.ts → /api/healthCheck (비표준 URL)
 ```
 
 ### 2. Server Components (Default)
 
 ```tsx
-// app/users/page.tsx - Server Component by default
+// src/app/users/page.tsx - Server Component by default
 async function getUsers() {
   const res = await fetch('https://api.example.com/users')
   return res.json()
@@ -61,7 +93,7 @@ export default async function UsersPage() {
 ### 3. Client Components
 
 ```tsx
-// components/counter.tsx
+// src/components/counter.tsx
 'use client'
 
 import { useState } from 'react'
@@ -75,7 +107,7 @@ export function Counter() {
 ### 4. Server Actions (Stable in 14.0)
 
 ```tsx
-// app/actions.ts
+// src/app/actions.ts
 'use server'
 
 export async function createPost(formData: FormData) {
@@ -84,7 +116,7 @@ export async function createPost(formData: FormData) {
   revalidatePath('/posts')
 }
 
-// app/posts/new/page.tsx
+// src/app/posts/new/page.tsx
 import { createPost } from '../actions'
 
 export default function NewPost() {
@@ -116,7 +148,7 @@ export async function generateMetadata({ params }) {
 ### 6. Route Handlers
 
 ```tsx
-// app/api/users/route.ts
+// src/app/api/users/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -177,7 +209,7 @@ revalidateTag('posts')
 ### Params Access (Synchronous)
 
 ```tsx
-// app/posts/[slug]/page.tsx
+// src/app/posts/[slug]/page.tsx
 type Props = {
   params: { slug: string }  // Direct access (synchronous)
   searchParams: { [key: string]: string | string[] | undefined }
@@ -205,7 +237,7 @@ export async function generateStaticParams() {
 ## Middleware (Next.js 14)
 
 ```tsx
-// middleware.ts
+// src/middleware.ts
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
@@ -244,6 +276,114 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+```
+
+---
+
+## UI Component Library (MANDATORY)
+
+Next.js 프로젝트에서는 **항상 shadcn/ui**를 사용합니다.
+
+### Setup
+
+```bash
+# 새 프로젝트: shadcn이 Next.js 프로젝트를 자동 생성
+npx shadcn@latest init --src-dir
+
+# 기존 프로젝트: 현재 프로젝트에 shadcn/ui 추가
+npx shadcn@latest init
+```
+
+### components.json (프로젝트 루트)
+
+```json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "new-york",
+  "rsc": true,
+  "tsx": true,
+  "tailwind": {
+    "config": "tailwind.config.ts",
+    "css": "src/app/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": ""
+  },
+  "aliases": {
+    "components": "@/components",
+    "ui": "@/components/ui",
+    "utils": "@/lib/utils",
+    "lib": "@/lib",
+    "hooks": "@/hooks"
+  },
+  "iconLibrary": "lucide"
+}
+```
+
+### Project Structure with shadcn/ui
+
+```
+src/
+├── app/
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── globals.css          # Tailwind + CSS variables
+│   └── api/
+│       └── users/
+│           └── route.ts
+├── components/
+│   ├── ui/                  # shadcn/ui 컴포넌트 (자동 생성)
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── dialog.tsx
+│   │   └── ...
+│   └── custom/              # 프로젝트 커스텀 컴포넌트
+│       ├── user-card.tsx
+│       └── nav-menu.tsx
+├── hooks/                   # 커스텀 훅
+│   └── use-auth.ts
+├── lib/
+│   └── utils.ts             # cn() 유틸리티 (shadcn 필수)
+└── types/
+    └── index.ts
+```
+
+### Rules
+
+- [HARD] UI 컴포넌트 구현 시 항상 shadcn/ui를 우선 사용
+- [HARD] shadcn/ui에 없는 컴포넌트만 커스텀 구현
+- [HARD] Tailwind CSS + CSS variables 기반 테마 시스템 사용
+- [HARD] 아이콘은 lucide-react 사용
+- 관련 스킬: `jikime-library-shadcn` (상세 구현 가이드)
+
+### Component Usage
+
+```tsx
+// shadcn/ui 컴포넌트 사용
+import { Button } from '@/components/ui/button'
+import { Card, CardHeader, CardContent } from '@/components/ui/card'
+
+export function UserCard({ user }) {
+  return (
+    <Card>
+      <CardHeader>{user.name}</CardHeader>
+      <CardContent>
+        <Button variant="outline">Edit</Button>
+      </CardContent>
+    </Card>
+  )
+}
+```
+
+### Adding Components
+
+```bash
+# 개별 컴포넌트 추가
+npx shadcn@latest add button
+npx shadcn@latest add card dialog
+
+# 사용 가능한 컴포넌트 목록 확인
+npx shadcn@latest add
 ```
 
 ---
