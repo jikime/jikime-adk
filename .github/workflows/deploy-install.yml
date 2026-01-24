@@ -4,14 +4,17 @@ name: Deploy Install Script
 # Result: https://jikime.github.io/jikime-adk/install.sh
 
 on:
+  workflow_dispatch:
   release:
     types: [published]
   push:
     branches: [main]
     paths:
       - 'install/install.sh'
+      - '.github/workflows/deploy-install.yml'
 
 permissions:
+  contents: read
   pages: write
   id-token: write
 
