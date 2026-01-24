@@ -17,7 +17,8 @@ var PreToolSecurityCmd = &cobra.Command{
 	Long: `PreToolUse hook that protects sensitive files and prevents dangerous modifications.
 
 Security Features:
-- Block modifications to .env and secret files
+- Block modifications to secret/credential files
+- Confirm before modifying .env files (content-level secret detection still applies)
 - Protect lock files (package-lock.json, yarn.lock)
 - Guard .git directory
 - Prevent accidental overwrites of critical configs
@@ -27,10 +28,7 @@ Security Features:
 
 // Patterns for files that should NEVER be modified
 var denyPatterns = []string{
-	// Environment and secrets
-	`\.env$`,
-	`\.env\.[^/]+$`,
-	`\.envrc$`,
+	// Secrets and credentials
 	`secrets?\.(json|ya?ml|toml)$`,
 	`credentials?\.(json|ya?ml|toml)$`,
 	`\.secrets/.*`,
@@ -57,6 +55,10 @@ var denyPatterns = []string{
 
 // Patterns for files that require user confirmation
 var askPatterns = []string{
+	// Environment files (common in development, content-level secret detection still applies)
+	`\.env$`,
+	`\.env\.[^/]+$`,
+	`\.envrc$`,
 	// Lock files
 	`package-lock\.json$`,
 	`yarn\.lock$`,

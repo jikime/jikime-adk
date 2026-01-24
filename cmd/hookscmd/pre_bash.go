@@ -106,6 +106,15 @@ func runPreBash(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
+	// Bypass: Commands prefixed with JIKIME_MANAGED=1 are managed by JikiME commands
+	// (e.g., browser-verify managing dev server lifecycle) and don't need tmux protection
+	if strings.HasPrefix(command, "JIKIME_MANAGED=1 ") {
+		output := preBashOutput{SuppressOutput: true}
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetEscapeHTML(false)
+		return encoder.Encode(output)
+	}
+
 	// Check if running in tmux
 	inTmux := os.Getenv("TMUX") != ""
 

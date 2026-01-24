@@ -22,34 +22,19 @@ Migration keywords activate F.R.I.D.A.Y., all other requests activate J.A.R.V.I.
 }
 
 // Migration keywords that trigger F.R.I.D.A.Y. activation
+// NOTE: Keywords must be specific enough to avoid false positives in general development.
+// Removed "port" (matches "port 3000", "--port") and "transform" (matches CSS/data transforms).
 var migrationKeywords = []string{
 	"migrate",
 	"migration",
-	"convert",
-	"legacy",
-	"transform",
-	"port",
+	"convert legacy",
+	"legacy migration",
+	"legacy code",
+	"legacy system",
 	"upgrade framework",
+	"porting",
 	"/jikime:friday",
 	"/jikime:migrate",
-}
-
-// Development keywords that explicitly switch back to J.A.R.V.I.S.
-var jarvisKeywords = []string{
-	"/jikime:jarvis",
-	"/jikime:build-fix",
-	"/jikime:loop",
-	"/jikime:test",
-	"/jikime:architect",
-	"/jikime:docs",
-	"/jikime:e2e",
-	"/jikime:learn",
-	"/jikime:refactor",
-	"/jikime:security",
-	"/jikime:0-project",
-	"/jikime:1-plan",
-	"/jikime:2-run",
-	"/jikime:3-sync",
 }
 
 // Orchestrator names
@@ -94,20 +79,24 @@ func runOrchestratorRoute(cmd *cobra.Command, args []string) error {
 		projectRoot, _ = os.Getwd()
 	}
 
-	// Priority 1: Command/Keyword-based detection (explicit signal)
+	// Priority 1: Input-based detection
+	// - Migration keywords → F.R.I.D.A.Y.
+	// - All other non-empty input → J.A.R.V.I.S. (HARD rule)
+	// - Empty input → keep current state
 	orchestrator := detectOrchestrator(userInput)
 
 	if orchestrator != "" {
-		// Explicit signal found - update state
+		// Non-empty input detected - update state based on content
 		writeOrchestratorState(projectRoot, orchestrator)
 	} else if !stateFileExists(projectRoot) {
-		// Priority 2: No state file yet - check for migration artifacts
+		// Priority 2: No input AND no state file - check for migration artifacts
 		if hasMigrationArtifacts(projectRoot) {
 			writeOrchestratorState(projectRoot, OrchestratorFRIDAY)
+		} else {
+			writeOrchestratorState(projectRoot, OrchestratorJARVIS)
 		}
-		// If no artifacts either, default J.A.R.V.I.S. (via ReadOrchestratorState)
 	}
-	// Priority 3: State file exists + no explicit signal → sticky state (no write)
+	// Priority 3: No input + state file exists → keep current state
 
 	// Return success response
 	response := HookResponse{
@@ -148,8 +137,9 @@ func hasMigrationArtifacts(projectRoot string) bool {
 	return false
 }
 
-// detectOrchestrator checks user input for explicit orchestrator signals.
-// Returns "" if no explicit signal is found (keep current state).
+// detectOrchestrator checks user input to determine which orchestrator should be active.
+// Per HARD rule: "Migration requests activate F.R.I.D.A.Y., all other requests activate J.A.R.V.I.S."
+// Returns "" only if input is empty (no signal to process).
 func detectOrchestrator(input string) string {
 	if input == "" {
 		return "" // No input, keep current state
@@ -157,22 +147,15 @@ func detectOrchestrator(input string) string {
 
 	lower := strings.ToLower(input)
 
-	// Check migration keywords first (FRIDAY activation)
+	// Check migration keywords (FRIDAY activation)
 	for _, keyword := range migrationKeywords {
 		if strings.Contains(lower, keyword) {
 			return OrchestratorFRIDAY
 		}
 	}
 
-	// Check JARVIS keywords (explicit switch back to JARVIS)
-	for _, keyword := range jarvisKeywords {
-		if strings.Contains(lower, keyword) {
-			return OrchestratorJARVIS
-		}
-	}
-
-	// No explicit signal - keep current state (return empty)
-	return ""
+	// All non-migration requests activate J.A.R.V.I.S. (HARD rule compliance)
+	return OrchestratorJARVIS
 }
 
 // writeOrchestratorState writes the active orchestrator to the state file

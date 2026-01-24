@@ -6744,6 +6744,14 @@ Migration is complete when verification passes.
 2. User Acceptance Testing (UAT)
 3. Production deployment
 
+## Related Commands
+
+- `/jikime:browser-verify` - Standalone browser runtime error detection and auto-fix loop. Use this for catching runtime errors (undefined references, missing modules, DOM errors) that static analysis and build tools miss. Works independently of migration workflow.
+- `/jikime:e2e` - E2E test generation and execution
+- `/jikime:loop` - General iterative fix loop (LSP, tests, coverage)
+
+> **Tip**: After migration verification passes, run `/jikime:browser-verify` to catch any remaining runtime browser errors that only appear during actual page rendering.
+
 ---
 
 Version: 4.0.0

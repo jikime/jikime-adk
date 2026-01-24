@@ -28,7 +28,48 @@ Developer                    GitHub Actions                GitHub
 - Repository push 권한
 - GitHub Pages 활성화 (Settings → Pages → Source: GitHub Actions)
 
-## Release Process (Step by Step)
+## Quick Release (권장)
+
+`release.sh` 스크립트로 빌드부터 릴리스 트리거까지 한번에 수행합니다.
+
+```bash
+# 기본 사용
+.github/scripts/release.sh 0.0.1
+
+# 커밋 메시지 지정
+.github/scripts/release.sh 0.0.2 "feat: add jikime-wt binary support"
+
+# 드라이런 (실제 실행 없이 확인만)
+.github/scripts/release.sh 0.0.1 --dry-run
+```
+
+### 스크립트 동작 순서
+
+```
+[0] Pre-flight checks   → 브랜치, 태그 중복, 필수 파일 확인
+[1] Build verification   → go build ./... + ./cmd/jikime-wt
+[2] Update version       → sync-versions.sh로 fallbackVersion 업데이트
+[3] Stage and commit     → git add -A && git commit
+[4] Push to remote       → git push origin main
+[5] Create and push tag  → git tag vX.Y.Z && git push origin vX.Y.Z
+                           → GitHub Actions release.yml 자동 트리거
+```
+
+### 옵션
+
+| 옵션 | 설명 |
+|------|------|
+| `--dry-run` | 실제 실행 없이 과정만 표시 |
+| `--skip-build` | 빌드 검증 단계 건너뛰기 |
+| `--force` | 변경사항 없어도 강제 진행 |
+
+> **참고**: 최초 사용 시 실행 권한 부여 필요: `chmod +x .github/scripts/release.sh`
+
+---
+
+## Release Process (수동, Step by Step)
+
+아래는 `release.sh`가 내부적으로 수행하는 과정을 수동으로 진행하는 방법입니다.
 
 ### Step 1: 코드 변경 및 빌드 확인
 
@@ -419,15 +460,14 @@ gh release list     # 릴리스 없음 확인
 ### Step 5: 새로 시작
 
 ```bash
-# 버전 설정
-.github/scripts/sync-versions.sh 0.0.1
+# release.sh 사용 (권장)
+.github/scripts/release.sh 0.0.1
 
-# 커밋 & 푸시
+# 또는 수동으로:
+.github/scripts/sync-versions.sh 0.0.1
 git add version/version.go
 git commit -m "chore: set version to 0.0.1"
 git push origin main
-
-# 태그 생성 & 릴리스 트리거
 git tag v0.0.1
 git push --tags
 ```
@@ -452,14 +492,14 @@ git push --tags
 ### 핵심 명령어 요약
 
 ```bash
-# 버전 업데이트
-.github/scripts/sync-versions.sh X.Y.Z
+# 원클릭 릴리스 (권장)
+.github/scripts/release.sh X.Y.Z
 
-# 커밋 & 푸시
-git add -A && git commit -m "chore: release vX.Y.Z" && git push origin main
+# 또는 커밋 메시지 지정
+.github/scripts/release.sh X.Y.Z "feat: add new feature"
 
-# 태그 & 릴리스 트리거
-git tag vX.Y.Z && git push --tags
+# 드라이런 (확인만)
+.github/scripts/release.sh X.Y.Z --dry-run
 
 # 릴리스 확인
 gh release view vX.Y.Z

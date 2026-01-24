@@ -646,45 +646,33 @@ func syncProjectTemplates() error {
 	}
 	defer os.RemoveAll(templateSrc)
 
-	// Sync templates (preserving user customizations)
-	// This is a simplified version - full implementation would merge carefully
-	syncCount := 0
-
-	// Sync .claude directory
-	srcClaude := filepath.Join(templateSrc, ".claude")
-	if _, err := os.Stat(srcClaude); err == nil {
-		if err := syncTemplateDir(srcClaude, claudeDir); err == nil {
-			syncCount++
-		}
-	}
-
-	// Sync .jikime/config (but not user data)
-	srcJikimeConfig := filepath.Join(templateSrc, ".jikime", "config")
-	dstJikimeConfig := filepath.Join(jikimeDir, "config")
-	if _, err := os.Stat(srcJikimeConfig); err == nil {
-		if err := syncTemplateDir(srcJikimeConfig, dstJikimeConfig); err == nil {
-			syncCount++
-		}
+	// Sync all files from templates/ to project root
+	syncCount, err := syncTemplateDir(templateSrc, cwd)
+	if err != nil {
+		dim.Printf("Sync error: %v\n", err)
+		return nil
 	}
 
 	if syncCount > 0 {
-		green.Printf("Synced %d template directories\n", syncCount)
+		green.Printf("Synced %d files\n", syncCount)
 	} else {
-		dim.Println("No templates to sync")
+		dim.Println("All templates are up to date")
 	}
 
 	return nil
 }
 
-func syncTemplateDir(src, dst string) error {
+func syncTemplateDir(src, dst string) (int, error) {
 	// Ensure destination exists
 	if err := os.MkdirAll(dst, 0755); err != nil {
-		return err
+		return 0, err
 	}
+
+	syncCount := 0
 
 	// Walk through source and copy files that don't exist in destination
 	// or are newer in source
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // Continue on error
 		}
@@ -714,6 +702,13 @@ func syncTemplateDir(src, dst string) error {
 			return nil
 		}
 
-		return os.WriteFile(dstPath, data, info.Mode())
+		if writeErr := os.WriteFile(dstPath, data, info.Mode()); writeErr != nil {
+			return nil
+		}
+
+		syncCount++
+		return nil
 	})
+
+	return syncCount, err
 }

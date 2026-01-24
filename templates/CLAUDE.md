@@ -34,7 +34,8 @@ Priority 1: Command/Keyword Detection (Explicit Signal)
         → Activate F.R.I.D.A.Y. + update state file
 
     ELIF request contains development keywords/commands:
-        (/jikime:jarvis, /jikime:build-fix, /jikime:loop, /jikime:test,
+        (/jikime:jarvis, /jikime:browser-verify, /jikime:build-fix,
+         /jikime:loop, /jikime:test,
          /jikime:architect, /jikime:docs, /jikime:e2e, /jikime:learn,
          /jikime:refactor, /jikime:security, /jikime:0-project,
          /jikime:1-plan, /jikime:2-run, /jikime:3-sync)
@@ -239,6 +240,7 @@ Definition: Commands for rapid fixes and automation where speed is prioritized.
 
 **J.A.R.V.I.S. Commands** (Development):
 - /jikime:jarvis - Autonomous development orchestration
+- /jikime:browser-verify - Browser runtime error detection and auto-fix
 - /jikime:build-fix - Build error fixing
 - /jikime:loop - Iterative improvement
 - /jikime:test - Test execution and coverage

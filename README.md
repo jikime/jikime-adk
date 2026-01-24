@@ -33,7 +33,7 @@
 
 ### 영감과 뿌리
 
-이 여정의 시작에서 명확한 이정표를 제시해준 것은 구스킴님의 **MOAI-ADK**였습니다. 에이전틱(Agentic) 워크플로우에 대한 깊은 통찰을 접하며 큰 영감을 얻었고, 그 단단한 철학적 기반 위에서 Golang을 활용해 마이그레이션에 특화된 새로운 ADK를 구축했습니다. 또한 **everything-claude-code**의 에이전트, 커맨드, 훅 구조를 참고하여 기능을 보강했습니다.
+이 여정의 시작에서 명확한 이정표를 제시해준 것은 Goos.Kim님의 **[MoAI-ADK](https://github.com/modu-ai/moai-adk)**였습니다. 에이전틱(Agentic) 워크플로우에 대한 깊은 통찰을 접하며 큰 영감을 얻었고, 그 단단한 철학적 기반 위에서 Golang을 활용해 마이그레이션에 특화된 새로운 ADK를 구축했습니다. 또한 **everything-claude-code**의 에이전트, 커맨드, 훅 구조를 참고하여 기능을 보강했습니다.
 
 이는 단순한 카피가 아닌, 선배 개발자의 소중한 자산을 양분 삼아 피워낸 새로운 꽃이라고 생각합니다.
 
@@ -180,12 +180,82 @@ jikime-adk init
 | 명령어 | 설명 |
 |--------|------|
 | `/jikime:architect` | 아키텍처 리뷰 및 설계, ADR 생성 |
+| `/jikime:browser-verify` | 브라우저 런타임 에러 감지 및 자동 수정 루프 |
 | `/jikime:build-fix` | 빌드 에러 점진적 수정 |
 | `/jikime:docs` | 문서 업데이트 및 생성 |
 | `/jikime:e2e` | Playwright E2E 테스트 |
 | `/jikime:learn` | 코드베이스 탐색 및 학습 |
 | `/jikime:refactor` | DDD 방법론 리팩토링 |
 | `/jikime:security` | OWASP Top 10 보안 감사 |
+
+### browser-verify 사용법
+
+브라우저에서 실제로 앱을 실행해 런타임 에러(undefined 참조, 모듈 누락, DOM 에러 등)를 자동으로 감지하고 수정하는 루프 명령어입니다. 정적 분석으로는 발견할 수 없는 문제를 Playwright를 활용해 포착합니다.
+
+```bash
+# 기본 실행: 패키지 매니저 감지 → 개발 서버 시작 → 전체 라우트 검증
+/jikime:browser-verify
+
+# 포트 지정
+/jikime:browser-verify --port 5173
+
+# 특정 라우트만 검증
+/jikime:browser-verify --routes /,/about,/dashboard
+
+# 에러 리포트만 출력 (자동 수정 없음)
+/jikime:browser-verify --skip-fix
+
+# 브라우저 창을 띄워서 디버그
+/jikime:browser-verify --headed
+
+# 에러 수정 후 E2E 기능 테스트까지 실행
+/jikime:browser-verify --e2e
+
+# 이미 실행 중인 개발 서버 URL 직접 지정
+/jikime:browser-verify --url http://localhost:3000
+```
+
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--max N` | 최대 수정 반복 횟수 | 10 |
+| `--port N` | 개발 서버 포트 | 자동 감지 |
+| `--url URL` | 개발 서버 URL (서버 시작 건너뜀) | - |
+| `--headed` | 브라우저 창 표시 (디버그용) | false |
+| `--routes paths` | 검증할 라우트 (쉼표 구분) | 자동 탐색 |
+| `--skip-fix` | 에러 리포트만 출력 | false |
+| `--e2e` | 에러 수정 후 E2E 테스트 실행 | false |
+| `--timeout N` | 페이지 로드 타임아웃 (ms) | 30000 |
+| `--stagnation-limit N` | 개선 없는 최대 반복 횟수 | 3 |
+
+#### 동작 흐름
+
+```
+개발 서버 시작 → 라우트 탐색 → Playwright로 각 페이지 방문
+  → 콘솔 에러/예외 캡처 → 스택 트레이스 → 소스 파일 매핑
+  → 에이전트에 수정 위임 → 재검증 → 에러 0건까지 반복
+  → (--e2e) E2E 기능 테스트 실행
+```
+
+#### 감지하는 에러 유형
+
+| 유형 | 심각도 |
+|------|--------|
+| `console.error` | HIGH |
+| 미처리 예외 (uncaughtException) | CRITICAL |
+| 미처리 Promise 거부 | CRITICAL |
+| HTTP 4xx/5xx 응답 | MEDIUM |
+| 리소스 로드 실패 | MEDIUM |
+
+#### 패키지 매니저 자동 감지
+
+| Lock 파일 | 패키지 매니저 | 실행 명령 |
+|-----------|--------------|-----------|
+| `pnpm-lock.yaml` | pnpm | `pnpm run dev` |
+| `yarn.lock` | yarn | `yarn dev` |
+| `package-lock.json` | npm | `npm run dev` |
+| `bun.lockb` | bun | `bun run dev` |
+
+---
 
 ### Migration Commands
 
@@ -449,7 +519,7 @@ jikime-adk/
 
 JiKiME-ADK가 지금의 모습을 갖출 수 있었던 것은 아래 프로젝트들 덕분입니다:
 
-- **[MOAI-ADK](https://github.com/modu-ai/moai-adk)** - 구스킴님의 에이전틱 워크플로우 철학과 구조적 영감
+- **[MoAI-ADK](https://github.com/modu-ai/moai-adk)** - Goos.Kim님의 에이전틱 워크플로우 철학과 구조적 영감
 - **[everything-claude-code](https://github.com/anthropics/anthropic-cookbook)** - 에이전트, 커맨드, 훅 구조 참고
 
 앞으로 JiKiME는 고유한 로직과 코드로 채워지며 계속 진화하겠지만, 그 뿌리에 닿아있는 영감은 오래도록 남을 것입니다.
