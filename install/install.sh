@@ -18,6 +18,7 @@ readonly BINARY_NAME="jikime-adk"
 readonly DEFAULT_INSTALL_DIR="${HOME}/.local/bin"
 readonly GLOBAL_INSTALL_DIR="/usr/local/bin"
 readonly RELEASES_URL="https://api.github.com/repos/${REPO}/releases"
+readonly DOWNLOAD_BASE="https://github.com/${REPO}/releases/download"
 readonly MAX_RETRIES=3
 readonly RETRY_DELAY=2
 
@@ -104,7 +105,6 @@ check_requirements() {
         missing+=("curl")
     fi
 
-    # Check for sha256sum or shasum
     if ! command -v sha256sum &>/dev/null && ! command -v shasum &>/dev/null; then
         missing+=("sha256sum or shasum")
     fi
@@ -149,26 +149,14 @@ detect_arch() {
 
 get_latest_version() {
     local url="${RELEASES_URL}/latest"
-    local auth_header=""
-
-    if [ -n "${GITHUB_TOKEN:-}" ]; then
-        auth_header="-H \"Authorization: Bearer ${GITHUB_TOKEN}\""
-    fi
-
     local response
     local attempt=0
 
     while [ $attempt -lt $MAX_RETRIES ]; do
         attempt=$((attempt + 1))
 
-        if [ -n "${GITHUB_TOKEN:-}" ]; then
-            response=$(curl -fsSL -H "Accept: application/vnd.github.v3+json" \
-                -H "Authorization: Bearer ${GITHUB_TOKEN}" \
-                "$url" 2>/dev/null) && break
-        else
-            response=$(curl -fsSL -H "Accept: application/vnd.github.v3+json" \
-                "$url" 2>/dev/null) && break
-        fi
+        response=$(curl -fsSL -H "Accept: application/vnd.github.v3+json" \
+            "$url" 2>/dev/null) && break
 
         if [ $attempt -lt $MAX_RETRIES ]; then
             dim "Retry $attempt/$MAX_RETRIES in ${RETRY_DELAY}s..."
@@ -178,13 +166,13 @@ get_latest_version() {
 
     if [ -z "${response:-}" ]; then
         error "Failed to fetch latest version from GitHub API"
-        dim "For private repos, set GITHUB_TOKEN: export GITHUB_TOKEN=\$(gh auth token)"
+        dim "Check your network connection and try again."
         exit 1
     fi
 
-    # Extract tag_name (strip 'v' prefix)
+    # Extract tag_name
     local tag
-    tag=$(echo "$response" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"v\{0,1\}\([^"]*\)".*/\1/')
+    tag=$(echo "$response" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
 
     if [ -z "$tag" ]; then
         error "Could not parse version from GitHub API response"
@@ -202,18 +190,13 @@ download_binary() {
     local dest="$4"
 
     local asset_name="${BINARY_NAME}-${platform}-${arch}"
-    local download_url="https://github.com/${REPO}/releases/download/v${version}/${asset_name}"
-
-    local auth_args=()
-    if [ -n "${GITHUB_TOKEN:-}" ]; then
-        auth_args=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
-    fi
+    local download_url="${DOWNLOAD_BASE}/v${version}/${asset_name}"
 
     local attempt=0
     while [ $attempt -lt $MAX_RETRIES ]; do
         attempt=$((attempt + 1))
 
-        if curl -fsSL "${auth_args[@]}" -o "$dest" "$download_url" 2>/dev/null; then
+        if curl -fsSL -o "$dest" "$download_url" 2>/dev/null; then
             return 0
         fi
 
@@ -224,9 +207,6 @@ download_binary() {
     done
 
     error "Failed to download binary from: $download_url"
-    if [ -z "${GITHUB_TOKEN:-}" ]; then
-        dim "For private repos, set GITHUB_TOKEN environment variable."
-    fi
     return 1
 }
 
@@ -237,16 +217,11 @@ verify_checksum() {
     local arch="$4"
 
     local asset_name="${BINARY_NAME}-${platform}-${arch}"
-    local checksums_url="https://github.com/${REPO}/releases/download/v${version}/checksums.txt"
-
-    local auth_args=()
-    if [ -n "${GITHUB_TOKEN:-}" ]; then
-        auth_args=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
-    fi
+    local checksums_url="${DOWNLOAD_BASE}/v${version}/checksums.txt"
 
     # Download checksums.txt
     local checksums_file="${TMP_DIR}/checksums.txt"
-    if ! curl -fsSL "${auth_args[@]}" -o "$checksums_file" "$checksums_url" 2>/dev/null; then
+    if ! curl -fsSL -o "$checksums_file" "$checksums_url" 2>/dev/null; then
         dim "Warning: Could not download checksums.txt, skipping verification"
         return 0
     fi
@@ -282,7 +257,6 @@ install_binary() {
     local src="$1"
     local install_dir="$2"
 
-    # Create install directory if needed
     if [ "$USE_SUDO" = true ]; then
         sudo mkdir -p "$install_dir"
         sudo cp "$src" "${install_dir}/${BINARY_NAME}"
@@ -373,9 +347,6 @@ usage() {
     echo "  --version X   Install specific version (e.g., 2.1.0)"
     echo "  --no-color    Disable colored output"
     echo "  --help        Show this help message"
-    echo ""
-    echo "Environment variables:"
-    echo "  GITHUB_TOKEN  GitHub token for API rate limiting"
     echo ""
     echo "Alternative installation:"
     echo "  go install github.com/jikime/jikime-adk@latest"
