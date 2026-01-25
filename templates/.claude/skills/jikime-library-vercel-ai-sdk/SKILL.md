@@ -205,303 +205,55 @@ export function Chat() {
 
 ## Tool Calling
 
-### Define Tools with inputSchema
+For detailed tool implementation patterns, see:
+- [Tool Calling Patterns](modules/tool-calling.md) - Define, use, and display tools
+
+Quick reference:
 
 ```typescript
-// lib/tools.ts
+// Define tool with inputSchema (NOT parameters!)
 import { tool } from 'ai'
 import { z } from 'zod'
 
-export const weatherTool = tool({
-  description: 'Get the current weather for a location',
-  inputSchema: z.object({
-    city: z.string().describe('The city to get weather for'),
-    unit: z.enum(['celsius', 'fahrenheit']).default('celsius'),
-  }),
-  execute: async ({ city, unit }) => {
-    const weather = await fetchWeatherAPI(city)
-    return {
-      city,
-      temperature: unit === 'celsius' ? weather.tempC : weather.tempF,
-      condition: weather.condition,
-    }
-  },
+const myTool = tool({
+  description: 'Tool description',
+  inputSchema: z.object({ param: z.string() }),  // MUST use inputSchema
+  execute: async ({ param }) => { /* ... */ },
 })
 
-export const searchTool = tool({
-  description: 'Search the web for information',
-  inputSchema: z.object({
-    query: z.string().describe('Search query'),
-    maxResults: z.number().default(5),
-  }),
-  execute: async ({ query, maxResults }) => {
-    const results = await searchAPI(query, maxResults)
-    return results
-  },
+// Use in API route
+streamText({
+  model: openai('gpt-4o'),
+  messages,
+  tools: { myTool },
+  maxSteps: 5,  // Enable multi-step tool use
 })
-```
-
-### Use Tools in API Route
-
-```typescript
-// app/api/chat/route.ts
-import { streamText } from 'ai'
-import { openai } from '@ai-sdk/openai'
-import { weatherTool, searchTool } from '@/lib/tools'
-
-export async function POST(req: Request) {
-  const { messages } = await req.json()
-
-  const result = streamText({
-    model: openai('gpt-4o'),
-    messages,
-    tools: {
-      weather: weatherTool,
-      search: searchTool,
-    },
-    maxSteps: 5,  // Allow multi-step tool use
-  })
-
-  return result.toDataStreamResponse()
-}
-```
-
-### Display Tool Results
-
-```tsx
-// components/message.tsx
-'use client'
-
-import type { Message } from '@ai-sdk/react'
-
-export function ChatMessage({ message }: { message: Message }) {
-  return (
-    <div className={`message ${message.role}`}>
-      {message.parts.map((part, index) => {
-        switch (part.type) {
-          case 'text':
-            return <p key={index}>{part.text}</p>
-
-          case 'tool-call':
-            return (
-              <div key={index} className="tool-call">
-                <span className="tool-name">{part.toolName}</span>
-                <pre>{JSON.stringify(part.args, null, 2)}</pre>
-              </div>
-            )
-
-          case 'tool-result':
-            return (
-              <div key={index} className="tool-result">
-                <span className="tool-name">{part.toolName}</span>
-                <pre>{JSON.stringify(part.result, null, 2)}</pre>
-              </div>
-            )
-
-          default:
-            return null
-        }
-      })}
-    </div>
-  )
-}
 ```
 
 ---
 
 ## AI SDK v6 Features
 
-### ToolLoopAgent
+For advanced v6 features, see:
+- [v6 Features](modules/v6-features.md) - ToolLoopAgent, Output patterns, streaming objects
 
-```typescript
-// lib/agents/tool-loop-agent.ts
-import { streamText, tool } from 'ai'
-import { openai } from '@ai-sdk/openai'
-import { z } from 'zod'
-
-export async function runToolLoopAgent(userMessage: string) {
-  const tools = {
-    search: tool({
-      description: 'Search for information',
-      inputSchema: z.object({ query: z.string() }),
-      execute: async ({ query }) => await search(query),
-    }),
-    calculate: tool({
-      description: 'Perform calculations',
-      inputSchema: z.object({ expression: z.string() }),
-      execute: async ({ expression }) => eval(expression),
-    }),
-  }
-
-  let messages = [{ role: 'user' as const, content: userMessage }]
-  let iteration = 0
-  const maxIterations = 10
-
-  while (iteration < maxIterations) {
-    const result = await streamText({
-      model: openai('gpt-4o'),
-      messages,
-      tools,
-    })
-
-    const response = await result.text
-    const toolCalls = await result.toolCalls
-
-    if (toolCalls.length === 0) {
-      return response  // No more tool calls, return final response
-    }
-
-    // Add assistant message with tool calls
-    messages.push({
-      role: 'assistant',
-      content: response,
-      toolCalls,
-    })
-
-    // Execute tools and add results
-    for (const toolCall of toolCalls) {
-      const toolResult = await tools[toolCall.toolName].execute(toolCall.args)
-      messages.push({
-        role: 'tool',
-        toolCallId: toolCall.toolCallId,
-        content: JSON.stringify(toolResult),
-      })
-    }
-
-    iteration++
-  }
-
-  throw new Error('Max iterations reached')
-}
-```
-
-### Output Patterns (v6)
-
-```typescript
-// generateObject and streamObject deprecated
-// Use Output.object({ schema }) instead
-
-import { streamText, Output } from 'ai'
-import { openai } from '@ai-sdk/openai'
-import { z } from 'zod'
-
-const productSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  price: z.number(),
-  features: z.array(z.string()),
-})
-
-const result = await streamText({
-  model: openai('gpt-4o'),
-  prompt: 'Generate a product description for a smartwatch',
-  output: Output.object({ schema: productSchema }),
-})
-
-const product = await result.object  // Typed as Product
-```
+Key changes in v6:
+- `generateObject` → `Output.object({ schema })`
+- ToolLoopAgent for multi-step reasoning
+- Enhanced streaming support
 
 ---
 
 ## AI Elements (UI Components)
 
-### Installation
+For UI component examples, see:
+- [AI Elements](modules/ai-elements.md) - Conversation, Message, Tool, Sources components
 
 ```bash
 npm install @anthropic-ai/ai-elements streamdown shiki
 ```
 
-### Core Components
-
-```tsx
-// components/ai-chat.tsx
-'use client'
-
-import {
-  Conversation,
-  Message,
-  PromptInput,
-  Reasoning,
-  Sources,
-  Tool,
-} from '@anthropic-ai/ai-elements'
-import { useChat } from '@ai-sdk/react'
-
-export function AIChat() {
-  const { messages, input, setInput, sendMessage, isLoading } = useChat()
-
-  return (
-    <div className="flex flex-col h-screen">
-      <Conversation className="flex-1 overflow-auto">
-        {messages.map((m) => (
-          <Message
-            key={m.id}
-            role={m.role}
-            className={m.role === 'user' ? 'bg-blue-100' : 'bg-gray-100'}
-          >
-            {m.parts.map((part, i) => {
-              if (part.type === 'text') {
-                return <span key={i}>{part.text}</span>
-              }
-              if (part.type === 'tool-call') {
-                return (
-                  <Tool key={i} name={part.toolName} status="running">
-                    <pre>{JSON.stringify(part.args, null, 2)}</pre>
-                  </Tool>
-                )
-              }
-              if (part.type === 'tool-result') {
-                return (
-                  <Tool key={i} name={part.toolName} status="complete">
-                    <pre>{JSON.stringify(part.result, null, 2)}</pre>
-                  </Tool>
-                )
-              }
-              if (part.type === 'reasoning') {
-                return (
-                  <Reasoning key={i} collapsed>
-                    {part.text}
-                  </Reasoning>
-                )
-              }
-              return null
-            })}
-          </Message>
-        ))}
-      </Conversation>
-
-      <PromptInput
-        value={input}
-        onChange={setInput}
-        onSubmit={() => sendMessage({ text: input })}
-        loading={isLoading}
-        placeholder="Ask me anything..."
-      />
-    </div>
-  )
-}
-```
-
-### Sources Component
-
-```tsx
-import { Sources, Source } from '@anthropic-ai/ai-elements'
-
-function SearchResults({ results }) {
-  return (
-    <Sources>
-      {results.map((r, i) => (
-        <Source
-          key={i}
-          title={r.title}
-          url={r.url}
-          snippet={r.snippet}
-        />
-      ))}
-    </Sources>
-  )
-}
-```
+Core components: `Conversation`, `Message`, `PromptInput`, `Tool`, `Sources`, `Reasoning`
 
 ---
 

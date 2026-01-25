@@ -2,6 +2,90 @@
 
 This module provides detailed conversion patterns from React (Create React App or Vite) to Next.js 16 with App Router.
 
+## Official Migration Codemod
+
+Next.js provides an official codemod for automated CRA migration:
+
+```bash
+# Run the official CRA to Next.js codemod
+npx @next/codemod cra-to-next
+```
+
+### What the Codemod Does
+
+The official codemod automates these transformations:
+
+| Transformation | Description |
+|----------------|-------------|
+| **Entry Point** | Converts `index.html` + `index.js` to `app/layout.tsx` |
+| **Routing Setup** | Creates basic App Router structure |
+| **Dependencies** | Updates package.json for Next.js |
+| **Scripts** | Replaces react-scripts with next commands |
+| **Environment Variables** | Prefixes with NEXT_PUBLIC_ where needed |
+
+### Post-Codemod Manual Steps
+
+After running the codemod, these manual steps are typically required:
+
+1. **React Router Migration** → File-based routing
+2. **Data Fetching** → Server Components or SWR/React Query
+3. **Build Configuration** → next.config.ts
+4. **Static Assets** → Move to `public/`
+5. **Tests** → Update Jest/Vitest configuration
+
+## Incremental Migration Strategy
+
+For large CRA applications, use an incremental approach:
+
+### Phase 1: SPA Mode (Fastest Path)
+
+Start with full client-side rendering using a ClientOnly wrapper:
+
+```tsx
+// components/client-only.tsx
+'use client'
+
+import dynamic from 'next/dynamic'
+
+// Wrap entire CRA app to start as SPA
+const App = dynamic(() => import('../App'), { ssr: false })
+
+export default function ClientOnly() {
+  return <App />
+}
+
+// app/page.tsx
+import ClientOnly from '@/components/client-only'
+
+export default function Page() {
+  return <ClientOnly />
+}
+```
+
+### Phase 2: Gradual SSR/SSG Adoption
+
+After SPA mode works, incrementally convert pages:
+
+```markdown
+1. Identify pages that benefit from SSR/SSG
+2. Extract individual routes from React Router
+3. Create corresponding app/ directory pages
+4. Move data fetching to Server Components
+5. Keep interactive parts as Client Components
+```
+
+### Phase 3: Full Next.js Integration
+
+Final optimizations:
+
+```markdown
+1. Remove React Router dependency
+2. Implement middleware for auth
+3. Add Server Actions for forms
+4. Enable ISR for dynamic content
+5. Configure image optimization
+```
+
 ## Project Structure Migration
 
 ### CRA Structure → Next.js App Router
@@ -846,8 +930,9 @@ const nextConfig = withBundleAnalyzer({
 
 ---
 
-Version: 2.0.0
-Last Updated: 2026-01-22
+Version: 3.0.0
+Last Updated: 2026-01-25
 Changelog:
+- v3.0.0: Added Official Migration Codemod section and Incremental Migration Strategy (Context7 latest)
 - v2.0.0: Added React Performance Best Practices from Vercel Engineering (45 rules)
 - v1.0.0: Initial CRA/Vite to Next.js migration patterns

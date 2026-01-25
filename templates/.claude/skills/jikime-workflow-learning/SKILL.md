@@ -77,92 +77,16 @@ At session end, the system analyzes:
 
 ## Pattern Categories
 
-### 1. Error Resolution
+For detailed YAML examples and patterns, see:
+- [Pattern Categories](modules/pattern-categories.md) - Error resolution, user corrections, workarounds, debugging, conventions
 
-Captures how specific errors were resolved:
-
-```yaml
-category: error_resolution
-pattern:
-  trigger: "TypeError: Cannot read properties of undefined"
-  context: "React component accessing props before mount"
-  resolution: "Add null check or use optional chaining"
-  example: |
-    // Before
-    const value = data.nested.property;
-
-    // After
-    const value = data?.nested?.property;
-confidence: 0.92
-frequency: 5
-last_used: "2024-01-22"
-```
-
-### 2. User Corrections
-
-Patterns from user corrections to Claude's output:
-
-```yaml
-category: user_correction
-pattern:
-  original: "Claude suggested inline styles"
-  correction: "User preferred Tailwind CSS classes"
-  learning: "This project uses Tailwind CSS for styling, avoid inline styles"
-  scope: project
-confidence: 0.88
-frequency: 3
-```
-
-### 3. Workarounds
-
-Solutions to framework/library quirks:
-
-```yaml
-category: workaround
-pattern:
-  technology: "Next.js 14"
-  issue: "App Router dynamic imports with SSR"
-  workaround: |
-    Use 'use client' directive or dynamic import with ssr: false
-    import dynamic from 'next/dynamic'
-    const Component = dynamic(() => import('./Component'), { ssr: false })
-confidence: 0.95
-source: "official_docs"
-```
-
-### 4. Debugging Techniques
-
-Effective debugging approaches:
-
-```yaml
-category: debugging
-pattern:
-  symptom: "State not updating in React"
-  technique: "Check for object/array mutation instead of new reference"
-  steps:
-    1. "Verify state update uses new reference"
-    2. "Check useEffect dependencies"
-    3. "Look for direct mutation patterns"
-  success_rate: 0.87
-```
-
-### 5. Project Conventions
-
-Project-specific patterns:
-
-```yaml
-category: project_convention
-pattern:
-  domain: "API responses"
-  convention: "All API responses follow { success, data, error } structure"
-  example: |
-    interface ApiResponse<T> {
-      success: boolean;
-      data?: T;
-      error?: { code: string; message: string };
-    }
-  enforced: true
-```
+| Category | Description | Typical Confidence |
+|----------|-------------|-------------------|
+| `error_resolution` | How specific errors were resolved | 0.80-0.95 |
+| `user_correction` | User corrections to Claude's output | 0.85-0.92 |
+| `workaround` | Framework/library quirks solutions | 0.90-0.98 |
+| `debugging` | Effective debugging approaches | 0.75-0.90 |
+| `project_convention` | Project-specific patterns | 0.85-0.95 |
 
 ---
 
@@ -341,51 +265,17 @@ Ended: 2:15 PM (3h 45m)
 
 ## Export/Import
 
-### Export Patterns
+For detailed CLI commands and export format, see:
+- [CLI Commands](modules/cli-commands.md) - Export, import, and search commands
 
-Share learnings between projects:
+Quick reference:
 
 ```bash
-# Export all patterns
+# Export patterns
 jikime-adk learnings export --output learnings-export.yaml
 
-# Export specific category
-jikime-adk learnings export --category workaround --output workarounds.yaml
-
-# Export high-confidence only
-jikime-adk learnings export --min-confidence 0.85 --output reliable-patterns.yaml
-```
-
-### Import Patterns
-
-```bash
 # Import from another project
-jikime-adk learnings import --source ../other-project/.jikime/learnings/
-
-# Import with merge strategy
 jikime-adk learnings import --source patterns.yaml --strategy merge
-
-# Import with confidence adjustment
-jikime-adk learnings import --source patterns.yaml --confidence-penalty 0.1
-```
-
-### Export Format
-
-```yaml
-export_version: "1.0"
-exported_at: "2024-01-22T15:30:00Z"
-source_project: "auth-service"
-patterns:
-  - id: "wk-nextjs-001"
-    category: "workaround"
-    confidence: 0.93
-    pattern:
-      technology: "Next.js 14"
-      issue: "Dynamic routes with middleware"
-      solution: "..."
-    metadata:
-      created: "2024-01-15"
-      frequency: 8
 ```
 
 ---
@@ -474,7 +364,7 @@ learning:
 
 ## Searching Patterns
 
-Query stored patterns:
+Query stored patterns (see [CLI Commands](modules/cli-commands.md) for full examples):
 
 ```bash
 # Search by keyword
@@ -485,37 +375,6 @@ jikime-adk learnings search --category workaround
 
 # Search by technology
 jikime-adk learnings search --tech nextjs
-
-# Full-text search
-jikime-adk learnings search "hydration mismatch react"
-```
-
-### Search Output
-
-```markdown
-## Search Results: "hydration mismatch"
-
-### 1. React Hydration Mismatch Fix
-**Category**: error_resolution
-**Confidence**: 0.91
-**Frequency**: 7
-
-**Pattern**:
-When encountering hydration mismatch in Next.js:
-1. Check for browser-only APIs (window, localStorage)
-2. Use useEffect for client-side only code
-3. Consider dynamic import with ssr: false
-
-### 2. Dynamic Import Workaround
-**Category**: workaround
-**Confidence**: 0.88
-**Frequency**: 5
-
-**Pattern**:
-```jsx
-import dynamic from 'next/dynamic'
-const Component = dynamic(() => import('./Component'), { ssr: false })
-```
 ```
 
 ---

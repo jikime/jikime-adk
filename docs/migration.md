@@ -239,6 +239,7 @@ modules:
 | `--source-url` | No | 소스 시스템 URL (라이브 비교용) |
 | `--target-url` | No | 타겟 시스템 URL (라이브 비교용) |
 | `--headed` | No | 브라우저 창 표시 (디버깅용) |
+| `--capture-skill` | No | 검증된 마이그레이션 패턴을 재사용 가능한 스킬로 저장 |
 
 > **Note**: `--source-url`/`--target-url`은 실행 중인 인스턴스 비교용입니다. 소스/타겟 프레임워크 정보는 `.migrate-config.yaml`에서 자동으로 읽습니다.
 
@@ -252,8 +253,11 @@ modules:
 7. Performance Check - Core Web Vitals, 로드 시간 비교
 8. Cross-Browser - Chromium, Firefox, WebKit 검증
 9. Accessibility - axe-core 기반 WCAG 준수 확인
+10. Skill Capture - 검증된 패턴을 재사용 가능한 스킬로 저장 (`--capture-skill` 옵션)
 
-**산출물**: `{artifacts_dir}/verification_report.md`
+**산출물**:
+- `{artifacts_dir}/verification_report.md`
+- `skills/jikime-migration-{source}-to-{target}/` (`--capture-skill` 사용 시)
 
 ### 런타임 에러 감지: browser-verify
 
@@ -357,6 +361,10 @@ Step 4: verification_report.md 생성
      │  (동작 보존 + 성능 검증)
      │
      ▼
+(선택) --capture-skill
+     │  (검증된 패턴을 스킬로 저장 → 다음 마이그레이션에 재사용)
+     │
+     ▼
 (선택) /jikime:browser-verify
      │  (런타임 브라우저 에러 감지 + 자동 수정)
      │
@@ -445,6 +453,7 @@ Domain Pattern: jikime-migration-patterns-{domain}
 5. **모듈별 진행** - 큰 프로젝트는 `--module` 옵션으로 점진적 실행
 6. **중단 후 재개** - Step 3에서 `--resume`으로 이어서 진행 가능
 7. **런타임 에러 확인** - Step 4 후 `/jikime:browser-verify`로 브라우저 런타임 에러까지 잡으세요
+8. **경험을 스킬로 저장** - 성공적인 마이그레이션 후 `--capture-skill`로 패턴을 스킬화하여 다음 마이그레이션에 재사용하세요
 
 ### 스킬 작성자 가이드
 
@@ -456,9 +465,10 @@ Domain Pattern: jikime-migration-patterns-{domain}
 
 ---
 
-Version: 3.1.0
-Last Updated: 2026-01-24
+Version: 3.2.0
+Last Updated: 2026-01-25
 Changelog:
+- v3.2.0: Added --capture-skill option to Step 4 for generating reusable migration skills from verified patterns
 - v3.1.0: Step 4 Playwright-based verification details; Added browser-verify integration for runtime error detection
 - v3.0.0: Config-First approach; FRIDAY orchestrator; Removed /jikime:migrate; Removed redundant source/target options from Steps 2-4; Renamed --source/--target to --source-url/--target-url in Step 4
 - v2.0.0: Added Step-by-Step Workflow, Command Reference with full options

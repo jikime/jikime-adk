@@ -273,46 +273,18 @@ IF current_warnings > baseline_warnings + threshold:
 
 **Objective**: Verify quality principles are maintained
 
-**Principle Checks**:
+For detailed checks and scoring, see:
+- [TRUST 5 Compliance](modules/trust5-compliance.md) - Principle checks, commands, and scoring
 
-```markdown
-**[T] Tested**
-- Unit test coverage > 80%
-- Critical paths have tests
-- Edge cases covered
-- Characterization tests for legacy code
+| Principle | Key Checks |
+|-----------|------------|
+| **[T] Tested** | 80%+ coverage, critical paths, edge cases |
+| **[R] Readable** | < 50 line functions, complexity < 10 |
+| **[U] Unified** | Architecture compliance, no duplicates |
+| **[S] Secured** | No secrets, input validation, OWASP |
+| **[T] Trackable** | Structured logging, error context |
 
-**[R] Readable**
-- No functions > 50 lines
-- Cyclomatic complexity < 10
-- Clear naming conventions
-- Self-documenting code
-
-**[U] Unified**
-- Follows project architecture
-- Consistent error handling
-- Uses established patterns
-- No duplicate code
-
-**[S] Secured**
-- No hardcoded secrets
-- Input validation present
-- OWASP top 10 addressed
-- Dependencies up to date
-
-**[T] Trackable**
-- Structured logging
-- Error context preserved
-- Audit trail where needed
-- Observable operations
-```
-
-**Scoring**:
-```
-Each principle: 0-1 (percentage compliance)
-Overall TRUST 5 score: Average of all principles
-Target: 0.8+ (80% compliance)
-```
+**Target**: 0.8+ (80% compliance) overall TRUST 5 score
 
 ---
 

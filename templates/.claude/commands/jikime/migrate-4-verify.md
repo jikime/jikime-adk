@@ -70,6 +70,9 @@ IMPACT: Sequential thinking ensures comprehensive verification coverage with beh
 
 # Full verification with custom depth
 /jikime:migrate-4-verify --full --depth 5
+
+# Capture migration patterns as a reusable skill
+/jikime:migrate-4-verify --capture-skill
 ```
 
 ## Options
@@ -90,8 +93,107 @@ IMPACT: Sequential thinking ensures comprehensive verification coverage with beh
 | `--headless` | Run browsers in headless mode | true |
 | `--threshold` | Visual diff threshold percentage | 5 |
 | `--depth` | Navigation crawl depth for route discovery | 3 |
+| `--capture-skill` | Generate migration skill from verified patterns | false |
 
 **Note**: `--source-url` and `--target-url` are for comparing **already running instances**. When not provided, the command automatically starts dev servers.
+
+---
+
+## --capture-skill Option
+
+After successful verification, this option captures migration patterns and creates a reusable skill for similar future migrations.
+
+### Prerequisites
+
+- Verification must pass (at least `--behavior` or `--full`)
+- Migration artifacts must exist:
+  - `{artifacts_dir}/as_is_spec.md` - Source analysis
+  - `{artifacts_dir}/migration_plan.md` - Transformation rules
+  - `{artifacts_dir}/progress.yaml` - Actual migration history
+
+### Workflow
+
+```
+Step 1: Analyze Artifacts
+  → Read as_is_spec.md (source patterns)
+  → Read migration_plan.md (transformation rules)
+  → Read progress.yaml (actual transformations applied)
+
+Step 2: Extract Patterns
+  → Identify recurring transformation patterns
+  → Capture special case solutions
+  → Document framework-specific mapping rules
+
+Step 3: Invoke skill-builder Agent
+  → Task(subagent_type="skill-builder", prompt="
+      Create migration skill from verified patterns:
+      - Source Framework: {source_framework}
+      - Target Framework: {target_framework}
+      - Artifacts Directory: {artifacts_dir}
+      - Key Patterns: {extracted_patterns}
+    ")
+
+Step 4: Generate Skill Draft
+  → Output: skills/jikime-migration-{source}-to-{target}/SKILL.md
+  → Follows Progressive Disclosure format (Level 1/2/3)
+
+Step 5: Request User Review
+  → Display generated skill summary
+  → Ask user to review and refine before finalizing
+```
+
+### Generated Skill Structure
+
+```
+skills/jikime-migration-{source}-to-{target}/
+├── SKILL.md                 # Main skill definition (Level 1-2)
+├── reference.md             # Detailed patterns (Level 3)
+├── modules/
+│   ├── components.md        # Component transformation rules
+│   ├── routing.md           # Routing migration patterns
+│   └── state.md             # State management patterns
+└── examples/
+    └── common-cases.md      # Real examples from this migration
+```
+
+### Example Usage
+
+```bash
+# After successful verification
+/jikime:migrate-4-verify --full
+
+# Capture patterns as reusable skill
+/jikime:migrate-4-verify --capture-skill
+
+# Combined: verify and capture in one command
+/jikime:migrate-4-verify --full --capture-skill
+```
+
+### Generated Skill Frontmatter
+
+```yaml
+---
+name: jikime-migration-{source}-to-{target}
+description: Migration patterns from {source} to {target}
+version: 1.0.0
+
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~5000
+
+triggers:
+  keywords: ["{source}", "{target}", "migration", "convert"]
+  phases: ["plan", "run"]
+  agents: ["manager-ddd", "refactorer"]
+
+metadata:
+  source_framework: "{source}"
+  target_framework: "{target}"
+  generated_from: "{project_name}"
+  generation_date: "{date}"
+---
+```
 
 ---
 
