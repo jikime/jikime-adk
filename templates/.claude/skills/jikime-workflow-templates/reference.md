@@ -300,7 +300,7 @@ diagnose.validate_customizations()
 
 - jikime-workflow-project - Project initialization with templates
 - jikime-foundation-core - SPEC-driven template generation
-- jikime-docs-generation - Documentation template scaffolding
+- jikime-workflow-docs - Documentation template scaffolding
 - jikime-foundation-claude - Claude Code settings integration
 
 ### Template Development Resources

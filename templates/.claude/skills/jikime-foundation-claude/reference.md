@@ -201,7 +201,7 @@ Solutions:
 - `jikime-foundation-core`: Core execution patterns and SPEC workflow
 - `jikime-foundation-context`: Token budget and session management
 - `jikime-workflow-project`: Project initialization and configuration
-- `jikime-docs-generation`: Documentation generation
+- `jikime-workflow-docs`: Documentation generation
 
 ---
 

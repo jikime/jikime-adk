@@ -1,0 +1,517 @@
+# JikiME-ADK Skills Catalog
+# Auto-generated on 2026-01-25 15:51
+
+version: '1.0.0'
+generated_at: '2026-01-25T15:51:46.725717'
+total_skills: 59
+
+# Skills by domain
+domains:
+  domain:
+    count: 5
+    skills:
+      - jikime-domain-architecture
+      - jikime-domain-backend
+      - jikime-domain-database
+      - jikime-domain-frontend
+      - jikime-domain-uiux
+
+  foundation:
+    count: 5
+    skills:
+      - jikime-foundation-claude
+      - jikime-foundation-context
+      - jikime-foundation-core
+      - jikime-foundation-philosopher
+      - jikime-foundation-quality
+
+  framework:
+    count: 3
+    skills:
+      - jikime-framework-nextjs@14
+      - jikime-framework-nextjs@15
+      - jikime-framework-nextjs@16
+
+  lang:
+    count: 7
+    skills:
+      - jikime-lang-flutter
+      - jikime-lang-go
+      - jikime-lang-java
+      - jikime-lang-javascript
+      - jikime-lang-php
+      - jikime-lang-python
+      - jikime-lang-typescript
+
+  library:
+    count: 4
+    skills:
+      - jikime-library-mermaid
+      - jikime-library-shadcn
+      - jikime-library-vercel-ai-sdk
+      - jikime-library-zod
+
+  marketing:
+    count: 10
+    skills:
+      - jikime-marketing-ab-test
+      - jikime-marketing-analytics
+      - jikime-marketing-copywriting
+      - jikime-marketing-email
+      - jikime-marketing-launch
+      - jikime-marketing-onboarding
+      - jikime-marketing-page-cro
+      - jikime-marketing-pricing
+      - jikime-marketing-psychology
+      - jikime-marketing-seo
+
+  migration:
+    count: 3
+    skills:
+      - jikime-migration-ast-grep
+      - jikime-migration-patterns-auth
+      - jikime-migration-to-nextjs
+
+  platform:
+    count: 4
+    skills:
+      - jikime-platform-clerk
+      - jikime-platform-supabase
+      - jikime-platform-vercel
+      - jikime-platform-vercel-react
+
+  tool:
+    count: 1
+    skills:
+      - jikime-tool-ast-grep
+
+  workflow:
+    count: 17
+    skills:
+      - jikime-workflow-codemap
+      - jikime-workflow-ddd
+      - jikime-workflow-docs
+      - jikime-workflow-eval
+      - jikime-workflow-jit-docs
+      - jikime-workflow-learning
+      - jikime-workflow-loop
+      - jikime-workflow-parallel
+      - jikime-workflow-performance
+      - jikime-workflow-project
+      - jikime-workflow-spec
+      - jikime-workflow-sync
+      - jikime-workflow-tdd
+      - jikime-workflow-templates
+      - jikime-workflow-testing
+      - jikime-workflow-verify
+      - jikime-workflow-worktree
+
+# All skills with metadata
+skills:
+  - name: jikime-domain-architecture
+    domain: domain
+    description: "Comprehensive software architecture design guide covering pattern selection, directory structures, trade-off analysis, and architectural decision records for projects of all sizes."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["domain", "architecture", "design-patterns", "system-design", "adr"]
+
+  - name: jikime-domain-backend
+    domain: domain
+    description: "Backend development specialist covering API design, database integration, microservices architecture, and modern backend patterns"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["backend", "api", "database", "microservices", "architecture"]
+
+  - name: jikime-domain-database
+    domain: domain
+    description: "Database specialist covering PostgreSQL, MongoDB, Redis, Oracle, and advanced data patterns for modern applications"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["database", "postgresql", "mongodb", "redis", "oracle"]
+
+  - name: jikime-domain-frontend
+    domain: domain
+    description: "Frontend development specialist covering React 19, Next.js 16, Vue 3.5, and modern UI/UX patterns with component architecture. Use when building web UIs, implementing components, optimizing frontend performance, or integrating state management."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["frontend", "react", "nextjs", "vue", "ui"]
+
+  - name: jikime-domain-uiux
+    domain: domain
+    description: "Domain UI/UX Expert - Enterprise design systems, component architecture, accessibility, icons, and theming integration"
+    version: 2.0.0
+    user_invocable: false
+
+  - name: jikime-foundation-claude
+    domain: foundation
+    description: "Canonical Claude Code authoring kit covering Skills, sub-agents, plugins, slash commands, hooks, memory, settings, sandboxing, headless mode, and advanced agent patterns. Use when creating Claude Code extensions or configuring Claude Code features."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["foundation", "claude-code", "skills", "agents", "plugins"]
+
+  - name: jikime-foundation-context
+    domain: foundation
+    description: "Enterprise context and session management with token budget optimization and state persistence"
+    version: 3.1.0
+    user_invocable: false
+
+  - name: jikime-foundation-core
+    domain: foundation
+    description: "JikiME-ADK's foundational principles - TRUST 5, SPEC-First DDD, delegation patterns, token optimization, progressive disclosure, modular architecture, agent catalog, command reference, and execution rules for building AI-powered development workflows"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["foundation", "trust-5", "spec", "ddd", "delegation"]
+
+  - name: jikime-foundation-philosopher
+    domain: foundation
+    description: "Strategic thinking framework integrating First Principles Analysis, Stanford Design Thinking, and MIT Systems Engineering for deeper problem-solving and decision-making"
+    version: 1.1.0
+    user_invocable: false
+    tags: ["foundation", "strategic-thinking", "first-principles", "trade-off-analysis", "cognitive-bias"]
+
+  - name: jikime-foundation-quality
+    domain: foundation
+    description: "Enterprise code quality orchestrator with TRUST 5 validation, proactive analysis, and automated best practices enforcement"
+    version: 2.2.0
+    user_invocable: false
+    tags: ["foundation", "quality", "testing", "validation", "trust-5"]
+
+  - name: jikime-framework-nextjs@14
+    domain: framework
+    description: "Next.js 14 App Router baseline guide. Core patterns, conventions, and best practices for Next.js 14.x applications."
+    version: 14
+    user_invocable: false
+    tags: ["framework", "nextjs", "version", "app-router", "server-components"]
+
+  - name: jikime-framework-nextjs@15
+    domain: framework
+    description: "Next.js 15 upgrade guide with breaking changes from 14. Async params, Turbopack stable, fetch caching changes."
+    version: 15
+    user_invocable: false
+    tags: ["framework", "nextjs", "version", "async-params", "turbopack"]
+
+  - name: jikime-framework-nextjs@16
+    domain: framework
+    description: "Next.js 16 upgrade guide with breaking changes from 15. 'use cache' directive, PPR stable, updateTag, enhanced streaming."
+    version: 16
+    user_invocable: false
+    tags: ["framework", "nextjs", "version", "use-cache", "ppr"]
+
+  - name: jikime-lang-flutter
+    domain: lang
+    description: "Flutter 3.24+ / Dart 3.5+ development specialist covering Riverpod, go_router, and cross-platform patterns. Use when building cross-platform mobile apps, desktop apps, or web applications with Flutter."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["language", "dart", "flutter", "mobile", "cross-platform"]
+
+  - name: jikime-lang-go
+    domain: lang
+    description: "Go 1.23+ development specialist covering Fiber, Gin, GORM, and concurrent programming patterns. Use when building high-performance microservices, CLI tools, or cloud-native applications."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["language", "go", "fiber", "gin", "gorm"]
+
+  - name: jikime-lang-java
+    domain: lang
+    description: "Java 21 LTS development specialist covering Spring Boot 3.3, virtual threads, pattern matching, and enterprise patterns. Use when building enterprise applications, microservices, or Spring projects."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["language", "java", "spring-boot", "jpa", "hibernate"]
+
+  - name: jikime-lang-javascript
+    domain: lang
+    description: "JavaScript ES2024+ development specialist covering Node.js 22 LTS, Bun 1.x (serve, SQLite, S3, shell, test), Deno 2.x, testing (Vitest, Jest), linting (ESLint 9, Biome), and backend frameworks (Express, Fastify, Hono). Use when developing JavaScript APIs, web applications, or Node.js projects."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["language", "javascript", "nodejs", "bun", "deno"]
+
+  - name: jikime-lang-php
+    domain: lang
+    description: "PHP 8.3+ development specialist covering Laravel 11, Symfony 7, Eloquent ORM, and modern PHP patterns. Use when developing PHP APIs, web applications, or Laravel/Symfony projects."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["language", "php", "laravel", "symfony", "eloquent"]
+
+  - name: jikime-lang-python
+    domain: lang
+    description: "Python 3.13+ development specialist covering FastAPI, Django, async patterns, and data science. Use when developing Python APIs, web applications, data pipelines, or writing tests."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["language", "python", "fastapi", "django", "pytest"]
+
+  - name: jikime-lang-typescript
+    domain: lang
+    description: "TypeScript 5.9+ development specialist covering React 19, Next.js 16 App Router, type-safe APIs with tRPC, Zod validation, and modern TypeScript patterns. Use when developing TypeScript applications, React components, Next.js pages, or type-safe APIs."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["language", "typescript", "react", "nextjs", "trpc"]
+
+  - name: jikime-library-mermaid
+    domain: library
+    description: "Enterprise Mermaid diagramming skill for Claude Code using MCP Playwright. Use when creating architecture diagrams, flowcharts, sequence diagrams, or visual documentation."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["library", "mermaid", "diagrams", "documentation", "flowchart"]
+
+  - name: jikime-library-shadcn
+    domain: library
+    description: "Shadcn UI - Professional implementation guide"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["library", "shadcn", "ui", "components", "tailwind"]
+
+  - name: jikime-library-vercel-ai-sdk
+    domain: library
+    description: "Vercel AI SDK v5/v6 implementation guide with useChat, tool(), streamText, AI Elements, and ToolLoopAgent patterns. Use when building AI-powered applications with Next.js."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["library", "ai", "vercel", "llm", "streaming"]
+
+  - name: jikime-library-zod
+    domain: library
+    description: "Zod schema validation and React Hook Form integration for TypeScript frontends. This skill should be used when creating forms, defining API schemas, validating form data, implementing type-safe validation, using ZodResolver with React Hook Form, or migrating legacy forms to the Zod + React Hook Form pattern."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["library", "zod", "validation", "typescript", "react-hook-form"]
+
+  - name: jikime-marketing-ab-test
+    domain: marketing
+    description: "A/B testing and experimentation specialist for designing statistically valid tests, calculating sample sizes, and analyzing experiment results."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "ab-test", "experimentation", "statistics", "optimization"]
+
+  - name: jikime-marketing-analytics
+    domain: marketing
+    description: "Analytics and tracking implementation specialist for setting up GA4, GTM, event tracking, UTM parameters, and conversion measurement."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "analytics", "tracking", "ga4", "gtm"]
+
+  - name: jikime-marketing-copywriting
+    domain: marketing
+    description: "Conversion copywriting specialist for writing compelling marketing copy including headlines, CTAs, landing pages, and product descriptions."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "copywriting", "content", "headlines", "cta"]
+
+  - name: jikime-marketing-email
+    domain: marketing
+    description: "Email marketing and automation specialist for creating email sequences, drip campaigns, lifecycle emails, and nurture flows."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "email", "automation", "drip-campaign", "lifecycle"]
+
+  - name: jikime-marketing-launch
+    domain: marketing
+    description: "Product launch and go-to-market strategy specialist for planning phased launches, channel strategy, Product Hunt launches, and ongoing launch momentum."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "launch", "go-to-market", "product-hunt", "beta"]
+
+  - name: jikime-marketing-onboarding
+    domain: marketing
+    description: "User onboarding and activation specialist for optimizing post-signup experience, reducing time-to-value, and improving user activation rates."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "onboarding", "activation", "user-experience", "retention"]
+
+  - name: jikime-marketing-page-cro
+    domain: marketing
+    description: "Page conversion rate optimization (CRO) specialist for analyzing and improving marketing pages including homepages, landing pages, pricing pages, and feature pages."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "cro", "conversion", "landing-page", "optimization"]
+
+  - name: jikime-marketing-pricing
+    domain: marketing
+    description: "SaaS pricing and monetization strategy specialist covering pricing research methods (Van Westendorp, MaxDiff), tier structure, value metrics, and packaging decisions."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "pricing", "monetization", "saas", "strategy"]
+
+  - name: jikime-marketing-psychology
+    domain: marketing
+    description: "Marketing psychology and mental models specialist for applying behavioral science principles to marketing decisions, customer behavior analysis, and ethical persuasion techniques."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "psychology", "mental-models", "persuasion", "behavioral-science"]
+
+  - name: jikime-marketing-seo
+    domain: marketing
+    description: "SEO audit and optimization specialist for technical SEO, on-page optimization, content quality assessment, and search performance improvement."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["marketing", "seo", "technical-seo", "on-page", "search"]
+
+  - name: jikime-migration-ast-grep
+    domain: migration
+    description: "AST-based code transformation skill using ast-grep. Structural code search and automated migration patterns for legacy code conversion."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["migration", "ast", "code-transformation", "legacy", "refactoring"]
+
+  - name: jikime-migration-patterns-auth
+    domain: migration
+    description: "Authentication migration patterns for Next.js applications. Covers NextAuth v4→v5, Clerk, Auth0, Firebase Auth, and custom JWT migration."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["migration", "auth", "nextauth", "clerk", "oauth"]
+
+  - name: jikime-migration-to-nextjs
+    domain: migration
+    description: "Legacy to Next.js 16 migration workflow specialist. Analyzes legacy projects (Vue, React CRA, Angular, Svelte) and orchestrates migration to modern Next.js 16 App Router architecture."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["migration", "nextjs", "react", "vue", "angular"]
+
+  - name: jikime-platform-clerk
+    domain: platform
+    description: "Clerk modern authentication specialist covering WebAuthn, passkeys, passwordless, and beautiful UI components. Use when implementing modern auth with great UX."
+    version: 2.1.0
+    user_invocable: false
+    tags: ["clerk", "webauthn", "passkeys", "passwordless", "authentication"]
+
+  - name: jikime-platform-supabase
+    domain: platform
+    description: "Supabase specialist covering PostgreSQL 16, pgvector, RLS, real-time subscriptions, and Edge Functions. Use when building full-stack apps with Supabase backend."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["platform", "supabase", "postgresql", "realtime", "auth"]
+
+  - name: jikime-platform-vercel
+    domain: platform
+    description: "Vercel edge deployment specialist covering Edge Functions, Next.js optimization, preview deployments, ISR, and storage solutions. Use when deploying Next.js applications, implementing edge computing, or configuring Vercel platform features."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["platform", "vercel", "deployment", "edge", "nextjs"]
+
+  - name: jikime-platform-vercel-react
+    domain: platform
+    description: "React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements."
+    version: 1.0.0
+    user_invocable: false
+
+  - name: jikime-tool-ast-grep
+    domain: tool
+    description: "AST-based structural code search, security scanning, and refactoring using ast-grep (sg CLI). Supports 40+ languages with pattern matching and code transformation."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["tool", "ast", "code-analysis", "refactoring", "security-scan"]
+
+  - name: jikime-workflow-codemap
+    domain: workflow
+    description: "Comprehensive codebase architecture mapping with AST analysis and dependency visualization"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "codemap", "architecture", "documentation", "ast"]
+
+  - name: jikime-workflow-ddd
+    domain: workflow
+    description: "Domain-Driven Development workflow specialist using ANALYZE-PRESERVE-IMPROVE cycle for behavior-preserving code transformation"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "ddd", "refactoring", "testing", "behavior-preservation"]
+
+  - name: jikime-workflow-docs
+    domain: workflow
+    description: "Documentation generation patterns for technical specs, API docs, user guides, and knowledge bases using real tools like Sphinx, MkDocs, TypeDoc, and Nextra. Use when creating docs from code, building doc sites, or automating documentation workflows."
+    version: 2.1.0
+    user_invocable: false
+    tags: ["workflow", "documentation", "sphinx", "mkdocs", "typedoc"]
+
+  - name: jikime-workflow-eval
+    domain: workflow
+    description: "Eval-Driven Development (EDD) framework - treat evals as unit tests for AI development"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "eval", "edd", "testing", "quality"]
+
+  - name: jikime-workflow-jit-docs
+    domain: workflow
+    description: "Enhanced Just-In-Time document loading system that intelligently discovers, loads, and caches relevant documentation based on user intent and project context. Use when users need specific documentation, when working with new technologies, when answering domain-specific questions, or when context indicates documentation gaps."
+    version: 3.0.0
+    user_invocable: false
+
+  - name: jikime-workflow-learning
+    domain: workflow
+    description: "Continuous learning system - extract, store, and reuse patterns from Claude Code sessions"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "learning", "patterns", "knowledge", "session"]
+
+  - name: jikime-workflow-loop
+    domain: workflow
+    description: "Ralph Loop workflow for iterative code improvement with LSP/AST-grep feedback"
+    version: 1.0.0
+    user_invocable: true
+    tags: ["workflow", "loop", "iteration", "feedback", "quality"]
+
+  - name: jikime-workflow-parallel
+    domain: workflow
+    description: "Parallel subagent execution patterns for multi-perspective analysis, adversarial review, and coordinated task delegation"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "parallel", "subagent", "adversarial", "multi-perspective"]
+
+  - name: jikime-workflow-performance
+    domain: workflow
+    description: "Comprehensive code performance optimization workflow covering profiling, bottleneck analysis, and optimization patterns for frontend, backend, database, and algorithm layers."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "performance", "optimization", "profiling", "bottleneck"]
+
+  - name: jikime-workflow-project
+    domain: workflow
+    description: "Integrated project management system with documentation, language initialization, and template optimization modules. Use when setting up projects, generating documentation, configuring multilingual support, or optimizing templates."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "project", "documentation", "initialization", "templates"]
+
+  - name: jikime-workflow-spec
+    domain: workflow
+    description: "SPEC workflow orchestration with EARS format, requirement clarification, and Plan-Run-Sync integration for JikiME-ADK development methodology"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "spec", "ears", "requirements", "planning"]
+
+  - name: jikime-workflow-sync
+    domain: workflow
+    description: "Documentation synchronization workflow specialist for code-to-docs sync, quality verification, and git operations"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "sync", "documentation", "quality", "git"]
+
+  - name: jikime-workflow-tdd
+    domain: workflow
+    description: "Test-Driven Development workflow for new feature development. RED-GREEN-REFACTOR cycle for building new functionality with test-first approach."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "tdd", "testing", "red-green-refactor", "test-first"]
+
+  - name: jikime-workflow-templates
+    domain: workflow
+    description: "Enterprise template management with code boilerplates, feedback templates, and project optimization workflows"
+    version: 3.1.0
+    user_invocable: false
+
+  - name: jikime-workflow-testing
+    domain: workflow
+    description: "Comprehensive development workflow specialist combining DDD, debugging, performance optimization, code review, PR review, and quality assurance into unified development workflows"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "testing", "quality", "coverage", "vitest"]
+
+  - name: jikime-workflow-verify
+    domain: workflow
+    description: "Comprehensive verification workflow with LSP Quality Gates and TRUST 5 integration"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "verify", "quality", "lsp", "trust5"]
+
+  - name: jikime-workflow-worktree
+    domain: workflow
+    description: "Git worktree management for parallel SPEC development with isolated workspaces, automatic registration, and seamless JikiME-ADK integration"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "git", "worktree", "parallel-development", "isolation"]

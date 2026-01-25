@@ -1,5 +1,5 @@
 ---
-name: jikime-nextjs@16
+name: jikime-framework-nextjs@16
 description: Next.js 16 upgrade guide with breaking changes from 15. 'use cache' directive, PPR stable, updateTag, enhanced streaming.
 tags: ["framework", "nextjs", "version", "use-cache", "ppr", "updateTag"]
 triggers:
@@ -36,7 +36,7 @@ Next.js 15에서 16으로 업그레이드 시 필요한 새로운 기능과 마�
 
 ## Base Conventions (from Next.js 14)
 
-다음 규칙은 Next.js 14부터 동일하게 적용됩니다. 상세 내용은 `jikime-nextjs@14`를 참조하세요.
+다음 규칙은 Next.js 14부터 동일하게 적용됩니다. 상세 내용은 `jikime-framework-nextjs@14`를 참조하세요.
 
 | 규칙 | 요약 |
 |------|------|
@@ -481,8 +481,8 @@ async function WelcomeMessage() {
 
 | 스킬 | 용도 |
 |------|------|
-| `jikime-nextjs@14` | Next.js 14 App Router 기본 패턴, 프로젝트 구조, 네이밍 규칙, shadcn/ui |
-| `jikime-nextjs@15` | Next.js 15 업그레이드 가이드 (async params, fetch caching) |
+| `jikime-framework-nextjs@14` | Next.js 14 App Router 기본 패턴, 프로젝트 구조, 네이밍 규칙, shadcn/ui |
+| `jikime-framework-nextjs@15` | Next.js 15 업그레이드 가이드 (async params, fetch caching) |
 | `jikime-platform-vercel` | Vercel 배포, Edge Functions, ISR |
 | `jikime-library-shadcn` | shadcn/ui 컴포넌트 라이브러리 (Next.js 필수) |
 
@@ -490,4 +490,4 @@ async function WelcomeMessage() {
 
 Version: 1.1.0
 Last Updated: 2026-01-23
-Previous Version: See `jikime-nextjs@15`
+Previous Version: See `jikime-framework-nextjs@15`

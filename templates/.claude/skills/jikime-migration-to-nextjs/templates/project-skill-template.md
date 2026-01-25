@@ -21,9 +21,9 @@ type: project-specific
 ### Core Migration Skills
 | Skill | Purpose | When to Load |
 |-------|---------|--------------|
-| `jikime-migrate-to-nextjs` | 마이그레이션 워크플로우 | 항상 |
-| `jikime-nextjs@16` | Next.js 16 패턴 | App Router, 'use cache' 사용 시 |
-| `jikime-nextjs@15` | Next.js 15 패턴 | async params 마이그레이션 시 |
+| `jikime-migration-to-nextjs` | 마이그레이션 워크플로우 | 항상 |
+| `jikime-framework-nextjs@16` | Next.js 16 패턴 | App Router, 'use cache' 사용 시 |
+| `jikime-framework-nextjs@15` | Next.js 15 패턴 | async params 마이그레이션 시 |
 
 ### Auth Migration (if applicable)
 | Skill | Purpose | When to Load |
@@ -79,7 +79,7 @@ type: project-specific
 **Server Component (Default)**
 ```tsx
 // No 'use client' directive needed
-// @see jikime-nextjs@16 for patterns
+// @see jikime-framework-nextjs@16 for patterns
 import { db } from '@/lib/db'
 
 export default async function {{COMPONENT_NAME}}() {
@@ -92,7 +92,7 @@ export default async function {{COMPONENT_NAME}}() {
 ```tsx
 'use client'
 
-// @see jikime-nextjs@16 for patterns
+// @see jikime-framework-nextjs@16 for patterns
 import { useState } from 'react'
 
 export function {{COMPONENT_NAME}}() {
@@ -105,7 +105,7 @@ export function {{COMPONENT_NAME}}() {
 
 **From {{SOURCE_STATE}} to Zustand**
 ```tsx
-// @see jikime-migrate-to-nextjs/modules/react-patterns.md
+// @see jikime-migration-to-nextjs/modules/react-patterns.md
 // Before: {{SOURCE_STATE_EXAMPLE}}
 // After: Zustand store pattern
 ```
@@ -144,7 +144,7 @@ Load additional patterns as needed:
 
 ```
 # Next.js 16 specific patterns
-Skill("jikime-nextjs@16")
+Skill("jikime-framework-nextjs@16")
 
 # Auth migration
 Skill("jikime-migration-patterns-auth")
@@ -160,5 +160,5 @@ Skill("jikime-migration-patterns-auth")
 
 Version: 1.0.0
 Generated: {{GENERATED_DATE}}
-Source: jikime-migrate-to-nextjs skill template
+Source: jikime-migration-to-nextjs skill template
 ```

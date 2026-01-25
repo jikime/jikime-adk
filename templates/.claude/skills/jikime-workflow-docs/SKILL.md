@@ -1,5 +1,5 @@
 ---
-name: "jikime-docs-generation"
+name: "jikime-workflow-docs"
 description: "Documentation generation patterns for technical specs, API docs, user guides, and knowledge bases using real tools like Sphinx, MkDocs, TypeDoc, and Nextra. Use when creating docs from code, building doc sites, or automating documentation workflows."
 version: 2.1.0
 category: "workflow"

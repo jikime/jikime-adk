@@ -1,5 +1,5 @@
 ---
-name: jikime-nextjs@15
+name: jikime-framework-nextjs@15
 description: Next.js 15 upgrade guide with breaking changes from 14. Async params, Turbopack stable, fetch caching changes.
 tags: ["framework", "nextjs", "version", "async-params", "turbopack", "react-19"]
 triggers:
@@ -36,7 +36,7 @@ Next.js 14에서 15로 업그레이드 시 필요한 breaking changes와 마이�
 
 ## Base Conventions (from Next.js 14)
 
-다음 규칙은 Next.js 14부터 동일하게 적용됩니다. 상세 내용은 `jikime-nextjs@14`를 참조하세요.
+다음 규칙은 Next.js 14부터 동일하게 적용됩니다. 상세 내용은 `jikime-framework-nextjs@14`를 참조하세요.
 
 | 규칙 | 요약 |
 |------|------|
@@ -380,8 +380,8 @@ git checkout .
 
 | 스킬 | 용도 |
 |------|------|
-| `jikime-nextjs@14` | Next.js 14 App Router 기본 패턴, 프로젝트 구조, 네이밍 규칙, shadcn/ui |
-| `jikime-nextjs@16` | Next.js 16 업그레이드 가이드 ('use cache', PPR, updateTag) |
+| `jikime-framework-nextjs@14` | Next.js 14 App Router 기본 패턴, 프로젝트 구조, 네이밍 규칙, shadcn/ui |
+| `jikime-framework-nextjs@16` | Next.js 16 업그레이드 가이드 ('use cache', PPR, updateTag) |
 | `jikime-platform-vercel` | Vercel 배포, Edge Functions, ISR |
 | `jikime-library-shadcn` | shadcn/ui 컴포넌트 라이브러리 (Next.js 필수) |
 
@@ -389,4 +389,4 @@ git checkout .
 
 Version: 1.1.0
 Last Updated: 2026-01-23
-Upgrade Path: Next.js 15 → 16: See `jikime-nextjs@16`
+Upgrade Path: Next.js 15 → 16: See `jikime-framework-nextjs@16`

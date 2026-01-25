@@ -77,7 +77,7 @@ Step 5: Load discovered skills
 
 | target_framework | Discovered Skills |
 |------------------|-------------------|
-| nextjs16 | jikime-migrate-to-nextjs, jikime-nextjs@16, jikime-library-shadcn |
+| nextjs16 | jikime-migration-to-nextjs, jikime-framework-nextjs@16, jikime-library-shadcn |
 | fastapi | jikime-lang-python (+ related) |
 | go-fiber | jikime-lang-go (+ related) |
 | flutter | jikime-lang-flutter (+ related) |

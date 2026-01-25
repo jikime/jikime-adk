@@ -1,5 +1,5 @@
 ---
-name: jikime-nextjs@14
+name: jikime-framework-nextjs@14
 description: Next.js 14 App Router baseline guide. Core patterns, conventions, and best practices for Next.js 14.x applications.
 tags: ["framework", "nextjs", "version", "app-router", "server-components", "server-actions"]
 triggers:
@@ -407,7 +407,7 @@ npx shadcn@latest add
 
 ## Upgrade Path
 
-**Next.js 14 → 15**: See `jikime-nextjs@15`
+**Next.js 14 → 15**: See `jikime-framework-nextjs@15`
 - `params`/`searchParams` become async (Promise)
 - Turbopack becomes stable for dev
 - fetch caching default changes

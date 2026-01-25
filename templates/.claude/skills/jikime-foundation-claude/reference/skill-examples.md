@@ -103,7 +103,7 @@ xargs python extract_docs.py --output ./docs/api/
 
 ## Works Well With
 
-- [`jikime-docs-generation`](../jikime-docs-generation/SKILL.md) - General documentation patterns
+- [`jikime-workflow-docs`](../jikime-workflow-docs/SKILL.md) - General documentation patterns
 - [`jikime-domain-backend`](../jikime-domain-backend/SKILL.md) - Backend API expertise
 - [`jikime-workflow-jit-docs`](../jikime-workflow-jit-docs/SKILL.md) - Latest framework docs
 

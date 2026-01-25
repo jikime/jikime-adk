@@ -1,5 +1,5 @@
 ---
-name: jikime-migrate-to-nextjs
+name: jikime-migration-to-nextjs
 description: Legacy to Next.js 16 migration workflow specialist. Analyzes legacy projects (Vue, React CRA, Angular, Svelte) and orchestrates migration to modern Next.js 16 App Router architecture.
 version: 1.0.0
 tags: ["migration", "nextjs", "react", "vue", "angular", "svelte", "app-router"]
@@ -372,8 +372,8 @@ npm install zustand react-hook-form @hookform/resolvers zod lucide-react
 
 | Skill | Purpose | Auto-Load Condition |
 |-------|---------|---------------------|
-| `jikime-nextjs@16` | Next.js 16 App Router 패턴 | 항상 |
-| `jikime-nextjs@15` | Next.js 15 Breaking Changes | async params 감지 시 |
+| `jikime-framework-nextjs@16` | Next.js 16 App Router 패턴 | 항상 |
+| `jikime-framework-nextjs@15` | Next.js 15 Breaking Changes | async params 감지 시 |
 | `jikime-migration-patterns-auth` | 인증 마이그레이션 | 인증 코드 감지 시 |
 
 ### Conditional Reference Skills
@@ -401,7 +401,7 @@ migrate-2-plan --skill my-app
     ├─▶ 2. 사용 기술 감지 (Auth, State, Styling)
     │
     ├─▶ 3. 관련 스킬 자동 매핑
-    │       - jikime-nextjs@16 (필수)
+    │       - jikime-framework-nextjs@16 (필수)
     │       - jikime-migration-patterns-auth (조건부)
     │       - jikime-platform-* (조건부)
     │
@@ -427,7 +427,7 @@ For detailed patterns, load on-demand:
 
 ### Auth Migration
 - `@jikime-migration-patterns-auth` - 인증 마이그레이션 종합 가이드
-- `@jikime-nextjs@14`, `@jikime-nextjs@15`, `@jikime-nextjs@16` - 버전별 업그레이드
+- `@jikime-framework-nextjs@14`, `@jikime-framework-nextjs@15`, `@jikime-framework-nextjs@16` - 버전별 업그레이드
 
 ---
 
@@ -545,7 +545,7 @@ examples:
 백서 문서 템플릿은 다음 위치에 있습니다:
 
 ```
-.claude/skills/jikime-migrate-to-nextjs/templates/pre-migration/
+.claude/skills/jikime-migration-to-nextjs/templates/pre-migration/
 ├── 00_cover.md
 ├── 01_executive_summary.md
 ├── 02_feasibility_report.md
@@ -656,7 +656,7 @@ examples:
 Post-Migration 문서 템플릿 위치:
 
 ```
-.claude/skills/jikime-migrate-to-nextjs/templates/post-migration/
+.claude/skills/jikime-migration-to-nextjs/templates/post-migration/
 ├── 00_cover.md
 ├── 01_executive_summary.md
 ├── 02_performance_comparison.md

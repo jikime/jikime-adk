@@ -254,7 +254,7 @@ Agents:
 
 Skills:
 
-- jikime-docs-generation: Documentation generation patterns
+- jikime-workflow-docs: Documentation generation patterns
 - jikime-workflow-project: Project documentation management
 
 Commands:

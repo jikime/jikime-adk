@@ -236,7 +236,7 @@ The whitepaper can be generated in different languages:
 
 **Default Behavior**:
 - If `--lang` is not specified, uses user's `conversation_language` from `.jikime/config/language.yaml`
-- Templates from `.claude/skills/jikime-migrate-to-nextjs/templates/pre-migration/` are used as structure reference
+- Templates from `.claude/skills/jikime-migration-to-nextjs/templates/pre-migration/` are used as structure reference
 - Content is generated in the specified language by the delegated agents
 
 **Language Application**:

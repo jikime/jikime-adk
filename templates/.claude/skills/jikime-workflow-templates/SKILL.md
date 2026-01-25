@@ -243,7 +243,7 @@ Skills:
 
 - jikime-workflow-project: Project configuration and management
 - jikime-foundation-core: Core patterns and SPEC workflow
-- jikime-docs-generation: Documentation template scaffolding
+- jikime-workflow-docs: Documentation template scaffolding
 - jikime-workflow-spec: SPEC template generation
 
 Commands:

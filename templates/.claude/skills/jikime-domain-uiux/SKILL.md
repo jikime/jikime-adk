@@ -216,7 +216,7 @@ Skills:
 
 - jikime-lang-typescript - TypeScript and JavaScript best practices
 - jikime-foundation-core - TRUST 5 quality validation
-- jikime-docs-generation - Documentation generation
+- jikime-workflow-docs - Documentation generation
 - jikime-library-shadcn - shadcn/ui specialized patterns
 
 Agents:

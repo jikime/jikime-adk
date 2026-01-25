@@ -440,13 +440,17 @@ Agents:
 ## Resources
 
 Module Deep Dives:
-- [Parallel Patterns](modules/parallel-patterns.md): Detailed execution patterns
-- [Synthesis Strategies](modules/synthesis-strategies.md): Result aggregation methods
-- [Error Handling](modules/error-handling.md): Failure recovery patterns
+- [Parallel Patterns](modules/parallel-patterns.md) - Detailed execution patterns and templates
+- [Synthesis Strategies](modules/synthesis-strategies.md) - Result aggregation and correlation methods
 
 Related Commands:
-- /jikime:perspective - Multi-perspective analysis command
-- /jikime:verify - Verification with adversarial review
+- `/jikime:perspective` - Multi-perspective analysis command
+- `/jikime:verify` - Verification with adversarial review
+
+Related Skills:
+- `jikime-foundation-core` - Parallel execution principles
+- `jikime-workflow-testing` - Test perspective patterns
+- `jikime-workflow-spec` - SPEC-driven parallel development
 
 ---
 

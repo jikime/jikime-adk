@@ -282,7 +282,7 @@ Low-Quality Sources:
 
 ### Related Skills
 
-- `jikime-docs-generation`: Documentation generation workflows
+- `jikime-workflow-docs`: Documentation generation workflows
 - `jikime-foundation-context`: Token budget management
 
 ### Performance Optimization

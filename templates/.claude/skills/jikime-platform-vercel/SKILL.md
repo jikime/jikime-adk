@@ -266,9 +266,9 @@ vercel --prod       # Production
 
 | 스킬 | 용도 |
 |------|------|
-| `jikime-nextjs@14` | Next.js 14 App Router 기본 패턴, 프로젝트 구조, 네이밍 규칙 |
-| `jikime-nextjs@15` | Next.js 15 업그레이드 가이드 (async params, fetch caching) |
-| `jikime-nextjs@16` | Next.js 16 업그레이드 가이드 ('use cache', PPR, updateTag) |
+| `jikime-framework-nextjs@14` | Next.js 14 App Router 기본 패턴, 프로젝트 구조, 네이밍 규칙 |
+| `jikime-framework-nextjs@15` | Next.js 15 업그레이드 가이드 (async params, fetch caching) |
+| `jikime-framework-nextjs@16` | Next.js 16 업그레이드 가이드 ('use cache', PPR, updateTag) |
 | `jikime-platform-vercel-react` | React/Next.js 성능 최적화 규칙 (Vercel Engineering) |
 | `jikime-library-shadcn` | shadcn/ui 컴포넌트 라이브러리 (Next.js 필수) |
 

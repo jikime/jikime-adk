@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://jikime-adk.dev/schemas/skill-frontmatter.json",
+  "title": "JikiME-ADK Skill Frontmatter",
+  "description": "Schema for validating SKILL.md YAML frontmatter",
+  "type": "object",
+  "required": ["name", "description", "version"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^jikime-[a-z]+-[a-z0-9@.-]+$",
+      "description": "Skill name following jikime-{domain}-{name} convention"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 500,
+      "description": "Brief description of the skill's purpose"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (e.g., 1.0.0)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 50
+      },
+      "minItems": 1,
+      "maxItems": 20,
+      "uniqueItems": true,
+      "description": "Tags for categorization and discovery"
+    },
+    "triggers": {
+      "type": "object",
+      "properties": {
+        "keywords": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Keywords that trigger skill loading"
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["plan", "run", "sync", "implement", "review", "test", "debug"]
+          },
+          "description": "Development phases where skill applies"
+        },
+        "agents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Agents that can use this skill"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Programming languages this skill applies to"
+        }
+      },
+      "additionalProperties": false
+    },
+    "progressive_disclosure": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "level1_tokens": {
+          "type": ["integer", "string"],
+          "description": "Approximate tokens for Level 1 (metadata)"
+        },
+        "level2_tokens": {
+          "type": ["integer", "string"],
+          "description": "Approximate tokens for Level 2 (full body)"
+        }
+      },
+      "additionalProperties": false
+    },
+    "user-invocable": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether users can invoke this skill directly"
+    },
+    "context": {
+      "type": "string",
+      "enum": ["fork", "main", "isolated"],
+      "default": "fork",
+      "description": "Context mode for skill execution"
+    },
+    "agent": {
+      "type": "string",
+      "default": "general-purpose",
+      "description": "Default agent for this skill"
+    },
+    "allowed-tools": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Read", "Write", "Edit", "Bash", "Grep", "Glob",
+          "Task", "TodoWrite", "WebFetch", "WebSearch",
+          "mcp__context7__resolve-library-id",
+          "mcp__context7__get-library-docs",
+          "mcp__context7__query-docs"
+        ]
+      },
+      "description": "Tools this skill is allowed to use"
+    }
+  },
+  "additionalProperties": true
+}

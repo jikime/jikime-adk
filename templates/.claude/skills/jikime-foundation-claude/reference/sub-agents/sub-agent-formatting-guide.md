@@ -201,7 +201,7 @@ Examples:
 skills: jikime-lang-python, jikime-domain-backend, jikime-workflow-jit-docs
 
 # Load quality and documentation skills
-skills: jikime-foundation-quality, jikime-docs-generation, jikime-foundation-claude
+skills: jikime-foundation-quality, jikime-workflow-docs, jikime-foundation-claude
 ```
 
 ---
