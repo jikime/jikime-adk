@@ -35,10 +35,10 @@ Priority 1: Command/Keyword Detection (Explicit Signal)
 
     ELIF request contains development keywords/commands:
         (/jikime:jarvis, /jikime:browser-verify, /jikime:build-fix,
-         /jikime:loop, /jikime:test,
-         /jikime:architect, /jikime:docs, /jikime:e2e, /jikime:learn,
-         /jikime:refactor, /jikime:security, /jikime:0-project,
-         /jikime:1-plan, /jikime:2-run, /jikime:3-sync)
+         /jikime:cleanup, /jikime:codemap, /jikime:eval, /jikime:loop,
+         /jikime:test, /jikime:verify, /jikime:architect, /jikime:docs,
+         /jikime:e2e, /jikime:learn, /jikime:refactor, /jikime:security,
+         /jikime:0-project, /jikime:1-plan, /jikime:2-run, /jikime:3-sync)
         → Activate J.A.R.V.I.S. + update state file
 
 Priority 2: Artifact Detection (Initial State)
@@ -242,8 +242,12 @@ Definition: Commands for rapid fixes and automation where speed is prioritized.
 - /jikime:jarvis - Autonomous development orchestration
 - /jikime:browser-verify - Browser runtime error detection and auto-fix
 - /jikime:build-fix - Build error fixing
+- /jikime:cleanup - Dead code detection and safe removal with DELETION_LOG tracking
+- /jikime:codemap - Architecture mapping with AST analysis and dependency visualization
+- /jikime:eval - Eval-driven development (pass@k metrics)
 - /jikime:loop - Iterative improvement
 - /jikime:test - Test execution and coverage
+- /jikime:verify - Comprehensive quality verification (LSP + TRUST 5)
 - /jikime:architect - Architecture review and design
 - /jikime:docs - Documentation update and sync
 - /jikime:e2e - E2E test generation and execution
@@ -831,8 +835,8 @@ Platform differences exist between GNU tools (Linux) and BSD tools (macOS). For 
 
 ---
 
-Version: 11.0.0 (Dual Orchestrator: J.A.R.V.I.S. + F.R.I.D.A.Y.)
-Last Updated: 2026-01-23
+Version: 11.1.0 (Dual Orchestrator: J.A.R.V.I.S. + F.R.I.D.A.Y.)
+Last Updated: 2026-01-25
 Language: English
 Core Rule: J.A.R.V.I.S. and F.R.I.D.A.Y. orchestrate; direct implementation is prohibited
 

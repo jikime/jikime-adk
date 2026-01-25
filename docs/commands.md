@@ -10,7 +10,7 @@ JikiME-ADK는 세 가지 타입의 명령어를 제공합니다:
 |------|------|--------|
 | **Type A: Workflow** | 핵심 개발 워크플로우 | 0-project, 1-plan, 2-run, 3-sync |
 | **Type B: Utility** | 빠른 실행 및 자동화 | jarvis, test, loop |
-| **Standalone** | 독립 실행 유틸리티 | architect, build-fix, docs, e2e, learn, refactor, security |
+| **Standalone** | 독립 실행 유틸리티 | architect, build-fix, cleanup, codemap, docs, e2e, learn, refactor, security |
 | **Migration** | 레거시 마이그레이션 | migrate, migrate-0~4 |
 
 ---
@@ -41,9 +41,9 @@ JikiME-ADK는 세 가지 타입의 명령어를 제공합니다:
                                  │
                     ┌────────────┼────────────┐
                     │            │            │
-                architect   build-fix      docs
-                  e2e        learn      refactor
-                          security
+                architect   build-fix    cleanup
+                 codemap      docs         e2e
+                  learn     refactor    security
 ```
 
 ---
@@ -586,6 +586,128 @@ PHASE 3: 완료 & 예측
 
 ---
 
+### /jikime:cleanup
+
+**Dead Code 탐지 및 안전한 제거**
+
+| 항목 | 내용 |
+|------|------|
+| **설명** | knip, depcheck, ts-prune으로 종합 dead code 분석 및 DELETION_LOG 추적 |
+| **Context** | dev.md |
+| **Agent** | refactorer |
+| **단독 사용** | ✅ 높음 - 언제든 독립 실행 가능 |
+
+#### Usage
+
+```bash
+# Dead code 스캔 (분석만)
+/jikime:cleanup scan
+
+# Safe 항목만 제거
+/jikime:cleanup remove --safe
+
+# Careful 항목 포함 제거
+/jikime:cleanup remove --careful
+
+# 특정 카테고리만
+/jikime:cleanup remove --deps
+/jikime:cleanup remove --exports
+/jikime:cleanup remove --files
+
+# 삭제 기록 확인
+/jikime:cleanup log
+
+# 종합 리포트
+/jikime:cleanup report
+```
+
+#### Options
+
+| Option | 설명 |
+|--------|------|
+| `scan` | 코드베이스 분석 (변경 없음) |
+| `remove` | Dead code 제거 |
+| `report` | 종합 정리 리포트 |
+| `log` | DELETION_LOG.md 확인 |
+| `--safe` | 저위험 항목만 |
+| `--careful` | 중위험 포함 |
+| `--deps` | 미사용 의존성 |
+| `--exports` | 미사용 exports |
+| `--files` | 미사용 파일 |
+| `--dry-run` | 미리보기만 |
+
+#### Risk Classification
+
+| Level | 카테고리 | 자동 제거 |
+|-------|----------|----------|
+| **SAFE** | npm deps, imports, eslint-disable | ✅ |
+| **CAREFUL** | exports, files, types | ⚠️ 확인 필요 |
+| **RISKY** | Public API, 동적 import | ❌ 수동 리뷰 |
+
+---
+
+### /jikime:codemap
+
+**AST 기반 아키텍처 매핑**
+
+| 항목 | 내용 |
+|------|------|
+| **설명** | ts-morph, madge로 코드베이스에서 아키텍처 문서 자동 생성 |
+| **Context** | sync.md |
+| **Skill** | jikime-workflow-codemap |
+| **단독 사용** | ✅ 높음 - 언제든 독립 실행 가능 |
+
+#### Usage
+
+```bash
+# 전체 아키텍처 맵 생성
+/jikime:codemap all
+
+# 특정 영역만
+/jikime:codemap frontend
+/jikime:codemap backend
+/jikime:codemap database
+/jikime:codemap integrations
+
+# AST 분석 포함
+/jikime:codemap all --ast
+
+# 의존성 그래프 생성
+/jikime:codemap all --deps
+
+# JSON 출력 (자동화용)
+/jikime:codemap all --json
+```
+
+#### Options
+
+| Option | 설명 |
+|--------|------|
+| `all` | 모든 영역 codemap |
+| `frontend` | 프론트엔드 아키텍처 |
+| `backend` | 백엔드/API 아키텍처 |
+| `database` | DB 스키마/모델 |
+| `integrations` | 외부 서비스 |
+| `--ast` | ts-morph AST 분석 |
+| `--deps` | madge 의존성 그래프 |
+| `--refresh` | 강제 재생성 |
+| `--json` | JSON 출력 |
+
+#### Output
+
+```
+docs/CODEMAPS/
+├── INDEX.md          # 아키텍처 개요
+├── frontend.md       # 프론트엔드 구조
+├── backend.md        # 백엔드 구조
+├── database.md       # DB 스키마
+├── integrations.md   # 외부 서비스
+└── assets/
+    └── dependency-graph.svg
+```
+
+---
+
 ### /jikime:docs
 
 **문서 업데이트**
@@ -947,6 +1069,8 @@ ANALYZE → PRESERVE → IMPROVE
 | 테스트 실행 (E2E) | `/jikime:e2e` |
 | 에러 반복 수정 | `/jikime:loop "description"` |
 | 코드베이스 학습 | `/jikime:learn` |
+| 아키텍처 문서화 | `/jikime:codemap all` |
+| Dead code 정리 | `/jikime:cleanup scan` → `/jikime:cleanup remove --safe` |
 | 문서 업데이트 (빠른) | `/jikime:docs` |
 | 문서 동기화 (SPEC 기반) | `/jikime:3-sync` |
 | 레거시 마이그레이션 | `/jikime:migrate` |
@@ -974,6 +1098,8 @@ ANALYZE → PRESERVE → IMPROVE
 | loop | 1.0.0 | 2026-01-22 |
 | architect | 1.0.0 | - |
 | build-fix | 1.0.0 | - |
+| cleanup | 1.0.0 | 2026-01-25 |
+| codemap | 1.0.0 | 2026-01-25 |
 | docs | 1.0.0 | - |
 | e2e | 1.0.0 | - |
 | learn | 1.0.0 | - |
@@ -983,5 +1109,5 @@ ANALYZE → PRESERVE → IMPROVE
 
 ---
 
-Version: 1.0.0
-Last Updated: 2026-01-22
+Version: 1.1.0
+Last Updated: 2026-01-25
