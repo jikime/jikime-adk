@@ -5,7 +5,7 @@ Claude Code의 API 요청을 외부 LLM 프로바이더(OpenAI, Gemini, GLM, Oll
 ## 개요
 
 ```
-Claude Code ─── ANTHROPIC_BASE_URL ──→ jikime router (localhost:8787)
+Claude Code ─── ANTHROPIC_BASE_URL ──→ jikime router (localhost:8787/{provider})
                                             │
                                     ┌───────┴───────┐
                                     ▼               ▼
@@ -13,7 +13,19 @@ Claude Code ─── ANTHROPIC_BASE_URL ──→ jikime router (localhost:8787
                               (OpenAI/GLM/Ollama)
 ```
 
-`ANTHROPIC_BASE_URL` 환경변수를 통해 Claude Code의 API 요청을 가로채고, 선택한 프로바이더의 형식으로 변환하여 전달합니다.
+`ANTHROPIC_BASE_URL` 환경변수를 통해 Claude Code의 API 요청을 가로채고, URL 경로에 지정된 프로바이더의 형식으로 변환하여 전달합니다.
+
+### URL 기반 라우팅
+
+라우터는 URL 경로에서 프로바이더를 식별합니다:
+
+```
+http://localhost:8787/{provider}/v1/messages
+                       ↑
+                       프로바이더 이름 (openai, gemini, ollama 등)
+```
+
+이 방식을 통해 **여러 Claude Code 세션이 서로 다른 프로바이더를 동시에 사용**할 수 있습니다. 하나의 라우터 인스턴스가 모든 프로바이더 요청을 처리합니다.
 
 ## 지원 프로바이더
 
@@ -34,7 +46,6 @@ Claude Code ─── ANTHROPIC_BASE_URL ──→ jikime router (localhost:8787
 router:
   port: 8787
   host: "127.0.0.1"
-  provider: openai
 
 providers:
   openai:
@@ -148,8 +159,9 @@ jikime router start -d -p 9090
 # 상태 확인
 jikime router status
 
-# 테스트 요청 전송
-jikime router test
+# 테스트 요청 전송 (프로바이더 지정 필수)
+jikime router test openai
+jikime router test gemini
 
 # 라우터 중지
 jikime router stop
@@ -159,13 +171,13 @@ jikime router stop
 
 ### 프록시 모드 (OpenAI, Gemini, Ollama)
 
-1. `switch` 명령이 라우터를 자동 시작 (기존 라우터가 있으면 재시작)
-2. `.claude/settings.local.json`에 `ANTHROPIC_BASE_URL=http://localhost:8787` 설정
-3. Claude Code가 로컬 라우터로 요청 전송
-4. 라우터가 Anthropic 형식 → 프로바이더 형식으로 변환
+1. `switch` 명령이 라우터를 자동 시작 (라우터가 실행 중이면 재시작하지 않음)
+2. `.claude/settings.local.json`에 `ANTHROPIC_BASE_URL=http://localhost:8787/{provider}` 설정
+3. Claude Code가 로컬 라우터로 요청 전송 (URL 경로에 프로바이더 포함)
+4. 라우터가 URL 경로에서 프로바이더를 식별하고 Anthropic 형식 → 프로바이더 형식으로 변환
 5. 프로바이더 응답을 Anthropic 형식으로 역변환하여 반환
 
-프로바이더를 전환할 때마다 라우터가 자동으로 재시작되어 새 설정을 반영합니다.
+**멀티 세션 지원**: 하나의 라우터가 모든 프로바이더를 처리하므로, 여러 Claude Code 세션에서 서로 다른 프로바이더를 동시에 사용할 수 있습니다.
 
 ### 직접 모드 (GLM)
 
@@ -279,7 +291,7 @@ jikime router start
 
 로그 예시:
 ```
-[router] 2026/01/25 01:30:00 Starting on 127.0.0.1:8787 (provider: openai)
+[router] 2026/01/25 01:30:00 Starting on 127.0.0.1:8787 (providers: openai, gemini, glm, ollama)
 [router] 2026/01/25 01:30:05 -> openai/gpt-5.1 (stream=true)
 [router] 2026/01/25 01:30:10 <- Provider error (400): {...}
 ```
@@ -369,12 +381,15 @@ API 키는 `router.yaml`에 절대 저장되지 않습니다 (`yaml:"-"` 태그 
 | gpt-5.x | 미전송 (모델 기본값) | 제한값 낮으면 400 에러 반환 |
 | o1, o3, o4 시리즈 | 미전송 (모델 기본값) | `max_completion_tokens` 필수이나 제한 불필요 |
 
-### 라우터 재시작 동작
+### URL 기반 라우팅 동작
 
 `switch` 명령 실행 시:
-1. 기존 라우터 프로세스 중지
-2. 새 프로바이더 설정으로 `router.yaml` 업데이트
-3. 라우터 백그라운드 재시작
-4. `.claude/settings.local.json` 업데이트
+1. 라우터가 실행 중이 아니면 백그라운드에서 시작
+2. `.claude/settings.local.json`에 `ANTHROPIC_BASE_URL=http://localhost:8787/{provider}` 설정
 
-이를 통해 프로바이더 전환 시 라우터가 항상 최신 설정을 사용합니다.
+**멀티 세션 지원**: 라우터는 URL 경로에서 프로바이더를 식별하므로, 한 번 시작된 라우터가 모든 프로바이더 요청을 처리합니다. 프로바이더를 전환해도 라우터를 재시작할 필요가 없습니다.
+
+예시:
+- 세션 A: `ANTHROPIC_BASE_URL=http://localhost:8787/openai` → OpenAI 사용
+- 세션 B: `ANTHROPIC_BASE_URL=http://localhost:8787/gemini` → Gemini 사용
+- 동일한 라우터 인스턴스가 두 세션 모두 처리

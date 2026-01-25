@@ -8,6 +8,11 @@ triggers:
   phases: ["plan", "run"]
   agents: ["skill-builder", "agent-builder", "command-builder", "manager-claude-code"]
   languages: []
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2000
 user-invocable: false
 allowed-tools:
   - Read

@@ -8,6 +8,11 @@ triggers:
   phases: ["run"]
   agents: ["security-auditor", "backend"]
   languages: ["typescript"]
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2077
 type: domain
 domain: auth
 user-invocable: false

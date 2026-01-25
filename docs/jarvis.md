@@ -86,7 +86,7 @@ J.A.R.V.I.S. (Just A Rather Very Intelligent System)는 JikiME-ADK의 **개발 �
 | `templates/.claude/commands/jikime/jarvis.md` | J.A.R.V.I.S. 슬래시 커맨드 |
 | `templates/.claude/commands/jikime/friday.md` | F.R.I.D.A.Y. 슬래시 커맨드 |
 | `templates/CLAUDE.md` | 듀얼 오케스트레이터 등록 |
-| `templates/.jikime/config/ralph.yaml` | Ralph Engine + LSP Quality Gates 설정 |
+| `templates/.jikime/config/quality.yaml` | LSP Quality Gates 설정 |
 | `docs/friday.md` | F.R.I.D.A.Y. 마이그레이션 오케스트레이터 문서 |
 | `docs/migration.md` | 마이그레이션 시스템 문서 |
 
@@ -197,11 +197,11 @@ Phase 2 실행 중 LSP 기반 품질 게이트가 자동으로 적용됩니다:
 | **run** | `max_errors: 0` | 에러/타입에러/린트에러 모두 0 필요 |
 | **sync** | `require_clean_lsp: true` | PR/Sync 전 LSP 클린 상태 필수 |
 
-설정 위치: `.jikime/config/ralph.yaml` → `ralph.lsp.quality_gates`
+설정 위치: `.jikime/config/quality.yaml` → `constitution.lsp_quality_gates`
 
 #### Ralph Loop 통합
 
-J.A.R.V.I.S.의 자가 진단 루프는 Ralph Engine과 통합됩니다:
+J.A.R.V.I.S.의 자가 진단 루프는 LSP Quality Gates와 통합됩니다:
 
 ```
 Ralph Loop Cycle:
@@ -211,7 +211,7 @@ Ralph Loop Cycle:
   4. Decision: Continue or Pivot
 ```
 
-Ralph Engine이 감지하는 회귀(regression)가 발생하면, J.A.R.V.I.S.는 자동으로 피봇을 고려합니다.
+LSP regression이 감지되면 J.A.R.V.I.S.는 자동으로 피봇을 고려합니다.
 
 #### 자가 진단 루프
 
@@ -415,7 +415,7 @@ F.R.I.D.A.Y. (마이그레이션):
 - [HARD] 완료 마커 필수: `<jikime>DONE</jikime>`
 - [HARD] LSP Quality Gate: run phase에서 에러 0 필수
 - 각 Phase에 롤백 포인트 생성
-- Ralph Engine이 regression 감지 시 자동 알림
+- LSP Quality Gates가 regression 감지 시 자동 알림
 
 ## Best Practices
 
@@ -455,11 +455,12 @@ F.R.I.D.A.Y. (마이그레이션):
 
 ---
 
-Version: 3.0.0
-Last Updated: 2026-01-24
+Version: 3.1.0
+Last Updated: 2026-01-25
 Codename: J.A.R.V.I.S. (Just A Rather Very Intelligent System)
 Inspiration: Iron Man's AI Assistant
 Changelog:
+- v3.1.0: LSP Quality Gates 설정 경로 업데이트 (quality.yaml), 문서 개선
 - v3.0.0: Dual Orchestrator (J.A.R.V.I.S. + F.R.I.D.A.Y.), LSP Quality Gates, Ralph Loop integration
 - v2.0.0: Added Migration Mode (--mode migrate), unified workflow orchestration
 - v1.0.0: Initial release with Development Mode

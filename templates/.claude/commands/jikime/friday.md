@@ -303,6 +303,33 @@ PRESERVE: Create characterization tests capturing current behavior
 IMPROVE: Transform to target framework following skill conventions
 ```
 
+### LSP Quality Gates
+
+Phase 3 실행 중 LSP 기반 품질 게이트가 자동으로 적용됩니다:
+
+| Phase | 조건 | 설명 |
+|-------|------|------|
+| **plan** | `require_baseline: true` | Migration plan 수립 시 LSP 베이스라인 캡처 |
+| **execute** | `max_errors: 0` | 타입에러/린트에러 모두 0 필요 |
+| **verify** | `require_clean_lsp: true` | 검증 전 LSP 클린 상태 필수 |
+
+설정 위치: `.jikime/config/quality.yaml` → `constitution.lsp_quality_gates`
+
+### Ralph Loop Integration
+
+F.R.I.D.A.Y.의 DDD Migration Cycle은 LSP Quality Gates와 통합됩니다:
+
+```
+Ralph Loop Cycle (Migration):
+  1. ANALYZE: 소스 컴포넌트 분석 + LSP 베이스라인 캡처
+  2. PRESERVE: Characterization test 생성
+  3. IMPROVE: 타겟 프레임워크로 변환
+  4. LSP Check: 변환 후 LSP 진단 (regression 체크)
+  5. Decision: Continue, Retry, or Pivot
+```
+
+LSP regression이 감지되면 F.R.I.D.A.Y.는 자동으로 대안 마이그레이션 패턴을 시도합니다.
+
 ### Self-Assessment Loop
 
 At each iteration, F.R.I.D.A.Y. evaluates:

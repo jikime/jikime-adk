@@ -8,6 +8,11 @@ triggers:
   phases: ["run"]
   agents: ["frontend", "backend"]
   languages: ["typescript"]
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2148
 user-invocable: false
 allowed-tools:
   - Read

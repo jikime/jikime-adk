@@ -10,8 +10,8 @@ import (
 	"jikime-adk/internal/router/types"
 )
 
-// handleMessages handles POST /v1/messages requests.
-func (s *Server) handleMessages(w http.ResponseWriter, r *http.Request) {
+// handleMessages handles POST /{provider}/v1/messages requests.
+func (s *Server) handleMessages(w http.ResponseWriter, r *http.Request, providerName string) {
 	if r.Method != http.MethodPost {
 		s.writeError(w, http.StatusMethodNotAllowed, "invalid_request_error", "Method not allowed")
 		return
@@ -32,9 +32,6 @@ func (s *Server) handleMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Resolve provider
-	providerName, _ := s.config.ResolveProvider(0, false)
-
 	// Use model from request (set by Claude Code via ANTHROPIC_DEFAULT_*_MODEL)
 	model := req.Model
 	if model == "" {
@@ -52,20 +49,16 @@ func (s *Server) handleMessages(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create provider instance if different from default
-	prov := s.provider
-	if providerName != s.config.Router.Provider {
-		pCfg := toProviderConfig(&provCfg)
-		var err error
-		prov, err = provider.NewProvider(providerName, pCfg)
-		if err != nil {
-			s.writeError(w, http.StatusInternalServerError, "api_error",
-				fmt.Sprintf("Failed to create provider: %v", err))
-			return
-		}
+	// Create provider instance
+	pCfg := toProviderConfig(&provCfg)
+	prov, err := provider.NewProvider(providerName, pCfg)
+	if err != nil {
+		s.writeError(w, http.StatusInternalServerError, "api_error",
+			fmt.Sprintf("Failed to create provider: %v", err))
+		return
 	}
 
-	s.logger.Printf("-> %s/%s (stream=%v)", providerName, model, req.Stream)
+	s.logger.Printf("-> %s/%s (stream=%v, msgs=%d)", providerName, model, req.Stream, len(req.Messages))
 
 	// Transform and forward request
 	provReq, err := prov.TransformRequest(&req, model)
@@ -100,14 +93,14 @@ func (s *Server) handleMessages(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.Stream {
-		s.handleStreamResponse(w, resp, prov, model)
+		s.handleStreamResponse(w, resp, prov, providerName, model)
 	} else {
-		s.handleSyncResponse(w, resp, prov)
+		s.handleSyncResponse(w, resp, prov, providerName, model)
 	}
 }
 
 // handleStreamResponse processes a streaming response from the provider.
-func (s *Server) handleStreamResponse(w http.ResponseWriter, resp *http.Response, prov provider.Provider, model string) {
+func (s *Server) handleStreamResponse(w http.ResponseWriter, resp *http.Response, prov provider.Provider, providerName, model string) {
 	SetSSEHeaders(w)
 	w.WriteHeader(http.StatusOK)
 
@@ -142,10 +135,14 @@ func (s *Server) handleStreamResponse(w http.ResponseWriter, resp *http.Response
 			sseWriter.WriteRawEvent(evt.Event, evt.Data)
 		}
 	}
+
+	// Log completion
+	s.logger.Printf("<- %s/%s OK (stream, in=%d, out=%d)",
+		providerName, model, state.InputTokens, state.OutputTokens)
 }
 
 // handleSyncResponse processes a non-streaming response from the provider.
-func (s *Server) handleSyncResponse(w http.ResponseWriter, resp *http.Response, prov provider.Provider) {
+func (s *Server) handleSyncResponse(w http.ResponseWriter, resp *http.Response, prov provider.Provider, providerName, model string) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		s.writeError(w, http.StatusBadGateway, "api_error", "Failed to read provider response")
@@ -158,6 +155,14 @@ func (s *Server) handleSyncResponse(w http.ResponseWriter, resp *http.Response, 
 			fmt.Sprintf("Transform response error: %v", err))
 		return
 	}
+
+	// Log completion with token usage
+	inTokens, outTokens := 0, 0
+	if anthropicResp.Usage != nil {
+		inTokens = anthropicResp.Usage.InputTokens
+		outTokens = anthropicResp.Usage.OutputTokens
+	}
+	s.logger.Printf("<- %s/%s OK (sync, in=%d, out=%d)", providerName, model, inTokens, outTokens)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

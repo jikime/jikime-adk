@@ -75,12 +75,9 @@ func runSessionStart(cmd *cobra.Command, args []string) error {
 	// Initialize orchestrator state only if no state file exists (preserve sticky state after compact)
 	if root, err := findProjectRoot(); err == nil {
 		if !stateFileExists(root) {
-			// No state file - apply artifact-based detection or default
-			if hasMigrationArtifacts(root) {
-				writeOrchestratorState(root, OrchestratorFRIDAY)
-			} else {
-				writeOrchestratorState(root, OrchestratorJARVIS)
-			}
+			// No state file - determine orchestrator using improved detection
+			orchestrator := determineInitialOrchestrator(root)
+			writeOrchestratorState(root, orchestrator)
 		}
 		// State file exists → preserve current orchestrator (sticky state)
 	}
@@ -279,4 +276,40 @@ func getGitInfo(projectRoot string) map[string]string {
 	}
 
 	return info
+}
+
+// determineInitialOrchestrator decides the initial orchestrator using improved logic:
+// Priority 1: Active migration detection (progress.yaml with in_progress status)
+// Priority 2: User's orchestrator_style setting (fallback)
+// Priority 3: Default to J.A.R.V.I.S.
+func determineInitialOrchestrator(projectRoot string) string {
+	// Priority 1: Check for ACTIVE migration (not just artifacts)
+	if isActiveMigration(projectRoot) {
+		return OrchestratorFRIDAY
+	}
+
+	// Priority 2: Check user's orchestrator_style setting
+	config, err := loadConfig(projectRoot)
+	if err == nil && config.User.OrchestratorStyle != "" {
+		switch config.User.OrchestratorStyle {
+		case "jarvis":
+			return OrchestratorJARVIS
+		case "friday":
+			return OrchestratorFRIDAY
+		case "auto":
+			// Fall through to artifact-based detection
+		}
+	}
+
+	// Priority 3 (auto mode): Artifact-based detection (legacy behavior)
+	// Only activate F.R.I.D.A.Y. if migration artifacts exist AND no explicit user preference
+	if hasMigrationArtifacts(projectRoot) {
+		// Migration artifacts exist but not actively in progress
+		// Default to J.A.R.V.I.S. since user might just be doing regular development
+		// User can switch to F.R.I.D.A.Y. by using migration keywords or /jikime:friday
+		return OrchestratorJARVIS
+	}
+
+	// Default: J.A.R.V.I.S. for development work
+	return OrchestratorJARVIS
 }

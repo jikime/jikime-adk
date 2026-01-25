@@ -40,16 +40,17 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	cyan := color.New(color.FgCyan).SprintFunc()
-	fmt.Printf("  Provider: %s\n", cyan(cfg.Router.Provider))
+	addr := fmt.Sprintf("http://%s:%d", cfg.Router.Host, cfg.Router.Port)
+	fmt.Printf("  Address:   %s\n", cyan(addr))
 
-	if p, ok := cfg.Providers[cfg.Router.Provider]; ok {
-		fmt.Printf("  Model:    %s\n", cyan(p.Model))
-		if p.BaseURL != "" {
-			fmt.Printf("  Base URL: %s\n", cyan(p.BaseURL))
+	// List available providers with their models
+	providers := cfg.GetProviderNames()
+	fmt.Printf("  Providers: %s\n", cyan(fmt.Sprintf("%v", providers)))
+	for _, name := range providers {
+		if p, ok := cfg.Providers[name]; ok {
+			fmt.Printf("    - %s: %s\n", cyan(name), p.Model)
 		}
 	}
-
-	fmt.Printf("  Address:  %s\n", cyan(fmt.Sprintf("http://%s:%d", cfg.Router.Host, cfg.Router.Port)))
 
 	// Show Claude Code integration status
 	if hasManagedEnv() {

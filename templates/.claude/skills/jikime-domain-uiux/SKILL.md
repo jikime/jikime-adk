@@ -44,6 +44,11 @@ triggers:
     - Lucide
     - Iconify
     - responsive design
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2273
     - user experience
 ---
 

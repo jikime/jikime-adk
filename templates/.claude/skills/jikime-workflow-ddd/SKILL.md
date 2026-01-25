@@ -8,6 +8,11 @@ triggers:
   phases: ["run"]
   agents: ["manager-ddd", "refactorer"]
   languages: []
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2787
 user-invocable: false
 context: fork
 agent: manager-ddd

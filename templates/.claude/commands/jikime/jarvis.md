@@ -287,6 +287,32 @@ OVERRIDE: User can force strategy with --strategy flag
 
 ## Phase 2: Adaptive Execution
 
+### LSP Quality Gates
+
+Phase 2 실행 중 LSP 기반 품질 게이트가 자동으로 적용됩니다:
+
+| Phase | 조건 | 설명 |
+|-------|------|------|
+| **plan** | `require_baseline: true` | Phase 시작 시 LSP 베이스라인 캡처 |
+| **run** | `max_errors: 0` | 에러/타입에러/린트에러 모두 0 필요 |
+| **sync** | `require_clean_lsp: true` | PR/Sync 전 LSP 클린 상태 필수 |
+
+설정 위치: `.jikime/config/quality.yaml` → `constitution.lsp_quality_gates`
+
+### Ralph Loop Integration
+
+J.A.R.V.I.S.의 자가 진단 루프는 LSP Quality Gates와 통합됩니다:
+
+```
+Ralph Loop Cycle:
+  1. Code Transformation (에이전트 작업 수행)
+  2. LSP Diagnostic Capture (변환 후 진단)
+  3. Regression Check (베이스라인 대비 비교)
+  4. Decision: Continue or Pivot
+```
+
+LSP regression이 감지되면 J.A.R.V.I.S.는 자동으로 피봇을 고려합니다.
+
 ### Self-Assessment Loop
 
 At each iteration, J.A.R.V.I.S. asks itself:

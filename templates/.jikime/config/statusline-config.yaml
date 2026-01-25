@@ -61,7 +61,7 @@ statusline:
     progress_bar: true           # ▰▱ Context usage progress bar
 
   # Token cost configuration
-  token_cost:
+  token_cost:ㄴㅅ
     input_price_per_mtok: 15.0   # $15 per 1M input tokens (Opus)
     output_price_per_mtok: 75.0  # $75 per 1M output tokens (Opus)
 

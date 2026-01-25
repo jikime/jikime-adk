@@ -177,22 +177,16 @@ func switchAnthropicCompatible(provider string, provCfg *router.ProviderConfig) 
 
 // switchViaProxy ensures router is running and configures settings.
 func switchViaProxy(provider string, cfg *router.Config, provCfg *router.ProviderConfig) error {
-	// Update active provider in config
-	cfg.Router.Provider = provider
-	if err := router.SaveConfig(cfg); err != nil {
-		return fmt.Errorf("saving config: %w", err)
+	// Start router if not running (one router handles all providers via URL path)
+	if pid := readPID(); pid <= 0 || !processExists(pid) {
+		startDaemon = true
+		if err := runStart(nil, nil); err != nil {
+			return fmt.Errorf("starting router: %w", err)
+		}
 	}
 
-	// Restart router to pick up new provider config
-	if pid := readPID(); pid > 0 && processExists(pid) {
-		runStop(nil, nil)
-	}
-	startDaemon = true
-	if err := runStart(nil, nil); err != nil {
-		return fmt.Errorf("starting router: %w", err)
-	}
-
-	addr := fmt.Sprintf("http://%s:%d", cfg.Router.Host, cfg.Router.Port)
+	// URL includes provider path: http://localhost:8787/{provider}
+	addr := fmt.Sprintf("http://%s:%d/%s", cfg.Router.Host, cfg.Router.Port, provider)
 
 	envVars := map[string]string{
 		"ANTHROPIC_BASE_URL":             addr,

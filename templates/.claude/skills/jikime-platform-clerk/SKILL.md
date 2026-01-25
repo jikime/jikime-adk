@@ -17,6 +17,11 @@ allowed-tools:
   - Grep
   - Glob
 triggers:
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2000
   keywords: ["clerk", "webauthn", "passkeys", "passwordless", "modern auth", "biometric"]
 ---
 

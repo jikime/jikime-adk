@@ -8,6 +8,11 @@ triggers:
   phases: ["run"]
   agents: ["backend", "frontend"]
   languages: ["typescript"]
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~3617
 user-invocable: false
 context: fork
 agent: ai-sdk-specialist

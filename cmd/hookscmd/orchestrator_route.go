@@ -137,6 +137,51 @@ func hasMigrationArtifacts(projectRoot string) bool {
 	return false
 }
 
+// isActiveMigration checks if a migration is currently in progress (not just artifacts exist).
+// Returns true only if progress.yaml exists with status: in_progress or status: executing.
+func isActiveMigration(projectRoot string) bool {
+	// Check possible progress.yaml locations
+	progressPaths := []string{
+		filepath.Join(projectRoot, "progress.yaml"),
+		filepath.Join(projectRoot, "migrations", "progress.yaml"),
+	}
+
+	// Also check .migrate-config.yaml for artifacts_dir
+	configPath := filepath.Join(projectRoot, ".migrate-config.yaml")
+	if data, err := os.ReadFile(configPath); err == nil {
+		// Simple extraction of artifacts_dir (avoid full YAML parsing)
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			if strings.HasPrefix(strings.TrimSpace(line), "artifacts_dir:") {
+				artifactsDir := strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "artifacts_dir:"))
+				artifactsDir = strings.Trim(artifactsDir, "\"'")
+				if artifactsDir != "" {
+					progressPaths = append(progressPaths, filepath.Join(projectRoot, artifactsDir, "progress.yaml"))
+				}
+			}
+		}
+	}
+
+	// Check each progress.yaml location
+	for _, progressPath := range progressPaths {
+		data, err := os.ReadFile(progressPath)
+		if err != nil {
+			continue
+		}
+
+		content := strings.ToLower(string(data))
+		// Check for active migration status
+		if strings.Contains(content, "status: in_progress") ||
+			strings.Contains(content, "status: executing") ||
+			strings.Contains(content, "status: \"in_progress\"") ||
+			strings.Contains(content, "status: 'in_progress'") {
+			return true
+		}
+	}
+
+	return false
+}
+
 // detectOrchestrator checks user input to determine which orchestrator should be active.
 // Per HARD rule: "Migration requests activate F.R.I.D.A.Y., all other requests activate J.A.R.V.I.S."
 // Returns "" only if input is empty (no signal to process).

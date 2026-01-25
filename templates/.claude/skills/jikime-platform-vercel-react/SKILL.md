@@ -10,6 +10,11 @@ triggers:
   keywords: ["react", "next.js", "performance", "bundle", "optimization"]
   phases: ["run"]
   agents: ["frontend", "optimizer"]
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2000
   languages: ["typescript", "javascript"]
 ---
 

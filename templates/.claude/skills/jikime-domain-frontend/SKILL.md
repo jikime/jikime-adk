@@ -35,6 +35,11 @@ triggers:
     - Tailwind
   phases: ["run"]
   agents: ["frontend"]
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2000
   languages: ["typescript", "javascript"]
 ---
 

@@ -8,6 +8,11 @@ triggers:
   phases: ["run"]
   agents: ["refactorer", "security-auditor"]
   languages: []
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2123
 user-invocable: false
 context: fork
 agent: Explore

@@ -8,6 +8,11 @@ triggers:
   phases: ["plan"]
   agents: ["manager-git"]
   languages: []
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~3001
 user-invocable: false
 allowed-tools:
   - Read

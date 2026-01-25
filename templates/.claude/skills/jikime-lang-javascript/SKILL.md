@@ -8,6 +8,11 @@ triggers:
   phases: ["run"]
   agents: ["backend", "frontend"]
   languages: ["javascript"]
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2000
 user-invocable: false
 ---
 

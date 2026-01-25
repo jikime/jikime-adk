@@ -8,6 +8,11 @@ triggers:
   phases: ["plan"]
   agents: ["manager-spec", "manager-strategy"]
   languages: []
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~3607
 user-invocable: false
 context: fork
 agent: Plan

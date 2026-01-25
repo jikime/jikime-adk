@@ -8,6 +8,11 @@ triggers:
   phases: ["sync"]
   agents: ["manager-docs", "manager-quality", "manager-git"]
   languages: []
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2221
 user-invocable: false
 context: fork
 agent: manager-docs

@@ -117,8 +117,13 @@ func printStartInfo(cfg *router.Config) {
 
 	fmt.Println()
 	fmt.Printf("  %s Router\n", green("LLM"))
-	fmt.Printf("  Provider: %s\n", cyan(cfg.Router.Provider))
-	fmt.Printf("  Address:  %s\n", cyan(fmt.Sprintf("http://%s:%d", cfg.Router.Host, cfg.Router.Port)))
+	fmt.Printf("  Address:   %s\n", cyan(fmt.Sprintf("http://%s:%d", cfg.Router.Host, cfg.Router.Port)))
+
+	// List available providers
+	providers := cfg.GetProviderNames()
+	if len(providers) > 0 {
+		fmt.Printf("  Providers: %s\n", cyan(fmt.Sprintf("%v", providers)))
+	}
 	fmt.Println()
 }
 

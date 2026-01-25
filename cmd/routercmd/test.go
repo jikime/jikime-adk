@@ -16,16 +16,30 @@ import (
 
 func newTestCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "test",
+		Use:   "test <provider>",
 		Short: "Send a test request to the router",
-		RunE:  runTest,
+		Long: `Send a test request to a specific provider via the router.
+
+Example:
+  jikime router test openai
+  jikime router test gemini`,
+		Args: cobra.ExactArgs(1),
+		RunE: runTest,
 	}
 }
 
 func runTest(cmd *cobra.Command, args []string) error {
+	providerName := args[0]
+
 	cfg, err := router.LoadConfig()
 	if err != nil {
 		return err
+	}
+
+	// Check if provider exists
+	provCfg, ok := cfg.Providers[providerName]
+	if !ok {
+		return fmt.Errorf("provider '%s' not found in config", providerName)
 	}
 
 	// Check if router is running
@@ -34,11 +48,12 @@ func runTest(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("router is not running. Start it with 'jikime router start'")
 	}
 
-	addr := fmt.Sprintf("http://%s:%d", cfg.Router.Host, cfg.Router.Port)
+	// URL includes provider path: http://localhost:8787/{provider}/v1/messages
+	addr := fmt.Sprintf("http://%s:%d/%s", cfg.Router.Host, cfg.Router.Port, providerName)
 
 	// Create test request
 	testReq := &types.AnthropicRequest{
-		Model:     "test",
+		Model:     provCfg.Model,
 		MaxTokens: 100,
 		Stream:    false,
 		Messages: []types.AnthropicMessage{
@@ -54,8 +69,7 @@ func runTest(cmd *cobra.Command, args []string) error {
 	fmt.Println()
 	cyan := color.New(color.FgCyan).SprintFunc()
 	fmt.Printf("  Testing %s -> %s/%s\n",
-		cyan(addr), cyan(cfg.Router.Provider),
-		cyan(cfg.Providers[cfg.Router.Provider].Model))
+		cyan(addr), cyan(providerName), cyan(provCfg.Model))
 
 	start := time.Now()
 	resp, err := http.Post(addr+"/v1/messages", "application/json", bytes.NewReader(body))

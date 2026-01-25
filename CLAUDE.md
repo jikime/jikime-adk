@@ -202,9 +202,9 @@ Execution: 3 agents parallel → 1 agent sequential
 
 Context Optimization:
 
-- Pass minimal context to agents (spec_id, key requirements as max 3 bullet points, architecture summary under 200 chars)
-- Exclude background information, reasoning, and non-essential details
-- Each agent gets independent 200K token session
+- Pass comprehensive context to agents (spec_id, key requirements as extended bullet points, detailed architecture summary)
+- Include background information, reasoning process, and relevant details for better understanding
+- Each agent gets independent 200K token session with sufficient context
 
 ### Phase 4: Report
 
@@ -370,6 +370,20 @@ Quick Reference:
 - [ ] XML tags never shown to users
 - [ ] URLs verified before inclusion (WebSearch)
 - [ ] Source attribution when WebSearch used
+
+### LSP Quality Gates
+
+LSP-based quality validation is enforced at each workflow phase:
+
+| Phase | Requirement | Description |
+|-------|-------------|-------------|
+| **plan** | Baseline capture | Capture LSP state at phase start |
+| **run** | Zero errors | No LSP errors, type errors, or lint errors allowed |
+| **sync** | Clean LSP | Must be error-free before PR/sync |
+
+Configuration: @.jikime/config/quality.yaml → `constitution.lsp_quality_gates`
+
+LSP regression detection automatically triggers strategy pivots in J.A.R.V.I.S. workflows.
 
 ### Violation Detection
 

@@ -8,6 +8,11 @@ triggers:
   phases: ["plan", "run"]
   agents: ["manager-strategy", "frontend"]
   languages: []
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~4908
 user-invocable: false
 ---
 

@@ -19,6 +19,12 @@ allowed-tools:
   - Bash
   - mcp__context7__resolve-library-id
   - mcp__context7__get-library-docs
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2241
+
 ---
 
 # Documentation Generation Patterns

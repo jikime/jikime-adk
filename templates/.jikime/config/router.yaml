@@ -8,7 +8,6 @@
 router:
   port: 8787
   host: "127.0.0.1"
-  provider: openai  # active provider for proxy mode
 
 providers:
   openai:

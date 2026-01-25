@@ -7,6 +7,11 @@ triggers:
   phases: ["run"]
   agents: ["frontend"]
   languages: ["typescript"]
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~2022
 type: version
 framework: nextjs
 version: "15"

@@ -20,9 +20,8 @@ type Config struct {
 
 // RouterConfig contains router server settings.
 type RouterConfig struct {
-	Port     int    `yaml:"port"`
-	Host     string `yaml:"host"`
-	Provider string `yaml:"provider"`
+	Port int    `yaml:"port"`
+	Host string `yaml:"host"`
 }
 
 // ProviderConfig contains provider-specific settings.
@@ -53,9 +52,8 @@ type ScenarioConfig struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Router: RouterConfig{
-			Port:     8787,
-			Host:     "127.0.0.1",
-			Provider: "openai",
+			Port: 8787,
+			Host: "127.0.0.1",
 		},
 		Providers: map[string]ProviderConfig{
 			"openai": {
@@ -255,49 +253,22 @@ func SaveConfig(cfg *Config) error {
 	return os.WriteFile(path, data, 0o644)
 }
 
-// GetActiveProvider returns the provider config for the active provider.
-func (c *Config) GetActiveProvider() (*ProviderConfig, error) {
-	name := c.Router.Provider
-	if name == "" {
-		return nil, fmt.Errorf("no provider configured")
-	}
-
+// GetProvider returns the provider config for the specified provider name.
+func (c *Config) GetProvider(name string) (*ProviderConfig, error) {
 	prov, ok := c.Providers[name]
 	if !ok {
 		return nil, fmt.Errorf("provider '%s' not found in config", name)
 	}
-
 	return &prov, nil
 }
 
-// ResolveProvider determines which provider to use based on scenario matching.
-func (c *Config) ResolveProvider(tokenCount int, hasThinking bool) (providerName, model string) {
-	if c.Scenarios == nil {
-		p, _ := c.GetActiveProvider()
-		if p != nil {
-			return c.Router.Provider, p.Model
-		}
-		return c.Router.Provider, ""
+// GetProviderNames returns a list of all configured provider names.
+func (c *Config) GetProviderNames() []string {
+	names := make([]string, 0, len(c.Providers))
+	for name := range c.Providers {
+		names = append(names, name)
 	}
-
-	// Scenario-based routing
-	if hasThinking && c.Scenarios.Think != "" {
-		return parseProviderModel(c.Scenarios.Think)
-	}
-
-	threshold := c.Scenarios.LongContextThreshold
-	if threshold == 0 {
-		threshold = 60000
-	}
-	if tokenCount > threshold && c.Scenarios.LongContext != "" {
-		return parseProviderModel(c.Scenarios.LongContext)
-	}
-
-	if c.Scenarios.Default != "" {
-		return parseProviderModel(c.Scenarios.Default)
-	}
-
-	return c.Router.Provider, ""
+	return names
 }
 
 // parseProviderModel splits "provider/model" into parts.
