@@ -95,6 +95,70 @@ Arguments: $ARGUMENTS
 | `--timeout N` | - | Page load timeout (ms) | 30000 |
 | `--stagnation-limit N` | - | Max iterations without improvement | 3 |
 
+## Dev Server Auto Detection
+
+**Pre-start Check**: Before launching a new dev server, automatically detect if one is already running.
+
+### Detection Logic
+
+```bash
+# Scan common dev server ports
+COMMON_PORTS=(3000 3001 5173 5174 8080 4200 8000 8888)
+
+# Check each port for running server
+for port in ${COMMON_PORTS[@]}; do
+  if lsof -i :$port -sTCP:LISTEN >/dev/null 2>&1; then
+    # Server found on this port
+  fi
+done
+```
+
+### Behavior Based on Detection
+
+| Scenario | Action |
+|----------|--------|
+| **`--url` provided** | Skip detection, use provided URL |
+| **1 server found** | Use automatically, skip server start |
+| **Multiple servers found** | Ask user which one to use |
+| **No servers found** | Proceed with normal server start |
+
+### Example Interactions
+
+**Single Server Detected:**
+```
+Detected dev server already running on http://localhost:3000
+Skipping server start, using existing server.
+```
+
+**Multiple Servers Detected:**
+```
+Detected multiple dev servers:
+1. http://localhost:3000
+2. http://localhost:5173
+
+Which server should be used for browser verification?
+(Select one, or choose 'Start New' to launch a fresh dev server)
+```
+
+**No Server Detected:**
+```
+No running dev server detected.
+Starting new server with: pnpm run dev
+```
+
+### Port Detection Priority
+
+| Port | Common Framework |
+|------|------------------|
+| 3000 | Next.js, Create React App |
+| 3001 | Next.js (alt) |
+| 5173 | Vite |
+| 5174 | Vite (alt) |
+| 8080 | Vue CLI, generic |
+| 4200 | Angular |
+| 8000 | Django, generic |
+| 8888 | Jupyter, generic |
+
 ## Package Manager Detection
 
 Detect package manager from lock files in project root:
@@ -389,7 +453,20 @@ Fixing...
 
 3. IF --url flag specified: Skip to step 6 (use provided URL directly)
 
-4. Start dev server:
+4. Dev Server Auto Detection (NEW):
+   - Scan common ports for running servers: 3000, 3001, 5173, 5174, 8080, 4200, 8000, 8888
+   - Use `lsof -i :PORT -sTCP:LISTEN` or `netstat` to detect listening processes
+   - IF exactly 1 server found:
+     - Log: "Detected dev server already running on http://localhost:{port}"
+     - Use detected URL, skip to step 6
+   - IF multiple servers found:
+     - Use AskUserQuestion to let user select which server to use
+     - Options: List detected servers + "Start New Server" option
+     - IF user selects existing server: Use that URL, skip to step 6
+     - IF user selects "Start New": Continue to step 5
+   - IF no servers found: Continue to step 5
+
+5. Start dev server:
    - Run detected command in background using Bash with run_in_background
    - [HARD] Prefix with `JIKIME_MANAGED=1` to bypass pre-bash tmux hook
    - Example: `JIKIME_MANAGED=1 pnpm run dev` or `JIKIME_MANAGED=1 npm run dev`
@@ -476,6 +553,6 @@ Fixing...
 
 ---
 
-Version: 1.0.0
-Last Updated: 2026-01-24
-Core: Browser Runtime Error Detection & Auto-Fix Loop
+Version: 1.1.0
+Last Updated: 2026-01-25
+Core: Browser Runtime Error Detection & Auto-Fix Loop (with Dev Server Auto Detection)

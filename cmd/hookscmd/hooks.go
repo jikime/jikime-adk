@@ -15,6 +15,9 @@ func NewHooks() *cobra.Command {
 	hooks.AddCommand(SessionEndRankCmd)
 	hooks.AddCommand(SessionEndCleanupCmd)
 
+	// UserPromptSubmit hooks
+	hooks.AddCommand(UserPromptSubmitCmd)
+
 	// PreCompact hooks
 	hooks.AddCommand(PreCompactCmd)
 

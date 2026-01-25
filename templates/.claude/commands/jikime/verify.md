@@ -169,6 +169,57 @@ lsp_quality_gates:
 [T] Trackable: Structured logging, error context
 ```
 
+### Phase 8: Adversarial Review (pre-pr, full profiles only)
+
+**Purpose**: Multi-angle validation to reduce false positives and catch missed issues.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   ADVERSARIAL REVIEW LAYER                  │
+├─────────────────────────────────────────────────────────────┤
+│  Subagent 1: False Positive Filter                          │
+│  ├─ Review all warnings/errors from Phases 1-7              │
+│  ├─ Identify false positives (intentional patterns,         │
+│  │   test fixtures, generated code, third-party)            │
+│  └─ Output: Filtered list with confidence scores            │
+├─────────────────────────────────────────────────────────────┤
+│  Subagent 2: Missing Issues Finder                          │
+│  ├─ Analyze code changes with fresh perspective             │
+│  ├─ Look for edge cases, race conditions, error handling    │
+│  ├─ Check boundary conditions and null safety               │
+│  └─ Output: Additional issues not caught by standard tools  │
+├─────────────────────────────────────────────────────────────┤
+│  Subagent 3: Context Validator                              │
+│  ├─ Compare findings against original intent/requirements   │
+│  ├─ Verify changes don't break existing functionality       │
+│  ├─ Check if suggested fixes align with codebase patterns   │
+│  └─ Output: Contextual assessment with recommendations      │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Execution**: All 3 subagents run in PARALLEL (single Task message):
+
+```markdown
+## Adversarial Review
+
+### False Positive Analysis
+| Finding | Verdict | Reason |
+|---------|---------|--------|
+| `unused import` in test.ts | FALSE POSITIVE | Test fixture |
+| `any` type warning | VALID | Should be typed |
+
+### Missing Issues Found
+1. Race condition in `async updateUser()` - no mutex
+2. Missing null check at `data.items[0]`
+
+### Context Validation
+- Changes align with PR description: ✅
+- Pattern consistency maintained: ✅
+- Suggested fixes are safe: ✅
+```
+
+**Gate**: Adversarial findings integrated into final report with severity adjustment.
+
 ---
 
 ## Output Format
@@ -198,6 +249,16 @@ lsp_quality_gates:
 ### Predictive Suggestions
 - Consider adding E2E test for new auth flow
 - Review error handling in payment module
+
+### Adversarial Review (pre-pr/full only)
+| Subagent | Findings |
+|----------|----------|
+| False Positive Filter | 2 warnings filtered (test fixtures) |
+| Missing Issues Finder | 1 race condition detected |
+| Context Validator | Changes align with intent ✅ |
+
+**Adjusted Issues**: 3 warnings → 1 warning (after filtering)
+**New Issues**: 1 (race condition in async handler)
 ```
 
 ### F.R.I.D.A.Y. Format
@@ -302,7 +363,15 @@ Benefits:
   "ready_for_pr": true,
   "warnings": [
     {"file": "src/utils.ts", "line": 42, "message": "Unused variable"}
-  ]
+  ],
+  "adversarial_review": {
+    "false_positives_filtered": 2,
+    "missing_issues_found": 1,
+    "context_validated": true,
+    "findings": [
+      {"type": "missing", "severity": "medium", "message": "Race condition in async handler", "file": "src/api.ts", "line": 78}
+    ]
+  }
 }
 ```
 
@@ -381,11 +450,19 @@ Each principle is verified:
 3. Execute phases in order:
    - Build → Type → Lint → Test → Security → LSP → TRUST 5
 4. Stop on critical failures (build, types in strict mode)
-5. Aggregate results into report
-6. Use orchestrator-appropriate format
-7. If `--fix`, attempt auto-fixes and re-verify
-8. If `--ci`, set exit code based on results
-9. If `--json`, output JSON instead of markdown
+5. **For `pre-pr` and `full` profiles**: Execute Adversarial Review (Phase 8)
+   - Launch 3 subagents in PARALLEL (single Task message):
+     - False Positive Filter: Review all findings, identify false positives
+     - Missing Issues Finder: Fresh perspective analysis for edge cases
+     - Context Validator: Compare findings against intent and patterns
+   - Collect results with TaskOutput
+   - Integrate adversarial findings into final report
+   - Adjust severity based on adversarial consensus
+6. Aggregate results into report
+7. Use orchestrator-appropriate format
+8. If `--fix`, attempt auto-fixes and re-verify
+9. If `--ci`, set exit code based on results
+10. If `--json`, output JSON instead of markdown
 
 Execute NOW. Do NOT just describe.
 
@@ -401,6 +478,6 @@ Execute NOW. Do NOT just describe.
 
 ---
 
-Version: 1.0.0
+Version: 1.1.0
 Type: Utility Command (Type B)
-Integration: LSP Quality Gates, TRUST 5
+Integration: LSP Quality Gates, TRUST 5, Adversarial Review

@@ -9,8 +9,8 @@ JikiME-ADK는 세 가지 타입의 명령어를 제공합니다:
 | Type | 설명 | 명령어 |
 |------|------|--------|
 | **Type A: Workflow** | 핵심 개발 워크플로우 | 0-project, 1-plan, 2-run, 3-sync |
-| **Type B: Utility** | 빠른 실행 및 자동화 | jarvis, test, loop |
-| **Standalone** | 독립 실행 유틸리티 | architect, build-fix, cleanup, codemap, docs, e2e, learn, refactor, security |
+| **Type B: Utility** | 빠른 실행 및 자동화 | jarvis, test, loop, verify |
+| **Standalone** | 독립 실행 유틸리티 | architect, build-fix, cleanup, codemap, docs, e2e, learn, perspective, refactor, security |
 | **Migration** | 레거시 마이그레이션 | migrate, migrate-0~4 |
 
 ---
@@ -33,6 +33,7 @@ JikiME-ADK는 세 가지 타입의 명령어를 제공합니다:
    0-project                    jarvis                      migrate
         ↓                       test                    migrate-0~4
     1-plan                      loop
+        ↓                      verify
         ↓                         │
      2-run              ┌─────────┴─────────┐
         ↓               │    Standalone     │
@@ -43,7 +44,8 @@ JikiME-ADK는 세 가지 타입의 명령어를 제공합니다:
                     │            │            │
                 architect   build-fix    cleanup
                  codemap      docs         e2e
-                  learn     refactor    security
+                  learn    perspective  refactor
+                            security
 ```
 
 ---
@@ -497,6 +499,89 @@ PHASE 3: 완료 & 예측
 
 ---
 
+### /jikime:verify
+
+**종합 품질 검증**
+
+| 항목 | 내용 |
+|------|------|
+| **설명** | 빌드, 타입, 린트, 테스트, 보안을 한 번에 검증 |
+| **Type** | Utility (Type B) |
+| **Context** | - |
+| **특징** | LSP Quality Gates, TRUST 5 프레임워크, Adversarial Review 통합 |
+
+#### Usage
+
+```bash
+# 표준 검증 (권장)
+/jikime:verify
+
+# 빠른 확인 (빌드 + 타입만)
+/jikime:verify quick
+
+# 전체 검증 (모든 체크 + deps)
+/jikime:verify full
+
+# PR 전 검증 (전체 + 보안 + Adversarial Review)
+/jikime:verify pre-pr
+
+# 자동 수정 시도
+/jikime:verify --fix
+
+# CI/CD 모드 (exit codes)
+/jikime:verify --ci
+
+# JSON 출력 (자동화용)
+/jikime:verify --json
+
+# 변경된 파일만 검사
+/jikime:verify --incremental
+```
+
+#### Verification Profiles
+
+| Profile | 검증 항목 | 용도 |
+|---------|----------|------|
+| `quick` | Build, Types | 개발 중 빠른 확인 |
+| `standard` | Build, Types, Lint, Tests | 기본, 변경 후 |
+| `full` | All + Deps, Coverage | 주요 커밋 전 |
+| `pre-pr` | Full + Security + Adversarial | PR 생성 전 |
+
+#### Verification Phases
+
+| Phase | 검증 내용 | Gate |
+|-------|----------|------|
+| 1. Build | 컴파일 성공 | FAIL → 즉시 중단 |
+| 2. Type Check | TypeScript/Pyright | 에러 → PR 전 수정 필수 |
+| 3. Lint | ESLint/Ruff | 에러 → 수정, 경고 → 문서화 |
+| 4. Test Suite | 커버리지 포함 | 실패 → 수정, <80% → 경고 |
+| 5. Security | 시크릿, 취약점 | 시크릿 → CRITICAL |
+| 6. LSP Gates | 품질 임계값 | 회귀 → PR 차단 |
+| 7. TRUST 5 | 5원칙 준수 | 미준수 항목 리포트 |
+| 8. Adversarial | 3-way 병렬 검증 (pre-pr, full만) | 조정된 심각도 |
+
+#### Adversarial Review (v1.1.0+)
+
+`pre-pr`과 `full` 프로파일에서 3개의 서브에이전트가 **병렬**로 실행:
+
+| Subagent | 역할 |
+|----------|------|
+| **False Positive Filter** | Phase 1-7 결과에서 오탐 식별 |
+| **Missing Issues Finder** | 새로운 관점으로 놓친 이슈 탐지 |
+| **Context Validator** | 원래 의도와 비교, 패턴 일관성 검증 |
+
+```
+결과 예시:
+- False Positives Filtered: 2 warnings (test fixtures)
+- Missing Issues Found: 1 race condition
+- Context Validated: ✅
+
+조정된 이슈: 3 warnings → 1 warning (필터링 후)
+새 이슈: 1 (async 핸들러의 race condition)
+```
+
+---
+
 ## Standalone Utility Commands
 
 워크플로우와 독립적으로 사용할 수 있는 유틸리티 명령어들입니다.
@@ -849,6 +934,102 @@ docs/CODEMAPS/
 
 ---
 
+### /jikime:perspective
+
+**다중 관점 병렬 분석**
+
+| 항목 | 내용 |
+|------|------|
+| **설명** | Architecture, Security, Performance, Testing 4개 관점 동시 분석 |
+| **Context** | - |
+| **Skill** | jikime-workflow-parallel |
+| **단독 사용** | ✅ 높음 - 언제든 독립 실행 가능 |
+
+#### Usage
+
+```bash
+# 전체 프로젝트 분석
+/jikime:perspective
+
+# 특정 경로 분석
+/jikime:perspective @src/api/
+
+# 특정 관점에 집중
+/jikime:perspective --focus security
+
+# 심층 분석
+/jikime:perspective --depth deep
+
+# 빠른 스캔
+/jikime:perspective --depth quick
+
+# 옵션 조합
+/jikime:perspective @src/auth/ --focus security --depth deep
+```
+
+#### Options
+
+| Option | 설명 |
+|--------|------|
+| `@path` | 분석 대상 경로 |
+| `--focus` | 특정 관점 집중: arch, security, perf, test |
+| `--depth` | 분석 깊이: quick, standard, deep |
+
+#### Depth Profiles
+
+| Profile | 설명 | 예상 시간 |
+|---------|------|----------|
+| `quick` | 표면 스캔, 명백한 이슈 | ~1분 |
+| `standard` | 균형 잡힌 분석 (기본) | ~3분 |
+| `deep` | 종합 분석, 엣지 케이스 | ~5분 |
+
+#### 4 Perspectives
+
+| 관점 | 분석 내용 | 주요 지표 |
+|------|----------|----------|
+| **Architecture** | 구조, 결합도, SOLID, DRY | 구조 점수 (0-100) |
+| **Security** | OWASP Top 10, 입력 검증, 시크릿 | 위험 점수 (0-100) |
+| **Performance** | 복잡도 O(n), N+1, 캐싱, 메모리 | 효율성 점수 (0-100) |
+| **Testing** | 커버리지, 엣지 케이스, 모킹 | 커버리지 점수 (0-100) |
+
+#### Synthesis Report
+
+4개 관점 분석 후 통합 리포트 생성:
+
+```markdown
+## Cross-Perspective Insights
+
+| Finding | Perspectives | Priority |
+|---------|--------------|----------|
+| SQL injection + Untested | Security + Testing | CRITICAL |
+| N+1 query + High coupling | Performance + Architecture | HIGH |
+
+## Correlation Matrix
+
+              Arch    Sec     Perf    Test
+Architecture    -     LOW     HIGH    MED
+Security       LOW     -      LOW     HIGH
+Performance   HIGH    LOW      -      MED
+Testing        MED    HIGH    MED      -
+```
+
+#### Parallel Execution
+
+4개 서브에이전트가 **단일 메시지**로 **병렬** 실행:
+
+```
+Single Message:
+  - Task("Architecture analysis", run_in_background: true)
+  - Task("Security analysis", run_in_background: true)
+  - Task("Performance analysis", run_in_background: true)
+  - Task("Testing analysis", run_in_background: true)
+
+→ TaskOutput로 결과 수집
+→ Synthesis 통합 리포트 생성
+```
+
+---
+
 ### /jikime:refactor
 
 **DDD 방법론 리팩토링**
@@ -1061,7 +1242,9 @@ ANALYZE → PRESERVE → IMPROVE
 | 새 프로젝트 시작 | `0-project` → `1-plan` → `2-run` → `3-sync` |
 | 빠른 기능 구현 | `/jikime:jarvis "description"` |
 | 빌드 에러 수정 | `/jikime:build-fix` |
+| PR 전 종합 검증 | `/jikime:verify pre-pr` |
 | 보안 점검 | `/jikime:security` |
+| 다중 관점 분석 | `/jikime:perspective @path` |
 | 아키텍처 리뷰 | `/jikime:architect` |
 | 코드 리팩토링 (SPEC 없이) | `/jikime:refactor @path` |
 | 코드 리팩토링 (SPEC 기반) | `/jikime:1-plan` → `/jikime:2-run` |
@@ -1096,6 +1279,7 @@ ANALYZE → PRESERVE → IMPROVE
 | jarvis | 1.0.0 | 2026-01-22 |
 | test | 1.0.0 | 2026-01-22 |
 | loop | 1.0.0 | 2026-01-22 |
+| verify | 1.1.0 | 2026-01-25 |
 | architect | 1.0.0 | - |
 | build-fix | 1.0.0 | - |
 | cleanup | 1.0.0 | 2026-01-25 |
@@ -1103,11 +1287,15 @@ ANALYZE → PRESERVE → IMPROVE
 | docs | 1.0.0 | - |
 | e2e | 1.0.0 | - |
 | learn | 1.0.0 | - |
+| perspective | 1.0.0 | 2026-01-25 |
 | refactor | 1.0.0 | - |
 | security | 1.0.0 | - |
 | migrate | 1.4.5 | - |
 
 ---
 
-Version: 1.1.0
+Version: 1.2.0
 Last Updated: 2026-01-25
+Changelog:
+- v1.2.0: verify (Adversarial Review), perspective (Multi-Perspective Analysis) 명령어 추가
+- v1.1.0: cleanup, codemap 명령어 추가

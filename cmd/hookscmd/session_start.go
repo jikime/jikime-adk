@@ -188,7 +188,120 @@ func formatSessionOutput() (string, error) {
 		output.WriteString(fmt.Sprintf("   👋 Welcome back, %s!\n", userName))
 	}
 
+	// Environment validation warnings
+	envWarnings := validateEnvironment(projectRoot)
+	if len(envWarnings) > 0 {
+		output.WriteString("\n   ⚠️  Environment Warnings:\n")
+		for _, warning := range envWarnings {
+			output.WriteString(fmt.Sprintf("      - %s\n", warning))
+		}
+	}
+
 	return output.String(), nil
+}
+
+// validateEnvironment checks for required tools and project setup
+func validateEnvironment(projectRoot string) []string {
+	var warnings []string
+
+	// Check for Git
+	if _, err := exec.LookPath("git"); err != nil {
+		warnings = append(warnings, "Git not found - version control features will be limited")
+	}
+
+	// Detect project type and check for required tools
+	projectType := detectProjectType(projectRoot)
+
+	switch projectType {
+	case "node":
+		// Check for Node.js
+		if _, err := exec.LookPath("node"); err != nil {
+			warnings = append(warnings, "Node.js not found - required for this project")
+		}
+		// Check for package manager
+		if _, err := exec.LookPath("npm"); err != nil {
+			if _, err := exec.LookPath("pnpm"); err != nil {
+				if _, err := exec.LookPath("yarn"); err != nil {
+					warnings = append(warnings, "No package manager (npm/pnpm/yarn) found")
+				}
+			}
+		}
+		// Check for node_modules
+		nodeModules := filepath.Join(projectRoot, "node_modules")
+		if _, err := os.Stat(nodeModules); os.IsNotExist(err) {
+			warnings = append(warnings, "node_modules not found - run 'npm install' or equivalent")
+		}
+
+	case "python":
+		// Check for Python
+		if _, err := exec.LookPath("python3"); err != nil {
+			if _, err := exec.LookPath("python"); err != nil {
+				warnings = append(warnings, "Python not found - required for this project")
+			}
+		}
+		// Check for virtual environment
+		venvPath := filepath.Join(projectRoot, ".venv")
+		venvPath2 := filepath.Join(projectRoot, "venv")
+		if _, err := os.Stat(venvPath); os.IsNotExist(err) {
+			if _, err := os.Stat(venvPath2); os.IsNotExist(err) {
+				warnings = append(warnings, "No virtual environment found - consider creating one")
+			}
+		}
+
+	case "go":
+		// Check for Go
+		if _, err := exec.LookPath("go"); err != nil {
+			warnings = append(warnings, "Go not found - required for this project")
+		}
+
+	case "rust":
+		// Check for Rust
+		if _, err := exec.LookPath("cargo"); err != nil {
+			warnings = append(warnings, "Cargo (Rust) not found - required for this project")
+		}
+	}
+
+	// Check for .env file (common requirement)
+	envExample := filepath.Join(projectRoot, ".env.example")
+	envFile := filepath.Join(projectRoot, ".env")
+	if _, err := os.Stat(envExample); err == nil {
+		if _, err := os.Stat(envFile); os.IsNotExist(err) {
+			warnings = append(warnings, ".env file missing - copy from .env.example")
+		}
+	}
+
+	return warnings
+}
+
+// detectProjectType determines the project type based on config files
+func detectProjectType(projectRoot string) string {
+	// Node.js indicators
+	if _, err := os.Stat(filepath.Join(projectRoot, "package.json")); err == nil {
+		return "node"
+	}
+
+	// Python indicators
+	if _, err := os.Stat(filepath.Join(projectRoot, "pyproject.toml")); err == nil {
+		return "python"
+	}
+	if _, err := os.Stat(filepath.Join(projectRoot, "requirements.txt")); err == nil {
+		return "python"
+	}
+	if _, err := os.Stat(filepath.Join(projectRoot, "setup.py")); err == nil {
+		return "python"
+	}
+
+	// Go indicators
+	if _, err := os.Stat(filepath.Join(projectRoot, "go.mod")); err == nil {
+		return "go"
+	}
+
+	// Rust indicators
+	if _, err := os.Stat(filepath.Join(projectRoot, "Cargo.toml")); err == nil {
+		return "rust"
+	}
+
+	return "unknown"
 }
 
 func findProjectRoot() (string, error) {

@@ -3,7 +3,9 @@ package hookscmd
 import (
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -67,6 +69,9 @@ func runSessionEndCleanup(cmd *cobra.Command, args []string) error {
 
 	// P0-3: Generate session summary
 	result.SessionSummary = generateCleanupSummary(stats, uncommittedWarning)
+
+	// P0-4: Send desktop notification
+	sendDesktopNotification("JikiME-ADK Session Ended", result.SessionSummary)
 
 	// Record execution time
 	result.ExecutionTimeSeconds = time.Since(startTime).Seconds()
@@ -186,4 +191,51 @@ func generateCleanupSummary(stats cleanupStats, uncommittedWarning string) strin
 	}
 
 	return strings.Join(summaryLines, "\n")
+}
+
+// sendDesktopNotification sends a cross-platform desktop notification
+// Supports macOS (osascript), Linux (notify-send), and Windows (PowerShell)
+func sendDesktopNotification(title, message string) {
+	// Skip if JIKIME_NO_NOTIFY is set
+	if os.Getenv("JIKIME_NO_NOTIFY") != "" {
+		return
+	}
+
+	// Escape quotes in message for shell safety
+	escapedTitle := strings.ReplaceAll(title, `"`, `\"`)
+	escapedMessage := strings.ReplaceAll(message, `"`, `\"`)
+	escapedMessage = strings.ReplaceAll(escapedMessage, "\n", " ")
+
+	var cmd *exec.Cmd
+
+	switch runtime.GOOS {
+	case "darwin":
+		// macOS: Use osascript for native notifications
+		script := `display notification "` + escapedMessage + `" with title "` + escapedTitle + `"`
+		cmd = exec.Command("osascript", "-e", script)
+
+	case "linux":
+		// Linux: Use notify-send (requires libnotify)
+		cmd = exec.Command("notify-send", title, message)
+
+	case "windows":
+		// Windows: Use PowerShell toast notification
+		psScript := `
+		[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+		[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+		$template = "<toast><visual><binding template='ToastText02'><text id='1'>` + escapedTitle + `</text><text id='2'>` + escapedMessage + `</text></binding></visual></toast>"
+		$xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+		$xml.LoadXml($template)
+		$toast = [Windows.UI.Notifications.ToastNotification]::new($xml)
+		[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("JikiME-ADK").Show($toast)
+		`
+		cmd = exec.Command("powershell", "-Command", psScript)
+
+	default:
+		// Unsupported OS - silently skip
+		return
+	}
+
+	// Run notification in background, ignore errors (non-critical)
+	_ = cmd.Start()
 }

@@ -417,6 +417,49 @@ F.R.I.D.A.Y. (마이그레이션):
 - 각 Phase에 롤백 포인트 생성
 - LSP Quality Gates가 regression 감지 시 자동 알림
 
+## Related Commands & Features
+
+### 병렬 실행 기능
+
+J.A.R.V.I.S.의 5-way 병렬 탐색과 연계하여 사용할 수 있는 명령어들:
+
+| 명령어 | 설명 | 병렬 실행 패턴 |
+|--------|------|---------------|
+| `/jikime:perspective` | 4개 관점(Arch, Sec, Perf, Test) 동시 분석 | 4-way 병렬 서브에이전트 |
+| `/jikime:verify pre-pr` | Adversarial Review 포함 검증 | 3-way 병렬 검증 |
+
+### Multi-Perspective Analysis
+
+`/jikime:perspective` 명령어는 J.A.R.V.I.S.의 Intelligence Gathering과 유사한 병렬 분석 패턴을 사용합니다:
+
+```
+J.A.R.V.I.S. Phase 0:        /jikime:perspective:
+├── Explore Agent            ├── Architecture Agent
+├── Research Agent           ├── Security Agent
+├── Quality Agent      ←→    ├── Performance Agent
+├── Security Agent           └── Testing Agent
+└── Performance Agent
+```
+
+### Adversarial Review
+
+`/jikime:verify pre-pr`에서 Phase 8로 실행되는 Adversarial Review는 3개의 서브에이전트가 병렬로 검증합니다:
+
+| Subagent | 역할 |
+|----------|------|
+| **False Positive Filter** | 오탐 필터링 |
+| **Missing Issues Finder** | 놓친 이슈 탐지 |
+| **Context Validator** | 맥락 검증 |
+
+### Skill Reference
+
+병렬 실행 패턴에 대한 상세 문서:
+- `templates/.claude/skills/jikime-workflow-parallel/SKILL.md`
+- `templates/.claude/skills/jikime-workflow-parallel/modules/parallel-patterns.md`
+- `templates/.claude/skills/jikime-workflow-parallel/modules/synthesis-strategies.md`
+
+---
+
 ## Best Practices
 
 ### 언제 J.A.R.V.I.S.를 사용하나요?
@@ -455,11 +498,12 @@ F.R.I.D.A.Y. (마이그레이션):
 
 ---
 
-Version: 3.1.0
+Version: 3.2.0
 Last Updated: 2026-01-25
 Codename: J.A.R.V.I.S. (Just A Rather Very Intelligent System)
 Inspiration: Iron Man's AI Assistant
 Changelog:
+- v3.2.0: Related Commands 섹션 추가 (perspective, verify), 병렬 실행 패턴 문서 연결
 - v3.1.0: LSP Quality Gates 설정 경로 업데이트 (quality.yaml), 문서 개선
 - v3.0.0: Dual Orchestrator (J.A.R.V.I.S. + F.R.I.D.A.Y.), LSP Quality Gates, Ralph Loop integration
 - v2.0.0: Added Migration Mode (--mode migrate), unified workflow orchestration
