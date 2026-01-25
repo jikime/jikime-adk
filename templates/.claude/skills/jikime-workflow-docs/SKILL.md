@@ -25,6 +25,26 @@ progressive_disclosure:
   level1_tokens: ~100
   level2_tokens: ~2241
 
+# Trigger Conditions for Level 2 Loading
+triggers:
+  keywords:
+    - documentation
+    - docs
+    - Sphinx
+    - MkDocs
+    - TypeDoc
+    - Nextra
+    - API docs
+    - user guide
+    - technical spec
+    - doc site
+  phases:
+    - plan
+    - sync
+  agents:
+    - manager-docs
+    - documenter
+
 ---
 
 # Documentation Generation Patterns

@@ -6,6 +6,13 @@ license: MIT
 metadata:
   author: vercel
   version: "1.0.0"
+tags:
+  - platform
+  - vercel
+  - react
+  - nextjs
+  - performance
+  - optimization
 triggers:
   keywords: ["react", "next.js", "performance", "bundle", "optimization"]
   phases: ["run"]
