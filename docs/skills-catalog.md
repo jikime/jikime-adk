@@ -1,6 +1,6 @@
 # JikiME-ADK Skills Catalog
 
-> Auto-generated on 2026-01-25 15:51
+> Auto-generated on 2026-01-25 16:31
 > Total Skills: **59**
 
 ## Overview
@@ -28,14 +28,14 @@
 | `jikime-domain-backend` | Backend development specialist covering API design, datab... | backend, api, database | No |
 | `jikime-domain-database` | Database specialist covering PostgreSQL, MongoDB, Redis, ... | database, postgresql, mongodb | No |
 | `jikime-domain-frontend` | Frontend development specialist covering React 19, Next.j... | frontend, react, nextjs | No |
-| `jikime-domain-uiux` | Domain UI/UX Expert - Enterprise design systems, componen... | - | No |
+| `jikime-domain-uiux` | Domain UI/UX Expert - Enterprise design systems, componen... | domain, uiux, design-systems | No |
 
 ## Foundation Skills (5)
 
 | Skill | Description | Tags | Invocable |
 |-------|-------------|------|-----------|
 | `jikime-foundation-claude` | Canonical Claude Code authoring kit covering Skills, sub-... | foundation, claude-code, skills | No |
-| `jikime-foundation-context` | Enterprise context and session management with token budg... | - | No |
+| `jikime-foundation-context` | Enterprise context and session management with token budg... | foundation, context, session | No |
 | `jikime-foundation-core` | JikiME-ADK's foundational principles - TRUST 5, SPEC-Firs... | foundation, trust-5, spec | No |
 | `jikime-foundation-philosopher` | Strategic thinking framework integrating First Principles... | foundation, strategic-thinking, first-principles | No |
 | `jikime-foundation-quality` | Enterprise code quality orchestrator with TRUST 5 validat... | foundation, quality, testing | No |
@@ -99,7 +99,7 @@
 | `jikime-platform-clerk` | Clerk modern authentication specialist covering WebAuthn,... | clerk, webauthn, passkeys | No |
 | `jikime-platform-supabase` | Supabase specialist covering PostgreSQL 16, pgvector, RLS... | platform, supabase, postgresql | No |
 | `jikime-platform-vercel` | Vercel edge deployment specialist covering Edge Functions... | platform, vercel, deployment | No |
-| `jikime-platform-vercel-react` | React and Next.js performance optimization guidelines fro... | - | No |
+| `jikime-platform-vercel-react` | React and Next.js performance optimization guidelines fro... | platform, vercel, react | No |
 
 ## Tool Skills (1)
 
@@ -115,7 +115,7 @@
 | `jikime-workflow-ddd` | Domain-Driven Development workflow specialist using ANALY... | workflow, ddd, refactoring | No |
 | `jikime-workflow-docs` | Documentation generation patterns for technical specs, AP... | workflow, documentation, sphinx | No |
 | `jikime-workflow-eval` | Eval-Driven Development (EDD) framework - treat evals as ... | workflow, eval, edd | No |
-| `jikime-workflow-jit-docs` | Enhanced Just-In-Time document loading system that intell... | - | No |
+| `jikime-workflow-jit-docs` | Enhanced Just-In-Time document loading system that intell... | workflow, documentation, jit-loading | No |
 | `jikime-workflow-learning` | Continuous learning system - extract, store, and reuse pa... | workflow, learning, patterns | No |
 | `jikime-workflow-loop` | Ralph Loop workflow for iterative code improvement with L... | workflow, loop, iteration | Yes |
 | `jikime-workflow-parallel` | Parallel subagent execution patterns for multi-perspectiv... | workflow, parallel, subagent | No |
@@ -124,7 +124,7 @@
 | `jikime-workflow-spec` | SPEC workflow orchestration with EARS format, requirement... | workflow, spec, ears | No |
 | `jikime-workflow-sync` | Documentation synchronization workflow specialist for cod... | workflow, sync, documentation | No |
 | `jikime-workflow-tdd` | Test-Driven Development workflow for new feature developm... | workflow, tdd, testing | No |
-| `jikime-workflow-templates` | Enterprise template management with code boilerplates, fe... | - | No |
+| `jikime-workflow-templates` | Enterprise template management with code boilerplates, fe... | workflow, templates, boilerplate | No |
 | `jikime-workflow-testing` | Comprehensive development workflow specialist combining D... | workflow, testing, quality | No |
 | `jikime-workflow-verify` | Comprehensive verification workflow with LSP Quality Gate... | workflow, verify, quality | No |
 | `jikime-workflow-worktree` | Git worktree management for parallel SPEC development wit... | workflow, git, worktree | No |

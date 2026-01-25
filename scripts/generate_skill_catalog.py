@@ -75,6 +75,26 @@ def extract_frontmatter(content: str) -> Optional[dict[str, Any]]:
         return None
 
     yaml_content = match.group(1)
+
+    # Pre-process: Handle multiline JSON arrays (e.g., tags: [\n  "item1",\n  "item2"\n])
+    # Convert them to inline arrays for easier parsing
+    def replace_multiline_array(m):
+        key = m.group(1)
+        array_content = m.group(2)
+        # Extract items from multiline array
+        items = re.findall(r'"([^"]+)"', array_content)
+        if not items:
+            items = re.findall(r"'([^']+)'", array_content)
+        quoted_items = ', '.join('"{}"'.format(item) for item in items)
+        return '{}: [{}]'.format(key, quoted_items)
+
+    yaml_content = re.sub(
+        r'^(\w+):\s*\[\s*\n(.*?)\s*\]',
+        replace_multiline_array,
+        yaml_content,
+        flags=re.MULTILINE | re.DOTALL
+    )
+
     result = {}
     current_key = None
     current_indent = 0

@@ -1,8 +1,8 @@
 # JikiME-ADK Skills Catalog
-# Auto-generated on 2026-01-25 15:51
+# Auto-generated on 2026-01-25 16:31
 
 version: '1.0.0'
-generated_at: '2026-01-25T15:51:46.725717'
+generated_at: '2026-01-25T16:31:46.562194'
 total_skills: 59
 
 # Skills by domain
@@ -141,6 +141,7 @@ skills:
     description: "Domain UI/UX Expert - Enterprise design systems, component architecture, accessibility, icons, and theming integration"
     version: 2.0.0
     user_invocable: false
+    tags: ["domain", "uiux", "design-systems", "accessibility", "components"]
 
   - name: jikime-foundation-claude
     domain: foundation
@@ -154,6 +155,7 @@ skills:
     description: "Enterprise context and session management with token budget optimization and state persistence"
     version: 3.1.0
     user_invocable: false
+    tags: ["foundation", "context", "session", "token-optimization", "state-management"]
 
   - name: jikime-foundation-core
     domain: foundation
@@ -391,6 +393,7 @@ skills:
     description: "React and Next.js performance optimization guidelines from Vercel Engineering. This skill should be used when writing, reviewing, or refactoring React/Next.js code to ensure optimal performance patterns. Triggers on tasks involving React components, Next.js pages, data fetching, bundle optimization, or performance improvements."
     version: 1.0.0
     user_invocable: false
+    tags: ["platform", "vercel", "react", "nextjs", "performance"]
 
   - name: jikime-tool-ast-grep
     domain: tool
@@ -432,6 +435,7 @@ skills:
     description: "Enhanced Just-In-Time document loading system that intelligently discovers, loads, and caches relevant documentation based on user intent and project context. Use when users need specific documentation, when working with new technologies, when answering domain-specific questions, or when context indicates documentation gaps."
     version: 3.0.0
     user_invocable: false
+    tags: ["workflow", "documentation", "jit-loading", "context-aware", "caching"]
 
   - name: jikime-workflow-learning
     domain: workflow
@@ -494,6 +498,7 @@ skills:
     description: "Enterprise template management with code boilerplates, feedback templates, and project optimization workflows"
     version: 3.1.0
     user_invocable: false
+    tags: ["workflow", "templates", "boilerplate", "scaffolding", "optimization"]
 
   - name: jikime-workflow-testing
     domain: workflow
