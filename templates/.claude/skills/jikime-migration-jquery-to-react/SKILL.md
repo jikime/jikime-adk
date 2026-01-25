@@ -1,16 +1,34 @@
 ---
-name: migrate-jquery-to-react
+name: jikime-migration-jquery-to-react
 description: |
   jQuery to React 19 migration specialist. Converts legacy jQuery applications
   to modern React with hooks, TypeScript, and component-based architecture.
   Use when migrating jQuery projects, converting $() patterns to React,
   or asking about jQuery to React conversion.
 argument-hint: [source-path]
-disable-model-invocation: false
-user-invocable: true
-allowed-tools: Read, Grep, Glob, Edit, Write
+version: 2.1.0
+tags: ["migration", "jquery", "react", "javascript", "typescript", "legacy"]
+triggers:
+  keywords: ["jquery", "$", "$.ajax", "jquery-to-react", "migrate jquery", "convert jquery", "제이쿼리"]
+  phases: ["plan", "run"]
+  agents: ["manager-migrate-react", "frontend"]
+  languages: ["javascript", "typescript"]
+# Progressive Disclosure Configuration
+progressive_disclosure:
+  enabled: true
+  level1_tokens: ~100
+  level2_tokens: ~5000
+user-invocable: false
 context: fork
 agent: Explore
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Bash
+  - Grep
+  - Glob
+  - TodoWrite
 ---
 
 # jQuery → React Migration
@@ -96,9 +114,8 @@ Test behavior preservation:
 
 ## Module Reference
 
-For detailed patterns, load:
-- [Conversion Patterns](modules/jquery-patterns.md) - Complete jQuery to React mappings
-- DOM manipulation, events, AJAX, lifecycle, animations
+For detailed patterns, see:
+- [jQuery Patterns](modules/jquery-patterns.md) - DOM manipulation, events, AJAX, lifecycle, animations
 
 ## Examples
 
@@ -168,4 +185,4 @@ function Component() {
 
 Version: 2.1.0
 Last Updated: 2026-01-25
-Source: Context7 React Documentation + Official Claude Code Skills Specification
+Source: React Official Docs, jQuery Migration Guide
