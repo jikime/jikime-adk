@@ -73,7 +73,99 @@ triggers:
 여기에 스킬의 상세 내용을 작성합니다.
 ```
 
-## 스킬 관리 도구
+## 스킬 CLI (Discovery)
+
+`jikime-adk skill` 명령어를 통해 스킬을 탐색하고 검색할 수 있습니다.
+
+### 스킬 목록 조회 (list)
+
+```bash
+# 모든 스킬 목록
+jikime-adk skill list
+
+# 태그로 필터링
+jikime-adk skill list --tag framework
+
+# 페이즈로 필터링 (plan, run, sync)
+jikime-adk skill list --phase run
+
+# 에이전트로 필터링
+jikime-adk skill list --agent frontend
+
+# 언어로 필터링
+jikime-adk skill list --language typescript
+
+# 출력 형식 지정
+jikime-adk skill list --format json      # JSON 형식
+jikime-adk skill list --format compact   # 간결한 형식
+jikime-adk skill list --format table     # 테이블 형식 (기본값)
+```
+
+### 스킬 검색 (search)
+
+```bash
+# 텍스트로 검색
+jikime-adk skill search nextjs
+jikime-adk skill search "react components" --limit 5
+
+# 태그로 검색 (쉼표로 구분)
+jikime-adk skill search --tags framework,nextjs
+
+# 복합 필터링
+jikime-adk skill search --phases run --languages typescript
+jikime-adk skill search --agents frontend,backend --limit 10
+```
+
+**검색 결과 예시:**
+
+```
+Search Results (3 found):
+--------------------------------------------------------------------------------
+1. jikime-migration-to-nextjs (score: 95.0)
+   Legacy to Next.js 16 migration workflow specialist...
+   Tags: migration, nextjs, react, vue, angular
+   Keywords: migrate, migration, nextjs
+
+2. jikime-framework-nextjs@16 (score: 95.0)
+   Next.js 16 upgrade guide with breaking changes...
+   Tags: framework, nextjs, version, use-cache
+   Keywords: nextjs 16, next.js 16
+```
+
+### 관련 스킬 찾기 (related)
+
+공유하는 태그, 페이즈, 에이전트, 언어를 기반으로 관련 스킬을 찾습니다.
+
+```bash
+# 관련 스킬 찾기
+jikime-adk skill related jikime-lang-typescript
+
+# 결과 개수 제한
+jikime-adk skill related jikime-platform-vercel --limit 5
+```
+
+### 스킬 상세 정보 (info)
+
+```bash
+# 메타데이터 조회
+jikime-adk skill info jikime-lang-typescript
+
+# 마크다운 본문까지 포함
+jikime-adk skill info jikime-platform-vercel --body
+```
+
+### CLI 옵션 요약
+
+| 명령어 | 주요 옵션 | 설명 |
+|--------|----------|------|
+| `list` | `--tag`, `--phase`, `--agent`, `--language`, `--format` | 스킬 목록 및 필터링 |
+| `search` | `--tags`, `--phases`, `--agents`, `--languages`, `--limit` | 스킬 검색 |
+| `related` | `--limit` | 관련 스킬 찾기 |
+| `info` | `--body` | 스킬 상세 정보 |
+
+---
+
+## 스킬 관리 도구 (Scripts)
 
 ### 1. 스킬 카탈로그 생성
 
