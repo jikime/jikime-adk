@@ -38,6 +38,7 @@ Priority 1: Command/Keyword Detection (Explicit Signal)
          /jikime:cleanup, /jikime:codemap, /jikime:eval, /jikime:loop,
          /jikime:test, /jikime:verify, /jikime:architect, /jikime:docs,
          /jikime:e2e, /jikime:learn, /jikime:refactor, /jikime:security,
+         /jikime:skill-create, /jikime:migration-skill,
          /jikime:0-project, /jikime:1-plan, /jikime:2-run, /jikime:3-sync)
         → Activate J.A.R.V.I.S. + update state file
 
@@ -273,6 +274,22 @@ Allowed Tools: Task, AskUserQuestion, TodoWrite, Bash, Read, Write, Edit, Glob, 
 - User retains responsibility for reviewing changes
 
 WHY: Ensures consistent quality through agent expertise regardless of session state.
+
+### Type C: Generator Commands
+
+Definition: Commands that generate new skills, agents, and commands.
+
+**Generator Commands**:
+- /jikime:skill-create - Claude Code skill generator with Progressive Disclosure
+- /jikime:migration-skill - Migration-specific skill generator
+
+Allowed Tools: Task, AskUserQuestion, TodoWrite, Bash, Read, Write, Edit, Glob, Grep, mcp__context7__resolve-library-id, mcp__context7__query-docs
+
+- Uses Context7 MCP for documentation research
+- Generates SKILL.md with appropriate supporting files based on skill type
+- Follows Progressive Disclosure pattern (Level 1/2/3 loading)
+
+WHY: Standardized skill generation ensures consistency and discoverability.
 
 ---
 
@@ -835,8 +852,8 @@ Platform differences exist between GNU tools (Linux) and BSD tools (macOS). For 
 
 ---
 
-Version: 11.1.0 (Dual Orchestrator: J.A.R.V.I.S. + F.R.I.D.A.Y.)
-Last Updated: 2026-01-25
+Version: 11.2.0 (Dual Orchestrator: J.A.R.V.I.S. + F.R.I.D.A.Y.)
+Last Updated: 2026-01-26
 Language: English
 Core Rule: J.A.R.V.I.S. and F.R.I.D.A.Y. orchestrate; direct implementation is prohibited
 

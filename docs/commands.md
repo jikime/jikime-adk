@@ -11,6 +11,7 @@ JikiME-ADK는 세 가지 타입의 명령어를 제공합니다:
 | **Type A: Workflow** | 핵심 개발 워크플로우 | 0-project, 1-plan, 2-run, 3-sync |
 | **Type B: Utility** | 빠른 실행 및 자동화 | jarvis, test, loop, verify |
 | **Standalone** | 독립 실행 유틸리티 | architect, build-fix, cleanup, codemap, docs, e2e, learn, perspective, refactor, security |
+| **Generator** | 스킬 및 코드 생성 | skill-create, migration-skill |
 | **Migration** | 레거시 마이그레이션 | migrate, migrate-0~4 |
 
 ---
@@ -22,30 +23,24 @@ JikiME-ADK는 세 가지 타입의 명령어를 제공합니다:
                     │        JikiME-ADK Commands          │
                     └─────────────────────────────────────┘
                                     │
-        ┌───────────────────────────┼───────────────────────────┐
-        │                           │                           │
-        ▼                           ▼                           ▼
-┌───────────────┐          ┌───────────────┐          ┌───────────────┐
-│   Workflow    │          │   Utility     │          │   Migration   │
-│   (Type A)    │          │   (Type B)    │          │   Workflow    │
-└───────────────┘          └───────────────┘          └───────────────┘
-        │                           │                           │
-   0-project                    jarvis                      migrate
-        ↓                       test                    migrate-0~4
-    1-plan                      loop
-        ↓                      verify
-        ↓                         │
-     2-run              ┌─────────┴─────────┐
-        ↓               │    Standalone     │
-    3-sync              │    Utilities      │
-                        └───────────────────┘
-                                 │
-                    ┌────────────┼────────────┐
-                    │            │            │
-                architect   build-fix    cleanup
-                 codemap      docs         e2e
-                  learn    perspective  refactor
-                            security
+    ┌───────────────┬───────────────┼───────────────┬───────────────┐
+    │               │               │               │               │
+    ▼               ▼               ▼               ▼               ▼
+┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐
+│Workflow │   │ Utility │   │Generator│   │Standalone│   │Migration│
+│(Type A) │   │(Type B) │   │         │   │         │   │         │
+└─────────┘   └─────────┘   └─────────┘   └─────────┘   └─────────┘
+    │               │               │               │               │
+ 0-project       jarvis      skill-create      architect        migrate
+    ↓            test       migration-skill   build-fix      migrate-0~4
+  1-plan         loop                          cleanup
+    ↓           verify                         codemap
+  2-run                                          docs
+    ↓                                            e2e
+  3-sync                                        learn
+                                            perspective
+                                              refactor
+                                              security
 ```
 
 ---
@@ -1151,6 +1146,105 @@ ANALYZE → PRESERVE → IMPROVE
 
 ---
 
+## Generator Commands
+
+스킬 및 코드 생성을 위한 명령어들입니다.
+
+### /jikime:skill-create
+
+**범용 Claude Code 스킬 생성기**
+
+| 항목 | 내용 |
+|------|------|
+| **설명** | 다양한 유형의 전문 스킬을 Progressive Disclosure 패턴으로 생성 |
+| **Type** | Generator |
+| **Context** | - |
+| **MCP** | Context7 (문서 조회) |
+
+#### Usage
+
+```bash
+# 언어 전문가 스킬 생성
+/jikime:skill-create --type lang --name rust
+
+# 플랫폼 통합 스킬 생성
+/jikime:skill-create --type platform --name firebase
+
+# 도메인 전문가 스킬 생성
+/jikime:skill-create --type domain --name security
+
+# 워크플로우 스킬 생성
+/jikime:skill-create --type workflow --name ci-cd
+
+# 라이브러리 스킬 생성
+/jikime:skill-create --type library --name prisma
+
+# 프레임워크 스킬 생성
+/jikime:skill-create --type framework --name remix
+
+# 기존 스킬 개선
+/jikime:skill-create --type lang --name python --enhance-only
+```
+
+#### Options
+
+| Option | 설명 |
+|--------|------|
+| `--type` | 스킬 유형: lang, platform, domain, workflow, library, framework |
+| `--name` | 스킬 이름 |
+| `--enhance-only` | 기존 스킬 개선만 (새로 생성 안함) |
+
+#### Generated Structure by Type
+
+| Type | 생성 파일 | 용도 |
+|------|----------|------|
+| `lang` | SKILL.md + examples.md + reference.md | 언어 전문가 |
+| `platform` | SKILL.md + setup.md + reference.md | 플랫폼 통합 |
+| `domain` | SKILL.md + patterns.md + examples.md | 도메인 전문가 |
+| `workflow` | SKILL.md + steps.md + examples.md | 워크플로우 |
+| `library` | SKILL.md + examples.md + reference.md | 라이브러리 |
+| `framework` | SKILL.md + patterns.md + upgrade.md | 프레임워크 |
+
+> 상세 문서: [skill-create.md](./skill-create.md)
+
+---
+
+### /jikime:migration-skill
+
+**마이그레이션 전용 스킬 생성기**
+
+| 항목 | 내용 |
+|------|------|
+| **설명** | 레거시→현대 프레임워크 마이그레이션 전문 스킬 생성 |
+| **Type** | Generator |
+| **Context** | - |
+| **MCP** | Context7 (마이그레이션 가이드 조회) |
+
+#### Usage
+
+```bash
+# CRA에서 Next.js로 마이그레이션 스킬 생성
+/jikime:migration-skill --from cra --to nextjs
+
+# Vue에서 Nuxt로 마이그레이션 스킬 생성
+/jikime:migration-skill --from vue --to nuxt
+
+# 기존 스킬 개선
+/jikime:migration-skill --from angular --to react --enhance-only
+```
+
+#### Options
+
+| Option | 설명 |
+|--------|------|
+| `--from` | 소스 프레임워크: cra, vue, angular, svelte, jquery, php |
+| `--to` | 타겟 프레임워크: nextjs, nuxt, react, vue |
+| `--enhance-only` | 기존 스킬 개선만 |
+
+> 상세 문서: [migration-skill.md](./migration-skill.md)
+
+---
+
 ## Migration Workflow
 
 레거시 프로젝트를 Next.js 16으로 마이그레이션하는 워크플로우입니다.
@@ -1279,7 +1373,7 @@ ANALYZE → PRESERVE → IMPROVE
 | jarvis | 1.0.0 | 2026-01-22 |
 | test | 1.0.0 | 2026-01-22 |
 | loop | 1.0.0 | 2026-01-22 |
-| verify | 1.1.0 | 2026-01-25 |
+| verify | 2.0.0 | 2026-01-26 |
 | architect | 1.0.0 | - |
 | build-fix | 1.0.0 | - |
 | cleanup | 1.0.0 | 2026-01-25 |
@@ -1290,12 +1384,15 @@ ANALYZE → PRESERVE → IMPROVE
 | perspective | 1.0.0 | 2026-01-25 |
 | refactor | 1.0.0 | - |
 | security | 1.0.0 | - |
+| skill-create | 1.0.0 | 2026-01-26 |
+| migration-skill | 1.0.0 | 2026-01-26 |
 | migrate | 1.4.5 | - |
 
 ---
 
-Version: 1.2.0
-Last Updated: 2026-01-25
+Version: 1.3.0
+Last Updated: 2026-01-26
 Changelog:
+- v1.3.0: Generator Commands 섹션 추가 (skill-create, migration-skill)
 - v1.2.0: verify (Adversarial Review), perspective (Multi-Perspective Analysis) 명령어 추가
 - v1.1.0: cleanup, codemap 명령어 추가
