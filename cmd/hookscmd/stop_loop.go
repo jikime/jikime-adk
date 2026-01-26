@@ -62,7 +62,14 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 	// Check if loop controller is disabled
 	if disabled := os.Getenv(disableEnvVar); disabled != "" {
 		if disabled == "1" || strings.ToLower(disabled) == "true" || strings.ToLower(disabled) == "yes" {
-			return nil
+			// Loop disabled - output proper JSON response
+			output := stopLoopOutput{
+				Continue:       true,
+				SuppressOutput: true,
+			}
+			encoder := json.NewEncoder(os.Stdout)
+			encoder.SetEscapeHTML(false)
+			return encoder.Encode(output)
 		}
 	}
 
@@ -115,10 +122,16 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 			encoder.SetEscapeHTML(false)
 			encoder.Encode(output)
 
-			os.Exit(1) // Continue - errors exist
+			return nil // Always exit 0 - Continue field controls behavior
 		}
-		// No errors - normal exit
-		return nil
+		// No errors - normal exit with proper JSON response
+		output := stopLoopOutput{
+			Continue:       true,
+			SuppressOutput: true,
+		}
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetEscapeHTML(false)
+		return encoder.Encode(output)
 	}
 
 	// Loop is explicitly active - use full loop logic
@@ -129,7 +142,6 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 
 	// Determine action
 	var action string
-	var exitCode int
 
 	if result.Complete {
 		// Loop complete - all conditions met
@@ -138,7 +150,6 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		state.CompletionReason = result.Reason
 		action = "COMPLETE - " + result.Reason
 		ClearEnhancedLoopState()
-		exitCode = 0
 	} else if state.Iteration >= state.MaxIterations {
 		// Max iterations reached
 		state.Active = false
@@ -146,7 +157,6 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		state.CompletionReason = "Max iterations reached"
 		action = "STOPPED - Max iterations (" + strconv.Itoa(state.MaxIterations) + ") reached"
 		ClearEnhancedLoopState()
-		exitCode = 0
 	} else if state.IsStagnant() {
 		// Stagnation detected
 		state.Active = false
@@ -154,13 +164,11 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		state.CompletionReason = "Stagnation - no improvement detected"
 		action = "STOPPED - No improvement in last " + strconv.Itoa(state.Criteria.StagnationLimit) + " iterations"
 		ClearEnhancedLoopState()
-		exitCode = 0
 	} else {
 		// Continue loop
 		state.Iteration++
 		action = "CONTINUE"
 		SaveEnhancedLoopState(state)
-		exitCode = 1
 	}
 
 	// Format output with feedback
@@ -178,8 +186,7 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	os.Exit(exitCode)
-	return nil
+	return nil // Always exit 0 - Continue field controls behavior
 }
 
 func checkCompletionMarker(text string) bool {

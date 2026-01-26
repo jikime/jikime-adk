@@ -28,7 +28,7 @@ JikiME-ADK Migration System은 F.R.I.D.A.Y. 오케스트레이터를 통해 레�
         ↓
 /jikime:migrate-4-verify     → Step 4: 검증 + 보고서
         ↓
-/jikime:browser-verify       → (선택) 런타임 에러 감지 + 자동 수정
+/jikime:verify --browser-only --fix-loop  → (선택) 런타임 에러 감지 + 자동 수정
 
 또는
 
@@ -259,31 +259,37 @@ modules:
 - `{artifacts_dir}/verification_report.md`
 - `skills/jikime-migration-{source}-to-{target}/` (`--capture-skill` 사용 시)
 
-### 런타임 에러 감지: browser-verify
+### 런타임 에러 감지: verify --browser-only
 
-마이그레이션 검증 후에도 **브라우저에서만 발생하는 런타임 에러**가 남아있을 수 있습니다. 정적 분석이나 빌드 도구가 감지하지 못하는 에러(undefined 참조, 잘못된 라이브러리 import 등)를 잡으려면 `/jikime:browser-verify`를 활용하세요.
+마이그레이션 검증 후에도 **브라우저에서만 발생하는 런타임 에러**가 남아있을 수 있습니다. 정적 분석이나 빌드 도구가 감지하지 못하는 에러(undefined 참조, 잘못된 라이브러리 import 등)를 잡으려면 `/jikime:verify --browser-only`를 활용하세요.
 
 ```bash
 # 마이그레이션 검증 완료 후, 런타임 에러 추가 확인
 cd {output_dir}
-/jikime:browser-verify
+/jikime:verify --browser-only
 
 # 특정 라우트만 확인
-/jikime:browser-verify --routes /,/dashboard,/settings
+/jikime:verify --browser-only --routes /,/dashboard,/settings
 
-# 에러 보고만 (수정 안함)
-/jikime:browser-verify --skip-fix
+# 에러 보고만 (수정 안함, fix-loop 없이)
+/jikime:verify --browser-only
+
+# 자동 수정 루프 활성화
+/jikime:verify --browser-only --fix-loop
+
+# 브라우저 창 표시 (headed 모드)
+/jikime:verify --browser-only --headed
 ```
 
-**browser-verify 동작 방식**:
+**verify --browser-only 동작 방식**:
 1. package.json에서 패키지 매니저 감지 (pnpm/yarn/npm/bun)
 2. `dev` 스크립트로 개발 서버 시작 (백그라운드)
 3. Playwright로 각 라우트 탐색하며 에러 캡처
 4. 스택 트레이스에서 소스 파일:라인 추출
-5. 전문 에이전트에 수정 위임 (자동)
+5. `--fix-loop` 사용 시: 전문 에이전트에 수정 위임 (자동)
 6. 재검증 루프 (에러 0개까지 반복)
 
-> **Tip**: `migrate-4-verify`는 마이그레이션 전후 **비교 검증**에 초점을 맞추고, `browser-verify`는 **런타임 에러 감지 및 자동 수정**에 초점을 맞춥니다. 마이그레이션 후 순차적으로 사용하면 가장 효과적입니다.
+> **Tip**: `migrate-4-verify`는 마이그레이션 후 **정적 분석 검증**에 초점을 맞추고, `verify --browser-only --fix-loop`는 **런타임 에러 감지 및 자동 수정**에 초점을 맞춥니다. 마이그레이션 후 순차적으로 사용하면 가장 효과적입니다.
 
 ---
 
@@ -365,7 +371,7 @@ Step 4: verification_report.md 생성
      │  (검증된 패턴을 스킬로 저장 → 다음 마이그레이션에 재사용)
      │
      ▼
-(선택) /jikime:browser-verify
+(선택) /jikime:verify --browser-only --fix-loop
      │  (런타임 브라우저 에러 감지 + 자동 수정)
      │
      ▼
@@ -421,7 +427,7 @@ Domain Pattern: jikime-migration-patterns-{domain}
 | MCP Server | Purpose |
 |------------|---------|
 | **Context7** | 공식 문서, 마이그레이션 가이드, API 변경사항 |
-| **Playwright** | Step 4 검증 (E2E, 시각적 회귀, 크로스 브라우저), browser-verify 런타임 에러 감지 |
+| **Playwright** | Step 4 검증 (E2E, 시각적 회귀, 크로스 브라우저), 런타임 에러 감지 |
 | **WebFetch** | 최신 릴리스 노트, 브레이킹 체인지 |
 | **Sequential** | 복잡한 마이그레이션 분석 |
 
@@ -452,7 +458,7 @@ Domain Pattern: jikime-migration-patterns-{domain}
 4. **계획 검토** - Step 2에서 계획을 꼼꼼히 검토 후 승인하세요
 5. **모듈별 진행** - 큰 프로젝트는 `--module` 옵션으로 점진적 실행
 6. **중단 후 재개** - Step 3에서 `--resume`으로 이어서 진행 가능
-7. **런타임 에러 확인** - Step 4 후 `/jikime:browser-verify`로 브라우저 런타임 에러까지 잡으세요
+7. **런타임 에러 확인** - Step 4 후 `/jikime:verify --browser-only --fix-loop`로 브라우저 런타임 에러까지 잡으세요
 8. **경험을 스킬로 저장** - 성공적인 마이그레이션 후 `--capture-skill`로 패턴을 스킬화하여 다음 마이그레이션에 재사용하세요
 
 ### 스킬 작성자 가이드
@@ -469,7 +475,7 @@ Version: 3.2.0
 Last Updated: 2026-01-25
 Changelog:
 - v3.2.0: Added --capture-skill option to Step 4 for generating reusable migration skills from verified patterns
-- v3.1.0: Step 4 Playwright-based verification details; Added browser-verify integration for runtime error detection
+- v3.1.0: Step 4 Playwright-based verification details; Added verify --browser-only integration for runtime error detection
 - v3.0.0: Config-First approach; FRIDAY orchestrator; Removed /jikime:migrate; Removed redundant source/target options from Steps 2-4; Renamed --source/--target to --source-url/--target-url in Step 4
 - v2.0.0: Added Step-by-Step Workflow, Command Reference with full options
 - v1.0.0: Initial migration system documentation

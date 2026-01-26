@@ -47,16 +47,6 @@
             "timeout": 5000
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jikime hooks pre-bash",
-            "timeout": 5000
-          }
-        ]
       }
     ],
     "PostToolUse": [

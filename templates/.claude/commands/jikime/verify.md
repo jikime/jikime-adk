@@ -1,8 +1,8 @@
 ---
-description: "Comprehensive quality verification - build, type, lint, test, security in one command"
-argument-hint: "[quick|standard|full|pre-pr|--fix|--json|--ci|--incremental]"
+description: "Comprehensive quality verification - build, type, lint, test, security, browser in one command"
+argument-hint: "[quick|standard|full|pre-pr|--fix|--json|--ci|--incremental|--no-browser|--browser-only|--headed|--fix-loop]"
 type: utility
-allowed-tools: Task, TodoWrite, Bash, Read, Write, Edit, Glob, Grep
+allowed-tools: Task, AskUserQuestion, TodoWrite, Bash, Read, Write, Edit, Glob, Grep
 model: inherit
 ---
 
@@ -17,15 +17,25 @@ Verification mode: $ARGUMENTS
 ## Core Philosophy
 
 ```
-Single command for complete quality assurance:
-├─ Build verification (compilation success)
-├─ Type checking (TypeScript/Pyright/etc.)
-├─ Lint validation (ESLint/Ruff/etc.)
-├─ Test execution (with coverage)
-├─ Security scanning (secrets, vulnerabilities)
-├─ LSP Quality Gates (zero regression policy)
-└─ TRUST 5 compliance check
+Unified Quality Gate Verification:
+├─ Static Analysis
+│   ├─ Build verification (compilation success)
+│   ├─ Type checking (TypeScript/Pyright/etc.)
+│   ├─ Lint validation (ESLint/Ruff/etc.)
+│   ├─ Test execution (with coverage)
+│   ├─ Security scanning (secrets, vulnerabilities)
+│   ├─ LSP Quality Gates (zero regression policy)
+│   └─ TRUST 5 compliance check
+│
+└─ Runtime Verification (full, pre-pr, or --browser-only)
+    └─ Browser verification via Playwright
+        ├─ Console errors detection
+        ├─ Page load validation
+        ├─ UI rendering checks
+        └─ Auto-fix loop (with --fix-loop)
 ```
+
+**Integrated Workflow**: `full` and `pre-pr` profiles automatically run browser verification after static analysis passes. Use `--no-browser` to skip, or `--browser-only` to run browser verification exclusively.
 
 ---
 
@@ -55,18 +65,67 @@ Single command for complete quality assurance:
 
 # Only check changed files
 /jikime:verify --incremental
+
+# Browser-only verification (skip static analysis)
+/jikime:verify --browser-only
+
+# Browser verification with visible window (headed mode)
+/jikime:verify --browser-only --headed
+
+# Browser verification with auto-fix loop
+/jikime:verify --browser-only --fix-loop
+
+# Full verification with headed browser
+/jikime:verify pre-pr --headed
+
+# Browser-only with custom routes and max iterations
+/jikime:verify --browser-only --routes /,/dashboard,/settings --max 5
 ```
 
 ---
 
 ## Verification Profiles
 
-| Profile | Checks | Use Case |
-|---------|--------|----------|
-| `quick` | Build, Types | During active development |
-| `standard` | Build, Types, Lint, Tests | Default, after changes |
-| `full` | All + Deps, Coverage | Before major commits |
-| `pre-pr` | Full + Security + Secrets | Before creating PR |
+| Profile | Static Checks | Browser | Use Case |
+|---------|---------------|---------|----------|
+| `quick` | Build, Types | ❌ | During active development |
+| `standard` | Build, Types, Lint, Tests | ❌ | Default, after changes |
+| `full` | All + Deps, Coverage | ✅ | Before major commits |
+| `pre-pr` | Full + Security + Secrets + Adversarial | ✅ | Before creating PR |
+
+**Browser Verification**: Automatically runs for `full` and `pre-pr` profiles using Playwright.
+
+**Skip Browser Verification**:
+```bash
+# Skip browser verification even for full/pre-pr profiles
+/jikime:verify pre-pr --no-browser
+```
+
+**Run Browser-Only Verification**:
+```bash
+# Browser verification only (skip static analysis)
+/jikime:verify --browser-only
+
+# With visible browser window
+/jikime:verify --browser-only --headed
+
+# With auto-fix loop for runtime errors
+/jikime:verify --browser-only --fix-loop --max 10
+```
+
+## Browser Verification Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--browser-only` | Skip static analysis, run browser verification only | false |
+| `--headed` | Run browser in headed mode (visible window) | false |
+| `--fix-loop` | Enable auto-fix loop for browser errors | false |
+| `--max N` | Maximum fix iterations (with --fix-loop) | 10 |
+| `--routes paths` | Comma-separated routes to verify | Auto-discover |
+| `--port N` | Dev server port | Auto-detect |
+| `--url URL` | Dev server URL (skip server start) | - |
+| `--stagnation-limit N` | Max iterations without improvement | 3 |
+| `--e2e` | Run E2E tests after browser verification | false |
 
 ---
 
@@ -220,6 +279,170 @@ lsp_quality_gates:
 
 **Gate**: Adversarial findings integrated into final report with severity adjustment.
 
+### Phase 9: Browser Verification (full, pre-pr profiles only)
+
+**Purpose**: Runtime browser error detection that catches issues missed by static analysis.
+
+**Browser Tool Selection**:
+1. **Playwright** (recommended): Built-in, supports headed/headless modes
+2. **agent-browser** (fallback): If installed, uses agent-browser CLI
+
+**Browser Modes**:
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| `headless` | No visible browser (default) | CI/CD, automated testing |
+| `headed` | Visible browser window | Manual verification, debugging |
+
+**Workflow**:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   BROWSER VERIFICATION                       │
+├─────────────────────────────────────────────────────────────┤
+│  1. Dev Server Detection                                     │
+│     ├─ Scan common ports (3000, 5173, 8080, 4200)           │
+│     ├─ If running: Use existing server                       │
+│     └─ If not: Start with detected package manager           │
+├─────────────────────────────────────────────────────────────┤
+│  2. Route Discovery                                          │
+│     ├─ Parse React Router / Next.js / Vue Router patterns    │
+│     └─ Fallback to ["/"] if none found                       │
+├─────────────────────────────────────────────────────────────┤
+│  3. Browser Navigation & Error Capture                       │
+│     ├─ Open browser (headed or headless)                     │
+│     ├─ Navigate to each route                                │
+│     ├─ Capture console errors and page errors                │
+│     └─ Take screenshots for evidence                         │
+├─────────────────────────────────────────────────────────────┤
+│  4. Error Analysis                                           │
+│     ├─ Categorize: console_error, page_error, network_error  │
+│     ├─ Extract source file and line from stack traces        │
+│     └─ Deduplicate and prioritize by severity                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Execution with Playwright (Recommended)**:
+
+```bash
+# Headed mode (visible browser for manual verification)
+npx playwright open http://localhost:{port}
+
+# Programmatic verification with error capture
+npx playwright test --project=chromium  # If E2E tests exist
+
+# Screenshot capture for evidence
+npx playwright screenshot http://localhost:{port} screenshot.png
+```
+
+**Execution with agent-browser (Fallback)**:
+
+```bash
+# Check if agent-browser is available
+if which agent-browser > /dev/null 2>&1; then
+  # Start browser verification
+  agent-browser open http://localhost:{port}
+  agent-browser snapshot -i
+  agent-browser errors
+  agent-browser close
+fi
+```
+
+**Headed Mode Activation**:
+- Use `--headed` flag with verify command
+- Useful for debugging and manual verification
+- Shows actual browser window during verification
+
+**Error Types Captured**:
+
+| Type | Detection | Severity |
+|------|-----------|----------|
+| `console.error` | Snapshot analysis | HIGH |
+| `uncaughtException` | Error boundary detection | CRITICAL |
+| `unhandledRejection` | Promise rejection detection | CRITICAL |
+| `network error` | Failed resource placeholders | MEDIUM |
+| `resource load failure` | Missing images/broken links | LOW |
+
+**Gate**: Browser errors found → Report in final summary. CRITICAL errors → Block PR recommendation.
+
+**Skip Condition**: Use `--no-browser` to skip this phase.
+
+### Browser-Only Mode (--browser-only)
+
+When `--browser-only` is specified, skip all static analysis phases (1-8) and run browser verification directly.
+
+**Use Cases**:
+- Quick runtime error check after code changes
+- Debugging browser-specific issues
+- Manual verification with `--headed` flag
+
+**Workflow**:
+```
+START: --browser-only flag detected
+  |
+  ├─ Skip Phases 1-8 (static analysis)
+  |
+  └─ Execute Phase 9 (browser verification) only
+      |
+      ├─ Dev server detection/start
+      ├─ Route discovery
+      ├─ Browser navigation
+      └─ Error capture and reporting
+```
+
+### Auto-Fix Loop (--fix-loop)
+
+When `--fix-loop` is specified with browser verification, automatically fix detected errors and re-verify until clean.
+
+**Flow**:
+```
+Iteration 1:
+  Errors Found: 5
+  → Delegate fixes to agents
+  → Re-navigate all routes
+
+Iteration 2:
+  Errors Found: 2 (3 fixed)
+  → Delegate remaining fixes
+  → Re-navigate all routes
+
+Iteration 3:
+  Errors Found: 0
+  → SUCCESS: All runtime errors resolved
+```
+
+**Fix Delegation**:
+| Error Type | Agent |
+|------------|-------|
+| Component/UI errors | frontend subagent |
+| Module resolution | debugger subagent |
+| Type/reference errors | debugger subagent |
+| API/network errors | backend subagent |
+| Build/bundler errors | build-fixer subagent |
+
+**Stagnation Detection**:
+If error count doesn't decrease for N consecutive iterations (default: 3):
+- Stop loop
+- Report remaining errors with analysis
+- Suggest manual intervention
+
+**Example Output (Fix Loop)**:
+```markdown
+## Browser Verify: Iteration 2/10
+
+### Routes Scanned: 5/8
+- [x] / (0 errors)
+- [x] /about (0 errors)
+- [x] /dashboard (2 errors)
+- [ ] /settings ← scanning
+
+### Errors Found: 3
+1. CRITICAL: TypeError at src/components/Canvas.tsx:45
+2. HIGH: ReferenceError at src/hooks/useAuth.ts:23
+3. MEDIUM: 404 at /api/health
+
+Fixing...
+```
+
 ---
 
 ## Output Format
@@ -239,6 +462,7 @@ lsp_quality_gates:
 | Security | ✅ PASS | 0 issues |
 | LSP Gates | ✅ PASS | No regression |
 | TRUST 5 | ✅ PASS | All principles met |
+| Browser | ✅ PASS | 5 routes, 0 errors |
 
 ### Overall: ✅ READY FOR PR
 
@@ -259,6 +483,20 @@ lsp_quality_gates:
 
 **Adjusted Issues**: 3 warnings → 1 warning (after filtering)
 **New Issues**: 1 (race condition in async handler)
+
+### Browser Verification (pre-pr/full only)
+| Route | Status | Errors |
+|-------|--------|--------|
+| / | ✅ PASS | 0 |
+| /dashboard | ✅ PASS | 0 |
+| /settings | ⚠️ WARN | 1 (non-critical) |
+| /profile | ✅ PASS | 0 |
+| /auth/login | ✅ PASS | 0 |
+
+**Browser Errors Found**: 1
+- `src/pages/settings.tsx` - Warning: React key missing in list (non-blocking)
+
+**Runtime Health**: All critical paths load successfully
 ```
 
 ### F.R.I.D.A.Y. Format
@@ -343,6 +581,7 @@ Benefits:
 | 4 | Test failures |
 | 5 | Security issues (critical) |
 | 6 | LSP regression detected |
+| 7 | Browser errors (critical runtime errors) |
 
 ### JSON Output (--json)
 
@@ -358,7 +597,20 @@ Benefits:
     "tests": {"status": "pass", "total": 47, "passed": 47, "coverage": 98.2},
     "security": {"status": "pass", "secrets": 0, "vulnerabilities": 0},
     "lsp": {"status": "pass", "regression": false},
-    "trust5": {"status": "pass", "score": 5}
+    "trust5": {"status": "pass", "score": 5},
+    "browser": {
+      "status": "pass",
+      "routes_checked": 5,
+      "errors": 0,
+      "warnings": 1,
+      "routes": [
+        {"path": "/", "status": "pass", "errors": []},
+        {"path": "/dashboard", "status": "pass", "errors": []},
+        {"path": "/settings", "status": "warn", "errors": [{"type": "console_warn", "message": "React key missing"}]},
+        {"path": "/profile", "status": "pass", "errors": []},
+        {"path": "/auth/login", "status": "pass", "errors": []}
+      ]
+    }
   },
   "ready_for_pr": true,
   "warnings": [
@@ -446,29 +698,85 @@ Each principle is verified:
 ## EXECUTION DIRECTIVE
 
 1. Detect project type (npm, pnpm, cargo, go, etc.)
-2. Parse profile from $ARGUMENTS (default: standard)
-3. Execute phases in order:
+
+2. Parse profile and flags from $ARGUMENTS:
+   - Profile: quick | standard | full | pre-pr (default: standard)
+   - Flags: --fix, --ci, --json, --incremental, --no-browser, --browser-only, --headed, --fix-loop, --max, --routes, --port, --url, --stagnation-limit, --e2e
+
+3. **IF `--browser-only` flag**: Skip to step 6 (browser verification only)
+
+4. Execute static analysis phases in order:
    - Build → Type → Lint → Test → Security → LSP → TRUST 5
-4. Stop on critical failures (build, types in strict mode)
-5. **For `pre-pr` and `full` profiles**: Execute Adversarial Review (Phase 8)
-   - Launch 3 subagents in PARALLEL (single Task message):
-     - False Positive Filter: Review all findings, identify false positives
-     - Missing Issues Finder: Fresh perspective analysis for edge cases
-     - Context Validator: Compare findings against intent and patterns
-   - Collect results with TaskOutput
-   - Integrate adversarial findings into final report
-   - Adjust severity based on adversarial consensus
-6. Aggregate results into report
-7. Use orchestrator-appropriate format
-8. If `--fix`, attempt auto-fixes and re-verify
-9. If `--ci`, set exit code based on results
-10. If `--json`, output JSON instead of markdown
+
+5. Stop on critical failures (build, types in strict mode)
+
+6. **For `pre-pr`, `full` profiles, or `--browser-only`** (unless `--no-browser`): Execute Adversarial Review (Phase 8) if not --browser-only
+   - Launch 3 subagents in PARALLEL (single Task message)
+   - Collect results and integrate into final report
+
+7. **Browser Verification (Phase 9)**:
+   - **IF `--browser-only` OR (`pre-pr`/`full` AND NOT `--no-browser`)**:
+     a. Detect running dev server on common ports (3000, 5173, 8080, 4200)
+     b. If multiple servers found: Use AskUserQuestion to let user select
+     c. If no server running: Start with detected package manager (background)
+     d. Discover routes (from --routes flag or scan project files)
+     e. **Browser Mode**:
+        - IF `--headed`: Use `npx playwright open` for visible browser
+        - ELSE: Use headless mode for automated verification
+     f. For each route: Navigate, capture screenshots, detect errors
+     g. Aggregate browser errors by severity (CRITICAL, HIGH, MEDIUM, LOW)
+
+8. **IF `--fix-loop` flag**: Execute Auto-Fix Loop
+   a. Initialize iteration counter (max from --max flag, default 10)
+   b. LOOP while errors > 0 AND iteration < max:
+      - [HARD] Call TodoWrite to track discovered errors
+      - [HARD] Delegate fixes to specialized agents:
+        - Component/UI errors → frontend subagent
+        - Module resolution → debugger subagent
+        - API/network errors → backend subagent
+      - Re-verify all routes after fixes
+      - Check stagnation (--stagnation-limit, default 3)
+      - IF no improvement for N iterations: Exit with stagnation report
+   c. Report fix summary
+
+9. **IF `--e2e` flag AND browser verification passed**:
+   - Run E2E tests with Playwright
+   - Report E2E results
+
+10. Cleanup:
+    - Close browser
+    - Terminate dev server if we started it
+
+11. Aggregate all results into report
+
+12. Use orchestrator-appropriate format (J.A.R.V.I.S. or F.R.I.D.A.Y.)
+
+13. If `--fix`, attempt auto-fixes for static analysis issues and re-verify
+
+14. If `--ci`, set exit code based on results (browser errors = 7)
+
+15. If `--json`, output JSON instead of markdown
 
 Execute NOW. Do NOT just describe.
 
 ---
 
 ## Related Commands
+
+### Browser Verification (Built-in)
+
+Use verify command with browser options:
+```bash
+/jikime:verify --browser-only           # Browser verification only
+/jikime:verify --browser-only --headed  # With visible browser
+/jikime:verify --browser-only --fix-loop # With auto-fix loop
+```
+
+### E2E Testing
+
+- `/jikime:e2e` - E2E test generation and execution (Playwright)
+
+### Static Analysis Only
 
 - `/jikime:test` - Run tests only
 - `/jikime:build-fix` - Fix build errors
@@ -478,6 +786,37 @@ Execute NOW. Do NOT just describe.
 
 ---
 
-Version: 1.1.0
+## Prerequisites
+
+### Playwright (Built-in)
+
+Browser verification uses Playwright. Install if not present:
+
+```bash
+# Install Playwright
+npm install -D @playwright/test
+
+# Install browsers
+npx playwright install
+```
+
+**Playwright Commands**:
+```bash
+# Open browser (headed mode)
+npx playwright open http://localhost:3000
+
+# Take screenshot
+npx playwright screenshot http://localhost:3000 screenshot.png
+
+# Run E2E tests
+npx playwright test
+```
+
+---
+
+Version: 2.0.0
 Type: Utility Command (Type B)
-Integration: LSP Quality Gates, TRUST 5, Adversarial Review
+Integration: LSP Quality Gates, TRUST 5, Adversarial Review, Playwright
+Changelog:
+- v2.0.0: Unified browser-verify into verify command. Added --browser-only, --headed, --fix-loop options. Switched to Playwright.
+- v1.3.0: Added Adversarial Review phase

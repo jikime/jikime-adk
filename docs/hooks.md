@@ -182,18 +182,6 @@ jikime hooks pre-tool-security
 - 민감한 파일 수정 차단 (`.env`, `secrets/`, `~/.ssh/`)
 - 하드코딩된 시크릿 패턴 탐지
 
-#### pre-bash
-
-**목적**: Bash 명령어 실행 전 검증
-
-```bash
-jikime hooks pre-bash
-```
-
-**검증 항목**:
-- 위험 명령어 패턴 탐지
-- 필요시 사용자 확인 요청
-
 #### pre-write
 
 **목적**: 파일 생성 전 경로 검증
@@ -388,16 +376,6 @@ jikime hooks pre-compact
           {
             "type": "command",
             "command": "jikime hooks pre-tool-security",
-            "timeout": 5000
-          }
-        ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "jikime hooks pre-bash",
             "timeout": 5000
           }
         ]

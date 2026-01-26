@@ -23,7 +23,6 @@ func NewHooks() *cobra.Command {
 
 	// PreToolUse hooks
 	hooks.AddCommand(PreToolSecurityCmd)
-	hooks.AddCommand(PreBashCmd)
 	hooks.AddCommand(PreWriteCmd)
 
 	// PostToolUse hooks

@@ -53,7 +53,10 @@ func runStopAudit(cmd *cobra.Command, args []string) error {
 	// Get modified files from git
 	modifiedFiles := getGitModifiedFiles()
 	if len(modifiedFiles) == 0 {
-		output := stopAuditOutput{SuppressOutput: true}
+		output := stopAuditOutput{
+			Continue:       true,
+			SuppressOutput: true,
+		}
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetEscapeHTML(false)
 		return encoder.Encode(output)
@@ -88,7 +91,10 @@ func runStopAudit(cmd *cobra.Command, args []string) error {
 	}
 
 	// No warnings - suppress output
-	output := stopAuditOutput{SuppressOutput: true}
+	output := stopAuditOutput{
+		Continue:       true,
+		SuppressOutput: true,
+	}
 	encoder := json.NewEncoder(os.Stdout)
 	encoder.SetEscapeHTML(false)
 	return encoder.Encode(output)

@@ -9,7 +9,7 @@ description: |
 tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, Task, Skill, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__sequential-thinking__sequentialthinking
 model: opus
 permissionMode: default
-skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-ddd, jikime-tool-ast-grep, jikime-workflow-testing
+skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-ddd, jikime-tool-ast-grep, jikime-workflow-testing, jikime-tool-agent-browser
 ---
 
 # Manager-DDD - Domain-Driven Development Expert

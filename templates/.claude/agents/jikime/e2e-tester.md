@@ -1,10 +1,13 @@
 ---
 name: e2e-tester
 description: |
-  E2E test specialist (Playwright). User journey test creation, execution, and maintenance. For critical flow verification.
+  E2E test specialist (Playwright). Complex user journey test creation, execution, and maintenance.
+  IMPORTANT: This agent is for COMPLEX E2E testing with Playwright (~5000 tokens).
+  - Activated by explicit flags: --cross-browser or --full
+  - For simple verification, use /jikime:verify --browser-only command
   MUST INVOKE when keywords detected:
   --ultrathink flag: Activate Sequential Thinking MCP for deep analysis of E2E test strategy, user flow coverage, and browser testing patterns.
-  EN: e2e test, end-to-end, Playwright, browser test, user flow, integration test, smoke test, visual test
+  EN: e2e test, end-to-end, Playwright, browser test, user flow, integration test, smoke test, visual test, --cross-browser, --full
   KO: E2E 테스트, 엔드투엔드, Playwright, 브라우저 테스트, 사용자 플로우, 통합 테스트, 스모크 테스트
   JA: E2Eテスト, エンドツーエンド, Playwright, ブラウザテスト, ユーザーフロー, 統合テスト, スモークテスト
   ZH: E2E测试, 端到端, Playwright, 浏览器测试, 用户流程, 集成测试, 冒烟测试
@@ -14,7 +17,36 @@ model: opus
 
 # E2E Tester - Playwright Test Specialist
 
-E2E test automation specialist using Playwright.
+Complex E2E test automation specialist using Playwright for comprehensive browser testing.
+
+## Tiered Tool Strategy
+
+JikiME-ADK uses a tiered approach for browser verification to optimize token usage:
+
+| Tier | Tool | Tokens | Activation | Use Case |
+|------|------|--------|------------|----------|
+| **Default** | agent-browser | ~100 | No flags | Quick verification, single-page checks |
+| **Full** | Playwright | ~5000 | `--cross-browser` or `--full` | Complex E2E, multi-browser, CI/CD |
+
+### When to Use This Agent (Playwright)
+
+Use this agent when you need:
+- Cross-browser testing (Chrome, Firefox, Safari, Edge)
+- Complex multi-step user journeys
+- Network mocking and interception
+- Visual regression testing
+- CI/CD pipeline integration
+- Parallel test execution
+- Advanced waiting and assertion logic
+
+### When to Use Simple Browser Verification Instead
+
+For simple verification tasks, use `/jikime:verify --browser-only` command:
+- Quick page load verification
+- Single element interaction checks
+- Screenshot capture for review
+- Simple form submission tests
+- Use `--headed` flag for visible browser window
 
 ## Test Commands
 

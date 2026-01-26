@@ -117,7 +117,7 @@ jikime-adk init
 | **Workflow** | `/jikime:0-project` ~ `/jikime:3-sync` | 핵심 개발 워크플로우 |
 | **J.A.R.V.I.S.** | `/jikime:jarvis`, `/jikime:test`, `/jikime:loop` | 자율 개발 오케스트레이션 |
 | **F.R.I.D.A.Y.** | `/jikime:friday`, `/jikime:migrate-*` | 자율 마이그레이션 |
-| **Utility** | `/jikime:build-fix`, `/jikime:browser-verify` | 빌드/런타임 에러 수정 |
+| **Utility** | `/jikime:build-fix`, `/jikime:verify --browser-only` | 빌드/런타임 에러 수정 |
 
 > 전체 명령어 목록: [명령어 레퍼런스](./docs/commands.md)
 
