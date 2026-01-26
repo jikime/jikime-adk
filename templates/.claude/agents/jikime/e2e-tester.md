@@ -141,6 +141,130 @@ export default defineConfig({
 - [ ] Test execution time < 10 minutes
 - [ ] HTML report generated
 
+---
+
+## Quick Verification with agent-browser
+
+For simple browser verification tasks, use **agent-browser** instead of full Playwright tests.
+This saves ~93% tokens while providing fast feedback.
+
+### When to Use Each Tool
+
+| Task | Tool | Reason |
+|------|------|--------|
+| Simple page verification | agent-browser | 93% token savings |
+| Complex E2E test suites | Playwright | Full feature set |
+| Quick screenshot check | agent-browser | Fast snapshot |
+| Network mocking/interception | Playwright | Advanced features |
+| Multi-step user journeys | Playwright | Better waiting logic |
+| Single element interaction | agent-browser | Minimal overhead |
+
+### Installation
+
+```bash
+# Install globally
+npm install -g agent-browser
+
+# Download browser (Chromium by default)
+agent-browser install
+
+# Verify installation
+agent-browser --version
+```
+
+### Basic Commands
+
+```bash
+# Open a URL
+agent-browser open https://example.com
+
+# Take AI-optimized snapshot (accessibility tree with @refs)
+agent-browser snapshot
+
+# Take screenshot
+agent-browser screenshot
+
+# Click element by reference
+agent-browser click @e5
+
+# Type text
+agent-browser type @e3 "hello world"
+
+# Get page text
+agent-browser text
+
+# Scroll
+agent-browser scroll down
+agent-browser scroll @e10
+
+# Close browser
+agent-browser close
+```
+
+### Session Management
+
+```bash
+# Start named session (persistent)
+agent-browser open https://example.com --session my-session
+
+# Use profile for persistent auth
+agent-browser open https://app.com --profile logged-in-user
+
+# List active sessions
+agent-browser sessions
+
+# Switch session
+agent-browser switch my-session
+```
+
+### Verification Examples
+
+```bash
+# Quick login verification
+agent-browser open https://app.com/login
+agent-browser snapshot                    # Find input refs
+agent-browser type @e5 "user@example.com"
+agent-browser type @e7 "password123"
+agent-browser click @e9                   # Submit button
+agent-browser snapshot                    # Verify redirect/dashboard
+
+# Check element visibility
+agent-browser open https://app.com
+agent-browser snapshot | grep "Welcome"   # Verify text exists
+
+# Screenshot comparison
+agent-browser open https://app.com
+agent-browser screenshot --path ./screenshots/home.png
+```
+
+### Integration with Playwright
+
+Use agent-browser for quick checks, Playwright for comprehensive tests:
+
+```typescript
+// playwright.config.ts - keep for full E2E
+export default defineConfig({
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+  ],
+})
+```
+
+```bash
+# Quick verification script (agent-browser)
+#!/bin/bash
+agent-browser open $BASE_URL
+agent-browser snapshot > /tmp/snapshot.txt
+if grep -q "Dashboard" /tmp/snapshot.txt; then
+  echo "✅ Dashboard loaded"
+else
+  echo "❌ Dashboard not found"
+  exit 1
+fi
+agent-browser close
+```
+
 ## Orchestration Protocol
 
 This agent is invoked by J.A.R.V.I.S. (development) or F.R.I.D.A.Y. (migration) orchestrators via Task().

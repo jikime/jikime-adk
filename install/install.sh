@@ -154,11 +154,21 @@ get_latest_version() {
     local response
     local attempt=0
 
+    # Build authorization header if token is available
+    # GITHUB_TOKEN or GH_TOKEN increases rate limit from 60/hour to 5000/hour
+    local auth_header=""
+    local token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
+    if [ -n "$token" ]; then
+        auth_header="-H \"Authorization: Bearer $token\""
+        dim "Using GitHub token for API request"
+    fi
+
     while [ $attempt -lt $MAX_RETRIES ]; do
         attempt=$((attempt + 1))
 
-        response=$(curl -fsSL -H "Accept: application/vnd.github.v3+json" \
-            "$url" 2>/dev/null) && break
+        # Use eval to properly expand auth_header
+        response=$(eval curl -fsSL -H \"Accept: application/vnd.github.v3+json\" \
+            $auth_header \"$url\" 2>/dev/null) && break
 
         if [ $attempt -lt $MAX_RETRIES ]; then
             dim "Retry $attempt/$MAX_RETRIES in ${RETRY_DELAY}s..."
@@ -169,6 +179,7 @@ get_latest_version() {
     if [ -z "${response:-}" ]; then
         error "Failed to fetch latest version from GitHub API"
         dim "Check your network connection and try again."
+        dim "Tip: Set GITHUB_TOKEN to increase rate limit (60 → 5000 requests/hour)"
         exit 1
     fi
 
@@ -371,6 +382,10 @@ usage() {
     echo "  --version X   Install specific version (e.g., 2.1.0)"
     echo "  --no-color    Disable colored output"
     echo "  --help        Show this help message"
+    echo ""
+    echo "Environment variables:"
+    echo "  GITHUB_TOKEN  GitHub personal access token (increases API rate limit)"
+    echo "  GH_TOKEN      Alternative token variable (used by gh CLI)"
     echo ""
     echo "Alternative installation:"
     echo "  go install github.com/jikime/jikime-adk@latest"
