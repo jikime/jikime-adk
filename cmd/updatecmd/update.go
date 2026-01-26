@@ -34,9 +34,9 @@ const (
 // NewUpdate creates the update command.
 func NewUpdate() *cobra.Command {
 	var (
-		checkOnly    bool
-		forceUpdate  bool
-		skipBackup   bool
+		checkOnly     bool
+		forceUpdate   bool
+		skipBackup    bool
 		syncTemplates bool
 	)
 
@@ -188,6 +188,34 @@ func runUpdate(checkOnly, forceUpdate, skipBackup, syncTemplates bool) error {
 	return nil
 }
 
+// getGitHubToken tries to get a GitHub token from multiple sources:
+// 1. GITHUB_TOKEN environment variable
+// 2. GH_TOKEN environment variable
+// 3. gh CLI auth token (if gh is installed and authenticated)
+func getGitHubToken() string {
+	// Try GITHUB_TOKEN first
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		return token
+	}
+
+	// Try GH_TOKEN
+	if token := os.Getenv("GH_TOKEN"); token != "" {
+		return token
+	}
+
+	// Try gh CLI
+	cmd := exec.Command("gh", "auth", "token")
+	output, err := cmd.Output()
+	if err == nil {
+		token := strings.TrimSpace(string(output))
+		if token != "" {
+			return token
+		}
+	}
+
+	return ""
+}
+
 func getLatestRelease() (*GitHubRelease, error) {
 	client := &http.Client{Timeout: httpTimeout}
 
@@ -197,6 +225,12 @@ func getLatestRelease() (*GitHubRelease, error) {
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	req.Header.Set("User-Agent", "jikime-adk/"+version.String())
+
+	// Support GitHub authentication to avoid rate limiting (60 req/hour without auth)
+	// Try multiple token sources: GITHUB_TOKEN, GH_TOKEN, gh CLI
+	if token := getGitHubToken(); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -472,8 +506,8 @@ func downloadFile(url, destPath string) error {
 	}
 	req.Header.Set("User-Agent", "jikime-adk/"+version.String())
 
-	// Support GITHUB_TOKEN for rate limiting
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+	// Support GitHub authentication for rate limiting
+	if token := getGitHubToken(); token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
@@ -506,7 +540,7 @@ func verifyChecksum(filePath, fileName, checksumURL string) error {
 		return err
 	}
 	req.Header.Set("User-Agent", "jikime-adk/"+version.String())
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+	if token := getGitHubToken(); token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
@@ -613,7 +647,6 @@ func createBackup() (string, error) {
 
 	return backupPath, nil
 }
-
 
 func syncProjectTemplates() error {
 	cyan := color.New(color.FgCyan)
