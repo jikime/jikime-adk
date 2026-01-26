@@ -34,9 +34,9 @@ Available providers:
   gemini   - Use Gemini via router proxy
   glm      - Use GLM directly (Anthropic-compatible endpoint)
   ollama   - Use Ollama via router proxy`,
-		Args:             cobra.ExactArgs(1),
-		ValidArgs:        []string{"claude", "openai", "gemini", "glm", "ollama"},
-		RunE:             runSwitch,
+		Args:      cobra.ExactArgs(1),
+		ValidArgs: []string{"claude", "openai", "gemini", "glm", "ollama"},
+		RunE:      runSwitch,
 	}
 }
 
@@ -136,8 +136,13 @@ func switchToClaude() error {
 		runStop(nil, nil)
 	}
 
-	// Clear router state
-	router.ClearState()
+	// Save router state indicating native Claude mode (routing disabled)
+	router.SaveState(&router.RouterState{
+		Provider: "claude",
+		Model:    "", // Uses Claude's default models
+		Mode:     "native",
+		Active:   false, // Routing is disabled
+	})
 
 	color.Green("  Switched to Claude (native)")
 	fmt.Println("  Removed proxy settings from Claude Code.")

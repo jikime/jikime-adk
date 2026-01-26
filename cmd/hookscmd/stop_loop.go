@@ -50,13 +50,12 @@ type stopLoopInput struct {
 	} `json:"messages"`
 }
 
+// stopLoopOutput follows Claude Code's expected Stop hook schema
+// Stop hooks should NOT use hookSpecificOutput - it's only for PreToolUse/PostToolUse/UserPromptSubmit
 type stopLoopOutput struct {
-	HookSpecificOutput *stopLoopHookOutput `json:"hookSpecificOutput,omitempty"`
-}
-
-type stopLoopHookOutput struct {
-	HookEventName     string `json:"hookEventName"`
-	AdditionalContext string `json:"additionalContext,omitempty"`
+	Continue       bool   `json:"continue"`
+	SystemMessage  string `json:"systemMessage,omitempty"`
+	SuppressOutput bool   `json:"suppressOutput,omitempty"`
 }
 
 func runStopLoop(cmd *cobra.Command, args []string) error {
@@ -86,10 +85,8 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		ClearEnhancedLoopState()
 
 		output := stopLoopOutput{
-			HookSpecificOutput: &stopLoopHookOutput{
-				HookEventName:     "Stop",
-				AdditionalContext: "Ralph Loop: COMPLETE - Completion marker detected",
-			},
+			Continue:      true,
+			SystemMessage: "Ralph Loop: COMPLETE - Completion marker detected",
 		}
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetEscapeHTML(false)
@@ -111,10 +108,8 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 			context := formatAutoLoopFeedback(currentSnapshot)
 
 			output := stopLoopOutput{
-				HookSpecificOutput: &stopLoopHookOutput{
-					HookEventName:     "Stop",
-					AdditionalContext: context,
-				},
+				Continue:      true,
+				SystemMessage: context,
 			}
 			encoder := json.NewEncoder(os.Stdout)
 			encoder.SetEscapeHTML(false)
@@ -173,10 +168,8 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 
 	// Prepare hook output
 	output := stopLoopOutput{
-		HookSpecificOutput: &stopLoopHookOutput{
-			HookEventName:     "Stop",
-			AdditionalContext: context,
-		},
+		Continue:      true,
+		SystemMessage: context,
 	}
 
 	encoder := json.NewEncoder(os.Stdout)

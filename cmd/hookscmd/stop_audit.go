@@ -41,14 +41,12 @@ var auditExtensions = map[string]bool{
 	".cjs": true,
 }
 
+// stopAuditOutput follows Claude Code's expected Stop hook schema
+// Stop hooks should NOT use hookSpecificOutput - it's only for PreToolUse/PostToolUse/UserPromptSubmit
 type stopAuditOutput struct {
-	HookSpecificOutput *stopAuditHookOutput `json:"hookSpecificOutput,omitempty"`
-	SuppressOutput     bool                 `json:"suppressOutput,omitempty"`
-}
-
-type stopAuditHookOutput struct {
-	HookEventName     string `json:"hookEventName"`
-	AdditionalContext string `json:"additionalContext,omitempty"`
+	Continue       bool   `json:"continue"`
+	SystemMessage  string `json:"systemMessage,omitempty"`
+	SuppressOutput bool   `json:"suppressOutput,omitempty"`
 }
 
 func runStopAudit(cmd *cobra.Command, args []string) error {
@@ -81,10 +79,8 @@ func runStopAudit(cmd *cobra.Command, args []string) error {
 	if len(warnings) > 0 {
 		warnings = append(warnings, "[Hook] Remove console.log statements before committing")
 		output := stopAuditOutput{
-			HookSpecificOutput: &stopAuditHookOutput{
-				HookEventName:     "Stop",
-				AdditionalContext: strings.Join(warnings, "\n"),
-			},
+			Continue:      true,
+			SystemMessage: strings.Join(warnings, "\n"),
 		}
 		encoder := json.NewEncoder(os.Stdout)
 		encoder.SetEscapeHTML(false)
