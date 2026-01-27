@@ -101,30 +101,11 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		return nil // exit 0 - complete
 	}
 
-	// Collect current diagnostics
-	currentSnapshot := collectCurrentDiagnostics()
-
-	// Load current loop state
+	// Load current loop state FIRST (lightweight operation)
 	state := LoadEnhancedLoopState()
 
-	// AUTO-LOOP: If loop is not explicitly active, check if errors exist
+	// If loop is not active, skip expensive diagnostics and exit immediately
 	if !state.Active {
-		// If there are errors or security issues, automatically continue
-		if currentSnapshot.ErrorCount > 0 || currentSnapshot.SecurityIssues > 0 {
-			// Format auto-loop feedback
-			context := formatAutoLoopFeedback(currentSnapshot)
-
-			output := stopLoopOutput{
-				Continue:      true,
-				SystemMessage: context,
-			}
-			encoder := json.NewEncoder(os.Stdout)
-			encoder.SetEscapeHTML(false)
-			encoder.Encode(output)
-
-			return nil // Always exit 0 - Continue field controls behavior
-		}
-		// No errors - normal exit with proper JSON response
 		output := stopLoopOutput{
 			Continue:       true,
 			SuppressOutput: true,
@@ -134,7 +115,10 @@ func runStopLoop(cmd *cobra.Command, args []string) error {
 		return encoder.Encode(output)
 	}
 
-	// Loop is explicitly active - use full loop logic
+	// Loop is explicitly active - collect diagnostics (expensive: ruff, tsc, tests)
+	currentSnapshot := collectCurrentDiagnostics()
+
+	// Use full loop logic
 	state.AddSnapshot(currentSnapshot)
 
 	// Evaluate completion conditions
