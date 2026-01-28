@@ -13,6 +13,7 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"github.com/spf13/cobra"
 	"jikime-adk/cmd/banner"
+	"jikime-adk/cmd/ui"
 	"jikime-adk/project"
 	"jikime-adk/version"
 )
@@ -112,11 +113,10 @@ func NewInit() *cobra.Command {
 			// Setup complete message
 			fmt.Println()
 			fmt.Println(successStyle.Render("    ✓ ") + whiteStyle.Render(localize(localizer, "setup_completed", nil)))
-			fmt.Println()
 
 			// Starting installation
-			fmt.Println(sectionStyle.Render("    ░▒▓ ") + highlightStyle.Render("INSTALLATION SEQUENCE") + sectionStyle.Render(" ▓▒░"))
-			fmt.Println()
+			ui.PrintBorderedSection("INSTALLATION SEQUENCE")
+			ui.PrintBorderedEmpty()
 
 			initializer := project.NewInitializer(projectPath)
 			start := time.Now()
@@ -231,20 +231,19 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 	localizer := getTranslation(answers.Locale)
 
 	// Language Selection
-	printCyberSection("🌐", localize(localizer, "language_section", nil))
-	fmt.Println(dimStyle.Render("    " + localize(localizer, "language_prompt", nil)))
+	ui.PrintBorderedSection(localize(localizer, "language_section", nil))
 	answers.Locale = promptSelectLanguage(localize(localizer, "language_prompt", nil), languageOptions, answers.Locale)
 
 	localizer = getTranslation(answers.Locale)
-	fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(localize(localizer, "language_label", nil)+": ") + whiteStyle.Render(languageDisplay(answers.Locale)))
+	ui.PrintBorderedResult(localize(localizer, "language_label", nil), languageDisplay(answers.Locale))
 
 	// User Section
-	printCyberSection("👤", localize(localizer, "user_section", nil))
-	answers.UserName = promptInputWithLabel("    "+localize(localizer, "user_prompt", nil), localize(localizer, "user_name_label", nil), answers.UserName)
-	answers.Honorific = promptInputWithLabel("    "+localize(localizer, "honorific_prompt", nil), localize(localizer, "honorific_label", nil), answers.Honorific)
+	ui.PrintBorderedSection(localize(localizer, "user_section", nil))
+	answers.UserName = promptInputWithLabel(localize(localizer, "user_prompt", nil), localize(localizer, "user_name_label", nil), answers.UserName)
+	answers.Honorific = promptInputWithLabel(localize(localizer, "honorific_prompt", nil), localize(localizer, "honorific_label", nil), answers.Honorific)
 
 	// Tone preset selection
-	fmt.Println(dimStyle.Render("    " + localize(localizer, "tone_preset_help", nil)))
+	ui.PrintBorderedLine(dimStyle.Render(localize(localizer, "tone_preset_help", nil)))
 	tonePresetOptions := []selectOption{
 		{
 			Value:       "friendly",
@@ -270,11 +269,11 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 	answers.TonePreset = promptSelectWithDescriptionWithLabel(tonePresetOptions, localize(localizer, "tone_preset_label", nil), answers.TonePreset)
 
 	// Project name
-	answers.ProjectName = promptInputWithLabel("    "+localize(localizer, "project_prompt", nil), localize(localizer, "project_name_label", nil), answers.ProjectName)
+	answers.ProjectName = promptInputWithLabel(localize(localizer, "project_prompt", nil), localize(localizer, "project_name_label", nil), answers.ProjectName)
 
 	// Git Setup section
-	printCyberSection("🔀", localize(localizer, "git_setup_section", nil))
-	fmt.Println(dimStyle.Render("    " + localize(localizer, "git_mode_select_help", nil)))
+	ui.PrintBorderedSection(localize(localizer, "git_setup_section", nil))
+	ui.PrintBorderedLine(dimStyle.Render(localize(localizer, "git_mode_select_help", nil)))
 	gitModeOptions := []selectOption{
 		{
 			Value:       "manual",
@@ -295,11 +294,11 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 	answers.GitMode = promptSelectWithDescriptionWithLabel(gitModeOptions, localize(localizer, "select_git_mode_summary", nil), answers.GitMode)
 
 	if answers.GitMode == "personal" || answers.GitMode == "team" {
-		answers.GitHubUser = promptInputRequiredWithLabel("    "+localize(localizer, "github_prompt", nil), localize(localizer, "github_label", nil), answers.GitHubUser)
+		answers.GitHubUser = promptInputRequiredWithLabel(localize(localizer, "github_prompt", nil), localize(localizer, "github_label", nil), answers.GitHubUser)
 	}
 
 	// Output Language Settings section
-	printCyberSection("🌍", localize(localizer, "output_language_settings", nil))
+	ui.PrintBorderedSection(localize(localizer, "output_language_settings", nil))
 	answers.GitCommitLang = promptSelectLanguageWithLabel(
 		localize(localizer, "commit_lang_prompt", nil),
 		localize(localizer, "commit_lang_label", nil),
@@ -314,9 +313,8 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 		languageOptions, answers.DocLang)
 
 	// TAG System Setup
-	printCyberSection("🏷️", localize(localizer, "tag_setup_section", nil))
-	fmt.Println(dimStyle.Render("    " + localize(localizer, "tag_setup_desc", nil)))
-
+	ui.PrintBorderedSection(localize(localizer, "tag_setup_section", nil))
+	ui.PrintBorderedLine(dimStyle.Render(localize(localizer, "tag_setup_desc", nil)))
 	tagEnabledOptions := []selectOption{
 		{
 			Value:       "yes",
@@ -337,7 +335,7 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 	answers.TagEnabled = tagEnabledResult == "yes"
 
 	if answers.TagEnabled {
-		fmt.Println(dimStyle.Render("    " + localize(localizer, "tag_mode_select_help", nil)))
+		ui.PrintBorderedLine(dimStyle.Render(localize(localizer, "tag_mode_select_help", nil)))
 		tagModeOptions := []selectOption{
 			{
 				Value:       "warn",
@@ -381,64 +379,24 @@ func collectSetupAnswers(opts *initOptions, projectPath, defaultProjectName stri
 			successStyle.Render("✓ ") + dimStyle.Render("Enabled: ") + whiteStyle.Render("No"),
 		}
 	}
-	printSummaryBox("TAG SYSTEM", tagLines)
+	ui.PrintBorderedBox("TAG SYSTEM", tagLines, 56)
 
 	return answers, nil
 }
 
-func printCyberSection(icon, title string) {
-	fmt.Println()
-	header := sectionStyle.Render("    ░▒▓ ") +
-		lipgloss.NewStyle().Render(icon+" ") +
-		highlightStyle.Render(strings.ToUpper(title)) +
-		sectionStyle.Render(" ▓▒░")
-	fmt.Println(header)
-}
-
-
-// printSummaryBox prints a bordered summary box with title and content
-func printSummaryBox(title string, lines []string) {
-	borderColor := lipgloss.NewStyle().Foreground(dimCyan)
-	titleColor := lipgloss.NewStyle().Foreground(neonPink).Bold(true)
-
-	boxWidth := 50
-
-	// Top border with title
-	titleText := " " + title + " "
-	leftPad := 2
-	rightPad := boxWidth - leftPad - len(titleText)
-	if rightPad < 0 {
-		rightPad = 0
-	}
-
-	fmt.Println()
-	fmt.Println(borderColor.Render("    ┌" + strings.Repeat("─", leftPad)) + titleColor.Render(titleText) + borderColor.Render(strings.Repeat("─", rightPad) + "┐"))
-
-	// Content lines
-	for _, line := range lines {
-		// Pad line to fit box width
-		padding := boxWidth - len(line) - 2
-		if padding < 0 {
-			padding = 0
-		}
-		fmt.Println(borderColor.Render("    │ ") + line + strings.Repeat(" ", padding) + borderColor.Render(" │"))
-	}
-
-	// Bottom border
-	fmt.Println(borderColor.Render("    └" + strings.Repeat("─", boxWidth) + "┘"))
-}
 
 // promptInputWithLabel prompts for input and shows a success message with the setting name
 func promptInputWithLabel(prompt, settingLabel, current string) string {
+	borderPrefix := "\033[38;5;30m  │ \033[0m"
 	p := promptui.Prompt{
 		Label:     prompt,
 		Default:   current,
 		AllowEdit: true,
 		Templates: &promptui.PromptTemplates{
-			Prompt:  "{{ . | cyan }}: ",
-			Valid:   "{{ . | cyan }}: ",
-			Invalid: "{{ . | red }}: ",
-			Success: " ",
+			Prompt:  borderPrefix + "{{ . | cyan }}: ",
+			Valid:   borderPrefix + "{{ . | cyan }}: ",
+			Invalid: borderPrefix + "{{ . | red }}: ",
+			Success: borderPrefix,
 		},
 	}
 	if result, err := p.Run(); err == nil {
@@ -446,7 +404,7 @@ func promptInputWithLabel(prompt, settingLabel, current string) string {
 		// Clear the previous line (promptui's input echo) and print success message
 		fmt.Print("\033[A\033[K")
 		if trimmed != "" {
-			fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(settingLabel+": ") + whiteStyle.Render(trimmed))
+			ui.PrintBorderedResult(settingLabel, trimmed)
 		} else {
 			fmt.Println()
 		}
@@ -459,15 +417,16 @@ func promptInputWithLabel(prompt, settingLabel, current string) string {
 
 // promptInputRequiredWithLabel prompts for required input and shows a success message
 func promptInputRequiredWithLabel(prompt, settingLabel, current string) string {
+	borderPrefix := "\033[38;5;30m  │ \033[0m"
 	p := promptui.Prompt{
 		Label:     prompt,
 		Default:   current,
 		AllowEdit: true,
 		Templates: &promptui.PromptTemplates{
-			Prompt:  "{{ . | cyan }}: ",
-			Valid:   "{{ . | cyan }}: ",
-			Invalid: "{{ . | red }}: ",
-			Success: " ",
+			Prompt:  borderPrefix + "{{ . | cyan }}: ",
+			Valid:   borderPrefix + "{{ . | cyan }}: ",
+			Invalid: borderPrefix + "{{ . | red }}: ",
+			Success: borderPrefix,
 		},
 		Validate: func(input string) error {
 			if strings.TrimSpace(input) == "" {
@@ -482,7 +441,7 @@ func promptInputRequiredWithLabel(prompt, settingLabel, current string) string {
 			if trimmed != "" {
 				// Clear the previous line (promptui's input echo) and print success message
 				fmt.Print("\033[A\033[K")
-				fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(settingLabel+": ") + whiteStyle.Render(trimmed))
+				ui.PrintBorderedResult(settingLabel, trimmed)
 				return trimmed
 			}
 		} else if handleInterrupt(err) {
@@ -495,27 +454,23 @@ func promptSelectLanguage(label string, choices []languageOption, current string
 	type option struct {
 		Display string
 		Value   string
-		Icon    string
 	}
 
 	var items []option
 	for _, choice := range choices {
-		icon := "  "
-		if choice.value == current {
-			icon = "▶"
-		}
-		items = append(items, option{Display: choice.display, Value: choice.value, Icon: icon})
+		items = append(items, option{Display: choice.display, Value: choice.value})
 	}
 
+	borderPrefix := "\033[38;5;30m  │ \033[0m"
 	templates := &promptui.SelectTemplates{
-		Label:    "{{ . | cyan }}",
-		Active:   "\033[38;5;201m❯\033[0m {{ .Icon }} \033[38;5;226m{{ .Display }}\033[0m",
-		Inactive: "  {{ .Display | faint }}",
-		Selected: " ",
+		Label:    borderPrefix + "{{ . | cyan }}",
+		Active:   "\033[38;5;30m│\033[0m \033[38;5;201m❯\033[0m \033[38;5;226m{{ .Display }}\033[0m",
+		Inactive: "\033[38;5;30m│\033[0m    {{ .Display | faint }}",
+		Selected: borderPrefix,
 	}
 
 	prompt := promptui.Select{
-		Label:     fmt.Sprintf("    %s:", label),
+		Label:     label + ":",
 		Items:     items,
 		Templates: templates,
 		Size:      4,
@@ -523,6 +478,8 @@ func promptSelectLanguage(label string, choices []languageOption, current string
 	}
 
 	if i, _, err := prompt.Run(); err == nil {
+		// Clear the Selected line and print bordered result
+		fmt.Print("\033[A\033[K")
 		return items[i].Value
 	} else if handleInterrupt(err) {
 		os.Exit(1)
@@ -535,27 +492,23 @@ func promptSelectLanguageWithLabel(prompt, settingLabel string, choices []langua
 	type option struct {
 		Display string
 		Value   string
-		Icon    string
 	}
 
 	var items []option
 	for _, choice := range choices {
-		icon := "  "
-		if choice.value == current {
-			icon = "▶"
-		}
-		items = append(items, option{Display: choice.display, Value: choice.value, Icon: icon})
+		items = append(items, option{Display: choice.display, Value: choice.value})
 	}
 
+	borderPrefix := "\033[38;5;30m  │ \033[0m"
 	templates := &promptui.SelectTemplates{
-		Label:    "{{ . | cyan }}",
-		Active:   "\033[38;5;201m❯\033[0m {{ .Icon }} \033[38;5;226m{{ .Display }}\033[0m",
-		Inactive: "  {{ .Display | faint }}",
-		Selected: " ",
+		Label:    borderPrefix + "{{ . | cyan }}",
+		Active:   "\033[38;5;30m│\033[0m \033[38;5;201m❯\033[0m \033[38;5;226m{{ .Display }}\033[0m",
+		Inactive: "\033[38;5;30m│\033[0m    {{ .Display | faint }}",
+		Selected: borderPrefix,
 	}
 
 	sel := promptui.Select{
-		Label:     fmt.Sprintf("    %s:", prompt),
+		Label:     prompt + ":",
 		Items:     items,
 		Templates: templates,
 		Size:      4,
@@ -566,7 +519,7 @@ func promptSelectLanguageWithLabel(prompt, settingLabel string, choices []langua
 		selected := items[i]
 		// Clear the previous line (promptui's selected echo) and print success message
 		fmt.Print("\033[A\033[K")
-		fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(settingLabel+": ") + whiteStyle.Render(selected.Display))
+		ui.PrintBorderedResult(settingLabel, selected.Display)
 		return selected.Value
 	} else if handleInterrupt(err) {
 		os.Exit(1)
@@ -586,28 +539,23 @@ func promptSelectWithDescriptionWithLabel(options []selectOption, settingLabel, 
 		Value       string
 		Display     string
 		Description string
-		Icon        string
 	}
 
 	var items []displayOption
 	for _, opt := range options {
-		icon := "  "
-		if opt.Value == current {
-			icon = "▶"
-		}
 		items = append(items, displayOption{
 			Value:       opt.Value,
 			Display:     opt.Display,
 			Description: opt.Description,
-			Icon:        icon,
 		})
 	}
 
+	borderPrefix := "\033[38;5;30m  │ \033[0m"
 	templates := &promptui.SelectTemplates{
-		Label:    " ",
-		Active:   "\033[38;5;201m❯\033[0m {{ .Icon }} \033[38;5;226m{{ .Display }}\033[0m \033[38;5;242m{{ .Description }}\033[0m",
-		Inactive: "  {{ .Display }} \033[38;5;242m{{ .Description }}\033[0m",
-		Selected: " ",
+		Label:    borderPrefix,
+		Active:   "\033[38;5;30m│\033[0m \033[38;5;201m❯\033[0m \033[38;5;226m{{ .Display }}\033[0m \033[38;5;242m{{ .Description }}\033[0m",
+		Inactive: "\033[38;5;30m│\033[0m    {{ .Display }} \033[38;5;242m{{ .Description }}\033[0m",
+		Selected: borderPrefix,
 	}
 
 	prompt := promptui.Select{
@@ -622,7 +570,7 @@ func promptSelectWithDescriptionWithLabel(options []selectOption, settingLabel, 
 		selected := items[i]
 		// Clear the previous line (promptui's selected echo) and print success message
 		fmt.Print("\033[A\033[K")
-		fmt.Println("    " + successStyle.Render("✓ ") + dimStyle.Render(settingLabel+": ") + whiteStyle.Render(selected.Display))
+		ui.PrintBorderedResult(settingLabel, selected.Display)
 		return selected.Value
 	} else if handleInterrupt(err) {
 		os.Exit(1)
@@ -668,15 +616,12 @@ func displayFinalResult(result project.InitializeResult, answers project.SetupAn
 	// Completion banner
 	banner.PrintInitComplete()
 
-	// Summary box
-	fmt.Println(sectionStyle.Render("    ╔══════════════════════════════════════════════════════════╗"))
-	fmt.Println(sectionStyle.Render("    ║") + highlightStyle.Render("                    PROJECT SUMMARY                       ") + sectionStyle.Render("║"))
-	fmt.Println(sectionStyle.Render("    ╚══════════════════════════════════════════════════════════╝"))
-	fmt.Println()
-
 	// Summary details
-	printSummaryRow("📁", localize(localizer, "location", nil), result.ProjectPath)
-	printSummaryRow("🌐", localize(localizer, "language", nil), languageDisplay(answers.Locale))
+	labelStyle := lipgloss.NewStyle().Foreground(dimCyan).Width(18)
+
+	formatRow := func(label, value string) string {
+		return labelStyle.Render(label+":") + " " + whiteStyle.Render(value)
+	}
 
 	// Git mode display
 	gitModeDisplay := answers.GitMode
@@ -687,7 +632,6 @@ func displayFinalResult(result project.InitializeResult, answers project.SetupAn
 	} else if answers.GitMode == "team" {
 		gitModeDisplay = fmt.Sprintf("%s (%s)", answers.GitMode, localize(localizer, "github_team", nil))
 	}
-	printSummaryRow("🔀", localize(localizer, "git", nil), gitModeDisplay)
 
 	// TAG System display
 	tagDisplay := localize(localizer, "no", nil)
@@ -703,41 +647,35 @@ func displayFinalResult(result project.InitializeResult, answers project.SetupAn
 		}
 		tagDisplay = fmt.Sprintf("%s (%s)", localize(localizer, "yes", nil), tagModeDisplay)
 	}
-	printSummaryRow("🏷️", localize(localizer, "tag_enabled_label", nil), tagDisplay)
 
-	printSummaryRow("📄", localize(localizer, "files", nil), fmt.Sprintf("%d %s", len(result.CreatedFiles), localize(localizer, "created", nil)))
-	printSummaryRow("⏱️", localize(localizer, "duration", nil), duration.Round(time.Millisecond).String())
-
-	if result.Reinitialized {
-		printSummaryRow("💾", localize(localizer, "backup", nil), ".jikime/backups/")
+	summaryLines := []string{
+		formatRow(localize(localizer, "location", nil), result.ProjectPath),
+		formatRow(localize(localizer, "language", nil), languageDisplay(answers.Locale)),
+		formatRow(localize(localizer, "git", nil), gitModeDisplay),
+		formatRow(localize(localizer, "tag_enabled_label", nil), tagDisplay),
+		formatRow(localize(localizer, "files", nil), fmt.Sprintf("%d %s", len(result.CreatedFiles), localize(localizer, "created", nil))),
+		formatRow(localize(localizer, "duration", nil), duration.Round(time.Millisecond).String()),
 	}
 
-	// Next steps
-	fmt.Println()
-	fmt.Println(sectionStyle.Render("    ╔══════════════════════════════════════════════════════════╗"))
-	fmt.Println(sectionStyle.Render("    ║") + highlightStyle.Render("                      NEXT STEPS                         ") + sectionStyle.Render("║"))
-	fmt.Println(sectionStyle.Render("    ╚══════════════════════════════════════════════════════════╝"))
-	fmt.Println()
+	if result.Reinitialized {
+		summaryLines = append(summaryLines, formatRow(localize(localizer, "backup", nil), ".jikime/backups/"))
+	}
 
+	ui.PrintBorderedBox("PROJECT SUMMARY", summaryLines, 70)
+
+	// Next steps
 	stepStyle := lipgloss.NewStyle().Foreground(magenta).Bold(true)
-	fmt.Printf("    %s %s\n", stepStyle.Render("[1]"), whiteStyle.Render(localize(localizer, "next_step_1", nil)))
-	fmt.Println(dimStyle.Render("        " + localize(localizer, "next_step_1_desc", nil)))
-	fmt.Printf("    %s %s\n", stepStyle.Render("[2]"), whiteStyle.Render(localize(localizer, "next_step_2", nil)))
+	nextStepLines := []string{
+		stepStyle.Render("[1]") + " " + whiteStyle.Render(localize(localizer, "next_step_1", nil)),
+		"    " + dimStyle.Render(localize(localizer, "next_step_1_desc", nil)),
+		stepStyle.Render("[2]") + " " + whiteStyle.Render(localize(localizer, "next_step_2", nil)),
+	}
+
+	ui.PrintBorderedBox("NEXT STEPS", nextStepLines, 70)
 	fmt.Println()
 
 	// Final message
-	fmt.Println(systemStyle.Render("    [SYS]") + whiteStyle.Render(" System ready. Happy coding! 🚀"))
+	fmt.Println(systemStyle.Render("    [SYS]") + whiteStyle.Render(" System ready. Happy coding!"))
 	fmt.Println()
 }
 
-func printSummaryRow(icon, label, value string) {
-	labelStyle := lipgloss.NewStyle().
-		Foreground(dimCyan).
-		Width(18)
-
-	fmt.Printf("    %s %s %s\n",
-		icon,
-		labelStyle.Render(label+":"),
-		whiteStyle.Render(value),
-	)
-}

@@ -109,7 +109,7 @@ func PrintIntro(version string) {
 		Foreground(magenta).
 		Bold(true)
 
-	fmt.Println(welcomeStyle.Render("    🚀 WELCOME TO JiKiME-ADK"))
+	fmt.Println(welcomeStyle.Render("    WELCOME TO JiKiME-ADK"))
 	fmt.Println()
 
 	// Instructions
@@ -130,16 +130,22 @@ func PrintCompact() {
 	fmt.Println("\033[38;5;49m╚╝\033[38;5;85m·\033[38;5;121m╩ ╩\033[38;5;157m·\033[38;5;193m╩ ╩\033[38;5;229m╚═╝\033[0m  \033[38;5;211m╩ ╩\033[38;5;175m═╩╝\033[38;5;139m╩ ╩\033[0m")
 }
 
-// PrintInitComplete prints completion message in cyberpunk style
+// PrintInitComplete prints completion message in bordered style
 func PrintInitComplete() {
-	completeStyle := lipgloss.NewStyle().
-		Foreground(neonGreen).
-		Bold(true)
+	titleStyle := lipgloss.NewStyle().Foreground(neonGreen).Bold(true)
+
+	content := titleStyle.Render("INITIALIZATION SEQUENCE COMPLETE")
+
+	boxStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(neonGreen).
+		Padding(1, 4).
+		Width(60).
+		MarginLeft(2).
+		Align(lipgloss.Center)
 
 	fmt.Println()
-	fmt.Println(completeStyle.Render("    ╔══════════════════════════════════════════════════════════╗"))
-	fmt.Println(completeStyle.Render("    ║           INITIALIZATION SEQUENCE COMPLETE              ║"))
-	fmt.Println(completeStyle.Render("    ╚══════════════════════════════════════════════════════════╝"))
+	fmt.Println(boxStyle.Render(content))
 	fmt.Println()
 }
 
