@@ -20,7 +20,7 @@
           },
           {
             "type": "command",
-            "command": "jikime hooks session-end-rank",
+            "command": "jikime hooks memory-save",
             "timeout": 5000
           }
         ]
@@ -32,6 +32,11 @@
           {
             "type": "command",
             "command": "jikime hooks pre-compact",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "jikime hooks memory-flush",
             "timeout": 5000
           }
         ]
@@ -84,6 +89,16 @@
             "timeout": 10000
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jikime hooks memory-track",
+            "timeout": 3000
+          }
+        ]
       }
     ],
     "Stop": [
@@ -98,6 +113,11 @@
             "type": "command",
             "command": "jikime hooks stop-audit",
             "timeout": 10000
+          },
+          {
+            "type": "command",
+            "command": "jikime hooks memory-complete",
+            "timeout": 5000
           }
         ]
       }
@@ -114,6 +134,11 @@
             "type": "command",
             "command": "jikime hooks orchestrator-route",
             "timeout": 3000
+          },
+          {
+            "type": "command",
+            "command": "jikime hooks memory-prompt-save",
+            "timeout": 5000
           }
         ]
       }
@@ -140,6 +165,7 @@
       "mcp__context7__get-library-docs",
       "mcp__context7__resolve-library-id",
       "mcp__sequential-thinking__*",
+      "mcp__jikime-memory__*",
       "Bash(git status:*)",
       "Bash(git log:*)",
       "Bash(git diff:*)",

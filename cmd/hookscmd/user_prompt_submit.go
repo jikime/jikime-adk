@@ -136,7 +136,7 @@ var dangerousPatterns = []struct {
 }
 
 type userPromptInput struct {
-	UserPrompt string `json:"user_prompt"`
+	Prompt string `json:"prompt"`
 }
 
 type userPromptOutput struct {
@@ -154,12 +154,12 @@ func runUserPromptSubmit(cmd *cobra.Command, args []string) error {
 		return outputPromptResult("", true)
 	}
 
-	prompt := strings.ToLower(input.UserPrompt)
+	prompt := strings.ToLower(input.Prompt)
 	var messages []string
 
 	// Check for dangerous patterns first (highest priority)
 	for _, dp := range dangerousPatterns {
-		if dp.pattern.MatchString(input.UserPrompt) {
+		if dp.pattern.MatchString(input.Prompt) {
 			messages = append(messages, dp.warning)
 		}
 	}

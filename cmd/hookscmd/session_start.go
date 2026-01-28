@@ -67,25 +67,13 @@ type GitStrategyModeConfig struct {
 
 func runSessionStart(cmd *cobra.Command, args []string) error {
 	// Read input from stdin (Claude Code passes session info)
-	// We don't need the input currently, but read it for compatibility
 	var input map[string]interface{}
 	decoder := json.NewDecoder(os.Stdin)
-	_ = decoder.Decode(&input) // Ignore input for now
+	_ = decoder.Decode(&input)
 
-	// Initialize orchestrator state only if no state file exists (preserve sticky state after compact)
-	if root, err := findProjectRoot(); err == nil {
-		if !stateFileExists(root) {
-			// No state file - determine orchestrator using improved detection
-			orchestrator := determineInitialOrchestrator(root)
-			writeOrchestratorState(root, orchestrator)
-		}
-		// State file exists → preserve current orchestrator (sticky state)
-	}
-
-	// Generate session output
-	output, err := formatSessionOutput()
+	// Find project root once (avoid duplicate findProjectRoot calls)
+	projectRoot, err := findProjectRoot()
 	if err != nil {
-		// Return error response but continue
 		response := HookResponse{
 			Continue:      true,
 			SystemMessage: "⚠️ Session start encountered an error - continuing",
@@ -95,6 +83,18 @@ func runSessionStart(cmd *cobra.Command, args []string) error {
 		}
 		return writeResponse(response)
 	}
+
+	// Load config once (avoid duplicate loadConfig calls)
+	config, _ := loadConfig(projectRoot)
+
+	// Initialize orchestrator state only if no state file exists (preserve sticky state after compact)
+	if !stateFileExists(projectRoot) {
+		orchestrator := determineInitialOrchestratorWithConfig(projectRoot, config)
+		writeOrchestratorState(projectRoot, orchestrator)
+	}
+
+	// Generate session output
+	output := formatSessionOutputWithContext(projectRoot, config)
 
 	// Return success response
 	response := HookResponse{
@@ -113,21 +113,13 @@ func writeResponse(response HookResponse) error {
 	return encoder.Encode(response)
 }
 
-func formatSessionOutput() (string, error) {
-	// Find project root
-	projectRoot, err := findProjectRoot()
-	if err != nil {
-		return "", err
+func formatSessionOutputWithContext(projectRoot string, config *ConfigSection) string {
+	if config == nil {
+		config = &ConfigSection{}
 	}
 
-	// Load configuration
-	config, err := loadConfig(projectRoot)
-	if err != nil {
-		return "", err
-	}
-
-	// Get Git information
-	gitInfo := getGitInfo(projectRoot)
+	// Get Git information (3 commands in parallel)
+	gitInfo := getGitInfoParallel(projectRoot)
 
 	// Get version
 	appVersion := version.String()
@@ -188,120 +180,7 @@ func formatSessionOutput() (string, error) {
 		output.WriteString(fmt.Sprintf("   👋 Welcome back, %s!\n", userName))
 	}
 
-	// Environment validation warnings
-	envWarnings := validateEnvironment(projectRoot)
-	if len(envWarnings) > 0 {
-		output.WriteString("\n   ⚠️  Environment Warnings:\n")
-		for _, warning := range envWarnings {
-			output.WriteString(fmt.Sprintf("      - %s\n", warning))
-		}
-	}
-
-	return output.String(), nil
-}
-
-// validateEnvironment checks for required tools and project setup
-func validateEnvironment(projectRoot string) []string {
-	var warnings []string
-
-	// Check for Git
-	if _, err := exec.LookPath("git"); err != nil {
-		warnings = append(warnings, "Git not found - version control features will be limited")
-	}
-
-	// Detect project type and check for required tools
-	projectType := detectProjectType(projectRoot)
-
-	switch projectType {
-	case "node":
-		// Check for Node.js
-		if _, err := exec.LookPath("node"); err != nil {
-			warnings = append(warnings, "Node.js not found - required for this project")
-		}
-		// Check for package manager
-		if _, err := exec.LookPath("npm"); err != nil {
-			if _, err := exec.LookPath("pnpm"); err != nil {
-				if _, err := exec.LookPath("yarn"); err != nil {
-					warnings = append(warnings, "No package manager (npm/pnpm/yarn) found")
-				}
-			}
-		}
-		// Check for node_modules
-		nodeModules := filepath.Join(projectRoot, "node_modules")
-		if _, err := os.Stat(nodeModules); os.IsNotExist(err) {
-			warnings = append(warnings, "node_modules not found - run 'npm install' or equivalent")
-		}
-
-	case "python":
-		// Check for Python
-		if _, err := exec.LookPath("python3"); err != nil {
-			if _, err := exec.LookPath("python"); err != nil {
-				warnings = append(warnings, "Python not found - required for this project")
-			}
-		}
-		// Check for virtual environment
-		venvPath := filepath.Join(projectRoot, ".venv")
-		venvPath2 := filepath.Join(projectRoot, "venv")
-		if _, err := os.Stat(venvPath); os.IsNotExist(err) {
-			if _, err := os.Stat(venvPath2); os.IsNotExist(err) {
-				warnings = append(warnings, "No virtual environment found - consider creating one")
-			}
-		}
-
-	case "go":
-		// Check for Go
-		if _, err := exec.LookPath("go"); err != nil {
-			warnings = append(warnings, "Go not found - required for this project")
-		}
-
-	case "rust":
-		// Check for Rust
-		if _, err := exec.LookPath("cargo"); err != nil {
-			warnings = append(warnings, "Cargo (Rust) not found - required for this project")
-		}
-	}
-
-	// Check for .env file (common requirement)
-	envExample := filepath.Join(projectRoot, ".env.example")
-	envFile := filepath.Join(projectRoot, ".env")
-	if _, err := os.Stat(envExample); err == nil {
-		if _, err := os.Stat(envFile); os.IsNotExist(err) {
-			warnings = append(warnings, ".env file missing - copy from .env.example")
-		}
-	}
-
-	return warnings
-}
-
-// detectProjectType determines the project type based on config files
-func detectProjectType(projectRoot string) string {
-	// Node.js indicators
-	if _, err := os.Stat(filepath.Join(projectRoot, "package.json")); err == nil {
-		return "node"
-	}
-
-	// Python indicators
-	if _, err := os.Stat(filepath.Join(projectRoot, "pyproject.toml")); err == nil {
-		return "python"
-	}
-	if _, err := os.Stat(filepath.Join(projectRoot, "requirements.txt")); err == nil {
-		return "python"
-	}
-	if _, err := os.Stat(filepath.Join(projectRoot, "setup.py")); err == nil {
-		return "python"
-	}
-
-	// Go indicators
-	if _, err := os.Stat(filepath.Join(projectRoot, "go.mod")); err == nil {
-		return "go"
-	}
-
-	// Rust indicators
-	if _, err := os.Stat(filepath.Join(projectRoot, "Cargo.toml")); err == nil {
-		return "rust"
-	}
-
-	return "unknown"
+	return output.String()
 }
 
 func findProjectRoot() (string, error) {
@@ -391,19 +270,81 @@ func getGitInfo(projectRoot string) map[string]string {
 	return info
 }
 
+// getGitInfoParallel runs 3 git commands concurrently for faster startup.
+func getGitInfoParallel(projectRoot string) map[string]string {
+	info := make(map[string]string)
+
+	type gitResult struct {
+		key   string
+		value string
+	}
+
+	ch := make(chan gitResult, 3)
+
+	// Branch (goroutine 1)
+	go func() {
+		cmd := exec.Command("git", "branch", "--show-current")
+		cmd.Dir = projectRoot
+		if output, err := cmd.Output(); err == nil {
+			ch <- gitResult{"branch", strings.TrimSpace(string(output))}
+		} else {
+			ch <- gitResult{"branch", ""}
+		}
+	}()
+
+	// Status (goroutine 2)
+	go func() {
+		cmd := exec.Command("git", "status", "--porcelain")
+		cmd.Dir = projectRoot
+		if output, err := cmd.Output(); err == nil {
+			lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+			if len(lines) > 0 && lines[0] != "" {
+				ch <- gitResult{"changes", fmt.Sprintf("%d file(s) modified", len(lines))}
+			} else {
+				ch <- gitResult{"changes", "No changes"}
+			}
+		} else {
+			ch <- gitResult{"changes", "unknown"}
+		}
+	}()
+
+	// Last commit (goroutine 3)
+	go func() {
+		cmd := exec.Command("git", "log", "-1", "--pretty=format:%h - %s (%ar)")
+		cmd.Dir = projectRoot
+		if output, err := cmd.Output(); err == nil {
+			ch <- gitResult{"last_commit", strings.TrimSpace(string(output))}
+		} else {
+			ch <- gitResult{"last_commit", ""}
+		}
+	}()
+
+	for i := 0; i < 3; i++ {
+		r := <-ch
+		info[r.key] = r.value
+	}
+
+	return info
+}
+
 // determineInitialOrchestrator decides the initial orchestrator using improved logic:
 // Priority 1: Active migration detection (progress.yaml with in_progress status)
 // Priority 2: User's orchestrator_style setting (fallback)
 // Priority 3: Default to J.A.R.V.I.S.
 func determineInitialOrchestrator(projectRoot string) string {
+	config, _ := loadConfig(projectRoot)
+	return determineInitialOrchestratorWithConfig(projectRoot, config)
+}
+
+// determineInitialOrchestratorWithConfig uses a pre-loaded config to avoid duplicate loadConfig calls.
+func determineInitialOrchestratorWithConfig(projectRoot string, config *ConfigSection) string {
 	// Priority 1: Check for ACTIVE migration (not just artifacts)
 	if isActiveMigration(projectRoot) {
 		return OrchestratorFRIDAY
 	}
 
 	// Priority 2: Check user's orchestrator_style setting
-	config, err := loadConfig(projectRoot)
-	if err == nil && config.User.OrchestratorStyle != "" {
+	if config != nil && config.User.OrchestratorStyle != "" {
 		switch config.User.OrchestratorStyle {
 		case "jarvis":
 			return OrchestratorJARVIS
@@ -415,11 +356,7 @@ func determineInitialOrchestrator(projectRoot string) string {
 	}
 
 	// Priority 3 (auto mode): Artifact-based detection (legacy behavior)
-	// Only activate F.R.I.D.A.Y. if migration artifacts exist AND no explicit user preference
 	if hasMigrationArtifacts(projectRoot) {
-		// Migration artifacts exist but not actively in progress
-		// Default to J.A.R.V.I.S. since user might just be doing regular development
-		// User can switch to F.R.I.D.A.Y. by using migration keywords or /jikime:friday
 		return OrchestratorJARVIS
 	}
 

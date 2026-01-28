@@ -12,7 +12,6 @@ func NewHooks() *cobra.Command {
 
 	// Add subcommands - SessionStart/End hooks
 	hooks.AddCommand(SessionStartCmd)
-	hooks.AddCommand(SessionEndRankCmd)
 	hooks.AddCommand(SessionEndCleanupCmd)
 
 	// UserPromptSubmit hooks
@@ -42,6 +41,17 @@ func NewHooks() *cobra.Command {
 
 	// Orchestrator routing hooks
 	hooks.AddCommand(OrchestratorRouteCmd)
+
+	// Memory hooks (Phase 1)
+	hooks.AddCommand(MemoryLoadCmd)
+	hooks.AddCommand(MemoryFlushCmd)
+	hooks.AddCommand(MemorySaveCmd)
+
+	// Memory hooks (Phase 2: embedding + prompt save)
+	hooks.AddCommand(MemoryPromptSaveCmd) // UserPromptSubmit: save prompt only (search via MCP)
+	hooks.AddCommand(MemoryTrackCmd)      // PostToolUse: track file modifications
+	hooks.AddCommand(MemoryCompleteCmd)   // Stop: flush track buffer + save tool usage
+	hooks.AddCommand(EmbedBackfillCmd)    // Background: batch embedding (spawned by memory-save)
 
 	return hooks
 }

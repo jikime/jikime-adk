@@ -57,8 +57,38 @@ MoAI-ADK의 구조와 흐름을 깊이 분석했고, 그 단단한 철학적 기
 | **26개 전문 에이전트** | Manager 8, Specialist 14, Builder 4 에이전트 자동 위임 | [에이전트 카탈로그](./docs/agents.md) |
 | **레거시 마이그레이션** | Vue.js, React CRA, Angular 등 → Next.js 16 자동 전환 | [마이그레이션 가이드](./docs/migration.md) |
 | **60개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 카탈로그](./docs/skills-catalog.md) |
+| **세션 메모리** | 세션 간 컨텍스트 연속성, 하이브리드 벡터+텍스트 검색 | [메모리 시스템](./docs/memory.md) |
 | **품질 보증** | TRUST 5 프레임워크 + LSP 품질 게이트 | [품질 가이드](./docs/rules.md) |
 | **LLM 프로바이더 라우터** | OpenAI, Gemini, GLM, Ollama 전환 | [라우터 문서](./docs/provider-router.md) |
+
+---
+
+## 세션 메모리 시스템
+
+Claude Code 세션 간 **컨텍스트 연속성**을 제공하는 2-Layer Memory Architecture:
+
+```
+세션 시작 → memory_load(MEMORY.md + Daily Log)
+    │
+사용자 질문 → memory_search(하이브리드 검색) → snippet 미리보기
+    │                                            → memory_get(상세 읽기)
+    │
+Claude 응답 → 자동 기록 (user_prompt, assistant_response, tool_usage)
+    │
+결정/학습 발견 → memory_save(decision, learning, error_fix)
+    │
+세션 종료 → embed-backfill(백그라운드 배치 임베딩)
+```
+
+| 구성요소 | 설명 |
+|----------|------|
+| **MCP 서버** | `jikime-adk mcp serve` — 6개 도구 (search, get, load, save, stats, reindex) |
+| **하이브리드 검색** | 0.7 × 벡터(Cosine Similarity) + 0.3 × 텍스트(BM25) 가중 스코어링 |
+| **임베딩** | OpenAI `text-embedding-3-small` 또는 Gemini `text-embedding-004` |
+| **자동 수집** | Claude Code Hooks로 프롬프트/응답/파일수정 자동 기록 |
+| **Memory-First** | 과거 컨텍스트가 필요할 수 있으면 항상 검색 (추론 기반, 키워드 매칭 아님) |
+
+> 상세 문서: [메모리 시스템](./docs/memory.md) | [세션 메모리 흐름](./docs/session-memory-flow.md)
 
 ---
 
@@ -130,6 +160,8 @@ jikime-adk init
 | `jikime doctor` | 시스템 진단 |
 | `jikime router switch <provider>` | LLM 프로바이더 전환 |
 | `jikime worktree new <branch>` | Git Worktree 생성 |
+| `jikime memory search <query>` | 메모리 하이브리드 검색 |
+| `jikime memory stats` | 메모리 DB 통계 |
 | `jikime skill list` | 스킬 목록 조회 |
 
 > CLI 상세 옵션: [CLI 문서](./docs/commands.md#cli-명령어)
@@ -178,6 +210,8 @@ IMPROVE   →  자신감 있게 변경 → (반복)
 | [품질 규칙](./docs/rules.md) | TRUST 5, 코딩 스타일, 보안 가이드 |
 | [Worktree 관리](./docs/worktree.md) | Git Worktree 병렬 개발 |
 | [LLM 라우터](./docs/provider-router.md) | 외부 LLM 프로바이더 연동 |
+| [세션 메모리 시스템](./docs/memory.md) | 2-Layer Memory, MCP 도구, 임베딩, 검색 |
+| [세션 메모리 흐름](./docs/session-memory-flow.md) | 세션 시작~종료 전체 데이터 흐름 |
 | [Hooks 시스템](./docs/hooks.md) | Claude Code 훅 설정 |
 | [Ralph Loop](./docs/ralph-loop.md) | LSP/AST-grep 피드백 루프 |
 | [Statusline](./docs/statusline.md) | Claude Code 상태줄 커스터마이징 |
@@ -190,7 +224,12 @@ IMPROVE   →  자신감 있게 변경 → (반복)
 ```
 jikime-adk/
 ├── cmd/                    # CLI 명령어 구현
-├── internal/               # 내부 패키지 (라우터 엔진 등)
+│   ├── hookscmd/           # Claude Code 훅 (메모리 수집/보존)
+│   ├── mcpcmd/             # MCP 서버 (메모리 검색/관리)
+│   └── memorycmd/          # 메모리 CLI 명령어
+├── internal/               # 내부 패키지
+│   ├── memory/             # 메모리 시스템 (검색, 인덱싱, 임베딩)
+│   └── router/             # LLM 프로바이더 라우터
 ├── templates/              # 임베디드 프로젝트 템플릿
 │   ├── .claude/            # 에이전트, 커맨드, 스킬
 │   └── .jikime/            # 설정 파일

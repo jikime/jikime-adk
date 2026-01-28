@@ -95,14 +95,6 @@ jikime hooks session-end-cleanup
 export JIKIME_NO_NOTIFY=1
 ```
 
-#### session-end-rank
-
-**목적**: 세션 품질 랭킹 및 통계 생성
-
-```bash
-jikime hooks session-end-rank
-```
-
 ### 2. UserPromptSubmit Hooks
 
 사용자 프롬프트 제출 시 실행되는 훅입니다.
@@ -343,11 +335,6 @@ jikime hooks pre-compact
           {
             "type": "command",
             "command": "jikime hooks session-end-cleanup",
-            "timeout": 5000
-          },
-          {
-            "type": "command",
-            "command": "jikime hooks session-end-rank",
             "timeout": 5000
           }
         ]
