@@ -167,6 +167,7 @@ func printPhaseWithProgress(num int, label string) {
 }
 
 func printCyberProgress(width int, duration time.Duration) {
+	borderPrefix := lipgloss.NewStyle().Foreground(dimCyan).Render("  │")
 	chars := []string{"░", "▒", "▓", "█"}
 	steps := width
 
@@ -183,7 +184,7 @@ func printCyberProgress(width int, duration time.Duration) {
 		}
 
 		percent := lipgloss.NewStyle().Foreground(neonGreen).Bold(true).Render(fmt.Sprintf("%3d%%", (i*100)/steps))
-		fmt.Printf("\r              %s %s", bar, percent)
+		fmt.Printf("\r%s          %s %s", borderPrefix, bar, percent)
 		time.Sleep(duration / time.Duration(steps))
 	}
 	fmt.Println()

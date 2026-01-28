@@ -151,6 +151,7 @@ func PrintInitComplete() {
 
 // PrintPhase prints a phase header
 func PrintPhase(num int, label string) {
+	borderStyle := lipgloss.NewStyle().Foreground(dimCyan)
 	phaseStyle := lipgloss.NewStyle().
 		Foreground(magenta).
 		Bold(true)
@@ -161,7 +162,8 @@ func PrintPhase(num int, label string) {
 	statusStyle := lipgloss.NewStyle().
 		Foreground(neonGreen)
 
-	fmt.Printf("\n    %s %s %s\n",
+	fmt.Printf("%s %s %s %s\n",
+		borderStyle.Render("  │"),
 		phaseStyle.Render(fmt.Sprintf("[PHASE %d]", num)),
 		labelStyle.Render(label),
 		statusStyle.Render("..."),
@@ -170,9 +172,10 @@ func PrintPhase(num int, label string) {
 
 // PrintPhaseOK prints phase completion status
 func PrintPhaseOK() {
+	borderStyle := lipgloss.NewStyle().Foreground(dimCyan)
 	okStyle := lipgloss.NewStyle().
 		Foreground(neonGreen).
 		Bold(true)
 
-	fmt.Printf("              %s\n", okStyle.Render("[ OK ]"))
+	fmt.Printf("%s            %s\n", borderStyle.Render("  │"), okStyle.Render("[ OK ]"))
 }

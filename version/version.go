@@ -3,7 +3,7 @@ package version
 // buildVersion is injected at build time via -ldflags "-X 'jikime-adk/version.buildVersion=<value>'".
 var buildVersion string
 
-const fallbackVersion = "0.5.0"
+const fallbackVersion = "0.5.1"
 
 func String() string {
 	if buildVersion != "" {
