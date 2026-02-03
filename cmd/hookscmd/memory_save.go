@@ -7,6 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/spf13/cobra"
+	"jikime-adk/internal/memory"
 )
 
 // MemorySaveCmd represents the memory-save hook command (SessionEnd).
@@ -37,6 +38,8 @@ func runMemorySave(cmd *cobra.Command, args []string) error {
 	if projectDir == "" {
 		return outputMemorySave("no project directory")
 	}
+	// Find actual project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	sessionID := input.SessionID
 	if sessionID == "" {

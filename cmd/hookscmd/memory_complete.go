@@ -48,6 +48,8 @@ func runMemoryComplete(cmd *cobra.Command, args []string) error {
 	if projectDir == "" {
 		return outputMemoryComplete()
 	}
+	// Find actual project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	sessionID := input.SessionID
 	if sessionID == "" {

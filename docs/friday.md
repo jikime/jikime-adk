@@ -46,7 +46,7 @@ F.R.I.D.A.Y. (Framework Relay & Integration Deployment Assistant Yesterday)는 �
 │                      ▼                                          │
 │  Phase 1: Detailed Analysis                                     │
 │  ┌─────────────────────────────────────────────────────────┐   │
-│  │  Component/Route/State Mapping → as_is_spec.md          │   │
+│  │  Component/Route/State/DB Mapping → as_is_spec.md        │   │
 │  └─────────────────────────────────────┬───────────────────┘   │
 │                                        ▼                        │
 │  Phase 2: Intelligent Planning                                  │
@@ -64,9 +64,9 @@ F.R.I.D.A.Y. (Framework Relay & Integration Deployment Assistant Yesterday)는 �
 │  Phase 3: DDD Execution (Per Module)                            │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │  FOR EACH module:                                        │   │
-│  │    ├── ANALYZE  (소스 동작 이해)                          │   │
-│  │    ├── PRESERVE (특성 테스트 작성)                        │   │
-│  │    ├── IMPROVE  (타겟 프레임워크로 변환)                  │   │
+│  │    ├── ANALYZE  (소스 동작 이해 + DB 모델 식별)             │   │
+│  │    ├── PRESERVE (특성 테스트 + DB 레이어 테스트)            │   │
+│  │    ├── IMPROVE  (타겟 프레임워크 + ORM 변환)              │   │
 │  │    ├── LSP Quality Gate (regression check)               │   │
 │  │    └── Self-Assessment:                                  │   │
 │  │        ├── SUCCESS → Next module                         │   │
@@ -106,12 +106,20 @@ F.R.I.D.A.Y.의 핵심 설계 원칙은 **Config-First**입니다. Phase 0에서
 ### .migrate-config.yaml
 
 ```yaml
-# Phase 0-1에서 자동 생성
+# Phase 0에서 자동 생성
 project_name: my-vue-app
 source_path: ./legacy-vue-app
+source_architecture: monolith           # Phase 0에서 감지 (monolith, separated, unknown)
 target_framework: nextjs16
 artifacts_dir: ./migrations/my-vue-app
 output_dir: ./migrations/my-vue-app/out
+db_type: postgresql                     # Phase 0에서 감지
+db_orm: eloquent                        # Phase 0에서 감지
+
+# Phase 2에서 추가
+target_architecture: fullstack-monolith  # 사용자 선택 (fullstack-monolith, frontend-backend, frontend-only)
+db_access_from: frontend                 # target_architecture에서 자동 파생
+# target_framework_backend: fastapi      # frontend-backend 아키텍처만
 ```
 
 ### 산출물 흐름
@@ -120,18 +128,22 @@ output_dir: ./migrations/my-vue-app/out
 @<source-path>/
     │
     ▼ (Phase 0-1: Discover + Analyze)
-.migrate-config.yaml                  ← 프로젝트 설정
-{artifacts_dir}/as_is_spec.md         ← 상세 분석
+.migrate-config.yaml                  ← 프로젝트 설정 (source_architecture, db_type, db_orm 포함)
+{artifacts_dir}/as_is_spec.md         ← 상세 분석 (Database Layer + Architecture Layers 포함)
     │
     ▼ (Phase 2: Plan)
-{artifacts_dir}/migration_plan.md     ← 마이그레이션 계획
+.migrate-config.yaml 업데이트          ← 아키텍처 선택 (target_architecture, db_access_from)
+{artifacts_dir}/migration_plan.md     ← 마이그레이션 계획 (아키텍처별 Phase 구조)
     │
     ▼ (Phase 3: Execute)
-{output_dir}/                         ← 마이그레이션된 프로젝트
+{output_dir}/                         ← 마이그레이션된 프로젝트 (아키텍처에 따라 구조 상이)
+  ├─ fullstack-monolith: {output_dir}/ (단일)
+  ├─ frontend-backend: {output_dir}/frontend/ + {output_dir}/backend/
+  └─ frontend-only: {output_dir}/ (단일, DB 없음)
 {artifacts_dir}/progress.yaml         ← 진행 상태 추적
     │
     ▼ (Phase 4: Verify)
-{artifacts_dir}/verification_report.md ← 검증 결과
+{artifacts_dir}/verification_report.md ← 검증 결과 (아키텍처별 검증)
     │
     ▼ (Optional: Whitepaper)
 {whitepaper_output}/                  ← 클라이언트용 보고서
@@ -193,7 +205,7 @@ output_dir: ./migrations/my-vue-app/out
 
 | 에이전트 | 역할 | 출력 |
 |----------|------|------|
-| **Codebase Explorer** | 파일 구조, 프레임워크 감지, 아키텍처 패턴 | 기술 스택, 컴포넌트 목록, 복잡도 점수 |
+| **Codebase Explorer** | 파일 구조, 프레임워크 감지, DB/ORM 유형, 소스 아키텍처 패턴 | 기술 스택, 컴포넌트 목록, DB 정보, 소스 아키텍처 (monolith/separated/unknown), 복잡도 점수 |
 | **Dependency Analyzer** | 패키지 의존성, 버전 호환성, 브레이킹 체인지 | 의존성 맵, 업그레이드 요구사항 |
 | **Risk Assessor** | 마이그레이션 리스크, 안티패턴, 레거시 락 | 리스크 점수, 차단 요인 식별 |
 
@@ -202,11 +214,13 @@ output_dir: ./migrations/my-vue-app/out
 소스 프로젝트의 전체 구조를 문서화합니다:
 
 - 컴포넌트/라우트/상태 매핑
+- 데이터베이스 레이어 분석 (모델, 쿼리 패턴, 외부 데이터 서비스)
+- 아키텍처 레이어 분석 (Frontend / Backend / Data / Shared 레이어 식별 + Coupling 분석)
 - 비즈니스 로직 문서화
 - API 엔드포인트 매핑
 - 의존성 및 리스크 평가
 
-### 3. Planning (Phase 2) - Dynamic Skill Discovery
+### 3. Planning (Phase 2) - Architecture Selection + Dynamic Skill Discovery
 
 F.R.I.D.A.Y.는 하드코딩된 프레임워크 패턴 없이, **동적으로 스킬을 탐색**합니다:
 
@@ -214,6 +228,13 @@ F.R.I.D.A.Y.는 하드코딩된 프레임워크 패턴 없이, **동적으로 �
 # 자동으로 실행되는 내부 프로세스
 jikime-adk skill search "{target_framework}"
 ```
+
+**아키텍처 패턴 선택** (Phase 2의 핵심 단계):
+
+1. `source_architecture`와 `Architecture Layers` 분석 결과를 기반으로 추천
+2. 사용자에게 3가지 옵션 제시: `fullstack-monolith` / `frontend-backend` / `frontend-only`
+3. `frontend-backend` 선택 시 백엔드 프레임워크 후속 질문 (FastAPI/NestJS/Express/Go)
+4. `.migrate-config.yaml` 업데이트 (`target_architecture`, `target_framework_backend`, `db_access_from`)
 
 2-3개의 마이그레이션 전략을 생성하고 비교합니다:
 
@@ -225,12 +246,23 @@ jikime-adk skill search "{target_framework}"
 
 ### 4. Execution (Phase 3) - DDD Migration Cycle
 
+`target_architecture`에 따라 실행 전략이 달라집니다:
+
+| 아키텍처 | 실행 방식 |
+|----------|----------|
+| `fullstack-monolith` | 단일 프로젝트 DDD 사이클 (기본) |
+| `frontend-backend` | Shared → Backend → Frontend → Integration 4단계 분리 실행 |
+| `frontend-only` | 프론트엔드 모듈만 DDD 사이클 (DB 단계 스킵) |
+
 각 모듈에 대해 ANALYZE-PRESERVE-IMPROVE 사이클을 수행합니다:
 
 ```
-ANALYZE:  소스 컴포넌트 동작 이해
-PRESERVE: 특성 테스트 작성 (현재 동작 캡처)
-IMPROVE:  타겟 프레임워크로 변환 (스킬 컨벤션 적용)
+ANALYZE:     소스 컴포넌트 동작 이해
+ANALYZE-DB:  데이터 모델 및 쿼리 패턴 식별 (DB가 있는 경우)
+PRESERVE:    특성 테스트 작성 (현재 동작 캡처)
+PRESERVE-DB: 데이터 레이어 테스트 작성 (DB가 있는 경우)
+IMPROVE:     타겟 프레임워크로 변환 (스킬 컨벤션 적용)
+IMPROVE-DB:  ORM/데이터 접근 패턴 변환 (DB가 있는 경우)
 ```
 
 #### LSP Quality Gates
@@ -284,6 +316,7 @@ LSP regression이 감지되면 F.R.I.D.A.Y.는 자동으로 대안 마이그레�
 project: my-vue-app
 source: vue3
 target: nextjs16
+target_architecture: fullstack-monolith  # 선택된 아키텍처 패턴
 status: in_progress
 strategy: phased
 
@@ -532,10 +565,12 @@ Continuing...
 
 ---
 
-Version: 1.1.0
-Last Updated: 2026-01-25
+Version: 1.3.0
+Last Updated: 2026-02-03
 Codename: F.R.I.D.A.Y. (Framework Relay & Integration Deployment Assistant Yesterday)
 Inspiration: Iron Man's second AI Assistant (successor to J.A.R.V.I.S.)
 Changelog:
+- v1.3.0: Architecture Pattern 지원 추가 (fullstack-monolith, frontend-backend, frontend-only); 아키텍처 선택 단계(Phase 2); 아키텍처별 실행/검증 전략; source_architecture 감지
+- v1.2.0: Database Layer 지원 추가 (DB/ORM 감지, DB-aware DDD cycle, DB 스키마 검증)
 - v1.1.0: LSP Quality Gates 통합, Ralph Loop Integration 추가
 - v1.0.0: Initial release - Migration-focused orchestrator extracted from J.A.R.V.I.S.

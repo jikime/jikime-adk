@@ -64,14 +64,22 @@ version: "1.0"
 project_name: my-vue-app
 source_path: ./my-vue-app
 source_framework: vue3              # Step 0에서 감지
+source_architecture: monolith       # Step 0에서 감지 (monolith, separated, unknown)
 target_framework: nextjs16          # Step 0에서 --target으로 지정
 artifacts_dir: ./migrations/my-vue-app
 output_dir: ./migrations/my-vue-app/out
+db_type: postgresql                 # Step 0에서 감지 (postgresql, mysql, sqlite, mongodb, none)
+db_orm: eloquent                    # Step 0에서 감지 (prisma, drizzle, typeorm, sequelize, mongoose, eloquent, none)
 created_at: "2026-01-23T10:00:00Z"
 # Step 1에서 추가되는 필드
 analyzed_at: "2026-01-23T11:00:00Z"
 component_count: 45
 complexity_score: 7
+db_model_count: 15                  # Step 1에서 추가 (0 if no database)
+# Step 2에서 추가되는 필드
+target_architecture: fullstack-monolith  # Step 2에서 사용자 선택 (fullstack-monolith, frontend-backend, frontend-only)
+target_framework_backend: fastapi        # Step 2에서 선택 (frontend-backend 아키텍처만, fastapi, nestjs, express, go-fiber)
+db_access_from: backend                  # Step 2에서 자동 파생 (frontend, backend, both, none)
 ```
 
 ### Config 필드 생명주기
@@ -80,11 +88,18 @@ complexity_score: 7
 |------|-----------|-----------|
 | `source_path` | Step 0 | Step 1, 3 |
 | `source_framework` | Step 0 | Step 1, 2, 3 |
+| `source_architecture` | Step 0 | Step 1, 2 |
 | `target_framework` | Step 0 or 1 | Step 2, 3 |
 | `artifacts_dir` | Step 0 | Step 2, 3, 4 |
 | `output_dir` | Step 0 | Step 3, 4 |
+| `db_type` | Step 0 | Step 1, 2, 3, 4 |
+| `db_orm` | Step 0 | Step 1, 2, 3, 4 |
 | `component_count` | Step 1 | Step 2 |
 | `complexity_score` | Step 1 | Step 2 |
+| `db_model_count` | Step 1 | Step 2 |
+| `target_architecture` | Step 2 | Step 3, 4 |
+| `target_framework_backend` | Step 2 | Step 3, 4 |
+| `db_access_from` | Step 2 | Step 3, 4 |
 
 ---
 
@@ -105,6 +120,8 @@ complexity_score: 7
 **하는 일**:
 - 기술 스택 감지 (언어, 프레임워크, 버전)
 - 아키텍처 패턴 파악
+- 소스 아키텍처 패턴 감지 (monolith / separated / unknown)
+- 데이터베이스 유형 및 ORM 감지
 - 마이그레이션 복잡도 평가
 - `.migrate-config.yaml` 생성
 - 타겟 미지정 시 추천 프레임워크 제시
@@ -141,6 +158,8 @@ complexity_score: 7
 - 컴포넌트 구조 및 계층 분석
 - 라우팅 구조 매핑
 - 상태 관리 패턴 파악
+- 데이터베이스 레이어 분석 (모델, 쿼리 패턴, 외부 데이터 서비스)
+- 아키텍처 레이어 분석 (Frontend / Backend / Data / Shared 레이어 식별)
 - 의존성 호환성 분석
 - 위험 요소 식별
 
@@ -163,10 +182,12 @@ complexity_score: 7
 
 **하는 일**:
 1. `.migrate-config.yaml`에서 `target_framework` 읽기
-2. 동적 스킬 탐색 (`jikime-adk skill search "{target_framework}"`)
-3. `{artifacts_dir}/as_is_spec.md` 기반 계획 수립
-4. 스킬 규칙(구조, 네이밍, 라우팅) 적용
-5. **사용자 승인 대기**
+2. 동적 스킬 탐색 (`jikime-adk skill search "{target_framework}"`, `"{db_orm}"`, `"{db_type}"`)
+3. 타겟 아키텍처 패턴 선택 (fullstack-monolith / frontend-backend / frontend-only)
+4. `{artifacts_dir}/as_is_spec.md` 기반 계획 수립
+5. 데이터베이스 마이그레이션 전략 수립
+6. 스킬 규칙(구조, 네이밍, 라우팅) 적용
+7. **사용자 승인 대기**
 
 **산출물**: `{artifacts_dir}/migration_plan.md`
 
@@ -193,16 +214,33 @@ complexity_score: 7
 
 **방법론**: DDD (ANALYZE → PRESERVE → IMPROVE)
 
+**아키텍처별 실행 전략**:
+
+| 아키텍처 | 실행 방식 | 출력 구조 |
+|----------|----------|----------|
+| `fullstack-monolith` | 단일 프로젝트 DDD 사이클 | `{output_dir}/` |
+| `frontend-backend` | Shared → Backend → Frontend → Integration 4단계 | `{output_dir}/frontend/` + `{output_dir}/backend/` |
+| `frontend-only` | 프론트엔드 모듈만 DDD 사이클 (DB 스킵) | `{output_dir}/` |
+
 ```
-각 모듈별 반복:
-  1. ANALYZE  - 소스 모듈 동작 이해
-  2. PRESERVE - 특성 테스트 작성 (동작 보존)
-  3. IMPROVE  - 타겟 프레임워크로 변환
-  4. Validate - 빌드 + 테스트 확인
+각 모듈별 반복 (fullstack-monolith 기준):
+  1. ANALYZE     - 소스 모듈 동작 이해
+  1.5 ANALYZE-DB - 데이터 모델 및 쿼리 식별 (DB가 있는 경우)
+  2. PRESERVE    - 특성 테스트 작성 (동작 보존)
+  2.5 PRESERVE-DB - 데이터 레이어 테스트 작성 (DB가 있는 경우)
+  3. IMPROVE     - 타겟 프레임워크로 변환
+  3.5 IMPROVE-DB - ORM/데이터 접근 패턴 변환 (DB가 있는 경우)
+  4. Validate    - 빌드 + 테스트 + DB 스키마 확인
+
+frontend-backend의 경우:
+  Sub-Phase 1: Shared Layer (공유 타입, API 계약 정의)
+  Sub-Phase 2: Backend (API + 비즈니스 로직 + 데이터 접근)
+  Sub-Phase 3: Frontend (컴포넌트 + 라우팅 + 상태 + API Client)
+  Sub-Phase 4: Integration (API 계약 일치 검증)
 ```
 
 **산출물**:
-- `{output_dir}/` - 마이그레이션된 프로젝트
+- `{output_dir}/` - 마이그레이션된 프로젝트 (아키텍처에 따라 구조 상이)
 - `{artifacts_dir}/progress.yaml` - 진행 상황 추적
 
 **progress.yaml 구조**:
@@ -242,6 +280,14 @@ modules:
 | `--capture-skill` | No | 검증된 마이그레이션 패턴을 재사용 가능한 스킬로 저장 |
 
 > **Note**: `--source-url`/`--target-url`은 실행 중인 인스턴스 비교용입니다. 소스/타겟 프레임워크 정보는 `.migrate-config.yaml`에서 자동으로 읽습니다.
+
+**아키텍처별 검증**:
+
+| 아키텍처 | 검증 대상 | DB 검증 |
+|----------|----------|---------|
+| `fullstack-monolith` | 단일 프로젝트 빌드/타입체크/린트 | 포함 |
+| `frontend-backend` | Frontend + Backend 개별 검증 + 연동 검증 | Backend에서 실행 |
+| `frontend-only` | 단일 프로젝트 빌드/타입체크/린트 | 스킵 |
 
 **검증 항목**:
 1. Dev Server Setup - 소스/타겟 개발 서버 자동 시작
@@ -348,23 +394,27 @@ cd {output_dir}
      │
      ▼
 Step 0: .migrate-config.yaml 생성
-     │  (source_path, source_framework, target_framework, artifacts_dir, output_dir)
+     │  (source_path, source_framework, source_architecture, target_framework,
+     │   db_type, db_orm, artifacts_dir, output_dir)
      │
      ▼
 Step 1: config 업데이트 + as_is_spec.md 생성
-     │  (component_count, complexity_score, analyzed_at 추가)
+     │  (component_count, complexity_score, db_model_count, analyzed_at 추가)
+     │  (Architecture Layers 분석: Frontend/Backend/Data/Shared)
      │
      ▼
-Step 2: migration_plan.md 생성 (승인 대기)
-     │  (동적 스킬 탐색 → 타겟 규칙 적용)
+Step 2: 아키텍처 패턴 선택 + migration_plan.md 생성 (승인 대기)
+     │  (target_architecture, target_framework_backend, db_access_from 추가)
+     │  (동적 스킬 탐색 → 타겟 규칙 적용 + DB 마이그레이션 전략)
      │
      ▼
 Step 3: output_dir/ 생성 + progress.yaml 업데이트
-     │  (모듈별 DDD 사이클 반복)
+     │  (아키텍처별 실행 전략: monolith / frontend-backend / frontend-only)
+     │  (모듈별 DDD 사이클 반복 + DB 레이어 변환)
      │
      ▼
 Step 4: verification_report.md 생성
-     │  (동작 보존 + 성능 검증)
+     │  (아키텍처별 검증 + 동작 보존 + 성능 검증 + DB 스키마/연결 검증)
      │
      ▼
 (선택) --capture-skill
@@ -389,6 +439,8 @@ Step 2에서 타겟 프레임워크에 맞는 스킬을 동적으로 탐색합�
 jikime-adk skill search "{target_framework}"
 jikime-adk skill search "migrate {target_framework}"
 jikime-adk skill search "{target_language}"
+jikime-adk skill search "{db_orm}"
+jikime-adk skill search "{db_type}"
 ```
 
 | target_framework | 탐색되는 스킬 |
@@ -399,6 +451,87 @@ jikime-adk skill search "{target_language}"
 | `flutter` | `jikime-lang-flutter` (+ 관련 스킬) |
 
 스킬이 없는 경우 Context7 MCP를 통해 공식 문서를 조회합니다.
+
+---
+
+## Architecture Patterns
+
+Step 2 (Plan)에서 사용자가 타겟 아키텍처 패턴을 선택합니다. 소스 분석 결과에 따라 자동 추천되며, 사용자가 최종 결정합니다.
+
+### 3가지 패턴
+
+| 패턴 | 설명 | 적합한 경우 |
+|------|------|------------|
+| **fullstack-monolith** | 단일 Next.js 프로젝트 (API Routes + Server Components → DB) | 소규모~중규모, 모놀리식 소스 |
+| **frontend-backend** | 프론트엔드(Next.js) + 백엔드(FastAPI/NestJS/Express/Go) 분리 | 대규모, 이미 분리된 소스 |
+| **frontend-only** | 프론트엔드만 마이그레이션 (기존 백엔드 유지, API 호출) | 백엔드 유지 필요 시 |
+
+### 선택 기준
+
+```
+source_architecture?
+├─ monolith + component_count < 50 → 추천: fullstack-monolith
+├─ monolith + component_count >= 50 → 추천: frontend-backend
+├─ separated → 추천: frontend-backend
+└─ unknown → 사용자에게 3가지 옵션 제시
+```
+
+### 디렉토리 구조
+
+**fullstack-monolith** (기본):
+```
+{output_dir}/
+├── src/
+│   ├── app/          # Next.js App Router
+│   ├── components/   # React 컴포넌트
+│   ├── lib/          # 유틸리티, DB 클라이언트
+│   └── stores/       # 상태 관리
+├── prisma/           # DB 스키마
+└── package.json
+```
+
+**frontend-backend**:
+```
+{output_dir}/
+├── shared/           # 공유 타입, API 계약
+│   └── types/
+├── frontend/         # Next.js 프로젝트
+│   ├── src/
+│   └── package.json
+└── backend/          # 백엔드 프로젝트 (FastAPI/NestJS/Express/Go)
+    ├── src/
+    ├── prisma/       # DB 스키마
+    └── package.json
+```
+
+**frontend-only**:
+```
+{output_dir}/
+├── src/
+│   ├── app/          # Next.js App Router
+│   ├── components/   # React 컴포넌트
+│   ├── lib/          # API 클라이언트, 유틸리티
+│   └── stores/       # 상태 관리
+└── package.json      # DB 관련 없음
+```
+
+### Config 필드
+
+```yaml
+# Step 0에서 자동 감지
+source_architecture: monolith    # monolith | separated | unknown
+
+# Step 2에서 사용자 선택
+target_architecture: fullstack-monolith  # fullstack-monolith | frontend-backend | frontend-only
+
+# frontend-backend 선택 시 추가
+target_framework_backend: fastapi  # fastapi | nestjs | express | go-fiber
+
+# target_architecture에서 자동 파생
+db_access_from: frontend          # frontend | backend | both | none
+```
+
+**기본값 (하위 호환)**: `target_architecture` 미설정 시 `fullstack-monolith`로 동작 (기존과 동일)
 
 ---
 
@@ -471,9 +604,11 @@ Domain Pattern: jikime-migration-patterns-{domain}
 
 ---
 
-Version: 3.2.0
-Last Updated: 2026-01-25
+Version: 3.4.0
+Last Updated: 2026-02-03
 Changelog:
+- v3.4.0: Added Architecture Patterns section (fullstack-monolith, frontend-backend, frontend-only); Architecture-specific execution and verification; New config fields (source_architecture, target_architecture, target_framework_backend, db_access_from)
+- v3.3.0: Added database layer support across all phases (db_type, db_orm, db_model_count); DB-aware DDD cycle; DB skill discovery
 - v3.2.0: Added --capture-skill option to Step 4 for generating reusable migration skills from verified patterns
 - v3.1.0: Step 4 Playwright-based verification details; Added verify --browser-only integration for runtime error detection
 - v3.0.0: Config-First approach; FRIDAY orchestrator; Removed /jikime:migrate; Removed redundant source/target options from Steps 2-4; Renamed --source/--target to --source-url/--target-url in Step 4

@@ -46,6 +46,7 @@ model: inherit
 Read .migrate-config.yaml:
   - output_dir: Path to migrated project
   - artifacts_dir: Path to migration artifacts
+  - target_architecture: Architecture pattern (fullstack-monolith | frontend-backend | frontend-only)
 ```
 
 If `.migrate-config.yaml` not found:
@@ -73,6 +74,8 @@ cd {output_dir}
 - Lint validation
 - Test execution
 - Security scanning
+- Database schema validation (if `db_type` is not `none`)
+- Database connectivity test (if `db_type` is not `none`)
 - Browser runtime errors (unless --skip-browser)
 
 **Browser Modes:**
@@ -86,9 +89,11 @@ On success, update `{artifacts_dir}/progress.yaml`:
 ```yaml
 status: verified
 verified_at: "2026-01-26T12:00:00Z"
+target_architecture: fullstack-monolith  # From config
 verification:
   profile: pre-pr
   browser_check: true  # or false if --skip-browser
+  db_check: true       # or false if db_type is none or frontend-only
   result: passed
 ```
 
@@ -143,19 +148,39 @@ Arguments: $ARGUMENTS
    cd {output_dir}
    ```
 
-4. **Run static analysis verification**:
+4. **Run static analysis verification** (by `target_architecture`):
+
+   **fullstack-monolith** (default) or **frontend-only**:
    ```bash
-   # Build check
+   cd {output_dir}
    npm run build 2>&1 | tail -30
-
-   # Type check
    npx tsc --noEmit 2>&1
-
-   # Lint check
    npm run lint 2>&1
-
-   # Test
    npm test 2>&1
+   ```
+
+   **frontend-backend**:
+   ```bash
+   # Frontend verification
+   cd {output_dir}/frontend
+   npm run build 2>&1 | tail -30
+   npx tsc --noEmit 2>&1
+   npm run lint 2>&1
+   npm test 2>&1
+
+   # Backend verification
+   cd {output_dir}/backend
+   {build_command} 2>&1 | tail -30   # framework-specific
+   {lint_command} 2>&1
+   {test_command} 2>&1
+   ```
+
+   **Database verification** (skip if `db_type` is `none` or `target_architecture` is `frontend-only`):
+   ```bash
+   # For fullstack-monolith: run in {output_dir}
+   # For frontend-backend: run in {output_dir}/backend
+   npx prisma validate 2>&1  # or equivalent for target ORM
+   npx prisma db pull --print 2>&1  # or equivalent dry-run connection test
    ```
 
 5. **Run browser verification** (unless `--skip-browser`):
@@ -210,8 +235,10 @@ When verification passes, migration is complete.
 
 ---
 
-Version: 5.0.0
+Version: 5.2.0
 Changelog:
+- v5.2.0: Added architecture-specific verification flows; frontend-backend runs separate verification per project; architecture field in progress.yaml
+- v5.1.0: Added database schema validation and connectivity test; Added db_check to verification result
 - v5.0.0: Simplified to wrapper for /jikime:verify pre-pr. Removed source↔target comparison.
 - v4.0.0: Playwright-based verification with visual regression, cross-browser, accessibility
 - v3.0.0: Config-first approach

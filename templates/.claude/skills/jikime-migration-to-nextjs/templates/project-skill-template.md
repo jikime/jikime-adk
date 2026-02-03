@@ -32,6 +32,11 @@ type: project-specific
 | `jikime-platform-clerk` | Clerk 통합 | Clerk 사용 시 |
 | `jikime-platform-supabase` | Supabase 통합 | Supabase Auth 사용 시 |
 
+### Database Migration (if applicable)
+| Skill | Purpose | When to Load |
+|-------|---------|--------------|
+| `jikime-domain-database` | DB 패턴 및 ORM 가이드 | DB 마이그레이션 시 |
+
 ### Additional Patterns
 | Skill | Purpose | When to Load |
 |-------|---------|--------------|
@@ -49,14 +54,25 @@ type: project-specific
 - **Router**: {{SOURCE_ROUTER}}
 - **State Management**: {{SOURCE_STATE}}
 - **Styling**: {{SOURCE_STYLING}}
+- **Database**: {{DB_TYPE}} ({{DB_ORM}})
+- **Architecture**: {{SOURCE_ARCHITECTURE}}
 
-### Target Stack
+### Target Architecture
+- **Pattern**: {{TARGET_ARCHITECTURE}}
+- **DB Access**: {{DB_ACCESS_FROM}}
+
+### Target Stack (Frontend)
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript 5.x
 - **Styling**: Tailwind CSS 4.x
 - **UI**: shadcn/ui
 - **State**: Zustand
 - **Forms**: react-hook-form + Zod
+- **Database ORM**: {{TARGET_DB_ORM}} (if fullstack-monolith)
+
+### Target Stack (Backend) — frontend-backend only
+- **Framework**: {{TARGET_FRAMEWORK_BACKEND}}
+- **Database ORM**: {{TARGET_DB_ORM}}
 
 ---
 
@@ -135,6 +151,11 @@ Before marking migration complete:
 - [ ] `npm run build` succeeds
 - [ ] Core functionality verified
 - [ ] Auth flow working (if applicable)
+- [ ] Database schema validated (if applicable, not frontend-only)
+- [ ] Database connectivity verified (if applicable, not frontend-only)
+- [ ] Data access patterns correctly transformed (if applicable)
+- [ ] Frontend ↔ Backend integration verified (if frontend-backend)
+- [ ] API client configured correctly (if frontend-only or frontend-backend)
 
 ---
 
@@ -158,7 +179,7 @@ Skill("jikime-migration-patterns-auth")
 
 ---
 
-Version: 1.0.0
+Version: 1.2.0
 Generated: {{GENERATED_DATE}}
 Source: jikime-migration-to-nextjs skill template
 ```

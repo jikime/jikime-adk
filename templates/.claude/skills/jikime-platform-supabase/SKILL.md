@@ -1,14 +1,19 @@
 ---
 name: jikime-platform-supabase
-description: Supabase specialist covering PostgreSQL 16, pgvector, RLS, real-time subscriptions, and Edge Functions. Use when building full-stack apps with Supabase backend.
-version: 1.0.0
-tags: ["platform", "supabase", "postgresql", "realtime", "auth", "pgvector"]
+description: Supabase specialist covering PostgreSQL 16, pgvector, RLS, real-time subscriptions, Edge Functions, and Postgres performance optimization. Use when building full-stack apps with Supabase backend or optimizing database performance.
+version: 3.0.0
+license: MIT
+metadata:
+  author: supabase
+  organization: Supabase
+  date: February 2026
+  abstract: Comprehensive Supabase platform guide and Postgres performance optimization reference. Covers full-stack development with Next.js (Setup, CRUD, Auth, Storage, Realtime, Edge Functions, pgvector) plus 30 performance optimization rules across 8 categories, prioritized by impact. Each rule includes incorrect vs. correct SQL examples, query plan analysis, and specific performance metrics.
+tags: ["platform", "supabase", "postgresql", "realtime", "auth", "pgvector", "performance", "optimization", "indexing", "connection-pooling", "monitoring"]
 triggers:
-  keywords: ["supabase", "postgresql", "RLS", "realtime", "pgvector", "수파베이스"]
+  keywords: ["supabase", "postgresql", "RLS", "realtime", "pgvector", "index", "performance", "connection pool", "vacuum", "explain analyze"]
   phases: ["run"]
   agents: ["backend"]
   languages: ["typescript", "sql"]
-# Progressive Disclosure Configuration
 progressive_disclosure:
   enabled: true
   level1_tokens: ~100
@@ -16,24 +21,36 @@ progressive_disclosure:
 user-invocable: false
 ---
 
-# Supabase Development Guide
+# Supabase Platform Guide
 
-Supabase + Next.js 개발을 위한 간결한 가이드.
+Comprehensive guide for Supabase + Next.js full-stack development and Postgres performance optimization.
+
+## When to Apply
+
+Reference this skill when:
+- Building full-stack apps with Supabase backend
+- Writing SQL queries or designing schemas
+- Implementing indexes or query optimization
+- Setting up real-time features or pgvector for AI embeddings
+- Configuring authentication, storage, or Edge Functions
+- Reviewing database performance issues
+- Configuring connection pooling or scaling
+- Working with Row-Level Security (RLS)
 
 ## Quick Reference
 
-| 기능 | 설명 |
-|------|------|
-| **PostgreSQL 16** | 풀 SQL, JSONB |
-| **pgvector** | AI 임베딩, 벡터 검색 |
+| Feature | Description |
+|---------|-------------|
+| **PostgreSQL 16** | Full SQL, JSONB |
+| **pgvector** | AI embeddings, vector search |
 | **RLS** | Row Level Security |
-| **Realtime** | 실시간 구독 |
-| **Auth** | 인증, JWT |
-| **Storage** | 파일 스토리지 |
+| **Realtime** | Real-time subscriptions |
+| **Auth** | Authentication, JWT |
+| **Storage** | File storage |
 
 ## Setup
 
-### Next.js 클라이언트
+### Next.js Client
 
 ```bash
 npm install @supabase/supabase-js @supabase/ssr
@@ -78,10 +95,10 @@ export function createClient() {
 
 ## Database
 
-### 테이블 생성
+### Table Creation
 
 ```sql
--- Users 테이블
+-- Users table
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email TEXT UNIQUE NOT NULL,
@@ -89,7 +106,7 @@ CREATE TABLE users (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Posts 테이블
+-- Posts table
 CREATE TABLE posts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   author_id UUID REFERENCES users(id) ON DELETE CASCADE,
@@ -99,7 +116,7 @@ CREATE TABLE posts (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 인덱스
+-- Index
 CREATE INDEX posts_author_idx ON posts(author_id);
 ```
 
@@ -141,49 +158,49 @@ const { error } = await supabase
 ## Row Level Security (RLS)
 
 ```sql
--- RLS 활성화
+-- Enable RLS
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 
--- 읽기: 공개 게시물은 모두 볼 수 있음
+-- Read: Public posts are viewable by everyone
 CREATE POLICY "Public posts are viewable"
   ON posts FOR SELECT
   USING (published = true);
 
--- 쓰기: 본인 게시물만 수정 가능
+-- Update: Users can only update their own posts
 CREATE POLICY "Users can update own posts"
   ON posts FOR UPDATE
   USING (auth.uid() = author_id);
 
--- 삭제: 본인 게시물만 삭제 가능
+-- Delete: Users can only delete their own posts
 CREATE POLICY "Users can delete own posts"
   ON posts FOR DELETE
   USING (auth.uid() = author_id);
 
--- 삽입: 인증된 사용자만 생성 가능
+-- Insert: Only authenticated users can create posts
 CREATE POLICY "Authenticated can insert"
   ON posts FOR INSERT
   WITH CHECK (auth.uid() IS NOT NULL);
 ```
 
-## pgvector (AI 임베딩)
+## pgvector (AI Embeddings)
 
 ```sql
--- Extension 활성화
+-- Enable extension
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- 임베딩 테이블
+-- Embeddings table
 CREATE TABLE documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   content TEXT NOT NULL,
-  embedding VECTOR(1536), -- OpenAI embedding 차원
+  embedding VECTOR(1536), -- OpenAI embedding dimensions
   metadata JSONB DEFAULT '{}'
 );
 
--- HNSW 인덱스 (빠른 검색)
+-- HNSW index (fast search)
 CREATE INDEX documents_embedding_idx
   ON documents USING hnsw (embedding vector_cosine_ops);
 
--- 유사도 검색 함수
+-- Similarity search function
 CREATE OR REPLACE FUNCTION search_documents(
   query_embedding VECTOR(1536),
   match_count INT DEFAULT 5
@@ -198,7 +215,7 @@ $$ LANGUAGE SQL;
 ```
 
 ```typescript
-// 벡터 검색
+// Vector search
 const { data } = await supabase.rpc('search_documents', {
   query_embedding: embedding,
   match_count: 5
@@ -208,7 +225,7 @@ const { data } = await supabase.rpc('search_documents', {
 ## Realtime
 
 ```typescript
-// 실시간 구독
+// Real-time subscription
 const channel = supabase
   .channel('posts-changes')
   .on(
@@ -220,7 +237,7 @@ const channel = supabase
   )
   .subscribe();
 
-// 필터 적용
+// Filtered subscription
 const channel = supabase
   .channel('user-posts')
   .on(
@@ -237,20 +254,20 @@ const channel = supabase
   )
   .subscribe();
 
-// 구독 해제
+// Unsubscribe
 supabase.removeChannel(channel);
 ```
 
 ## Authentication
 
 ```typescript
-// 로그인
+// Sign in
 const { data, error } = await supabase.auth.signInWithPassword({
   email: 'user@example.com',
   password: 'password123',
 });
 
-// 회원가입
+// Sign up
 const { data, error } = await supabase.auth.signUp({
   email: 'user@example.com',
   password: 'password123',
@@ -262,17 +279,17 @@ const { data, error } = await supabase.auth.signInWithOAuth({
   options: { redirectTo: `${origin}/auth/callback` },
 });
 
-// 세션 확인
+// Get current user
 const { data: { user } } = await supabase.auth.getUser();
 
-// 로그아웃
+// Sign out
 await supabase.auth.signOut();
 ```
 
 ## Storage
 
 ```typescript
-// 업로드
+// Upload
 const { data, error } = await supabase.storage
   .from('avatars')
   .upload(`${userId}/avatar.png`, file, {
@@ -280,12 +297,12 @@ const { data, error } = await supabase.storage
     upsert: true,
   });
 
-// 공개 URL
+// Public URL
 const { data: { publicUrl } } = supabase.storage
   .from('avatars')
   .getPublicUrl(`${userId}/avatar.png`);
 
-// 삭제
+// Delete
 await supabase.storage
   .from('avatars')
   .remove([`${userId}/avatar.png`]);
@@ -313,19 +330,104 @@ serve(async (req) => {
 ```
 
 ```bash
-# 배포
+# Deploy
 supabase functions deploy hello
 ```
 
+## PostgreSQL Performance Optimization
+
+Comprehensive performance optimization guide for Postgres, maintained by Supabase. Contains 30 rules across 8 categories in `references/`, prioritized by impact to guide automated query optimization and schema design.
+
+### Rule Categories by Priority
+
+| Priority | Category | Impact | Prefix | Files |
+|----------|----------|--------|--------|-------|
+| 1 | Query Performance | CRITICAL | `query-` | 5 |
+| 2 | Connection Management | CRITICAL | `conn-` | 4 |
+| 3 | Security & RLS | CRITICAL | `security-` | 3 |
+| 4 | Schema Design | HIGH | `schema-` | 5 |
+| 5 | Concurrency & Locking | MEDIUM-HIGH | `lock-` | 4 |
+| 6 | Data Access Patterns | MEDIUM | `data-` | 4 |
+| 7 | Monitoring & Diagnostics | LOW-MEDIUM | `monitor-` | 3 |
+| 8 | Advanced Features | LOW | `advanced-` | 2 |
+
+### How to Use References
+
+Read individual rule files from `references/` for detailed explanations and SQL examples.
+
+Each rule file contains:
+- Brief explanation of why it matters
+- Incorrect SQL example with explanation
+- Correct SQL example with explanation
+- Optional EXPLAIN output or metrics
+- Additional context and references
+- Supabase-specific notes (when applicable)
+
+### Available References
+
+**Query Performance** (`query-`):
+- `references/query-missing-indexes.md` - Add indexes on WHERE and JOIN columns (100-1000x faster)
+- `references/query-composite-indexes.md` - Use composite indexes for multi-column queries (5-50x faster)
+- `references/query-covering-indexes.md` - Use covering indexes for index-only scans
+- `references/query-index-types.md` - Choose appropriate index types (B-tree, GIN, GiST, BRIN)
+- `references/query-partial-indexes.md` - Use partial indexes for filtered queries
+
+**Connection Management** (`conn-`):
+- `references/conn-pooling.md` - Use PgBouncer for connection pooling (10x concurrency)
+- `references/conn-prepared-statements.md` - Disable prepared statements in transaction mode
+- `references/conn-idle-timeout.md` - Configure idle connection timeout
+- `references/conn-limits.md` - Set appropriate connection limits
+
+**Security & RLS** (`security-`):
+- `references/security-rls-basics.md` - RLS fundamentals and setup
+- `references/security-rls-performance.md` - Optimize RLS policy performance (2-10x faster)
+- `references/security-privileges.md` - Configure database privileges
+
+**Schema Design** (`schema-`):
+- `references/schema-data-types.md` - Choose appropriate data types
+- `references/schema-lowercase-identifiers.md` - Use lowercase identifiers
+- `references/schema-primary-keys.md` - Design effective primary keys
+- `references/schema-foreign-key-indexes.md` - Index foreign key columns
+- `references/schema-partitioning.md` - Table partitioning strategies
+
+**Concurrency & Locking** (`lock-`):
+- `references/lock-advisory.md` - Advisory locks for application-level locking
+- `references/lock-deadlock-prevention.md` - Deadlock prevention strategies
+- `references/lock-short-transactions.md` - Keep transactions short
+- `references/lock-skip-locked.md` - Use SKIP LOCKED for queue patterns
+
+**Data Access Patterns** (`data-`):
+- `references/data-batch-inserts.md` - Batch insert optimization
+- `references/data-n-plus-one.md` - Avoid N+1 query patterns
+- `references/data-pagination.md` - Efficient pagination strategies
+- `references/data-upsert.md` - Upsert patterns
+
+**Monitoring & Diagnostics** (`monitor-`):
+- `references/monitor-explain-analyze.md` - Use EXPLAIN ANALYZE for query plans
+- `references/monitor-pg-stat-statements.md` - Monitor with pg_stat_statements
+- `references/monitor-vacuum-analyze.md` - VACUUM and ANALYZE maintenance
+
+**Advanced Features** (`advanced-`):
+- `references/advanced-full-text-search.md` - Full-text search implementation
+- `references/advanced-jsonb-indexing.md` - JSONB indexing strategies
+
 ## Best Practices
 
-- **RLS 필수**: 모든 테이블에 RLS 활성화
-- **인덱스**: 자주 쿼리하는 컬럼에 인덱스 추가
-- **타입 생성**: `supabase gen types typescript`
-- **서버 클라이언트**: 서버 컴포넌트에서 서버 클라이언트 사용
-- **에러 처리**: 모든 쿼리에서 error 확인
+- **RLS Required**: Enable RLS on all tables
+- **Indexes**: Add indexes on frequently queried columns
+- **Type Generation**: `supabase gen types typescript`
+- **Server Client**: Use server client in server components
+- **Error Handling**: Always check for errors on every query
+
+## External References
+
+- https://www.postgresql.org/docs/current/
+- https://supabase.com/docs
+- https://wiki.postgresql.org/wiki/Performance_Optimization
+- https://supabase.com/docs/guides/database/overview
+- https://supabase.com/docs/guides/auth/row-level-security
 
 ---
 
-Last Updated: 2026-01-21
-Version: 2.0.0
+Last Updated: 2026-02-03
+Version: 3.0.0

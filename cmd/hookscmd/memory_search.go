@@ -43,6 +43,8 @@ func runMemoryPromptSave(cmd *cobra.Command, args []string) error {
 	if projectDir == "" {
 		return outputPromptSave()
 	}
+	// Find actual project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	store, err := memory.NewStore(projectDir)
 	if err != nil {

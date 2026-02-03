@@ -52,6 +52,7 @@ This skill provides a comprehensive workflow for migrating legacy frontend proje
 | UI Components | shadcn/ui | Accessible components |
 | Icons | lucide-react | Icon library |
 | State | Zustand | State management |
+| Database ORM | Prisma / Drizzle | Data access layer |
 
 ## Supported Source Frameworks
 
@@ -150,6 +151,35 @@ Quick reference:
 
 ---
 
+## Database Detection
+
+For detailed detection rules and algorithms, see:
+- [Database Discovery Algorithm](modules/database-discovery.md) - ORM detection, DB type identification, multi-database support
+
+Quick reference:
+
+| ORM/Tool | Primary Detection | Key Files |
+|----------|-------------------|-----------|
+| Prisma | `prisma`, `@prisma/client` in package.json | `prisma/schema.prisma` |
+| Drizzle | `drizzle-orm`, `drizzle-kit` in package.json | `drizzle.config.ts` |
+| TypeORM | `typeorm` in package.json | `ormconfig.json`, `*.entity.ts` |
+| Sequelize | `sequelize` in package.json | `.sequelizerc`, `*.model.js` |
+| Mongoose | `mongoose` in package.json | `*.model.js`, `*.schema.js` |
+| Django ORM | `django` in requirements.txt | `models.py`, `migrations/*.py` |
+| SQLAlchemy | `sqlalchemy` in requirements.txt | `alembic.ini`, `models.py` |
+| GORM | `gorm.io/gorm` in go.mod | `*model*.go` |
+| Eloquent | `laravel/framework` in composer.json | `app/Models/*.php` |
+
+| Database | Detection Pattern |
+|----------|-------------------|
+| PostgreSQL | `DATABASE_URL=postgres://`, `pg` package |
+| MySQL | `DATABASE_URL=mysql://`, `mysql2` package |
+| SQLite | `DATABASE_URL=file:`, `better-sqlite3` package |
+| MongoDB | `MONGODB_URI=`, `mongoose` package |
+| Redis | `REDIS_URL=`, `ioredis` / `@upstash/redis` package |
+
+---
+
 ## Component Mapping
 
 For detailed mapping patterns with code examples, see:
@@ -189,20 +219,166 @@ Is the state...
 
 ---
 
+## Database Migration Decision Tree
+
+```
+What database type is detected?
+│
+├─ Relational (PostgreSQL, MySQL, SQLite)?
+│   ├─ Current ORM is Prisma? → Keep Prisma (already Next.js compatible)
+│   ├─ Current ORM is Drizzle? → Keep Drizzle (already Next.js compatible)
+│   ├─ Current ORM is TypeORM/Sequelize? → Migrate to Prisma or Drizzle
+│   ├─ Current ORM is Django/SQLAlchemy? → New Prisma or Drizzle schema
+│   ├─ Current ORM is GORM? → New Prisma or Drizzle schema
+│   ├─ Current ORM is Eloquent? → New Prisma or Drizzle schema
+│   └─ No ORM (raw SQL)? → Introduce Prisma or Drizzle
+│
+├─ NoSQL (MongoDB)?
+│   ├─ Current tool is Mongoose? → Prisma (MongoDB) or keep Mongoose
+│   └─ No ODM? → Introduce Prisma (MongoDB) or Mongoose
+│
+├─ Cache/Queue (Redis)?
+│   └─ Keep current driver (ioredis / @upstash/redis)
+│
+└─ No database detected?
+    └─ Skip database migration phases (frontend-only project)
+```
+
+---
+
+## Architecture Detection
+
+For detailed detection rules and algorithms, see:
+- [Architecture Detection Algorithm](modules/architecture-detection.md) - Source architecture pattern detection, monolith/separated/unknown classification
+
+Quick reference:
+
+| Architecture | Detection Pattern |
+|-------------|-------------------|
+| Monolith | Single package.json with frontend+backend deps, fullstack framework (Next.js, Nuxt, Laravel, Django, Rails) |
+| Separated | `frontend/`+`backend/` directories, monorepo config, separate package.json per service |
+| Unknown | No clear indicators, mixed signals → ask user in Phase 2 |
+
+---
+
+## Architecture Pattern Decision Tree
+
+```
+source_architecture?
+├─ monolith + component_count < 50 → recommend: fullstack-monolith
+├─ monolith + component_count >= 50 → recommend: frontend-backend
+├─ separated → recommend: frontend-backend
+└─ unknown → ask user
+
+target_architecture?
+├─ fullstack-monolith
+│   ├─ db_access_from: frontend
+│   ├─ Single output directory: {output_dir}/
+│   └─ Next.js API Routes + Server Components → DB
+│
+├─ frontend-backend
+│   ├─ db_access_from: backend (default) or both (ask user)
+│   ├─ Output: {output_dir}/frontend/ + {output_dir}/backend/
+│   ├─ Ask backend framework: fastapi | nestjs | express | go-fiber
+│   └─ Sub-Phases: Shared → Backend → Frontend → Integration
+│
+└─ frontend-only
+    ├─ db_access_from: none
+    ├─ Single output directory: {output_dir}/
+    └─ Frontend only, API client calls existing backend
+```
+
+### Config Fields
+
+```yaml
+# Phase 0: Auto-detected
+source_architecture: monolith    # monolith | separated | unknown
+
+# Phase 2: User selection
+target_architecture: fullstack-monolith  # fullstack-monolith | frontend-backend | frontend-only
+
+# Phase 2: Auto-derived from target_architecture
+db_access_from: frontend        # frontend | backend | both | none
+
+# Phase 2: Only for frontend-backend
+target_framework_backend: fastapi   # fastapi | nestjs | express | go-fiber
+```
+
+**Default (backward compatible)**: If `target_architecture` is not set, defaults to `fullstack-monolith`.
+
+---
+
 ## Output Structure
 
 All migration artifacts are stored under `{artifacts-dir}` (default: `./migrations/{project-name}/`):
 
 ```
 ./migrations/{project-name}/        # or custom --artifacts-output path
-├── as_is_spec.md           # Phase 0: Current state analysis
-├── migration_plan.md       # Phase 1: Migration strategy
+├── as_is_spec.md           # Phase 1: Current state analysis
+├── migration_plan.md       # Phase 2: Migration strategy
 ├── component_mapping.yaml  # Component mapping table
+├── database_mapping.yaml   # Database layer analysis
 ├── SKILL.md                # Phase 2: Project-specific skill
 └── progress.yaml           # Migration progress tracking
 ```
 
-Migrated project structure:
+Migrated project structure (by target architecture):
+
+### fullstack-monolith (default)
+
+```
+{output-dir}/{project-name}/
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── api/           # API Routes
+│   │   └── {routes}/
+│   ├── components/
+│   │   ├── ui/           # shadcn components
+│   │   └── {migrated}/   # migrated components
+│   ├── lib/
+│   │   ├── db.ts         # Prisma/Drizzle client
+│   │   └── utils.ts
+│   └── stores/           # Zustand stores
+├── prisma/
+│   └── schema.prisma
+├── public/
+├── package.json
+├── tailwind.config.ts
+├── tsconfig.json
+└── next.config.ts
+```
+
+### frontend-backend (separated)
+
+```
+{output-dir}/{project-name}/
+├── shared/                # Shared types & API contracts
+│   ├── types/
+│   └── api-contracts/
+├── frontend/              # Next.js project
+│   ├── src/
+│   │   ├── app/
+│   │   ├── components/
+│   │   ├── lib/
+│   │   │   ├── api-client.ts  # Backend API client
+│   │   │   └── utils.ts
+│   │   └── stores/
+│   ├── package.json
+│   └── next.config.ts
+└── backend/               # Backend project (FastAPI, NestJS, etc.)
+    ├── src/
+    │   ├── routes/        # API endpoints
+    │   ├── services/      # Business logic
+    │   ├── models/        # DB models
+    │   └── middleware/
+    ├── prisma/
+    │   └── schema.prisma
+    └── package.json       # or requirements.txt, go.mod, etc.
+```
+
+### frontend-only
 
 ```
 {output-dir}/{project-name}/
@@ -215,6 +391,7 @@ Migrated project structure:
 │   │   ├── ui/           # shadcn components
 │   │   └── {migrated}/   # migrated components
 │   ├── lib/
+│   │   ├── api-client.ts # Calls existing backend API
 │   │   └── utils.ts
 │   └── stores/           # Zustand stores
 ├── public/
@@ -357,6 +534,11 @@ For detailed patterns, load on-demand:
 - `@modules/cheatsheet.md` - **빠른 참조 가이드** ⭐
 - `@modules/migration-scenario.md` - 완전한 마이그레이션 시나리오 (React → Next.js)
 
+### Detection & Discovery
+- `@modules/architecture-detection.md` - **Architecture Pattern 감지 알고리즘** ⭐ (NEW)
+- `@modules/database-discovery.md` - **Database/ORM 감지 알고리즘** ⭐
+- `@modules/framework-detection.md` - Framework 감지 알고리즘
+
 ### Framework Patterns
 - `@modules/vue-patterns.md` - Vue 2/3 → Next.js conversion rules
 - `@modules/react-patterns.md` - React CRA/Vite → Next.js migration
@@ -433,11 +615,13 @@ Generates: 8 documents (cover, summary, performance, security, quality, architec
 
 ---
 
-Version: 2.1.0
-Last Updated: 2026-01-25
+Version: 2.3.0
+Last Updated: 2026-02-03
 Source: Context7 Next.js Documentation + Official Claude Code Skills Specification
 Standards: Agent Skills (https://agentskills.io)
 Changelog:
+- v2.3.0: Added Architecture Detection section, Architecture Pattern Decision Tree, architecture-specific output structures, architecture-detection.md module reference
+- v2.2.0: Added Database Detection section, Database Migration Decision Tree, database-discovery.md module reference, database_mapping.yaml output
 - v2.1.0: Applied official Claude Code Skills specification - Added context:fork, agent:Explore, dynamic context injection, troubleshooting section, Agent Skills standard reference
 - v2.0.0: Enhanced CRA migration support - Added official @next/codemod, ClientOnly wrapper, incremental migration strategy (Context7 latest)
 - v1.8.0: Dynamic Project Initialization in migration_plan.md - target_framework 기반 조건부 초기화 섹션 포함

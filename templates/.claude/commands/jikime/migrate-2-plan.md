@@ -63,11 +63,20 @@ Step 3: Search for target language/framework skill
         → jikime-adk skill search "{target_language}"
         → e.g., "typescript", "python", "go"
 
-Step 4: Search for library/platform skills (from as_is_spec.md)
+Step 4: Search for database/ORM skills (from .migrate-config.yaml)
+        → jikime-adk skill search "{db_orm}"
+        → jikime-adk skill search "{db_type}"
+        → e.g., "prisma", "drizzle", "postgresql"
+
+Step 5: Search for library/platform skills (from as_is_spec.md)
         → Detected libraries → jikime-adk skill search "{library}"
         → e.g., "shadcn", "supabase", "auth"
 
-Step 5: Load discovered skills
+Step 6: Search for backend framework skills (if frontend-backend architecture)
+        → jikime-adk skill search "{target_framework_backend}"
+        → e.g., "fastapi", "nestjs", "express", "go-fiber"
+
+Step 7: Load discovered skills
         → Skill("{found-migration-skill}")
         → Skill("{found-framework-skill}")
         → Skill("{found-library-skills}")
@@ -81,6 +90,12 @@ Step 5: Load discovered skills
 | fastapi | jikime-lang-python (+ related) |
 | go-fiber | jikime-lang-go (+ related) |
 | flutter | jikime-lang-flutter (+ related) |
+
+| db_orm / db_type | Discovered Skills |
+|------------------|-------------------|
+| prisma | jikime-domain-database (+ related) |
+| drizzle | jikime-domain-database (+ related) |
+| postgresql | jikime-domain-database (+ related) |
 
 ### What to Extract from Loaded Skills
 
@@ -140,6 +155,8 @@ Read(".migrate-config.yaml")
 
 jikime-adk skill search "{target_framework}"
 jikime-adk skill search "{detected_language}"
+jikime-adk skill search "{db_orm}"
+jikime-adk skill search "{db_type}"
 jikime-adk skill search "{detected_libraries}"
 → Load all discovered relevant skills
 ```
@@ -150,6 +167,26 @@ jikime-adk skill search "{detected_libraries}"
 Read("{artifacts_dir}/as_is_spec.md")
 → Contains: components, routing, state, dependencies, risks
 ```
+
+### Step 1.5: Verify Target Stack Configuration
+
+Read target stack fields from `.migrate-config.yaml`:
+
+```
+Step 1: Read target_architecture, target_framework, target_framework_backend from config
+Step 2: Verify required fields are present and not "pending":
+        - target_architecture (required)
+        - target_framework (required)
+        - target_framework_backend (required if target_architecture is "frontend-backend")
+Step 3: If any required field is "pending" or missing:
+        → Inform user: "Target stack not configured. Run /jikime:migrate-0-discover first."
+        → DO NOT ask architecture questions here
+Step 4: If frontend-backend → discover backend framework skill
+        → jikime-adk skill search "{target_framework_backend}"
+        → Load discovered backend skill
+```
+
+**Backward compatible**: If `target_architecture` is not set, default to `fullstack-monolith`.
 
 ### Step 2: Create Migration Plan (Skills + Analysis)
 
@@ -187,6 +224,17 @@ Plan must include:
 - Components: {count} total
 - Risks identified: {count}
 
+## Target Architecture: {target_architecture}
+
+### Architecture Overview
+- **Pattern**: {fullstack-monolith | frontend-backend | frontend-only}
+- **Frontend**: {target_framework}
+- **Backend**: {target_framework_backend | "Same as frontend (API Routes)" | "Existing (no migration)"}
+- **DB Access**: {db_access_from}
+
+### Output Structure
+{Architecture-specific directory structure from SKILL.md}
+
 ## Loaded Skills & Conventions
 - Migration: {discovered_migration_skill}
 - Framework: {discovered_framework_skill}
@@ -202,10 +250,54 @@ Plan must include:
 ## Project Initialization
 {Commands from skill's project-initialization guide}
 
+## Database Migration Strategy
+- **Current**: {db_type} + {db_orm}
+- **Target**: {target_db_orm} (e.g., Prisma / Drizzle)
+- **Models to migrate**: {db_model_count}
+
+### Schema Migration Plan
+| Source Model | Target Model | Fields | Relationships | Notes |
+|-------------|-------------|--------|---------------|-------|
+| {model_1} | {target_model_1} | {count} | {relationships} | {notes} |
+| ... | ... | ... | ... | ... |
+
+### Data Migration Strategy
+- Schema conversion approach (manual / automated)
+- Seed data handling
+- Connection configuration for target environment
+
+### Execution Sub-Phases (by architecture)
+
+#### fullstack-monolith (default):
+- Phase 1: Foundation (project scaffolding, DB setup)
+- Phase 2: Core Features (module-by-module DDD cycle)
+- Phase 3: UI & Frontend
+- Phase 4: Testing & Verification
+
+#### frontend-backend:
+- Phase 1: Foundation (shared types, API contract definition)
+- Phase 1.5: Database Setup (in backend)
+- Phase 2-B: Backend (API + business logic + data access)
+- Phase 2-F: Frontend (components + routing + state + API client)
+- Phase 3: Integration (API contract verification, E2E)
+- Phase 4: Testing & Verification
+
+#### frontend-only:
+- Phase 1: Foundation (project scaffolding, API client setup)
+- Phase 2: Core Features (component migration)
+- Phase 3: UI & Frontend
+- Phase 4: Testing & Verification
+
 ## Phase 1: Foundation ({days} days)
 - Project scaffolding (skill conventions)
 - Core configuration setup
 - {framework-specific foundation tasks}
+
+## Phase 1.5: Database Setup (skip if frontend-only)
+- Target ORM installation and configuration
+- Schema definition (from source models)
+- Database connection configuration
+- Seed data migration
 
 ## Phase 2: Core Features ({days} days)
 - {component_group_1} migration
@@ -256,7 +348,7 @@ Response options:
         ↓ (as_is_spec.md + .migrate-config.yaml)
 /jikime:migrate-2-plan  ← current
         │
-        ├─ .migrate-config.yaml → Verify target_framework
+        ├─ .migrate-config.yaml → Verify target stack (architecture, framework, backend)
         ├─ jikime-adk skill search → Discover relevant skills
         ├─ Skill() load → Extract rules/structure/naming
         ├─ as_is_spec.md → Reference analysis data
@@ -283,8 +375,60 @@ After approval, proceed to next step:
 
 ---
 
-Version: 2.3.0
+## EXECUTION DIRECTIVE
+
+Arguments: $ARGUMENTS
+
+1. **Parse $ARGUMENTS**:
+   - Extract `--modules` (specific modules to migrate, comma-separated)
+   - Extract `--incremental` (incremental migration flag)
+
+2. **Load configuration**:
+   - Read `.migrate-config.yaml`
+   - Extract: `source_path`, `artifacts_dir`, `target_framework`, `source_architecture`, `db_type`, `db_orm`
+   - IF file not found: Inform user to run `/jikime:migrate-1-analyze` first
+
+3. **Load previous phase results**:
+   - Read `{artifacts_dir}/as_is_spec.md`
+   - IF file not found: Inform user to run `/jikime:migrate-1-analyze` first
+   - DO NOT read or analyze source code files directly
+
+4. **Discover and load skills**:
+   - `jikime-adk skill search "{target_framework}"` → load migration skill
+   - `jikime-adk skill search "{target_language}"` → load language skill
+   - `jikime-adk skill search "{db_orm}"` / `"{db_type}"` → load DB skills
+   - Extract project structure, naming, routing, state management conventions
+
+5. **Verify Target Stack Configuration** (Step 1.5):
+   - Read `target_architecture`, `target_framework`, `target_framework_backend` from config
+   - IF any required field is "pending" or missing: Inform user to run `/jikime:migrate-0-discover` first, then STOP
+   - IF `target_architecture` not set: default to `fullstack-monolith`
+   - IF `frontend-backend`: discover backend framework skill via `jikime-adk skill search`
+
+6. **Create migration plan**:
+   - Apply loaded skill conventions (structure, naming, routing, state)
+   - Define architecture-specific execution sub-phases
+   - Include database migration strategy (if applicable)
+   - Estimate effort per phase
+   - List risks from as_is_spec.md
+
+7. **Write plan**:
+   - Write to `{artifacts_dir}/migration_plan.md`
+
+8. **Present plan to user** in F.R.I.D.A.Y. format:
+   - Display full plan summary
+   - **WAIT FOR CONFIRMATION**: Proceed? (yes/no/modify)
+
+Execute NOW. Do NOT just describe.
+
+---
+
+Version: 3.0.0
 Changelog:
+- v3.0.0: Replaced Step 1.5 Architecture Pattern Selection with config verification; Architecture/stack selection moved to migrate-0-discover; Added target stack field validation; Backward compatible defaults
+- v2.6.0: Added EXECUTION DIRECTIVE with $ARGUMENTS parsing and step-by-step execution flow
+- v2.5.0: Added Step 1.5 Architecture Pattern Selection; Added Target Architecture section to plan output; Architecture-specific execution sub-phases; Backend framework skill discovery
+- v2.4.0: Added Database Migration Strategy section; Added Phase 1.5 Database Setup; Added db_orm/db_type skill discovery
 - v2.3.0: Added dynamic skill discovery based on target_framework; Framework-agnostic plan generation
 - v2.2.0: Added explicit input loading from Phase 1 outputs; Prohibited source code re-analysis
 - v2.1.0: Initial structured plan command

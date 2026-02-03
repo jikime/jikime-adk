@@ -52,6 +52,8 @@ func runMemoryFlush(cmd *cobra.Command, args []string) error {
 	if projectDir == "" {
 		return outputMemoryFlush()
 	}
+	// Find actual project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	// Validate transcript path
 	if input.TranscriptPath == "" {

@@ -117,6 +117,68 @@ Analyze project infrastructure:
    - CSS-in-JS libraries
    - UI framework (Vuetify, MUI, etc.)
 
+### Phase 3.5: Database Analysis
+
+Analyze the database layer (skip if `db_type: none` in `.migrate-config.yaml`):
+
+1. **DB Connection**:
+   - Connection string patterns (environment variables)
+   - Connection pooling configuration
+   - Multiple database connections
+
+2. **ORM/Schema Tool**:
+   - Schema definitions and models
+   - Migration files and history
+   - Seed data
+
+3. **Data Models**:
+   - Entity/model inventory with fields and relationships
+   - Indexes and constraints
+   - Enums and custom types
+
+4. **Data Access Patterns**:
+   - Query patterns (ORM queries, raw SQL, query builders)
+   - Transaction usage
+   - Eager/lazy loading patterns
+   - N+1 query risks
+
+5. **External Data Services**:
+   - Cache layer (Redis, Memcached)
+   - Search engines (Elasticsearch, Algolia)
+   - Message queues (RabbitMQ, SQS)
+
+### Phase 3.6: Architecture Layer Analysis
+
+Analyze the source project's architecture layers based on `source_architecture` from `.migrate-config.yaml`:
+
+1. **Frontend Layer**:
+   - Components, pages, layouts
+   - Routing configuration
+   - State management stores
+   - Client-side utilities
+
+2. **Backend Layer**:
+   - API endpoints (REST, GraphQL)
+   - Business logic services
+   - Middleware (auth, logging, error handling)
+   - Server-side utilities
+
+3. **Data Layer**:
+   - Database models and schemas
+   - Query patterns (repository, active record, raw SQL)
+   - Migration files
+   - Seed data
+
+4. **Shared Layer**:
+   - TypeScript types/interfaces
+   - Utility functions used by both frontend and backend
+   - Constants and configuration
+
+5. **Coupling Analysis**:
+   - Frontend ↔ Backend: Tight (direct import) or Loose (API calls only)
+   - Backend ↔ Data: Coupling pattern description
+   - Cross-boundary imports identification
+
 ### Phase 4: Generate AS_IS_SPEC
 
 Create comprehensive analysis document:
@@ -155,6 +217,64 @@ graph TD
 | vue-router | 4.x | Replace with Next.js App Router |
 | ... | ... | ... |
 
+## Database Layer
+- **Database**: {db_type} {version}
+- **ORM**: {db_orm} {version}
+- **Connection**: {connection pattern}
+
+### Data Models
+| Model | Fields | Relationships | Migration Notes |
+|-------|--------|---------------|-----------------|
+| User | id, email, name, ... | hasMany(Post) | Prisma User model |
+| Post | id, title, content, ... | belongsTo(User) | Prisma Post model |
+| ... | ... | ... | ... |
+
+### Migration Files
+- Total: {N} migration files
+- Latest: {latest_migration_date}
+
+### Data Access Patterns
+- Query Builder: {yes/no}
+- Raw SQL: {yes/no}
+- Transactions: {yes/no}
+- Eager Loading: {patterns}
+
+### External Data Services
+| Service | Type | Usage |
+|---------|------|-------|
+| Redis | Cache | Session store, query cache |
+| ... | ... | ... |
+
+## Architecture Layers
+
+### Layer Summary
+| Layer | Components | Files | Complexity |
+|-------|-----------|-------|------------|
+| Frontend | {N} | {N} | {Low/Medium/High} |
+| Backend | {N} | {N} | {Low/Medium/High} |
+| Data | {N} | {N} | {Low/Medium/High} |
+| Shared | {N} | {N} | {Low/Medium/High} |
+
+### Frontend Layer
+- Components: {N}
+- Routes: {N}
+- State stores: {N}
+
+### Backend Layer
+- API Endpoints: {N}
+- Business Logic Services: {N}
+- Middleware: {N}
+
+### Data Layer
+- Models: {N}
+- Query Patterns: {pattern description}
+- Migrations: {N} files
+
+### Coupling Analysis
+- Frontend ↔ Backend: {Tight (direct import) / Loose (API calls only)}
+- Backend ↔ Data: {coupling description}
+- Cross-boundary imports: {list or none}
+
 ## Special Patterns
 - {Pattern 1}: {description and location}
 - {Pattern 2}: {description and location}
@@ -191,6 +311,7 @@ output_dir: ./migrations/my-vue-app/out
 analyzed_at: "2026-01-23T11:00:00Z" # Added by Step 1
 component_count: 45                  # Added by Step 1
 complexity_score: 7                  # Added by Step 1
+db_model_count: 15                   # Added by Step 1 (0 if no database)
 ```
 
 ### Update Logic
@@ -551,6 +672,8 @@ Before completing:
 - [ ] Routing structure mapped
 - [ ] State management analyzed
 - [ ] Dependencies reviewed for compatibility
+- [ ] Database layer analyzed (or confirmed as none)
+- [ ] Architecture layers identified
 - [ ] Risks identified
 
 ## Example Usage
@@ -577,8 +700,65 @@ Before completing:
 
 ---
 
-Version: 2.0.0
+## EXECUTION DIRECTIVE
+
+Arguments: $ARGUMENTS
+
+1. **Parse $ARGUMENTS**:
+   - Extract `project-path` (optional if config exists)
+   - Extract `--framework` (vue|react|angular|svelte|auto)
+   - Extract `--target` (nextjs|fastapi|go|flutter)
+   - Extract `--artifacts-output` (custom artifacts path)
+   - Extract `--whitepaper` (generate whitepaper flag)
+   - Extract `--whitepaper-output` (custom whitepaper path)
+   - Extract `--client` (client company name)
+   - Extract `--lang` (whitepaper language: ko|en|ja|zh)
+
+2. **Load configuration**:
+   - Read `.migrate-config.yaml` if exists
+   - Extract: `source_path`, `target_framework`, `artifacts_dir`, `db_type`, `db_orm`, `source_architecture`
+   - Explicit arguments override config values
+   - IF no config AND no `project-path` argument: Inform user to run `/jikime:migrate-0-discover` first
+
+3. **Execute Phase 1: Framework Detection** using Explore agent:
+   - Scan project structure for framework, version, build tools, package manager
+
+4. **Execute Phase 2: Component Analysis** using frontend agent:
+   - Component inventory, hierarchy, patterns, props/events
+
+5. **Execute Phase 3: Infrastructure Analysis**:
+   - Routing, State Management, API Integration, Styling
+
+6. **Execute Phase 3.5: Database Analysis** (skip if `db_type: none`):
+   - DB connection, ORM/schema, data models, data access patterns, external services
+
+7. **Execute Phase 3.6: Architecture Layer Analysis**:
+   - Frontend/Backend/Data/Shared layers, coupling analysis
+
+8. **Generate `as_is_spec.md`**:
+   - Write to `{artifacts_dir}/as_is_spec.md`
+   - Include all analysis sections (components, routing, state, dependencies, database, architecture layers, risks)
+
+9. **Update `.migrate-config.yaml`**:
+   - Add `analyzed_at`, `component_count`, `complexity_score`, `db_model_count`
+
+10. **IF `--whitepaper`**: Execute Phase 5 (Whitepaper Generation)
+    - Generate all 7 whitepaper documents using delegated agents
+    - Apply `--lang` language setting
+    - Output to `{whitepaper-output}/`
+
+11. **Report results** to user in F.R.I.D.A.Y. format:
+    - Analysis summary, Next Step: `/jikime:migrate-2-plan`
+
+Execute NOW. Do NOT just describe.
+
+---
+
+Version: 2.3.0
 Changelog:
+- v2.3.0: Added EXECUTION DIRECTIVE with $ARGUMENTS parsing and step-by-step execution flow
+- v2.2.0: Added Phase 3.6 Architecture Layer Analysis; Added Architecture Layers section to AS_IS_SPEC; Added architecture layers quality check
+- v2.1.0: Added Phase 3.5 Database Analysis; Added Database Layer section to AS_IS_SPEC; Added db_model_count to config
 - v2.0.0: Config-first approach; project-path now optional (reads from .migrate-config.yaml); Removed /jikime:migrate reference
 - v1.5.0: Added .migrate-config.yaml auto-generation for cross-command artifact path resolution
 - v1.4.0: Added --artifacts-output option; Changed default artifacts path from .claude/skills/ to ./migrations/

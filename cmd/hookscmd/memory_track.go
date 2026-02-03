@@ -54,6 +54,8 @@ func runMemoryTrack(cmd *cobra.Command, args []string) error {
 	if projectDir == "" {
 		return outputMemoryTrack()
 	}
+	// Find actual project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	// Append to track buffer (best-effort)
 	record := memory.FileTrackRecord{
