@@ -94,14 +94,24 @@ Smart Rebuild:    스크린샷 + 소스 → AI가 새로 생성 (클린 코드)
 └─────────────────────────────────────────────────────────────────┘
                               ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│  Phase 3: Generate (코드 생성)                                   │
+│  Phase 3a: Generate Frontend (Mock 데이터)                       │
 ├─────────────────────────────────────────────────────────────────┤
-│  정적 페이지:                                                    │
-│  └── 스크린샷 + HTML → Next.js 정적 페이지                       │
-│                                                                  │
-│  동적 페이지:                                                    │
-│  ├── SQL → Java Entity/Repository/Controller                    │
-│  └── 스크린샷 + HTML → Next.js 페이지 (API 연동)                 │
+│  정적 페이지: 스크린샷 + HTML → Next.js 정적 페이지               │
+│  동적 페이지: Mock 데이터로 UI 렌더링 (경고 배너 표시)             │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  Phase 3b: Generate Backend                                      │
+├─────────────────────────────────────────────────────────────────┤
+│  SQL → Java Entity/Repository/Controller                         │
+│  application.properties, pom.xml 생성                            │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  Phase 3c: Generate Connect                                      │
+├─────────────────────────────────────────────────────────────────┤
+│  Mock 데이터 → 실제 API 호출로 교체                               │
+│  .env.local 생성 (API_URL 설정)                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -430,15 +440,19 @@ function classifyPage(phpFile: string): PageAnalysis {
 
 ---
 
-## 6. Phase 3: Generate (코드 생성)
+## 6. Phase 3: Generate (코드 생성) - 3단계 워크플로우
 
-### 6.1 정적 페이지 생성
+**UI 우선 개발 전략:** 프론트엔드를 먼저 생성하여 UI를 확인한 후, 백엔드를 생성하고 연동합니다.
 
-**입력:**
-- 스크린샷 (UI 디자인 참고)
-- HTML (텍스트, 이미지 추출)
+### 6.1 Phase 3a: Generate Frontend (Mock 데이터)
 
-**출력:**
+**목적:** UI를 먼저 확인할 수 있도록 Mock 데이터와 함께 프론트엔드 생성
+
+```bash
+/jikime:smart-rebuild generate frontend --mapping=./mapping.json
+```
+
+**정적 페이지:**
 ```tsx
 // app/about/page.tsx
 export default function AboutPage() {
@@ -453,51 +467,164 @@ export default function AboutPage() {
 }
 ```
 
-### 6.2 동적 페이지 생성
+**동적 페이지 (Mock 데이터 포함):**
+```tsx
+// app/members/page.tsx
+// Type: Dynamic Page (Mock Data)
+// TODO: Replace mock data with real API call after backend is ready
 
-**Backend (Java Spring Boot):**
+interface Member {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+}
 
+// ⚠️ MOCK DATA - Will be replaced by generate connect
+const mockMembers: Member[] = [
+  { id: 1, name: 'Member 1', description: 'Description 1', createdAt: '2026-02-04' },
+  { id: 2, name: 'Member 2', description: 'Description 2', createdAt: '2026-02-04' },
+];
+
+// ⚠️ MOCK FUNCTION - Will be replaced by real API call
+async function getMembers(): Promise<Member[]> {
+  return Promise.resolve(mockMembers);
+}
+
+export default async function MembersPage() {
+  const members = await getMembers();
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">회원 목록</h1>
+
+      {/* Mock Data Banner */}
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <p className="text-yellow-700">
+          ⚠️ 현재 Mock 데이터를 사용 중입니다. 백엔드 연동 후 실제 데이터로 교체됩니다.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {members.map(member => (
+          <MemberCard key={member.id} member={member} />
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+### 6.2 Phase 3b: Generate Backend
+
+**목적:** Java Spring Boot API 생성
+
+```bash
+/jikime:smart-rebuild generate backend --mapping=./mapping.json
+```
+
+**Entity (스키마 정보 반영):**
 ```java
 // Member.java
 @Entity
 @Table(name = "members")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "email", nullable = false)
     private String email;
+
+    @Column(name = "name")
     private String name;
+
+    @Column(name = "status")
     private String status;
-}
 
-// MemberRepository.java
-public interface MemberRepository extends JpaRepository<Member, Long> {
-    List<Member> findByStatus(String status);
-}
-
-// MemberController.java
-@RestController
-@RequestMapping("/api/members")
-public class MemberController {
-
-    @Autowired
-    private MemberRepository memberRepository;
-
-    @GetMapping
-    public List<Member> getActiveMembers() {
-        return memberRepository.findByStatus("active");
-    }
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
 }
 ```
 
-**Frontend (Next.js):**
+**Repository:**
+```java
+// MemberRepository.java
+@Repository
+public interface MemberRepository extends JpaRepository<Member, Long> {
+    // TODO: Add custom query methods based on SQL analysis
+}
+```
 
+**Controller (CRUD + CORS):**
+```java
+// MemberController.java
+@RestController
+@RequestMapping("/api/members")
+@RequiredArgsConstructor
+@CrossOrigin(origins = "*")
+public class MemberController {
+
+    private final MemberRepository memberRepository;
+
+    @GetMapping
+    public ResponseEntity<List<Member>> getAll() {
+        return ResponseEntity.ok(memberRepository.findAll());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Member> getById(@PathVariable Long id) {
+        return memberRepository.findById(id)
+            .map(ResponseEntity::ok)
+            .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping
+    public ResponseEntity<Member> create(@RequestBody Member member) {
+        return ResponseEntity.ok(memberRepository.save(member));
+    }
+    // ... PUT, DELETE
+}
+```
+
+### 6.3 Phase 3c: Generate Connect
+
+**목적:** Mock 데이터를 실제 API 호출로 교체
+
+```bash
+/jikime:smart-rebuild generate connect --mapping=./mapping.json
+```
+
+**변환 결과:**
 ```tsx
 // app/members/page.tsx
-async function MembersPage() {
-  const members = await fetch('http://api.example.com/api/members')
-    .then(res => res.json());
+// Type: Dynamic Page (Connected to API)
+// ✅ Connected to backend API
+
+interface Member {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+}
+
+async function getMembers(): Promise<Member[]> {
+  const res = await fetch(`http://localhost:8080/api/members`, {
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    throw new Error('Failed to fetch members');
+  }
+
+  return res.json();
+}
+
+export default async function MembersPage() {
+  const members = await getMembers();
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -510,6 +637,13 @@ async function MembersPage() {
     </div>
   );
 }
+```
+
+**생성되는 .env.local:**
+```bash
+# API Configuration
+API_URL=http://localhost:8080
+NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
 ---
@@ -565,8 +699,14 @@ skills/jikime-migration-smart-rebuild/
 # Phase 2: 분석 & 매핑
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
 
-# Phase 3: 코드 생성
-/jikime:smart-rebuild generate --mapping=./mapping.json --backend=java --frontend=nextjs
+# Phase 3a: 프론트엔드 생성 (Mock 데이터)
+/jikime:smart-rebuild generate frontend --mapping=./mapping.json
+
+# Phase 3b: 백엔드 생성
+/jikime:smart-rebuild generate backend --mapping=./mapping.json
+
+# Phase 3c: 프론트엔드 ↔ 백엔드 연동
+/jikime:smart-rebuild generate connect --mapping=./mapping.json
 ```
 
 ### 8.3 옵션
@@ -590,14 +730,27 @@ skills/jikime-migration-smart-rebuild/
 | `--db-schema` | DB 스키마 파일 (prisma, sql, json) | - |
 | `--db-from-env` | .env의 DATABASE_URL에서 스키마 추출 | - |
 
-**generate 옵션:**
+**generate frontend 옵션:**
 | 옵션 | 설명 | 기본값 |
 |------|------|--------|
 | `--mapping` | 매핑 파일 | `./mapping.json` |
-| `--backend` | 백엔드 타겟 | `java` |
-| `--frontend` | 프론트엔드 타겟 | `nextjs` |
-| `--output-backend` | 백엔드 출력 디렉토리 | `./backend` |
-| `--output-frontend` | 프론트엔드 출력 디렉토리 | `./frontend` |
+| `--output` | 출력 디렉토리 | `./output/frontend` |
+| `--framework` | 프론트엔드 프레임워크 | `nextjs` |
+| `--style` | CSS 프레임워크 | `tailwind` |
+
+**generate backend 옵션:**
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--mapping` | 매핑 파일 | `./mapping.json` |
+| `--output` | 출력 디렉토리 | `./output/backend` |
+| `--framework` | 백엔드 프레임워크 | `java` |
+
+**generate connect 옵션:**
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--mapping` | 매핑 파일 | `./mapping.json` |
+| `--frontend-dir` | 프론트엔드 디렉토리 | `./output/frontend` |
+| `--api-base` | API 기본 URL | `http://localhost:8080` |
 
 ---
 
@@ -657,4 +810,4 @@ skills/jikime-migration-smart-rebuild/
 ---
 
 **작성일:** 2026-02-04
-**버전:** 1.1.0
+**버전:** 1.2.0

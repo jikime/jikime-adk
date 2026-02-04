@@ -27,8 +27,10 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 # Phase 2: 분석 & 매핑
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
 
-# Phase 3: 코드 생성
-/jikime:smart-rebuild generate --mapping=./mapping.json --backend=java --frontend=nextjs
+# Phase 3: 코드 생성 (3단계)
+/jikime:smart-rebuild generate frontend --mapping=./mapping.json  # UI + Mock 데이터
+/jikime:smart-rebuild generate backend --mapping=./mapping.json   # Java API
+/jikime:smart-rebuild generate connect --mapping=./mapping.json   # Mock → 실제 API 연결
 ```
 
 ## Subcommands
@@ -38,7 +40,9 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 | (none) | 전체 워크플로우 실행 (capture → analyze → generate) |
 | `capture` | 사이트 크롤링 및 스크린샷 캡처 |
 | `analyze` | 소스 분석 및 매핑 생성 |
-| `generate` | 코드 생성 |
+| `generate frontend` | 프론트엔드 생성 (Mock 데이터 포함) |
+| `generate backend` | 백엔드 API 생성 (Java Spring Boot) |
+| `generate connect` | 프론트엔드와 백엔드 연동 (Mock → API 교체) |
 
 ## Options
 
@@ -60,14 +64,27 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 | `--capture` | 캡처 디렉토리 | `./capture` |
 | `--output` | 매핑 파일 출력 | `./mapping.json` |
 
-### generate 옵션
+### generate frontend 옵션
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--mapping` | 매핑 파일 | (required) |
-| `--backend` | 백엔드: `java`, `go`, `python` | `java` |
-| `--frontend` | 프론트엔드: `nextjs`, `nuxt` | `nextjs` |
-| `--output-backend` | 백엔드 출력 | `./backend` |
-| `--output-frontend` | 프론트엔드 출력 | `./frontend` |
+| `--mapping` | 매핑 파일 | `./mapping.json` |
+| `--output` | 출력 디렉토리 | `./output/frontend` |
+| `--framework` | 프론트엔드 프레임워크 | `nextjs` |
+| `--style` | CSS 프레임워크 | `tailwind` |
+
+### generate backend 옵션
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--mapping` | 매핑 파일 | `./mapping.json` |
+| `--output` | 출력 디렉토리 | `./output/backend` |
+| `--framework` | 백엔드 프레임워크 | `java` |
+
+### generate connect 옵션
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--mapping` | 매핑 파일 | `./mapping.json` |
+| `--frontend-dir` | 프론트엔드 디렉토리 | `./output/frontend` |
+| `--api-base` | API 기본 URL | `http://localhost:8080` |
 
 ## Core Philosophy
 
@@ -195,40 +212,89 @@ const dynamicPatterns = [
 
 ---
 
-### Phase 3: Generate (코드 생성)
+### Phase 3: Generate (코드 생성) - 3단계 워크플로우
 
-**목표:** mapping.json 기반으로 현대적 코드 생성
+**목표:** mapping.json 기반으로 현대적 코드 생성 (UI 우선 개발)
 
-**정적 페이지 생성:**
-- 입력: 스크린샷 (UI 참고) + HTML (텍스트/이미지 추출)
-- 출력: Next.js 정적 페이지 (app/[path]/page.tsx)
-- Tailwind CSS 스타일링
+#### Phase 3a: Generate Frontend (Mock)
 
-**동적 페이지 생성:**
+**목적:** UI를 먼저 확인할 수 있도록 Mock 데이터와 함께 프론트엔드 생성
 
-1. **Backend (Java Spring Boot):**
-   - Entity: SQL 테이블 → JPA Entity
-   - Repository: JpaRepository 인터페이스
-   - Controller: REST API 엔드포인트
+```bash
+/jikime:smart-rebuild generate frontend --mapping=./mapping.json
+```
 
-2. **Frontend (Next.js):**
-   - Server Component로 데이터 페칭
-   - API 엔드포인트 연동
-   - 반응형 UI 컴포넌트
+- 정적 페이지: 스크린샷 + HTML → Next.js 정적 페이지
+- 동적 페이지: Mock 데이터로 UI 렌더링 (노란색 경고 배너 표시)
+- 출력: `./output/frontend/`
+
+**Mock 데이터 패턴:**
+```tsx
+// ⚠️ MOCK DATA - Will be replaced by generate connect
+const mockMembers = [
+  { id: 1, name: 'Member 1', ... },
+];
+
+// ⚠️ MOCK FUNCTION
+async function getMembers() {
+  return Promise.resolve(mockMembers);
+}
+```
+
+#### Phase 3b: Generate Backend
+
+**목적:** Java Spring Boot API 생성
+
+```bash
+/jikime:smart-rebuild generate backend --mapping=./mapping.json
+```
+
+- Entity: SQL 테이블 → JPA Entity (스키마 정보 반영)
+- Repository: JpaRepository 인터페이스
+- Controller: CRUD REST API + CORS
+- 출력: `./output/backend/`
 
 **SQL → Java 타입 매핑:**
 | SQL | Java |
 |-----|------|
-| INT | Long |
+| BIGINT | Long |
+| INT | Integer |
 | VARCHAR | String |
-| TEXT | @Lob String |
+| TEXT | String |
 | DATETIME | LocalDateTime |
-| ENUM | enum + @Enumerated |
 | DECIMAL | BigDecimal |
+| BOOLEAN | Boolean |
+
+#### Phase 3c: Generate Connect
+
+**목적:** Mock 데이터를 실제 API 호출로 교체
+
+```bash
+/jikime:smart-rebuild generate connect --mapping=./mapping.json
+```
+
+- Mock 데이터 블록 제거
+- Mock 함수 → 실제 fetch API 호출로 교체
+- Mock 데이터 경고 배너 제거
+- `.env.local` 파일 생성 (API_URL 설정)
+
+**변환 예시:**
+```tsx
+// Before: Mock
+async function getMembers() {
+  return Promise.resolve(mockMembers);
+}
+
+// After: Real API
+async function getMembers() {
+  const res = await fetch(`http://localhost:8080/api/members`);
+  return res.json();
+}
+```
 
 **출력:**
+- `{output}/frontend/` - API 연동 완료된 Next.js 프로젝트
 - `{output}/backend/` - Java Spring Boot 프로젝트
-- `{output}/frontend/` - Next.js 프로젝트
 
 ---
 
@@ -316,15 +382,32 @@ cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts analyze \
   --output={output}
 ```
 
-**Case: generate**
+**Case: generate frontend**
 ```bash
-# /jikime:smart-rebuild generate --mapping=./mapping.json --backend=java
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate \
+# /jikime:smart-rebuild generate frontend --mapping=./mapping.json
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate frontend \
   --mapping={mapping} \
-  --backend={backend} \
-  --frontend={frontend} \
-  --output-backend={outputBackend} \
-  --output-frontend={outputFrontend}
+  --output={output} \
+  --framework={framework} \
+  --style={style}
+```
+
+**Case: generate backend**
+```bash
+# /jikime:smart-rebuild generate backend --mapping=./mapping.json
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate backend \
+  --mapping={mapping} \
+  --output={output} \
+  --framework={framework}
+```
+
+**Case: generate connect**
+```bash
+# /jikime:smart-rebuild generate connect --mapping=./mapping.json
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate connect \
+  --mapping={mapping} \
+  --frontend-dir={frontendDir} \
+  --api-base={apiBase}
 ```
 
 **Step 4: Report Results**
