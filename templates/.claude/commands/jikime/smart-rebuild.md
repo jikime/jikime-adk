@@ -22,7 +22,7 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 /jikime:smart-rebuild capture https://example.com --output=./capture
 
 # Phase 1: 캡처 (인증 필요 - 로그인 후 캡처 진행)
-/jikime:smart-rebuild capture https://example.com --login
+/jikime:smart-rebuild capture https://example.com --login --output=./capture
 
 # Phase 2: 분석 & 매핑
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
