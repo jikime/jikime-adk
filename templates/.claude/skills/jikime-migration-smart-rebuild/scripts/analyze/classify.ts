@@ -201,11 +201,12 @@ function classifyPage(filePath: string): PageAnalysis {
 }
 
 /**
- * URL과 소스 파일 매칭
+ * URL과 소스 파일 매칭 (개선된 버전)
  */
 function matchUrlToSource(
   url: string,
   sourcePath: string,
+  phpFiles: string[],
   manualMapping?: Record<string, string>
 ): string | null {
   const urlObj = new URL(url);
@@ -213,12 +214,18 @@ function matchUrlToSource(
 
   // 수동 매핑 체크
   if (manualMapping && manualMapping[url]) {
-    return manualMapping[url];
+    const manualFile = path.join(sourcePath, manualMapping[url]);
+    if (fs.existsSync(manualFile)) return manualFile;
   }
 
   // 경로 정규화
   if (urlPath === '/') urlPath = '/index';
   if (urlPath.endsWith('/')) urlPath = urlPath.slice(0, -1);
+
+  // URL 경로 파싱
+  const urlSegments = urlPath.split('/').filter(Boolean);
+  const urlFolder = urlSegments.length > 1 ? urlSegments[0] : '';
+  const urlName = urlSegments[urlSegments.length - 1] || 'index';
 
   // 1. 직접 매칭 (path.php)
   const directMatch = path.join(sourcePath, `${urlPath}.php`);
@@ -233,6 +240,59 @@ function matchUrlToSource(
   if (pageParam) {
     const pageMatch = path.join(sourcePath, `${pageParam}.php`);
     if (fs.existsSync(pageMatch)) return pageMatch;
+  }
+
+  // 4. 폴더 기반 유사도 매칭
+  if (urlFolder) {
+    // 같은 폴더 내 파일들 찾기
+    const folderFiles = phpFiles.filter(f => f.startsWith(urlFolder + '/') || f.startsWith(urlFolder + path.sep));
+
+    for (const file of folderFiles) {
+      const fileName = path.basename(file, '.php').toLowerCase();
+      const urlNameLower = urlName.toLowerCase();
+
+      // 파일명이 URL 이름을 포함하거나 URL 이름이 파일명을 포함
+      if (fileName.includes(urlNameLower) || urlNameLower.includes(fileName)) {
+        return path.join(sourcePath, file);
+      }
+
+      // list, view, detail 등 공통 패턴 매칭
+      if ((urlNameLower.includes('list') || urlNameLower === urlFolder) && fileName.includes('list')) {
+        return path.join(sourcePath, file);
+      }
+      if (urlNameLower.includes('view') && (fileName.includes('view') || fileName.includes('detail'))) {
+        return path.join(sourcePath, file);
+      }
+    }
+
+    // 폴더에 파일이 하나만 있으면 그것을 사용 (index 제외)
+    const nonIndexFiles = folderFiles.filter(f => !f.toLowerCase().includes('index'));
+    if (nonIndexFiles.length === 1) {
+      return path.join(sourcePath, nonIndexFiles[0]);
+    }
+  }
+
+  // 5. 전체 파일에서 유사도 매칭
+  const urlNameLower = urlName.toLowerCase().replace(/-/g, '_');
+  for (const file of phpFiles) {
+    const fileName = path.basename(file, '.php').toLowerCase();
+
+    // 정확히 일치 (하이픈 → 언더스코어 변환 포함)
+    if (fileName === urlNameLower) {
+      return path.join(sourcePath, file);
+    }
+  }
+
+  // 6. 부분 매칭 (키워드 기반)
+  const keywords = urlName.toLowerCase().split(/[-_]/).filter(k => k.length > 2);
+  if (keywords.length > 0) {
+    for (const file of phpFiles) {
+      const fileName = path.basename(file, '.php').toLowerCase();
+      const matchCount = keywords.filter(k => fileName.includes(k)).length;
+      if (matchCount >= Math.ceil(keywords.length / 2)) {
+        return path.join(sourcePath, file);
+      }
+    }
   }
 
   return null;
@@ -280,7 +340,7 @@ export async function analyzeSource(options: AnalyzeOptions): Promise<Mapping> {
 
   for (let i = 0; i < capturedPages.length; i++) {
     const captured = capturedPages[i];
-    const sourceFile = matchUrlToSource(captured.url, sourcePath, manualMapping);
+    const sourceFile = matchUrlToSource(captured.url, sourcePath, phpFiles, manualMapping);
 
     let pageType: 'static' | 'dynamic' | 'unknown' = 'unknown';
     let reasons: string[] = [];
