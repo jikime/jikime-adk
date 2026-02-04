@@ -240,11 +240,74 @@ export async function generateFrontend(options: GenerateFrontendOptions): Promis
   fs.mkdirSync(path.dirname(layoutPath), { recursive: true });
   fs.writeFileSync(layoutPath, generateLayout());
 
+  // 정적 자산 복사 (이미지, 폰트 등)
+  let assetCount = 0;
+  if (mapping.project.sourcePath && fs.existsSync(mapping.project.sourcePath)) {
+    console.log(`\n📦 정적 자산 복사 중...`);
+    assetCount = copyStaticAssets(mapping.project.sourcePath, outputDir);
+    console.log(`   ✓ ${assetCount}개 파일 복사 완료 → public/`);
+  }
+
   console.log(`\n✅ Frontend 생성 완료!`);
   console.log(`📄 정적 페이지: ${staticCount}개`);
   console.log(`📄 동적 페이지 (Mock): ${dynamicCount}개`);
+  console.log(`🖼️ 정적 자산: ${assetCount}개`);
   console.log(`📁 출력 경로: ${outputDir}`);
   console.log(`\n💡 다음 단계: UI 확인 후 'generate backend' 실행`);
+}
+
+/**
+ * 정적 자산 복사 (이미지, 폰트 등)
+ */
+function copyStaticAssets(sourcePath: string, outputDir: string): number {
+  const publicDir = path.join(outputDir, 'public');
+  fs.mkdirSync(publicDir, { recursive: true });
+
+  // 복사할 파일 확장자
+  const assetExtensions = [
+    // 이미지
+    '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp', '.ico', '.bmp',
+    // 폰트
+    '.woff', '.woff2', '.ttf', '.eot', '.otf',
+    // 기타
+    '.pdf', '.mp4', '.mp3', '.webm',
+  ];
+
+  // 제외할 디렉토리
+  const excludeDirs = ['node_modules', '.git', 'vendor', 'cache', '__pycache__'];
+
+  let copiedCount = 0;
+
+  function scanAndCopy(dir: string, relativePath: string = '') {
+    if (!fs.existsSync(dir)) return;
+
+    const items = fs.readdirSync(dir);
+
+    for (const item of items) {
+      const fullPath = path.join(dir, item);
+      const relPath = path.join(relativePath, item);
+
+      // 제외 디렉토리 스킵
+      if (excludeDirs.includes(item)) continue;
+
+      const stat = fs.statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        scanAndCopy(fullPath, relPath);
+      } else {
+        const ext = path.extname(item).toLowerCase();
+        if (assetExtensions.includes(ext)) {
+          const destPath = path.join(publicDir, relPath);
+          fs.mkdirSync(path.dirname(destPath), { recursive: true });
+          fs.copyFileSync(fullPath, destPath);
+          copiedCount++;
+        }
+      }
+    }
+  }
+
+  scanAndCopy(sourcePath);
+  return copiedCount;
 }
 
 /**
