@@ -1,7 +1,7 @@
 ---
 allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, Task, WebFetch]
 description: "AI-powered legacy site rebuilding - capture screenshots, analyze source, generate modern code"
-argument-hint: "<url> [--source=<path>] [--phase capture|analyze|generate|all]"
+argument-hint: "[capture|analyze|generate] <url> [options]"
 ---
 
 # /jikime:smart-rebuild - Legacy Site Rebuilding
@@ -18,24 +18,60 @@ argument-hint: "<url> [--source=<path>] [--phase capture|analyze|generate|all]"
 # 전체 워크플로우
 /jikime:smart-rebuild https://example.com --source=./legacy-php
 
-# 단계별 실행
-/jikime:smart-rebuild https://example.com --phase=capture
-/jikime:smart-rebuild --source=./legacy-php --phase=analyze
-/jikime:smart-rebuild --mapping=./mapping.json --phase=generate
+# Phase 1: 캡처
+/jikime:smart-rebuild capture https://example.com --output=./capture
+
+# Phase 1-1: 인증 세션 저장 (필요시)
+/jikime:smart-rebuild capture --login --save-auth=auth.json
+
+# Phase 1-2: 인증 페이지 캡처
+/jikime:smart-rebuild capture https://example.com --auth=auth.json
+
+# Phase 2: 분석 & 매핑
+/jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
+
+# Phase 3: 코드 생성
+/jikime:smart-rebuild generate --mapping=./mapping.json --backend=java --frontend=nextjs
 ```
 
-## Arguments
+## Subcommands
 
-| Argument | Description | Default |
-|----------|-------------|---------|
-| `<url>` | 캡처할 사이트 URL | (required for capture) |
-| `--source` | 레거시 소스 코드 경로 | `./source` |
-| `--phase` | 실행 단계: `capture`, `analyze`, `generate`, `all` | `all` |
-| `--output` | 출력 디렉토리 | `./smart-rebuild-output` |
-| `--max-pages` | 최대 캡처 페이지 수 | `50` |
-| `--auth` | 인증 세션 파일 (Playwright storageState) | - |
-| `--backend` | 백엔드 타겟: `java`, `go`, `python` | `java` |
-| `--frontend` | 프론트엔드 타겟: `nextjs`, `nuxt` | `nextjs` |
+| Subcommand | Description |
+|------------|-------------|
+| (none) | 전체 워크플로우 실행 (capture → analyze → generate) |
+| `capture` | 사이트 크롤링 및 스크린샷 캡처 |
+| `analyze` | 소스 분석 및 매핑 생성 |
+| `generate` | 코드 생성 |
+
+## Options
+
+### capture 옵션
+| Option | Description | Default |
+|--------|-------------|---------|
+| `<url>` | 캡처할 사이트 URL | (required) |
+| `--output` | 출력 디렉토리 | `./capture` |
+| `--max-pages` | 최대 캡처 페이지 수 | `100` |
+| `--concurrency` | 동시 처리 수 | `5` |
+| `--auth` | 인증 세션 파일 | - |
+| `--login` | 수동 로그인 모드 | - |
+| `--save-auth` | 세션 저장 파일 | - |
+| `--exclude` | 제외 URL 패턴 | `/admin/*,/api/*` |
+
+### analyze 옵션
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--source` | 레거시 소스 경로 | (required) |
+| `--capture` | 캡처 디렉토리 | `./capture` |
+| `--output` | 매핑 파일 출력 | `./mapping.json` |
+
+### generate 옵션
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--mapping` | 매핑 파일 | (required) |
+| `--backend` | 백엔드: `java`, `go`, `python` | `java` |
+| `--frontend` | 프론트엔드: `nextjs`, `nuxt` | `nextjs` |
+| `--output-backend` | 백엔드 출력 | `./backend` |
+| `--output-frontend` | 프론트엔드 출력 | `./frontend` |
 
 ## Core Philosophy
 
@@ -240,13 +276,11 @@ CRITICAL: Execute pre-built scripts from the skill folder.
 ```
 
 **Step 1: Parse Arguments**
-- Extract URL, source path, phase, and options from $ARGUMENTS
-- Default phase to "all" if not specified
-- Validate required arguments for each phase
+- Parse $ARGUMENTS to detect subcommand: `capture`, `analyze`, `generate`, or none (full workflow)
+- Extract URL and options based on subcommand
 
 **Step 2: Locate and Setup Scripts**
 ```bash
-# Find scripts directory
 SCRIPTS_DIR=".claude/skills/jikime-migration-smart-rebuild/scripts"
 
 # Install dependencies if needed
@@ -255,52 +289,54 @@ if [ ! -d "$SCRIPTS_DIR/node_modules" ]; then
 fi
 ```
 
-**Step 3: Execute Phase(s) via Pre-built CLI**
+**Step 3: Execute Based on Subcommand**
 
-IF phase is "capture" or "all":
+**Case: No subcommand (전체 워크플로우)**
 ```bash
+# /jikime:smart-rebuild https://example.com --source=./legacy-php
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts run {url} \
+  --source={source} \
+  --output={output}
+```
+
+**Case: capture**
+```bash
+# /jikime:smart-rebuild capture https://example.com --output=./capture
 cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts capture {url} \
-  --output={output}/capture \
+  --output={output} \
   --max-pages={maxPages} \
-  --concurrency=5 \
-  [--auth={authFile}]
-```
-- Report: "캡처 완료: {n}개 페이지"
+  --concurrency={concurrency} \
+  [--auth={auth}] \
+  [--exclude={exclude}]
 
-IF phase is "analyze" or "all":
+# /jikime:smart-rebuild capture --login --save-auth=auth.json
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts capture {url} \
+  --login --save-auth={saveAuth}
+```
+
+**Case: analyze**
 ```bash
+# /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
 cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts analyze \
-  --source={sourcePath} \
-  --capture={output}/capture \
-  --output={output}/mapping.json
+  --source={source} \
+  --capture={capture} \
+  --output={output}
 ```
-- Report: "분석 완료: 정적 {n}, 동적 {m}"
 
-IF phase is "generate" or "all":
+**Case: generate**
 ```bash
+# /jikime:smart-rebuild generate --mapping=./mapping.json --backend=java
 cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate \
-  --mapping={output}/mapping.json \
+  --mapping={mapping} \
   --backend={backend} \
   --frontend={frontend} \
-  --output-backend={output}/backend \
-  --output-frontend={output}/frontend
+  --output-backend={outputBackend} \
+  --output-frontend={outputFrontend}
 ```
-- Report: "생성 완료: Backend {n} entities, Frontend {m} pages"
 
-**Step 4: Summary Report**
-- Total pages processed
-- Static vs Dynamic breakdown
-- Generated files list
-- Next steps recommendation
-
-**Alternative: Full Workflow**
-```bash
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts run {url} \
-  --source={sourcePath} \
-  --output={output} \
-  --backend={backend} \
-  --frontend={frontend}
-```
+**Step 4: Report Results**
+- Parse CLI output and report to user in conversation language
+- Include: 캡처 페이지 수, 정적/동적 분류 결과, 생성된 파일 목록
 
 ## Related Skills
 
