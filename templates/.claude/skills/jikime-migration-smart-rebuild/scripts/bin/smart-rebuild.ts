@@ -3,14 +3,16 @@
 import { Command } from 'commander';
 import { crawlAndCapture } from '../capture/crawl';
 import { analyzeSource } from '../analyze/classify';
-import { generateCode } from '../generate/frontend';
+import { generateFrontend } from '../generate/frontend';
+import { generateBackend } from '../generate/backend';
+import { connectFrontendToBackend } from '../generate/connect';
 
 const program = new Command();
 
 program
   .name('smart-rebuild')
   .description('AI-powered legacy site rebuilding CLI')
-  .version('1.0.0');
+  .version('1.2.0');
 
 // Capture command
 program
@@ -72,36 +74,77 @@ program
     });
   });
 
-// Generate command
-program
+// Generate command with subcommands
+const generateCmd = program
   .command('generate')
-  .description('Generate code from mapping')
+  .description('Generate code from mapping (frontend → backend → connect)');
+
+// Generate Frontend (with mock data)
+generateCmd
+  .command('frontend')
+  .description('Generate frontend pages with mock data')
   .option('-m, --mapping <file>', 'Mapping file', './mapping.json')
-  .option('-b, --backend <type>', 'Backend framework', 'java')
-  .option('-f, --frontend <type>', 'Frontend framework', 'nextjs')
-  .option('--output-backend <dir>', 'Backend output directory', './output/backend')
-  .option('--output-frontend <dir>', 'Frontend output directory', './output/frontend')
+  .option('-o, --output <dir>', 'Output directory', './output/frontend')
+  .option('-f, --framework <type>', 'Frontend framework', 'nextjs')
   .option('--style <type>', 'CSS framework', 'tailwind')
   .action(async (options) => {
-    console.log('⚡ Smart Rebuild - Generate Phase');
+    console.log('🎨 Smart Rebuild - Generate Frontend (Mock)');
     console.log(`📋 Mapping: ${options.mapping}`);
-    console.log(`🔧 Backend: ${options.backend}`);
-    console.log(`🎨 Frontend: ${options.frontend}`);
+    console.log(`📁 Output: ${options.output}`);
+    console.log(`🖼️ Framework: ${options.framework}`);
 
-    await generateCode({
+    await generateFrontend({
       mappingFile: options.mapping,
-      backend: options.backend,
-      frontend: options.frontend,
-      outputBackend: options.outputBackend,
-      outputFrontend: options.outputFrontend,
+      outputDir: options.output,
+      framework: options.framework,
       style: options.style,
+    });
+  });
+
+// Generate Backend
+generateCmd
+  .command('backend')
+  .description('Generate backend API from mapping')
+  .option('-m, --mapping <file>', 'Mapping file', './mapping.json')
+  .option('-o, --output <dir>', 'Output directory', './output/backend')
+  .option('-b, --framework <type>', 'Backend framework', 'java')
+  .action(async (options) => {
+    console.log('🔧 Smart Rebuild - Generate Backend');
+    console.log(`📋 Mapping: ${options.mapping}`);
+    console.log(`📁 Output: ${options.output}`);
+    console.log(`⚙️ Framework: ${options.framework}`);
+
+    await generateBackend({
+      mappingFile: options.mapping,
+      outputDir: options.output,
+      framework: options.framework,
+    });
+  });
+
+// Connect Frontend to Backend
+generateCmd
+  .command('connect')
+  .description('Replace mock data with real API calls')
+  .option('-m, --mapping <file>', 'Mapping file', './mapping.json')
+  .option('-f, --frontend-dir <dir>', 'Frontend directory', './output/frontend')
+  .option('--api-base <url>', 'API base URL', 'http://localhost:8080')
+  .action(async (options) => {
+    console.log('🔗 Smart Rebuild - Connect Frontend to Backend');
+    console.log(`📋 Mapping: ${options.mapping}`);
+    console.log(`📁 Frontend: ${options.frontendDir}`);
+    console.log(`🌐 API Base: ${options.apiBase}`);
+
+    await connectFrontendToBackend({
+      mappingFile: options.mapping,
+      frontendDir: options.frontendDir,
+      apiBaseUrl: options.apiBase,
     });
   });
 
 // Full workflow command
 program
   .command('run <url>')
-  .description('Run full rebuild workflow')
+  .description('Run full rebuild workflow (capture → analyze → generate)')
   .option('-s, --source <dir>', 'Legacy source directory', './source')
   .option('-o, --output <dir>', 'Output directory', './smart-rebuild-output')
   .option('-b, --backend <type>', 'Backend framework', 'java')
@@ -110,6 +153,7 @@ program
   .option('--db-schema <file>', 'Database schema file (prisma, sql, json)')
   .option('--db-from-env', 'Extract schema from DATABASE_URL in .env')
   .option('--env-path <file>', 'Path to .env file', '.env')
+  .option('--frontend-only', 'Generate frontend only (skip backend)')
   .action(async (url, options) => {
     console.log('🚀 Smart Rebuild - Full Workflow');
     console.log(`📍 Target: ${url}`);
@@ -136,18 +180,41 @@ program
       envPath: options.envPath,
     });
 
-    // Phase 3: Generate
-    console.log('\n⚡ Phase 3: Generate');
-    await generateCode({
+    // Phase 3a: Generate Frontend (with mock data)
+    console.log('\n🎨 Phase 3a: Generate Frontend (Mock)');
+    await generateFrontend({
       mappingFile: `${options.output}/mapping.json`,
-      backend: options.backend,
-      frontend: options.frontend,
-      outputBackend: `${options.output}/backend`,
-      outputFrontend: `${options.output}/frontend`,
+      outputDir: `${options.output}/frontend`,
+      framework: options.frontend,
+      style: 'tailwind',
     });
 
-    console.log('\n✅ Smart Rebuild Complete!');
-    console.log(`📁 Output: ${options.output}`);
+    console.log('\n✅ Frontend 생성 완료!');
+    console.log(`📁 Frontend: ${options.output}/frontend`);
+    console.log('💡 UI를 확인하고, 백엔드 생성을 진행하세요:');
+    console.log(`   smart-rebuild generate backend -m ${options.output}/mapping.json -o ${options.output}/backend`);
+
+    if (!options.frontendOnly) {
+      // Phase 3b: Generate Backend
+      console.log('\n🔧 Phase 3b: Generate Backend');
+      await generateBackend({
+        mappingFile: `${options.output}/mapping.json`,
+        outputDir: `${options.output}/backend`,
+        framework: options.backend,
+      });
+
+      // Phase 3c: Connect
+      console.log('\n🔗 Phase 3c: Connect Frontend to Backend');
+      await connectFrontendToBackend({
+        mappingFile: `${options.output}/mapping.json`,
+        frontendDir: `${options.output}/frontend`,
+        apiBaseUrl: 'http://localhost:8080',
+      });
+
+      console.log('\n✅ Smart Rebuild Complete!');
+      console.log(`📁 Frontend: ${options.output}/frontend`);
+      console.log(`📁 Backend: ${options.output}/backend`);
+    }
   });
 
 program.parse();
