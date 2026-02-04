@@ -51,18 +51,28 @@ program
   .option('-s, --source <dir>', 'Legacy source directory', './source')
   .option('-c, --capture <dir>', 'Capture directory', './capture')
   .option('-o, --output <file>', 'Output mapping file', './mapping.json')
-  .option('--db-schema <file>', 'Database schema file')
+  .option('--db-schema <file>', 'Database schema file (prisma, sql, json)')
+  .option('--db-from-env', 'Extract schema from DATABASE_URL in .env')
+  .option('--env-path <file>', 'Path to .env file', '.env')
   .option('--manual-mapping <file>', 'Manual URL to source mapping file')
   .action(async (options) => {
     console.log('🔍 Smart Rebuild - Analyze Phase');
     console.log(`📂 Source: ${options.source}`);
     console.log(`📸 Capture: ${options.capture}`);
 
+    if (options.dbFromEnv) {
+      console.log(`🔌 DB: DATABASE_URL에서 스키마 추출`);
+    } else if (options.dbSchema) {
+      console.log(`📄 DB: ${options.dbSchema}`);
+    }
+
     await analyzeSource({
       sourcePath: options.source,
       capturePath: options.capture,
       outputFile: options.output,
       dbSchemaFile: options.dbSchema,
+      dbFromEnv: options.dbFromEnv,
+      envPath: options.envPath,
       manualMappingFile: options.manualMapping,
     });
   });
@@ -101,6 +111,9 @@ program
   .option('-o, --output <dir>', 'Output directory', './smart-rebuild-output')
   .option('-b, --backend <type>', 'Backend framework', 'java')
   .option('-f, --frontend <type>', 'Frontend framework', 'nextjs')
+  .option('--db-schema <file>', 'Database schema file (prisma, sql, json)')
+  .option('--db-from-env', 'Extract schema from DATABASE_URL in .env')
+  .option('--env-path <file>', 'Path to .env file', '.env')
   .action(async (url, options) => {
     console.log('🚀 Smart Rebuild - Full Workflow');
     console.log(`📍 Target: ${url}`);
@@ -121,6 +134,9 @@ program
       sourcePath: options.source,
       capturePath: `${options.output}/capture`,
       outputFile: `${options.output}/mapping.json`,
+      dbSchemaFile: options.dbSchema,
+      dbFromEnv: options.dbFromEnv,
+      envPath: options.envPath,
     });
 
     // Phase 3: Generate

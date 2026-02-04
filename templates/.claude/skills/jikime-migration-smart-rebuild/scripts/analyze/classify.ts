@@ -1,12 +1,15 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
+import { extractSchema, DatabaseSchema } from './schema-extractor';
 
 interface AnalyzeOptions {
   sourcePath: string;
   capturePath: string;
   outputFile: string;
   dbSchemaFile?: string;
+  dbFromEnv?: boolean;
+  envPath?: string;
   manualMappingFile?: string;
 }
 
@@ -76,12 +79,18 @@ interface Mapping {
   };
   pages: PageMapping[];
   database?: {
+    source?: string;
+    extractedAt?: string;
     tables: Array<{
       name: string;
       columns: Array<{
         name: string;
         type: string;
+        nullable?: boolean;
         primary?: boolean;
+        unique?: boolean;
+        default?: string;
+        length?: number;
       }>;
     }>;
   };
@@ -233,7 +242,7 @@ function matchUrlToSource(
  * 소스 분석 및 매핑 생성
  */
 export async function analyzeSource(options: AnalyzeOptions): Promise<Mapping> {
-  const { sourcePath, capturePath, outputFile, dbSchemaFile, manualMappingFile } = options;
+  const { sourcePath, capturePath, outputFile, dbSchemaFile, dbFromEnv, envPath, manualMappingFile } = options;
 
   console.log('🔍 소스 분석 시작');
 
@@ -348,9 +357,31 @@ export async function analyzeSource(options: AnalyzeOptions): Promise<Mapping> {
     pages,
   };
 
-  // DB 스키마 추가
-  if (dbSchemaFile && fs.existsSync(dbSchemaFile)) {
-    mapping.database = JSON.parse(fs.readFileSync(dbSchemaFile, 'utf-8'));
+  // DB 스키마 추출
+  let dbSchema: DatabaseSchema | null = null;
+
+  try {
+    if (dbFromEnv) {
+      // 환경변수에서 DATABASE_URL 읽어서 추출
+      dbSchema = await extractSchema({ fromEnv: true, envPath });
+    } else if (dbSchemaFile) {
+      // 스키마 파일에서 추출 (prisma, sql, json 자동 감지)
+      dbSchema = await extractSchema({ schemaFile: dbSchemaFile });
+    } else {
+      // 자동 감지 시도 (prisma/schema.prisma, schema.sql 등)
+      dbSchema = await extractSchema({});
+    }
+  } catch (error) {
+    console.warn(`⚠️ DB 스키마 추출 실패: ${(error as Error).message}`);
+  }
+
+  if (dbSchema) {
+    mapping.database = {
+      source: dbSchema.source,
+      extractedAt: dbSchema.extractedAt,
+      tables: dbSchema.tables,
+    };
+    console.log(`🗄️ DB 스키마: ${dbSchema.tables.length}개 테이블 (${dbSchema.source})`);
   }
 
   // 결과 저장
