@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { crawlAndCapture, saveLoginSession } from '../capture/crawl';
+import { crawlAndCapture } from '../capture/crawl';
 import { analyzeSource } from '../analyze/classify';
 import { generateCode } from '../generate/frontend';
 
@@ -22,17 +22,11 @@ program
   .option('-a, --auth <file>', 'Auth session file (JSON)')
   .option('-e, --exclude <patterns>', 'URL patterns to exclude', '/admin/*,/api/*')
   .option('-t, --timeout <ms>', 'Page load timeout', '30000')
-  .option('--login', 'Open browser for manual login')
-  .option('--save-auth <file>', 'Save auth session to file')
+  .option('--login', 'Open browser for login, then capture')
   .action(async (url, options) => {
     console.log('🚀 Smart Rebuild - Capture Phase');
     console.log(`📍 Target: ${url}`);
     console.log(`📁 Output: ${options.output}`);
-
-    if (options.login) {
-      await saveLoginSession(url, options.saveAuth || 'auth.json');
-      return;
-    }
 
     await crawlAndCapture(url, {
       outputDir: options.output,
@@ -41,6 +35,7 @@ program
       authFile: options.auth,
       exclude: options.exclude.split(','),
       timeout: parseInt(options.timeout),
+      login: options.login || false,
     });
   });
 
@@ -111,6 +106,7 @@ program
   .option('-o, --output <dir>', 'Output directory', './smart-rebuild-output')
   .option('-b, --backend <type>', 'Backend framework', 'java')
   .option('-f, --frontend <type>', 'Frontend framework', 'nextjs')
+  .option('--login', 'Open browser for login before capture')
   .option('--db-schema <file>', 'Database schema file (prisma, sql, json)')
   .option('--db-from-env', 'Extract schema from DATABASE_URL in .env')
   .option('--env-path <file>', 'Path to .env file', '.env')
@@ -126,6 +122,7 @@ program
       outputDir: `${options.output}/capture`,
       maxPages: 100,
       concurrency: 5,
+      login: options.login || false,
     });
 
     // Phase 2: Analyze

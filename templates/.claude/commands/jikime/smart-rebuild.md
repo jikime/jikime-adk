@@ -18,14 +18,11 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 # 전체 워크플로우
 /jikime:smart-rebuild https://example.com --source=./legacy-php
 
-# Phase 1: 캡처
+# Phase 1: 캡처 (인증 불필요)
 /jikime:smart-rebuild capture https://example.com --output=./capture
 
-# Phase 1-1: 인증 세션 저장 (필요시)
-/jikime:smart-rebuild capture --login --save-auth=auth.json
-
-# Phase 1-2: 인증 페이지 캡처
-/jikime:smart-rebuild capture https://example.com --auth=auth.json
+# Phase 1: 캡처 (인증 필요 - 로그인 후 캡처 진행)
+/jikime:smart-rebuild capture https://example.com --login
 
 # Phase 2: 분석 & 매핑
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
@@ -52,9 +49,8 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 | `--output` | 출력 디렉토리 | `./capture` |
 | `--max-pages` | 최대 캡처 페이지 수 | `100` |
 | `--concurrency` | 동시 처리 수 | `5` |
-| `--auth` | 인증 세션 파일 | - |
-| `--login` | 수동 로그인 모드 | - |
-| `--save-auth` | 세션 저장 파일 | - |
+| `--login` | 로그인 필요 시 (브라우저 열림 → 로그인 → 캡처 진행) | - |
+| `--auth` | 기존 세션 파일 재사용 | - |
 | `--exclude` | 제외 URL 패턴 | `/admin/*,/api/*` |
 
 ### analyze 옵션
@@ -153,9 +149,9 @@ async function capturePage(browser, url, baseUrl, outputDir) {
 }
 ```
 
-**인증 페이지 처리:**
-- `--auth` 옵션으로 Playwright storageState 파일 지정
-- 수동 로그인 후 세션 저장: `context.storageState({ path: 'auth.json' })`
+**인증 처리:**
+- `--login` 옵션 사용 시: 브라우저 열림 → 수동 로그인 → Enter 입력 → 세션 자동 저장 → 캡처 진행
+- `--auth` 옵션: 이전에 저장된 세션 파일 재사용 (반복 캡처 시 유용)
 
 **출력:** `{output}/capture/sitemap.json`
 
@@ -301,17 +297,14 @@ cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts run {url} \
 
 **Case: capture**
 ```bash
-# /jikime:smart-rebuild capture https://example.com --output=./capture
+# /jikime:smart-rebuild capture https://example.com [--login]
 cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts capture {url} \
   --output={output} \
   --max-pages={maxPages} \
   --concurrency={concurrency} \
+  [--login] \
   [--auth={auth}] \
   [--exclude={exclude}]
-
-# /jikime:smart-rebuild capture --login --save-auth=auth.json
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts capture {url} \
-  --login --save-auth={saveAuth}
 ```
 
 **Case: analyze**
@@ -350,5 +343,5 @@ cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate \
 |------|------|
 | 페이지 로드 타임아웃 | `timeout` 증가, `waitUntil: 'domcontentloaded'` |
 | Lazy loading 이미지 누락 | 스크롤 거리/속도 조절 |
-| 인증 필요 페이지 | `--auth` 옵션으로 세션 파일 지정 |
+| 인증 필요 페이지 | `--login` 옵션 추가하여 로그인 후 캡처 |
 | URL ↔ 소스 매칭 실패 | 라우터 파일 분석, 수동 매핑 추가 |

@@ -1,6 +1,7 @@
 import { chromium, Browser, Page, BrowserContext } from 'playwright';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as readline from 'readline';
 
 interface CaptureOptions {
   outputDir: string;
@@ -9,6 +10,7 @@ interface CaptureOptions {
   authFile?: string;
   exclude?: string[];
   timeout?: number;
+  login?: boolean;  // 로그인 필요 시 true
 }
 
 interface PageResult {
@@ -25,6 +27,22 @@ interface Sitemap {
   capturedAt: string;
   totalPages: number;
   pages: PageResult[];
+}
+
+/**
+ * 사용자 입력 대기
+ */
+function waitForUserInput(prompt: string): Promise<void> {
+  return new Promise((resolve) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+    rl.question(prompt, () => {
+      rl.close();
+      resolve();
+    });
+  });
 }
 
 /**
@@ -146,6 +164,7 @@ export async function crawlAndCapture(
     authFile,
     exclude = [],
     timeout = 30000,
+    login = false,
   } = options;
 
   // 출력 디렉토리 생성
@@ -162,16 +181,45 @@ export async function crawlAndCapture(
   console.log(`📁 출력 디렉토리: ${outputDir}`);
   console.log(`📄 최대 페이지: ${maxPages}`);
 
-  const browser = await chromium.launch({ headless: true });
+  let browser: Browser;
+  let context: BrowserContext;
+  const sessionFile = path.join(outputDir, 'auth.json');
 
-  // 인증 세션 사용
-  const contextOptions: { storageState?: string } = {};
-  if (authFile && fs.existsSync(authFile)) {
-    contextOptions.storageState = authFile;
-    console.log(`🔐 인증 세션 사용: ${authFile}`);
+  // 로그인 모드: 브라우저 열고 사용자 로그인 대기
+  if (login) {
+    console.log(`\n🔐 로그인 모드 활성화`);
+    browser = await chromium.launch({ headless: false });
+    context = await browser.newContext();
+    const page = await context.newPage();
+
+    await page.goto(startUrl);
+    console.log(`📍 브라우저에서 로그인을 완료하세요.`);
+
+    await waitForUserInput('✅ 로그인 완료 후 Enter를 누르세요...');
+
+    // 세션 저장
+    await context.storageState({ path: sessionFile });
+    console.log(`💾 세션 저장 완료: ${sessionFile}`);
+    await page.close();
+
+    // headless 모드로 재시작하여 캡처 진행
+    await context.close();
+    await browser.close();
+
+    browser = await chromium.launch({ headless: true });
+    context = await browser.newContext({ storageState: sessionFile });
+    console.log(`\n🚀 캡처 시작...`);
+  } else {
+    browser = await chromium.launch({ headless: true });
+
+    // 기존 인증 세션 사용
+    const contextOptions: { storageState?: string } = {};
+    if (authFile && fs.existsSync(authFile)) {
+      contextOptions.storageState = authFile;
+      console.log(`🔐 인증 세션 사용: ${authFile}`);
+    }
+    context = await browser.newContext(contextOptions);
   }
-
-  const context = await browser.newContext(contextOptions);
 
   // URL 제외 패턴 체크
   const shouldExclude = (url: string): boolean => {
@@ -230,29 +278,3 @@ export async function crawlAndCapture(
   return sitemap;
 }
 
-/**
- * 수동 로그인 후 세션 저장
- */
-export async function saveLoginSession(
-  loginUrl: string,
-  outputFile: string
-): Promise<void> {
-  console.log('🔐 로그인 세션 저장 모드');
-  console.log(`📍 로그인 URL: ${loginUrl}`);
-
-  const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext();
-  const page = await context.newPage();
-
-  await page.goto(loginUrl);
-
-  console.log('⏳ 브라우저에서 로그인하세요 (60초 대기)...');
-  await page.waitForTimeout(60000);
-
-  // 세션 저장
-  await context.storageState({ path: outputFile });
-
-  await browser.close();
-
-  console.log(`✅ 세션 저장 완료: ${outputFile}`);
-}
