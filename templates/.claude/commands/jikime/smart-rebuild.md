@@ -227,52 +227,80 @@ smart-rebuild-output/
 
 ## EXECUTION DIRECTIVE
 
-CRITICAL: Execute these steps in sequence.
+CRITICAL: Execute pre-built scripts from the skill folder.
+
+**Scripts Location:**
+```
+.claude/skills/jikime-migration-smart-rebuild/scripts/
+├── package.json
+├── bin/smart-rebuild.ts      # CLI 엔트리포인트
+├── capture/crawl.ts          # Playwright 크롤러
+├── analyze/classify.ts       # 정적/동적 분류
+└── generate/frontend.ts      # 코드 생성
+```
 
 **Step 1: Parse Arguments**
 - Extract URL, source path, phase, and options from $ARGUMENTS
 - Default phase to "all" if not specified
 - Validate required arguments for each phase
 
-**Step 2: Setup Output Directory**
+**Step 2: Locate and Setup Scripts**
 ```bash
-mkdir -p {output}/capture
+# Find scripts directory
+SCRIPTS_DIR=".claude/skills/jikime-migration-smart-rebuild/scripts"
+
+# Install dependencies if needed
+if [ ! -d "$SCRIPTS_DIR/node_modules" ]; then
+  cd "$SCRIPTS_DIR" && npm install
+fi
 ```
 
-**Step 3: Execute Phase(s)**
+**Step 3: Execute Phase(s) via Pre-built CLI**
 
 IF phase is "capture" or "all":
-1. Create Playwright crawler script in scratchpad
-2. Run with Bash: `cd {scratchpad} && npm install playwright && node crawl.js`
-3. Copy results to {output}/capture/
-4. Report: "캡처 완료: {n}개 페이지"
+```bash
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts capture {url} \
+  --output={output}/capture \
+  --max-pages={maxPages} \
+  --concurrency=5 \
+  [--auth={authFile}]
+```
+- Report: "캡처 완료: {n}개 페이지"
 
 IF phase is "analyze" or "all":
-1. Read sitemap.json from capture
-2. Use Glob to find source files: `**/*.php`, `**/*.jsp`, etc.
-3. For each captured URL:
-   - Match to source file
-   - Read source and classify (static/dynamic)
-   - Extract SQL queries if dynamic
-4. Generate mapping.json
-5. Report: "분석 완료: 정적 {n}, 동적 {m}"
+```bash
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts analyze \
+  --source={sourcePath} \
+  --capture={output}/capture \
+  --output={output}/mapping.json
+```
+- Report: "분석 완료: 정적 {n}, 동적 {m}"
 
 IF phase is "generate" or "all":
-1. Read mapping.json
-2. For each static page:
-   - Read captured HTML
-   - Generate Next.js page component
-3. For each dynamic page:
-   - Extract SQL queries
-   - Generate Java Entity/Repository/Controller
-   - Generate Next.js page with API calls
-4. Report: "생성 완료: Backend {n} entities, Frontend {m} pages"
+```bash
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate \
+  --mapping={output}/mapping.json \
+  --backend={backend} \
+  --frontend={frontend} \
+  --output-backend={output}/backend \
+  --output-frontend={output}/frontend
+```
+- Report: "생성 완료: Backend {n} entities, Frontend {m} pages"
 
 **Step 4: Summary Report**
 - Total pages processed
 - Static vs Dynamic breakdown
 - Generated files list
 - Next steps recommendation
+
+**Alternative: Full Workflow**
+```bash
+cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts run {url} \
+  --source={sourcePath} \
+  --output={output} \
+  --backend={backend} \
+  --frontend={frontend}
+```
 
 ## Related Skills
 
