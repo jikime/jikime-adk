@@ -28,9 +28,9 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
 
 # Phase 3: 코드 생성 (3단계)
-/jikime:smart-rebuild generate frontend --mapping=./mapping.json --framework=<nextjs>
-/jikime:smart-rebuild generate backend --mapping=./mapping.json --framework=<java>
-/jikime:smart-rebuild generate connect --mapping=./mapping.json --api-base=<http://localhost:8080>
+/jikime:smart-rebuild generate frontend --mapping=./mapping.json --framework=nextjs  # nextjs 지원
+/jikime:smart-rebuild generate backend --mapping=./mapping.json --framework=java     # java 지원
+/jikime:smart-rebuild generate connect --mapping=./mapping.json --api-base=http://localhost:8080
 ```
 
 ## Supported Frameworks

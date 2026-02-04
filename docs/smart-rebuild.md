@@ -700,13 +700,13 @@ skills/jikime-migration-smart-rebuild/
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
 
 # Phase 3a: 프론트엔드 생성 (Mock 데이터)
-/jikime:smart-rebuild generate frontend --mapping=./mapping.json --framework=<nextjs>
+/jikime:smart-rebuild generate frontend --mapping=./mapping.json --framework=nextjs  # nextjs 지원
 
 # Phase 3b: 백엔드 생성
-/jikime:smart-rebuild generate backend --mapping=./mapping.json --framework=<java>
+/jikime:smart-rebuild generate backend --mapping=./mapping.json --framework=java     # java 지원
 
 # Phase 3c: 프론트엔드 ↔ 백엔드 연동
-/jikime:smart-rebuild generate connect --mapping=./mapping.json --api-base=<http://localhost:8080>
+/jikime:smart-rebuild generate connect --mapping=./mapping.json --api-base=http://localhost:8080
 ```
 
 ### 8.4 지원 프레임워크
