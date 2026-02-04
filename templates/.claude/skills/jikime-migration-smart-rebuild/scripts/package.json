@@ -1,0 +1,41 @@
+{
+  "name": "@jikime/smart-rebuild",
+  "version": "1.0.0",
+  "description": "AI-powered legacy site rebuilding CLI",
+  "main": "dist/index.js",
+  "bin": {
+    "smart-rebuild": "./dist/bin/smart-rebuild.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/bin/smart-rebuild.ts",
+    "capture": "ts-node src/bin/smart-rebuild.ts capture",
+    "analyze": "ts-node src/bin/smart-rebuild.ts analyze",
+    "generate": "ts-node src/bin/smart-rebuild.ts generate"
+  },
+  "keywords": [
+    "migration",
+    "rebuild",
+    "legacy",
+    "playwright",
+    "nextjs",
+    "java"
+  ],
+  "author": "JikiME",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^13.0.0",
+    "playwright": "^1.58.1",
+    "glob": "^11.0.0",
+    "chalk": "^5.3.0",
+    "ora": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0",
+    "ts-node": "^10.9.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
