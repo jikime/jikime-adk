@@ -28,10 +28,19 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
 
 # Phase 3: 코드 생성 (3단계)
-/jikime:smart-rebuild generate frontend --mapping=./mapping.json  # UI + Mock 데이터
-/jikime:smart-rebuild generate backend --mapping=./mapping.json   # Java API
-/jikime:smart-rebuild generate connect --mapping=./mapping.json   # Mock → 실제 API 연결
+/jikime:smart-rebuild generate frontend --mapping=./mapping.json --framework=nextjs
+/jikime:smart-rebuild generate backend --mapping=./mapping.json --framework=java
+/jikime:smart-rebuild generate connect --mapping=./mapping.json --api-base=http://localhost:8080
 ```
+
+## Supported Frameworks
+
+| 구분 | 지원 프레임워크 | 기본값 |
+|------|----------------|--------|
+| **Frontend** | `nextjs` | nextjs |
+| **Backend** | `java` (Spring Boot) | java |
+
+> 💡 향후 지원 예정: Frontend (nuxt, react), Backend (go, python, nodejs)
 
 ## Subcommands
 
