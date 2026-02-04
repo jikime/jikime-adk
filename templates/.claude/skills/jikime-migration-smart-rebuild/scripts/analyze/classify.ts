@@ -256,7 +256,7 @@ export async function analyzeSource(options: AnalyzeOptions): Promise<Mapping> {
   const capturedPages: CapturedPage[] = sitemap.pages;
 
   // 수동 매핑 로드
-  let manualMapping: Record<string, string> | undefined;
+  let manualMapping: Record<string, string> = {};
   if (manualMappingFile && fs.existsSync(manualMappingFile)) {
     manualMapping = JSON.parse(fs.readFileSync(manualMappingFile, 'utf-8'));
     console.log(`📋 수동 매핑 로드: ${Object.keys(manualMapping).length}개`);
