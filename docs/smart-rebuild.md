@@ -209,33 +209,48 @@ async function autoScroll(page) {
 
 ### 4.4 인증 페이지 처리
 
+`--login` 옵션을 사용하면 로그인과 캡처가 한 번에 진행됩니다.
+
+```bash
+# 인증 필요 시: 로그인 → 캡처 한 번에 진행
+/jikime:smart-rebuild capture https://example.com --login --output=./capture
+```
+
+**동작 방식:**
+1. 브라우저가 열림 (headless: false)
+2. 사용자가 직접 로그인 수행
+3. 터미널에서 **Enter 입력** → 세션 자동 저장
+4. headless 모드로 전환하여 캡처 진행
+
 ```typescript
-// 방법 1: 수동 로그인 → 세션 저장
-async function saveLoginSession() {
-  const browser = await chromium.launch({ headless: false });
-  const context = await browser.newContext();
-  const page = await context.newPage();
+// --login 옵션 처리 내부 로직
+async function crawlAndCapture(url: string, options: CaptureOptions) {
+  if (options.login) {
+    // 1. 브라우저 열고 로그인 페이지 이동
+    const browser = await chromium.launch({ headless: false });
+    const page = await context.newPage();
+    await page.goto(url);
 
-  await page.goto('https://example.com/login');
+    // 2. 사용자 로그인 대기
+    await waitForUserInput('로그인 완료 후 Enter를 누르세요...');
 
-  // 수동 로그인 대기
-  console.log('브라우저에서 로그인하세요 (30초 대기)...');
-  await page.waitForTimeout(30000);
+    // 3. 세션 저장
+    await context.storageState({ path: `${outputDir}/auth.json` });
 
-  // 세션 저장
-  await context.storageState({ path: 'auth.json' });
-  await browser.close();
+    // 4. headless 모드로 재시작하여 캡처 진행
+    await browser.close();
+    browser = await chromium.launch({ headless: true });
+    context = await browser.newContext({ storageState: sessionFile });
+  }
+
+  // 캡처 진행...
 }
+```
 
-// 방법 2: 저장된 세션으로 크롤링
-async function crawlWithAuth() {
-  const browser = await chromium.launch();
-  const context = await browser.newContext({
-    storageState: 'auth.json'  // 저장된 세션 사용
-  });
-
-  // 인증된 상태로 크롤링
-}
+**세션 재사용 (반복 캡처 시):**
+```bash
+# 이전에 저장된 세션 파일 사용
+/jikime:smart-rebuild capture https://example.com --auth=./capture/auth.json
 ```
 
 ### 4.5 출력: sitemap.json
@@ -541,14 +556,11 @@ skills/jikime-migration-smart-rebuild/
 ### 8.2 단계별 실행
 
 ```bash
-# Phase 1: 캡처
+# Phase 1: 캡처 (인증 불필요)
 /jikime:smart-rebuild capture https://example.com --output=./capture
 
-# Phase 1-1: 인증 세션 저장 (필요시)
-/jikime:smart-rebuild capture --login --save-auth=auth.json
-
-# Phase 1-2: 인증 페이지 캡처
-/jikime:smart-rebuild capture https://example.com --auth=auth.json
+# Phase 1: 캡처 (인증 필요 - 로그인 후 캡처 진행)
+/jikime:smart-rebuild capture https://example.com --login --output=./capture
 
 # Phase 2: 분석 & 매핑
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
@@ -559,15 +571,33 @@ skills/jikime-migration-smart-rebuild/
 
 ### 8.3 옵션
 
+**capture 옵션:**
 | 옵션 | 설명 | 기본값 |
 |------|------|--------|
-| `--output` | 출력 디렉토리 | `./smart-rebuild-output` |
+| `--output` | 출력 디렉토리 | `./capture` |
 | `--max-pages` | 최대 캡처 페이지 수 | `100` |
 | `--concurrency` | 동시 처리 수 | `5` |
-| `--auth` | 인증 세션 파일 | - |
+| `--login` | 로그인 필요 시 (브라우저 열림 → 로그인 → 캡처) | - |
+| `--auth` | 기존 세션 파일 재사용 | - |
 | `--exclude` | 제외할 URL 패턴 | `/admin/*,/api/*` |
+
+**analyze 옵션:**
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--source` | 레거시 소스 경로 | `./source` |
+| `--capture` | 캡처 디렉토리 | `./capture` |
+| `--output` | 매핑 파일 출력 | `./mapping.json` |
+| `--db-schema` | DB 스키마 파일 (prisma, sql, json) | - |
+| `--db-from-env` | .env의 DATABASE_URL에서 스키마 추출 | - |
+
+**generate 옵션:**
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--mapping` | 매핑 파일 | `./mapping.json` |
 | `--backend` | 백엔드 타겟 | `java` |
 | `--frontend` | 프론트엔드 타겟 | `nextjs` |
+| `--output-backend` | 백엔드 출력 디렉토리 | `./backend` |
+| `--output-frontend` | 프론트엔드 출력 디렉토리 | `./frontend` |
 
 ---
 
@@ -627,4 +657,4 @@ skills/jikime-migration-smart-rebuild/
 ---
 
 **작성일:** 2026-02-04
-**버전:** 1.0.0
+**버전:** 1.1.0
