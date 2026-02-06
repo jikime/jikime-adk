@@ -33,8 +33,13 @@ var migrationKeywords = []string{
 	"legacy system",
 	"upgrade framework",
 	"porting",
+	"smart-rebuild",
+	"smart rebuild",
+	"rebuild site",
+	"screenshot migration",
 	"/jikime:friday",
 	"/jikime:migrate",
+	"/jikime:smart-rebuild",
 }
 
 // Orchestrator names

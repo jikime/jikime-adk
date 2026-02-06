@@ -1,5 +1,5 @@
 ---
-allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, Task, WebFetch]
+allowed-tools: [Read, Write, Edit, Bash, Glob, Grep, Task, WebFetch, AskUserQuestion]
 description: "AI-powered legacy site rebuilding - capture screenshots, analyze source, generate modern code"
 argument-hint: "[capture|analyze|generate] <url> [options]"
 ---
@@ -8,432 +8,389 @@ argument-hint: "[capture|analyze|generate] <url> [options]"
 
 > **"Rebuild, not Migrate"** — 코드를 변환하지 않고, 새로 만든다.
 
+**참조 문서:**
+- @.claude/rules/jikime/smart-rebuild-reference.md (Usage, Options, Frameworks)
+- @.claude/rules/jikime/smart-rebuild-execution.md (상세 실행 절차, 코드 예시)
+
+---
+
+## 🔴 STEP 0: SCRIPTS_DIR 경로 찾기 (가장 먼저 실행!)
+
+**Claude는 명령 실행 전에 반드시 스크립트 경로를 찾아야 합니다:**
+
+```bash
+# 1. Glob으로 스크립트 디렉토리 찾기
+Glob: "**/jikime-migration-smart-rebuild/scripts/package.json"
+
+# 2. 찾은 경로의 디렉토리가 SCRIPTS_DIR
+# 예: /path/to/.claude/skills/jikime-migration-smart-rebuild/scripts
+```
+
+---
+
+## 🚨🚨🚨 CRITICAL: UI 생성 핵심 원칙 🚨🚨🚨
+
+**Claude는 반드시 HTML + 스크린샷을 보고 원본과 동일한 UI를 재현해야 합니다!**
+
+### 🔴 HARD RULES (절대 위반 금지!)
+
+1. **🔴 스크린샷 필수 분석**: 코드 작성 전에 반드시 스크린샷을 Read하고 **시각적으로 분석**
+2. **🔴 HTML 구조 복사**: HTML의 `<header>`, `<nav>`, `<main>`, `<footer>` 구조 그대로 유지
+3. **🔴 원본 텍스트 유지**: HTML에서 추출한 텍스트를 **번역 없이 원본 그대로** 사용
+4. **🔴 원본 이미지 URL 사용**: HTML의 `<img src="...">` URL을 **그대로** 사용
+5. **🔴 원본 CSS Fetch**: 원본 사이트의 CSS를 WebFetch로 가져와 `src/styles/legacy/`에 저장
+6. **🔴 섹션 컴포넌트 분리**: 섹션별로 `components/{route}/*-section.tsx` 파일 생성
+7. **🔴 섹션 식별자 필수**: 모든 주요 섹션에 `data-section-id="01-header"` 형태로 추가 (HITL 비교용!)
+8. **🔴 스크린샷 기반 스타일**: 색상, 폰트 크기, 간격은 **스크린샷에서 추출**
+9. **🔴 kebab-case 네이밍**: 폴더/파일명은 반드시 **kebab-case** (`about-us/`, `hero-section.tsx`)
+
+### ❌ 절대 하지 말 것
+
+- ❌ 스크린샷 안 보고 기본 템플릿으로 대충 만들기
+- ❌ HTML 내용 번역하기 (영어→한글, 한글→영어)
+- ❌ 텍스트나 이미지 내용 상상해서 창작하기
+- ❌ 원본과 다른 레이아웃이나 색상 사용하기
+- ❌ PascalCase 폴더명 사용 (`AboutUs/` ❌ → `about-us/` ✅)
+- ❌ 섹션에 `data-section-id` 속성 빼먹기 (HITL 비교 불가!)
+- ❌ 모든 코드를 page.tsx 한 파일에 다 넣기 (섹션 컴포넌트로 분리!)
+
+---
+
+## 🚨 generate frontend --page N 전체 워크플로우
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase A: 프로젝트 초기화 (첫 페이지인 경우만)                                 │
+│  ──────────────────────────────────────────────────────────────────────────  │
+│  - Next.js + shadcn/ui 프로젝트 생성                                          │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase B: 페이지 기본 코드 생성 (🔴 HTML + 스크린샷 + CSS 필수!)               │
+│  ──────────────────────────────────────────────────────────────────────────  │
+│  0. 🔴 Lazy Capture 체크: page.captured === false면 캡처 실행!              │
+│  1. Read: {capture}/sitemap.json (페이지 정보)                                │
+│  2. Read: {capture}/{html_file} (🔴 HTML 구조 + 텍스트 + 이미지 URL 추출)      │
+│  3. Read: {capture}/{screenshot_file} (🔴 레이아웃, 색상, 간격 시각 분석)      │
+│  3.5. (첫 페이지만) WebFetch: 원본 CSS → src/styles/legacy/ 저장             │
+│  4. Write: 섹션별 컴포넌트 → components/{route}/*-section.tsx                │
+│  5. Write: page.tsx → 섹션 컴포넌트 import & 조합                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase C: 개발 서버 실행                                                      │
+│  ──────────────────────────────────────────────────────────────────────────  │
+│  Bash: cd {output}/frontend && npm run dev &                                  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase D: AskUserQuestion - 다음 단계 선택                                    │
+│  ──────────────────────────────────────────────────────────────────────────  │
+│  question: "페이지 {N} 기본 코드 생성 완료. 다음 작업은?"                      │
+│  options:                                                                     │
+│    - "HITL 세부 조정" → Phase E (HITL 루프) 진입                              │
+│    - "다음 페이지" → 페이지 N+1로 진행                                        │
+│    - "직접 입력" → 사용자 지시 따르기                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                    ┌─────────────────┼─────────────────┐
+                    ▼                 ▼                 ▼
+            [HITL 세부 조정]   [다음 페이지]      [직접 입력]
+                    │
+                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase E: HITL 루프 (섹션별 비교 및 수정) - 🔴 LOOP UNTIL ALL SECTIONS DONE   │
+│  ──────────────────────────────────────────────────────────────────────────  │
+│                                                                               │
+│   ┌──────────────────────────────────────────────────────────────────────┐   │
+│   │  E-1. hitl-refine.ts 실행 (Bash)                                     │   │
+│   │       → 원본 사이트 캡처 + 로컬 사이트 캡처 + DOM 비교               │   │
+│   └──────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                        │
+│                                      ▼                                        │
+│   ┌──────────────────────────────────────────────────────────────────────┐   │
+│   │  E-2. JSON 결과 파싱                                                 │   │
+│   │       → overallMatch%, issues[], suggestions[] 추출                  │   │
+│   └──────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                        │
+│                                      ▼                                        │
+│   ┌──────────────────────────────────────────────────────────────────────┐   │
+│   │  E-3. AskUserQuestion                                                │   │
+│   │       "{섹션} 일치율 {N}%. 어떻게 처리할까요?"                        │   │
+│   │       options: ["승인", "수정 필요", "스킵"]                          │   │
+│   └──────────────────────────────────────────────────────────────────────┘   │
+│                                      │                                        │
+│              ┌───────────────────────┼───────────────────────┐               │
+│              ▼                       ▼                       ▼               │
+│         [승인]                 [수정 필요]                [스킵]             │
+│              │                       │                       │               │
+│              │               ┌───────┴───────┐               │               │
+│              │               ▼               │               │               │
+│              │    ┌─────────────────────┐    │               │               │
+│              │    │ E-4. 코드 수정      │    │               │               │
+│              │    │ (suggestions 기반)  │    │               │               │
+│              │    └─────────────────────┘    │               │               │
+│              │               │               │               │               │
+│              │               ▼               │               │               │
+│              │    ┌─────────────────────┐    │               │               │
+│              │    │ 🔄 E-1로 돌아가기   │────┘               │               │
+│              │    │ (재캡처 & 재비교)   │                    │               │
+│              │    └─────────────────────┘                    │               │
+│              │                                               │               │
+│              └───────────────────┬───────────────────────────┘               │
+│                                  ▼                                            │
+│   ┌──────────────────────────────────────────────────────────────────────┐   │
+│   │  E-5. 다음 섹션으로 이동                                             │   │
+│   │       → 남은 섹션 있으면 E-1로 돌아가기                              │   │
+│   │       → 모든 섹션 완료되면 Phase F로                                 │   │
+│   └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase F: 페이지 완료 & 다음 페이지 질문                                       │
+│  ──────────────────────────────────────────────────────────────────────────  │
+│  1. sitemap.json에서 현재 페이지 status = "completed"                         │
+│  2. AskUserQuestion: "페이지 {N} 완료! 다음 페이지로 진행할까요?"              │
+│     - "예" → 다음 pending 페이지로                                            │
+│     - "아니오" → 종료                                                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔴 HITL 세부 조정 모드 - 필수 실행 절차
+
+### E-1: Bash로 hitl-refine.ts 실행 (🔴 MUST!)
+
+**Claude는 반드시 이 Bash 명령을 실행해야 합니다!**
+
+```bash
+cd "{SCRIPTS_DIR}" && npx ts-node --transpile-only \
+  generate/hitl-refine.ts --capture={capture} --page={pageId}
+```
+
+### E-2: JSON 결과 파싱
+
+스크립트 출력에서 `<!-- HITL_RESULT_JSON_START -->` ~ `<!-- HITL_RESULT_JSON_END -->` 사이 JSON 파싱:
+
+```json
+{
+  "comparison": {
+    "overallMatch": 85,
+    "issues": ["배경색 차이: 원본(#fff) vs 로컬(#f5f5f5)"],
+    "suggestions": ["배경색을 #fff로 변경"]
+  },
+  "claudeInstructions": {
+    "recommendation": "needs_review",
+    "questionOptions": ["승인", "수정 필요", "스킵"]
+  }
+}
+```
+
+### E-3: AskUserQuestion
+
+```
+AskUserQuestion:
+  question: "{섹션명} 비교 결과: 일치율 {overallMatch}%. {issues[0]}"
+  header: "HITL"
+  options:
+    - "승인" (recommendation이 "approve"면 Recommended)
+    - "수정 필요"
+    - "스킵"
+```
+
+### E-4: 응답별 처리
+
+| 응답 | 처리 |
+|------|------|
+| **승인** | 다음 섹션으로 (E-5) |
+| **수정 필요** | suggestions 기반으로 코드 Edit → **E-1로 돌아가기** (재캡처!) |
+| **스킵** | 다음 섹션으로 (E-5) |
+
+### E-5: 섹션 완료 체크
+
+```
+IF 남은 섹션 있음:
+  → E-1로 돌아가기 (다음 섹션)
+ELSE:
+  → Phase F (페이지 완료)
+```
+
+---
+
+## 🔴 HARD RULES 요약
+
+1. **코드 작성 전 반드시 스크린샷 Read** - 시각적 분석 필수
+2. **HTML 텍스트 원본 그대로** - 번역/창작 금지
+3. **원본 CSS Fetch** - `src/styles/legacy/`에 저장 후 재사용
+4. **섹션 컴포넌트 분리** - `components/{route}/*-section.tsx` 파일로 분리
+5. **섹션마다 data-section-id 필수** - HITL 비교를 위해 `data-section-id="01-header"` 추가
+6. **kebab-case 폴더/파일명** - `about-us/page.tsx` (PascalCase 금지!)
+7. **HITL 선택 시 Bash 실행 필수** - AskUserQuestion만 하면 안 됨
+8. **수정 필요 시 재캡처 루프** - 수정 → 재캡처 → 재비교 반복
+9. **모든 섹션 완료 후 다음 페이지** - 섹션별 순차 처리
+
+---
+
 ## Purpose
 
 레거시 사이트(웹빌더, PHP 등)를 스크린샷 + 소스 분석 기반으로 현대적 기술 스택(Next.js, Java Spring Boot)으로 **새로 구축**합니다.
 
-## Usage
+---
+
+## Quick Usage
 
 ```bash
-# 전체 워크플로우
-/jikime:smart-rebuild https://example.com --source=./legacy-php
+# 전체 워크플로우 (권장)
+/jikime:smart-rebuild https://example.com --source=./legacy-php --output=./rebuild-output
 
-# Phase 1: 캡처 (인증 불필요)
-/jikime:smart-rebuild capture https://example.com --output=./capture
+# Phase 1: 캡처
+/jikime:smart-rebuild capture https://example.com --output=./rebuild-output/capture
 
-# Phase 1: 캡처 (인증 필요 - 로그인 후 캡처 진행)
-/jikime:smart-rebuild capture https://example.com --login --output=./capture
+# Phase 2: 분석
+/jikime:smart-rebuild analyze --source=./legacy-php --capture=./rebuild-output/capture
 
-# Phase 2: 분석 & 매핑
-/jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
+# Phase 3: 코드 생성 (페이지별)
+/jikime:smart-rebuild generate frontend --page 1
+/jikime:smart-rebuild generate frontend --next
+/jikime:smart-rebuild generate frontend --status
 
-# Phase 3: 코드 생성 (3단계)
-/jikime:smart-rebuild generate frontend --mapping=./mapping.json --framework=nextjs  # nextjs 지원
-/jikime:smart-rebuild generate backend --mapping=./mapping.json --framework=java     # java 지원
-/jikime:smart-rebuild generate connect --mapping=./mapping.json --api-base=http://localhost:8080
+# Phase 3: 백엔드/연동
+/jikime:smart-rebuild generate backend --mapping=./rebuild-output/mapping.json
+/jikime:smart-rebuild generate connect --frontend-dir=./rebuild-output/frontend
 ```
 
-## Supported Frameworks
+> **상세 옵션은** @.claude/rules/jikime/smart-rebuild-reference.md **참조**
 
-| 구분 | 지원 프레임워크 | 기본값 |
-|------|----------------|--------|
-| **Frontend** | `nextjs` | nextjs |
-| **Backend** | `java` (Spring Boot) | java |
-
-> 💡 향후 지원 예정: Frontend (nuxt, react), Backend (go, python, nodejs)
+---
 
 ## Subcommands
 
 | Subcommand | Description |
 |------------|-------------|
-| (none) | 전체 워크플로우 실행 (capture → analyze → generate) |
+| (none) | 전체 워크플로우 실행 |
 | `capture` | 사이트 크롤링 및 스크린샷 캡처 |
 | `analyze` | 소스 분석 및 매핑 생성 |
 | `generate frontend` | 프론트엔드 생성 (Mock 데이터 포함) |
-| `generate backend` | 백엔드 API 생성 (Java Spring Boot) |
-| `generate connect` | 프론트엔드와 백엔드 연동 (Mock → API 교체) |
+| `generate backend` | 백엔드 API 생성 |
+| `generate connect` | 프론트엔드와 백엔드 연동 |
+| `generate hitl` | HITL 수동 실행 |
 
-## Options
+---
 
-### capture 옵션
+## Key Options Summary
+
 | Option | Description | Default |
 |--------|-------------|---------|
-| `<url>` | 캡처할 사이트 URL | (required) |
-| `--output` | 출력 디렉토리 | `./capture` |
-| `--max-pages` | 최대 캡처 페이지 수 | `100` |
-| `--concurrency` | 동시 처리 수 | `5` |
-| `--login` | 로그인 필요 시 (브라우저 열림 → 로그인 → 캡처 진행) | - |
-| `--auth` | 기존 세션 파일 재사용 | - |
-| `--exclude` | 제외 URL 패턴 | `/admin/*,/api/*` |
-
-### analyze 옵션
-| Option | Description | Default |
-|--------|-------------|---------|
+| `--output` | 출력 디렉토리 | `./smart-rebuild-output` |
 | `--source` | 레거시 소스 경로 | (required) |
-| `--capture` | 캡처 디렉토리 | `./capture` |
-| `--output` | 매핑 파일 출력 | `./mapping.json` |
+| `--target` | 타겟 프론트엔드 | `nextjs16` |
+| `--target-backend` | 타겟 백엔드 | `java` |
+| `--ui-library` | UI 라이브러리 | `shadcn` |
+| `--page [n]` | 특정 페이지 ID | - |
+| `--next` | 다음 pending 페이지 | - |
+| `--status` | 상태 조회 | - |
+| `--login` | 로그인 필요 시 | - |
 
-### generate frontend 옵션
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--mapping` | 매핑 파일 | `./mapping.json` |
-| `--output` | 출력 디렉토리 | `./output/frontend` |
-| `--framework` | 프론트엔드 프레임워크 | `nextjs` |
-| `--style` | CSS 프레임워크 | `tailwind` |
-
-### generate backend 옵션
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--mapping` | 매핑 파일 | `./mapping.json` |
-| `--output` | 출력 디렉토리 | `./output/backend` |
-| `--framework` | 백엔드 프레임워크 | `java` |
-
-### generate connect 옵션
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--mapping` | 매핑 파일 | `./mapping.json` |
-| `--frontend-dir` | 프론트엔드 디렉토리 | `./output/frontend` |
-| `--api-base` | API 기본 URL | `http://localhost:8080` |
-
-## Core Philosophy
-
-| 계층 | 전략 | 이유 |
-|------|------|------|
-| **UI** | 스크린샷 → 새로 생성 | 레거시 프론트 코드 분석 가치 낮음 |
-| **API** | 소스 참고 → 클린 코드 | 비즈니스 로직만 추출 |
-| **DB** | 유지 + 점진적 개선 | 데이터 손실 Zero |
-
-## 2-Track Strategy
-
-### Track 1: Static Content (정적 콘텐츠)
-```
-라이브 사이트 → Playwright 스크래핑 → Next.js 정적 페이지
-```
-- 소개, About, FAQ, 이용약관 등
-- DB 연동 없음, 콘텐츠만 이동
-
-### Track 2: Dynamic Content (동적 콘텐츠)
-```
-소스 분석 → SQL 추출 → Backend API → Next.js 동적 페이지
-```
-- 회원 목록, 결제 내역, 게시판 등
-- DB 연동 필수, 비즈니스 로직 있음
-
-## Execution Workflow
-
-### Phase 1: Capture (캡처)
-
-**목표:** Playwright로 라이브 사이트의 모든 페이지 캡처
-
-**실행 절차:**
-1. Playwright 프로젝트 초기화 (없으면 생성)
-2. 시작 URL에서 재귀적으로 내부 링크 수집
-3. 각 페이지마다:
-   - 전체 페이지 스크린샷 (fullPage: true)
-   - 렌더링된 HTML 저장
-   - 페이지 제목, H1 추출
-4. `sitemap.json` 생성
-
-**Playwright 크롤링 코드:**
-```javascript
-const { chromium } = require('playwright');
-
-async function capturePage(browser, url, baseUrl, outputDir) {
-  const page = await browser.newPage();
-
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-
-  // Lazy loading 해결: 자동 스크롤
-  await page.evaluate(async () => {
-    await new Promise((resolve) => {
-      let total = 0;
-      const timer = setInterval(() => {
-        window.scrollBy(0, 500);
-        total += 500;
-        if (total >= document.body.scrollHeight || total >= 30000) {
-          clearInterval(timer);
-          window.scrollTo(0, 0);
-          resolve();
-        }
-      }, 100);
-    });
-  });
-
-  // 스크린샷 + HTML 저장
-  const filename = url.replace(/https?:\/\//, '').replace(/[^a-zA-Z0-9]/g, '_').slice(0, 80);
-  await page.screenshot({ path: `${outputDir}/${filename}.png`, fullPage: true });
-  const html = await page.content();
-  require('fs').writeFileSync(`${outputDir}/${filename}.html`, html);
-
-  // 내부 링크 수집
-  const links = await page.$$eval('a[href]', (anchors, base) =>
-    anchors.map(a => a.href).filter(h => h.startsWith(base) && !h.includes('#')),
-    baseUrl
-  );
-
-  return { url, filename, links: [...new Set(links)] };
-}
-```
-
-**인증 처리:**
-- `--login` 옵션 사용 시: 브라우저 열림 → 수동 로그인 → Enter 입력 → 세션 자동 저장 → 캡처 진행
-- `--auth` 옵션: 이전에 저장된 세션 파일 재사용 (반복 캡처 시 유용)
-
-**출력:** `{output}/capture/sitemap.json`
+> **전체 옵션 목록은** @.claude/rules/jikime/smart-rebuild-reference.md **참조**
 
 ---
-
-### Phase 2: Analyze (분석 & 매핑)
-
-**목표:** 소스 코드 분석하여 캡처와 매핑, 정적/동적 분류
-
-**실행 절차:**
-1. `sitemap.json` 로드
-2. 소스 디렉토리의 모든 PHP/JSP/ASP 파일 스캔
-3. URL ↔ 소스 파일 매칭:
-   - 직접 경로 매칭: `/about` → `about.php`
-   - index 매칭: `/products/` → `products/index.php`
-   - 라우터 분석: `.htaccess`, `routes.php` 등
-4. 각 소스 파일 분류:
-   - **동적 판단 기준:**
-     - SQL 쿼리 존재 (SELECT, INSERT, UPDATE, DELETE)
-     - DB 함수 (mysqli_*, PDO, $wpdb)
-     - 세션 사용 ($_SESSION, session_start)
-     - POST 처리 ($_POST, $_REQUEST)
-   - **정적 판단:** 위 항목 모두 없음
-5. SQL 쿼리 추출 (동적 페이지)
-6. `mapping.json` 생성
-
-**분류 패턴:**
-```javascript
-const dynamicPatterns = [
-  /SELECT\s+.+\s+FROM/gi,
-  /INSERT\s+INTO/gi,
-  /UPDATE\s+.+\s+SET/gi,
-  /DELETE\s+FROM/gi,
-  /mysqli_query|\$pdo->query|\$wpdb->/g,
-  /\$_SESSION|session_start/g,
-  /\$_POST|\$_REQUEST/g,
-];
-```
-
-**출력:** `{output}/mapping.json`
-
----
-
-### Phase 3: Generate (코드 생성) - 3단계 워크플로우
-
-**목표:** mapping.json 기반으로 현대적 코드 생성 (UI 우선 개발)
-
-#### Phase 3a: Generate Frontend (Mock)
-
-**목적:** UI를 먼저 확인할 수 있도록 Mock 데이터와 함께 프론트엔드 생성
-
-```bash
-/jikime:smart-rebuild generate frontend --mapping=./mapping.json
-```
-
-- 정적 페이지: 스크린샷 + HTML → Next.js 정적 페이지
-- 동적 페이지: Mock 데이터로 UI 렌더링 (노란색 경고 배너 표시)
-- 출력: `./output/frontend/`
-
-**Mock 데이터 패턴:**
-```tsx
-// ⚠️ MOCK DATA - Will be replaced by generate connect
-const mockMembers = [
-  { id: 1, name: 'Member 1', ... },
-];
-
-// ⚠️ MOCK FUNCTION
-async function getMembers() {
-  return Promise.resolve(mockMembers);
-}
-```
-
-#### Phase 3b: Generate Backend
-
-**목적:** Java Spring Boot API 생성
-
-```bash
-/jikime:smart-rebuild generate backend --mapping=./mapping.json
-```
-
-- Entity: SQL 테이블 → JPA Entity (스키마 정보 반영)
-- Repository: JpaRepository 인터페이스
-- Controller: CRUD REST API + CORS
-- 출력: `./output/backend/`
-
-**SQL → Java 타입 매핑:**
-| SQL | Java |
-|-----|------|
-| BIGINT | Long |
-| INT | Integer |
-| VARCHAR | String |
-| TEXT | String |
-| DATETIME | LocalDateTime |
-| DECIMAL | BigDecimal |
-| BOOLEAN | Boolean |
-
-#### Phase 3c: Generate Connect
-
-**목적:** Mock 데이터를 실제 API 호출로 교체
-
-```bash
-/jikime:smart-rebuild generate connect --mapping=./mapping.json
-```
-
-- Mock 데이터 블록 제거
-- Mock 함수 → 실제 fetch API 호출로 교체
-- Mock 데이터 경고 배너 제거
-- `.env.local` 파일 생성 (API_URL 설정)
-
-**변환 예시:**
-```tsx
-// Before: Mock
-async function getMembers() {
-  return Promise.resolve(mockMembers);
-}
-
-// After: Real API
-async function getMembers() {
-  const res = await fetch(`http://localhost:8080/api/members`);
-  return res.json();
-}
-```
-
-**출력:**
-- `{output}/frontend/` - API 연동 완료된 Next.js 프로젝트
-- `{output}/backend/` - Java Spring Boot 프로젝트
-
----
-
-## Output Structure
-
-```
-smart-rebuild-output/
-├── capture/
-│   ├── sitemap.json          # 캡처 결과 인덱스
-│   ├── *.png                  # 페이지 스크린샷
-│   └── *.html                 # 페이지 HTML
-│
-├── mapping.json               # 소스 ↔ 캡처 매핑
-│
-├── backend/
-│   └── src/main/java/com/example/
-│       ├── entity/            # JPA Entity
-│       ├── repository/        # Repository
-│       └── controller/        # REST Controller
-│
-└── frontend/
-    ├── app/                   # Next.js App Router
-    │   ├── page.tsx           # 홈
-    │   ├── about/page.tsx     # 정적
-    │   └── members/page.tsx   # 동적
-    └── components/            # 공통 컴포넌트
-```
 
 ## EXECUTION DIRECTIVE
 
-CRITICAL: Execute pre-built scripts from the skill folder.
+### Step 0: Load Core Skill (MUST DO FIRST)
 
-**Scripts Location:**
 ```
-.claude/skills/jikime-migration-smart-rebuild/scripts/
-├── package.json
-├── bin/smart-rebuild.ts      # CLI 엔트리포인트
-├── capture/crawl.ts          # Playwright 크롤러
-├── analyze/classify.ts       # 정적/동적 분류
-└── generate/frontend.ts      # 코드 생성
+Skill("jikime-migration-smart-rebuild")
 ```
 
-**Step 1: Parse Arguments**
-- Parse $ARGUMENTS to detect subcommand: `capture`, `analyze`, `generate`, or none (full workflow)
-- Extract URL and options based on subcommand
+### Step 1: Find Scripts Directory
 
-**Step 2: Locate and Setup Scripts**
+```
+Glob: **/.claude/skills/jikime-migration-smart-rebuild/scripts/package.json
+```
+
+### Step 2: Setup Scripts
+
 ```bash
-SCRIPTS_DIR=".claude/skills/jikime-migration-smart-rebuild/scripts"
-
-# Install dependencies if needed
-if [ ! -d "$SCRIPTS_DIR/node_modules" ]; then
-  cd "$SCRIPTS_DIR" && npm install
-fi
+cd "{SCRIPTS_DIR}" && npm install
+cd "{SCRIPTS_DIR}" && npx playwright install chromium
 ```
 
-**Step 3: Execute Based on Subcommand**
-
-**Case: No subcommand (전체 워크플로우)**
-```bash
-# /jikime:smart-rebuild https://example.com --source=./legacy-php
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts run {url} \
-  --source={source} \
-  --output={output}
-```
+### Step 3: Execute Based on Subcommand
 
 **Case: capture**
 ```bash
-# /jikime:smart-rebuild capture https://example.com [--login]
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts capture {url} \
-  --output={output} \
-  --max-pages={maxPages} \
-  --concurrency={concurrency} \
-  [--login] \
-  [--auth={auth}] \
-  [--exclude={exclude}]
+cd "{SCRIPTS_DIR}" && npx ts-node --transpile-only bin/smart-rebuild.ts capture {url} \
+  --output={output} [--login]
 ```
 
 **Case: analyze**
 ```bash
-# /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts analyze \
-  --source={source} \
-  --capture={capture} \
-  --output={output}
+cd "{SCRIPTS_DIR}" && npx ts-node --transpile-only bin/smart-rebuild.ts analyze \
+  --source={source} --capture={capture} --output={output}
 ```
 
 **Case: generate frontend**
-```bash
-# /jikime:smart-rebuild generate frontend --mapping=./mapping.json
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate frontend \
-  --mapping={mapping} \
-  --output={output} \
-  --framework={framework} \
-  --style={style}
-```
 
-**Case: generate backend**
-```bash
-# /jikime:smart-rebuild generate backend --mapping=./mapping.json
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate backend \
-  --mapping={mapping} \
-  --output={output} \
-  --framework={framework}
-```
+🔴 Claude Code가 직접 수행 - **반드시 스크린샷을 보고 동일한 UI 재현!**
 
-**Case: generate connect**
-```bash
-# /jikime:smart-rebuild generate connect --mapping=./mapping.json
-cd "$SCRIPTS_DIR" && npx ts-node bin/smart-rebuild.ts generate connect \
-  --mapping={mapping} \
-  --frontend-dir={frontendDir} \
-  --api-base={apiBase}
-```
+1. sitemap.json 읽기
+2. **🔴 스크린샷 읽기 (시각 분석)**
+3. **🔴 HTML 읽기 (텍스트/이미지 URL 추출)**
+4. React 코드 작성 (**원본과 동일하게!**)
+5. 개발 서버 실행
+6. AskUserQuestion (HITL / 다음 페이지 / 직접 입력)
+7. HITL 선택 시 → 섹션별 루프 실행
 
-**Step 4: Report Results**
-- Parse CLI output and report to user in conversation language
-- Include: 캡처 페이지 수, 정적/동적 분류 결과, 생성된 파일 목록
+> **상세 실행 절차는** @.claude/rules/jikime/smart-rebuild-execution.md **참조**
+
+---
 
 ## Related Skills
 
-- `jikime-migration-smart-rebuild` - 상세 문서 및 참조 코드
-- `jikime-framework-nextjs@16` - Next.js 코드 생성 패턴
-- `jikime-lang-java` - Java Spring Boot 패턴
+### Core Skill
+- `jikime-migration-smart-rebuild` - 상세 문서 및 스크립트
+
+### Frontend/Backend/UI Skills
+| Type | Target | Skill |
+|------|--------|-------|
+| Frontend | `nextjs16` | `jikime-framework-nextjs@16` |
+| Frontend | `nextjs15` | `jikime-framework-nextjs@15` |
+| Backend | `java` | `jikime-lang-java` |
+| Backend | `go` | `jikime-lang-go` |
+| Backend | `python` | `jikime-lang-python` |
+| UI | `shadcn` | `jikime-library-shadcn` |
+
+---
 
 ## Troubleshooting
 
 | 문제 | 해결 |
 |------|------|
-| 페이지 로드 타임아웃 | `timeout` 증가, `waitUntil: 'domcontentloaded'` |
-| Lazy loading 이미지 누락 | 스크롤 거리/속도 조절 |
-| 인증 필요 페이지 | `--login` 옵션 추가하여 로그인 후 캡처 |
-| URL ↔ 소스 매칭 실패 | 라우터 파일 분석, 수동 매핑 추가 |
+| 캡처 실패 | `npx playwright install chromium` |
+| 로그인 필요 | `--login` 옵션 사용 |
+| HITL 스크립트 안 됨 | SCRIPTS_DIR 경로 확인, npm install 실행 |
+| UI가 원본과 다름 | 🔴 스크린샷 + HTML 다시 Read하고 비교 |
+| 이전 세션 이어서 작업 | `--next` 옵션 사용 |
+
+---
+
+## Version History
+
+**v2.2.0** (2026-02-05)
+- UI 생성 핵심 원칙 강조 (스크린샷 + HTML 필수)
+- HITL 루프 워크플로우 명확화 (수정 → 재캡처 루프)
+- 섹션별 처리 → 페이지 완료 흐름 개선
+
+**v2.1.0** (2026-02-05)
+- HITL 비주얼 검증을 `generate frontend`에 통합
+- 파일 분리: reference.md, execution.md
+
+**v2.0.0** (2026-02-05)
+- 페이지별 단계 처리 도입

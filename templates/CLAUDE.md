@@ -30,7 +30,8 @@ All tasks must be delegated to specialized agents through the appropriate orches
 Priority 1: Command/Keyword Detection (Explicit Signal)
     IF request contains migration keywords/commands:
         (migrate, migration, convert, legacy, transform, port, upgrade framework,
-         /jikime:friday, /jikime:migrate-*)
+         smart-rebuild, rebuild site, screenshot migration,
+         /jikime:friday, /jikime:migrate-*, /jikime:smart-rebuild)
         → Activate F.R.I.D.A.Y. + update state file
 
     ELIF request contains development keywords/commands:
@@ -139,6 +140,7 @@ Core Skills (load when needed):
 - Skill("jikime-foundation-claude") for orchestration patterns
 - Skill("jikime-foundation-core") for SPEC system and workflows
 - Skill("jikime-workflow-project") for project management
+- Skill("jikime-migration-smart-rebuild") for screenshot-based site rebuilding
 
 ### Phase 2: Route
 
@@ -263,6 +265,7 @@ Definition: Commands for rapid fixes and automation where speed is prioritized.
 - /jikime:migrate-2-plan - Migration planning
 - /jikime:migrate-3-execute - Migration execution
 - /jikime:migrate-4-verify - Verification
+- /jikime:smart-rebuild - AI-powered legacy site rebuilding (screenshot-based)
 
 Allowed Tools: Task, AskUserQuestion, TodoWrite, Bash, Read, Write, Edit, Glob, Grep
 

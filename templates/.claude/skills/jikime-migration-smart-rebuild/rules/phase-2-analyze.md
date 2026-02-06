@@ -18,6 +18,7 @@
 | 페이지 분류 | 정적/동적 판단 | static \| dynamic |
 | SQL 추출 | DB 쿼리 식별 | queries[] |
 | 스키마 분석 | 테이블 구조 파악 | tables[] |
+| **UI 분석** | 스크린샷 비전 분석 | ui_analysis |
 
 ## 자동 분류 알고리즘
 
@@ -158,6 +159,109 @@ function extractQueries(content: string): ExtractedQuery[] {
 }
 ```
 
+## 스크린샷 UI 분석 (Claude Code 수행)
+
+**중요**: 스크린샷 분석은 CLI가 아닌 **Claude Code가 직접 수행**합니다.
+
+### 분석 프로세스
+
+1. Claude Code가 캡처된 스크린샷을 **Read 도구**로 읽음
+2. 비전 기능으로 UI 구조, 색상, 컴포넌트 분석
+3. 분석 결과를 mapping.json의 `ui_analysis` 필드에 저장
+
+### UI 분석 항목
+
+| 항목 | 설명 | 예시 |
+|------|------|------|
+| layout.type | 레이아웃 유형 | hero-content, sidebar-content, grid |
+| colors | 색상 팔레트 | primary, secondary, background |
+| components | 컴포넌트 목록 | navbar, hero, cards, footer |
+| style | 스타일 특성 | modern, classic, minimal |
+
+### 분석 지시 예시
+
+```
+Claude Code에게:
+"이 스크린샷({screenshot_path})을 읽고 다음 JSON 형식으로 UI 분석해줘:
+{
+  "layout": { "type": "...", "sections": [...] },
+  "colors": { "primary": "#...", "secondary": "#...", "background": "#...", "text": "#..." },
+  "components": [{ "type": "...", "description": "...", "position": "..." }],
+  "style": { "theme": "...", "hasHero": true/false, ... },
+  "suggestions": ["현대화 제안 1", "현대화 제안 2"]
+}"
+```
+
+### UIAnalysis 인터페이스
+
+```typescript
+interface UIAnalysis {
+  layout: {
+    type: 'hero-content' | 'sidebar-content' | 'grid' | 'single-column' | 'dashboard' | 'landing';
+    sections: string[];
+  };
+  colors: {
+    primary: string;    // #HEX
+    secondary: string;
+    background: string;
+    text: string;
+    accent?: string;
+  };
+  components: {
+    type: string;       // navbar, hero, card, table, form, footer 등
+    description: string;
+    position: 'header' | 'main' | 'sidebar' | 'footer';
+  }[];
+  style: {
+    theme: 'modern' | 'classic' | 'minimal' | 'corporate';
+    hasHero: boolean;
+    hasCards: boolean;
+    hasTable: boolean;
+    hasForm: boolean;
+    hasSidebar: boolean;
+  };
+  suggestions: string[];  // UI 현대화 제안
+}
+```
+
+### Claude Code 실행 지시사항 (EXECUTION DIRECTIVE)
+
+**CRITICAL:** 이 단계는 CLI가 아닌 **Claude Code가 직접 실행**해야 합니다.
+
+**Step 1: mapping.json 로드**
+```
+Read 도구로 mapping.json 파일을 읽습니다.
+```
+
+**Step 2: 각 페이지의 스크린샷 분석**
+```
+mapping.json의 pages 배열을 순회하며:
+1. page.capture.screenshot 경로 확인
+2. Read 도구로 스크린샷 이미지 파일 읽기
+3. 비전 기능으로 다음 분석 수행:
+   - 레이아웃 유형 식별 (landing, single-column, grid 등)
+   - 주요 색상 추출 (primary, secondary, background, text)
+   - 컴포넌트 식별 (navbar, hero, cards, form, footer 등)
+   - 스타일 테마 판단 (modern, classic, corporate 등)
+   - UI 현대화 제안사항 생성
+```
+
+**Step 3: ui_analysis 필드 추가**
+```
+분석 결과를 UIAnalysis 형식으로 구성하여
+해당 page 객체에 ui_analysis 필드로 추가합니다.
+```
+
+**Step 4: mapping.json 업데이트**
+```
+Write 도구로 ui_analysis가 추가된 mapping.json을 저장합니다.
+```
+
+**분석 우선순위:**
+- 메인 페이지(index)를 먼저 분석하여 전역 색상/스타일 추출
+- 추출된 전역 스타일을 다른 페이지 분석 시 참조
+- 동적 페이지보다 정적 페이지를 먼저 분석 (UI 재구성 우선)
+
 ## 출력: mapping.json
 
 ```json
@@ -186,6 +290,16 @@ function extractQueries(content: string): ExtractedQuery[] {
         "file": "about.php",
         "type": "static",
         "reason": []
+      },
+      "ui_analysis": {
+        "layout": { "type": "hero-content", "sections": ["hero", "content", "footer"] },
+        "colors": { "primary": "#3B82F6", "secondary": "#6B7280", "background": "#FFFFFF", "text": "#1F2937" },
+        "components": [
+          { "type": "navbar", "description": "상단 네비게이션", "position": "header" },
+          { "type": "hero", "description": "메인 배너", "position": "main" }
+        ],
+        "style": { "theme": "modern", "hasHero": true, "hasCards": false, "hasTable": false, "hasForm": false, "hasSidebar": false },
+        "suggestions": ["반응형 디자인 추가", "다크 모드 지원"]
       },
       "output": {
         "frontend": {

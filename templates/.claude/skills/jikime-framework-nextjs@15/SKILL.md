@@ -47,6 +47,28 @@ Next.js 14에서 15로 업그레이드 시 필요한 breaking changes와 마이�
 
 ---
 
+## Project Initialization (Next.js 15)
+
+새 프로젝트를 시작할 때는 다음 순서로 생성합니다:
+
+```bash
+# Step 1: Next.js 15 프로젝트 생성
+npx create-next-app@15 my-app --typescript --tailwind --eslint --app --src-dir
+
+# Step 2: 프로젝트 폴더로 이동
+cd my-app
+
+# Step 3: shadcn/ui 초기화
+npx shadcn@latest init
+
+# Step 4: 필요한 컴포넌트 추가
+npx shadcn@latest add button card input form table
+```
+
+> **CRITICAL**: `npx shadcn@latest init`은 기존 Next.js 프로젝트에서만 실행합니다. 프로젝트 생성은 반드시 `create-next-app`으로 먼저 해야 합니다.
+
+---
+
 ## Breaking Changes Summary
 
 | 변경 사항 | 영향도 | 자동 수정 |

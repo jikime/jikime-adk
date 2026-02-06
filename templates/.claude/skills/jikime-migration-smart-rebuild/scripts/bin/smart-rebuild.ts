@@ -6,6 +6,8 @@ import { analyzeSource } from '../analyze/classify';
 import { generateFrontend } from '../generate/frontend';
 import { generateBackend } from '../generate/backend';
 import { connectFrontendToBackend } from '../generate/connect';
+import { spawn } from 'child_process';
+import * as path from 'path';
 
 const program = new Command();
 
@@ -52,10 +54,17 @@ program
   .option('--db-from-env', 'Extract schema from DATABASE_URL in .env')
   .option('--env-path <file>', 'Path to .env file', '.env')
   .option('--manual-mapping <file>', 'Manual URL to source mapping file')
+  .option('--framework <type>', 'Source framework (auto-detect if not specified)', '')
   .action(async (options) => {
     console.log('🔍 Smart Rebuild - Analyze Phase');
     console.log(`📂 Source: ${options.source}`);
     console.log(`📸 Capture: ${options.capture}`);
+
+    if (options.framework) {
+      console.log(`📦 Framework: ${options.framework} (수동 지정)`);
+    } else {
+      console.log(`📦 Framework: 자동 감지`);
+    }
 
     if (options.dbFromEnv) {
       console.log(`🔌 DB: DATABASE_URL에서 스키마 추출`);
@@ -71,6 +80,7 @@ program
       dbFromEnv: options.dbFromEnv,
       envPath: options.envPath,
       manualMappingFile: options.manualMapping,
+      framework: options.framework || undefined,
     });
   });
 
@@ -86,18 +96,23 @@ generateCmd
   .option('-m, --mapping <file>', 'Mapping file', './mapping.json')
   .option('-o, --output <dir>', 'Output directory', './output/frontend')
   .option('-f, --framework <type>', 'Frontend framework', 'nextjs')
+  .option('-c, --capture <dir>', 'Capture directory (for HTML extraction)')
   .option('--style <type>', 'CSS framework', 'tailwind')
   .action(async (options) => {
     console.log('🎨 Smart Rebuild - Generate Frontend (Mock)');
     console.log(`📋 Mapping: ${options.mapping}`);
     console.log(`📁 Output: ${options.output}`);
     console.log(`🖼️ Framework: ${options.framework}`);
+    if (options.capture) {
+      console.log(`📸 Capture: ${options.capture}`);
+    }
 
     await generateFrontend({
       mappingFile: options.mapping,
       outputDir: options.output,
       framework: options.framework,
       style: options.style,
+      captureDir: options.capture,
     });
   });
 
@@ -138,6 +153,49 @@ generateCmd
       mappingFile: options.mapping,
       frontendDir: options.frontendDir,
       apiBaseUrl: options.apiBase,
+    });
+  });
+
+// HITL (Human-in-the-Loop) Visual Refinement
+generateCmd
+  .command('hitl')
+  .description('HITL visual refinement - capture and compare original vs local')
+  .option('-c, --capture <dir>', 'Capture directory (with sitemap.json)', './capture')
+  .option('-p, --page <id>', 'Page ID to process')
+  .option('-s, --section <id>', 'Section ID to process')
+  .option('--responsive', 'Capture all viewports (desktop, tablet, mobile)')
+  .option('--status', 'Show progress status')
+  .option('--approve <id>', 'Approve section')
+  .option('--skip <id>', 'Skip section')
+  .option('--reset', 'Reset HITL state')
+  .action(async (options) => {
+    console.log('👁️ Smart Rebuild - HITL Visual Refinement');
+
+    // Build args for hitl-refine.ts
+    const args: string[] = [];
+    args.push('--capture', options.capture);
+
+    if (options.page) args.push('--page=' + options.page);
+    if (options.section) args.push('--section=' + options.section);
+    if (options.responsive) args.push('--responsive');
+    if (options.status) args.push('--status');
+    if (options.approve) args.push('--approve=' + options.approve);
+    if (options.skip) args.push('--skip=' + options.skip);
+    if (options.reset) args.push('--reset');
+
+    // Run hitl-refine.ts
+    const hitlScript = path.join(__dirname, '../generate/hitl-refine.ts');
+
+    const child = spawn('npx', ['ts-node', hitlScript, ...args], {
+      stdio: 'inherit',
+      shell: true,
+    });
+
+    child.on('close', (code) => {
+      if (code !== 0) {
+        console.error(`❌ HITL exited with code ${code}`);
+        process.exit(code || 1);
+      }
     });
   });
 
@@ -187,6 +245,7 @@ program
       outputDir: `${options.output}/frontend`,
       framework: options.frontend,
       style: 'tailwind',
+      captureDir: `${options.output}/capture`,
     });
 
     console.log('\n✅ Frontend 생성 완료!');

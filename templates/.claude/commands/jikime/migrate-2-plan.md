@@ -70,7 +70,12 @@ Step 4: Search for database/ORM skills (from .migrate-config.yaml)
 
 Step 5: Search for library/platform skills (from as_is_spec.md)
         → Detected libraries → jikime-adk skill search "{library}"
-        → e.g., "shadcn", "supabase", "auth"
+        → e.g., "supabase", "auth"
+
+Step 5.5: Search for UI library skills (from .migrate-config.yaml)
+        → jikime-adk skill search "{target_ui_library}"
+        → e.g., "shadcn", "mui", "chakra"
+        → CRITICAL: UI library skill defines component transformation patterns
 
 Step 6: Search for backend framework skills (if frontend-backend architecture)
         → jikime-adk skill search "{target_framework_backend}"
@@ -97,6 +102,13 @@ Step 7: Load discovered skills
 | drizzle | jikime-domain-database (+ related) |
 | postgresql | jikime-domain-database (+ related) |
 
+| target_ui_library | Discovered Skills |
+|-------------------|-------------------|
+| shadcn | jikime-library-shadcn (component patterns, installation) |
+| mui | jikime-library-mui (Material UI patterns) |
+| chakra | jikime-library-chakra (Chakra UI patterns) |
+| legacy-css | _(no skill - copy existing CSS)_ |
+
 ### What to Extract from Loaded Skills
 
 Rules that MUST be extracted from loaded skills and reflected in the Plan:
@@ -108,6 +120,27 @@ Rules that MUST be extracted from loaded skills and reflected in the Plan:
 5. **State management** - Target's recommended state management approach
 6. **Routing** - Target's routing structure and rules
 7. **UI library** - Target's UI component handling approach
+
+### What to Extract from UI Library Skills (CRITICAL)
+
+When `target_ui_library` is set (not "legacy-css"), extract from UI library skill:
+
+1. **Installation commands** - `npx shadcn@latest init`, component add commands
+2. **Component mapping** - Legacy HTML/CSS → modern component equivalents
+3. **Styling approach** - Tailwind CSS classes, CSS variables, theming
+4. **Accessibility patterns** - ARIA attributes, keyboard navigation
+5. **Form patterns** - Form components, validation integration
+6. **Layout components** - Container, grid, flex patterns
+
+**Example Component Mapping (shadcn)**:
+| Legacy Pattern | shadcn Equivalent |
+|----------------|-------------------|
+| `<button class="btn btn-primary">` | `<Button variant="default">` |
+| `<input type="text" class="form-control">` | `<Input />` |
+| `<select class="form-select">` | `<Select>` with `<SelectItem>` |
+| `<div class="modal">` | `<Dialog>` with `<DialogContent>` |
+| `<div class="card">` | `<Card>` with `<CardHeader>`, `<CardContent>` |
+| `<ul class="nav nav-tabs">` | `<Tabs>` with `<TabsList>`, `<TabsTrigger>` |
 
 ### Fallback (Skill Not Found)
 
@@ -245,7 +278,39 @@ Plan must include:
 - File naming: {skill-defined naming convention}
 - State management: {skill-defined state approach}
 - Routing: {skill-defined routing pattern}
-- UI library: {skill-defined UI approach}
+- UI library: {target_ui_library} (from skill: {ui_library_skill})
+
+## UI Component Transformation Strategy
+
+### UI Library: {target_ui_library}
+
+**Approach**: {modernize | preserve-legacy}
+
+IF target_ui_library != "legacy-css":
+  - **Installation**: `npx shadcn@latest init` (or equivalent for chosen library)
+  - **Component Migration**: Legacy HTML/CSS → modern component library
+  - **Styling**: Tailwind CSS / CSS-in-JS (depending on library)
+  - **Theme**: Extract colors, fonts, spacing from legacy CSS → design tokens
+
+### Component Transformation Table
+| Source Component | Target Component | Notes |
+|------------------|------------------|-------|
+| {legacy_button} | `<Button variant="...">` | From UI library skill |
+| {legacy_input} | `<Input>` | With validation integration |
+| {legacy_modal} | `<Dialog>` | Accessible, keyboard-friendly |
+| {legacy_card} | `<Card>` | With CardHeader, CardContent |
+
+### Legacy CSS Handling
+IF target_ui_library == "legacy-css":
+  - Copy existing CSS to `globals.css` or `styles/legacy.css`
+  - Minimal transformation (class names preserved)
+  - NOT RECOMMENDED for modernization goals
+
+IF target_ui_library != "legacy-css":
+  - Extract design tokens (colors, spacing, typography)
+  - Map to Tailwind/CSS variables
+  - DO NOT copy legacy CSS wholesale
+  - Transform component by component using UI library
 
 ## Project Initialization
 {Commands from skill's project-initialization guide}
@@ -397,7 +462,8 @@ Arguments: $ARGUMENTS
    - `jikime-adk skill search "{target_framework}"` → load migration skill
    - `jikime-adk skill search "{target_language}"` → load language skill
    - `jikime-adk skill search "{db_orm}"` / `"{db_type}"` → load DB skills
-   - Extract project structure, naming, routing, state management conventions
+   - `jikime-adk skill search "{target_ui_library}"` → load UI library skill (CRITICAL for modernization)
+   - Extract project structure, naming, routing, state management, UI component patterns
 
 5. **Verify Target Stack Configuration** (Step 1.5):
    - Read `target_architecture`, `target_framework`, `target_framework_backend` from config
@@ -407,6 +473,7 @@ Arguments: $ARGUMENTS
 
 6. **Create migration plan**:
    - Apply loaded skill conventions (structure, naming, routing, state)
+   - **UI Transformation Strategy**: Include component mapping from UI library skill
    - Define architecture-specific execution sub-phases
    - Include database migration strategy (if applicable)
    - Estimate effort per phase
@@ -423,8 +490,9 @@ Execute NOW. Do NOT just describe.
 
 ---
 
-Version: 3.0.0
+Version: 3.1.0
 Changelog:
+- v3.1.0: Added UI library skill discovery (Step 5.5); Added UI Component Transformation Strategy section with component mapping table; Added legacy CSS handling guidelines; UI library skill now CRITICAL for modernization
 - v3.0.0: Replaced Step 1.5 Architecture Pattern Selection with config verification; Architecture/stack selection moved to migrate-0-discover; Added target stack field validation; Backward compatible defaults
 - v2.6.0: Added EXECUTION DIRECTIVE with $ARGUMENTS parsing and step-by-step execution flow
 - v2.5.0: Added Step 1.5 Architecture Pattern Selection; Added Target Architecture section to plan output; Architecture-specific execution sub-phases; Backend framework skill discovery

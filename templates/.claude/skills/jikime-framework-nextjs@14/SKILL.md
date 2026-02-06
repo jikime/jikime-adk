@@ -292,8 +292,10 @@ Next.js 프로젝트에서는 **항상 shadcn/ui**를 사용합니다.
 ### Setup
 
 ```bash
-# 새 프로젝트: shadcn이 Next.js 프로젝트를 자동 생성
-npx shadcn@latest init --src-dir
+# 새 프로젝트: 1) Next.js 생성 → 2) shadcn 초기화
+npx create-next-app@latest my-app --typescript --tailwind --eslint --app --src-dir
+cd my-app
+npx shadcn@latest init
 
 # 기존 프로젝트: 현재 프로젝트에 shadcn/ui 추가
 npx shadcn@latest init

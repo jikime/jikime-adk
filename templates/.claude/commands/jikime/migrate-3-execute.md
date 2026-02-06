@@ -91,9 +91,11 @@ output_dir = config["output_dir"]
 target_arch = config.get("target_architecture", "fullstack-monolith")
 backend_framework = config.get("target_framework_backend", None)
 db_access = config.get("db_access_from", "frontend")
+ui_library = config.get("target_ui_library", "legacy-css")  # NEW: UI library setting
 
 plan = load(f"{artifacts_dir}/migration_plan.md")
 modules = extract_modules(plan)
+ui_component_map = extract_ui_component_mapping(plan)  # NEW: Component transformation rules
 ```
 
 ### Step 1: Initialize Target Project (by architecture)
@@ -103,6 +105,14 @@ Based on `target_architecture` from config and `migration_plan.md`:
 #### fullstack-monolith (default)
 - Single Next.js project creation in `{output_dir}/`
 - Install all dependencies
+- **UI Library setup** (CRITICAL - Claude Code 직접 수행):
+  - **Claude Code는 스스로 인지**: Next.js 프로젝트면 **반드시** UI 라이브러리 초기화
+  - **스크립트/템플릿 결과와 무관하게** 다음을 실행:
+  ```bash
+  cd {output_dir} && npx shadcn@latest init --defaults
+  cd {output_dir} && npx shadcn@latest add button input card dialog tabs alert badge
+  ```
+  - **레거시 CSS 복사 금지**: shadcn 컴포넌트로 UI 현대화
 - **Database setup** (if `db_type` is not `none`):
   - Install target ORM (Prisma/Drizzle) in the same project
   - Create schema from migration plan
@@ -111,6 +121,10 @@ Based on `target_architecture` from config and `migration_plan.md`:
 #### frontend-backend
 - Create `{output_dir}/shared/` for types and API contracts
 - Create `{output_dir}/frontend/` with Next.js project
+  - **UI Library setup** in frontend (if `target_ui_library` is not `legacy-css`):
+    - Initialize UI library: `cd frontend && npx shadcn@latest init`
+    - Add required base components
+    - Configure Tailwind CSS / theming
 - Create `{output_dir}/backend/` with `{backend_framework}` project
 - **Database setup** in backend:
   - Install target ORM in backend project
@@ -119,6 +133,10 @@ Based on `target_architecture` from config and `migration_plan.md`:
 
 #### frontend-only
 - Single Next.js project creation in `{output_dir}/`
+- **UI Library setup** (if `target_ui_library` is not `legacy-css`):
+  - Initialize UI library: `npx shadcn@latest init` (or equivalent)
+  - Add required base components
+  - Configure Tailwind CSS / theming
 - Configure API client for existing backend
 - **No database setup** (existing backend handles data access)
 
@@ -136,6 +154,9 @@ for module in modules:
     # ANALYZE-DB: Identify data models and queries in this module
     db_dependencies = analyze_db_usage(source_code, module)
 
+    # ANALYZE-UI: Identify UI components and patterns in this module
+    ui_components = analyze_ui_patterns(source_code, module)
+
     # PRESERVE: Create characterization tests
     create_characterization_tests(source_code, module)
 
@@ -149,6 +170,16 @@ for module in modules:
     # IMPROVE-DB: Convert ORM/data access patterns to target ORM
     if db_dependencies:
         transform_db_layer(db_dependencies, module, target_orm)
+
+    # IMPROVE-UI: Transform UI components using target UI library
+    if ui_components and ui_library != "legacy-css":
+        transform_ui_components(ui_components, module, ui_library, ui_component_map)
+        # - Legacy button → <Button variant="...">
+        # - Legacy input → <Input />
+        # - Legacy modal → <Dialog>
+        # - DO NOT copy legacy CSS classes
+    elif ui_components and ui_library == "legacy-css":
+        copy_legacy_styles(ui_components, module)  # Only if explicitly requested
 
     # Validate: Build and test
     validate_module(output_dir, module)
@@ -190,11 +221,21 @@ for module in frontend_modules:
     # ANALYZE: Source component understanding
     source_code = read_module(source_path, module)
 
+    # ANALYZE-UI: Identify UI components and patterns
+    ui_components = analyze_ui_patterns(source_code, module)
+
     # PRESERVE: Characterization tests (UI behavior)
     create_characterization_tests(source_code, module)
 
     # IMPROVE: Transform to Next.js (using API client to call backend)
     transform_frontend_module(source_code, module, "nextjs16")
+
+    # IMPROVE-UI: Transform UI components using target UI library
+    if ui_components and ui_library != "legacy-css":
+        transform_ui_components(ui_components, module, ui_library, ui_component_map)
+        # Use modern UI library components instead of legacy HTML/CSS
+    elif ui_components and ui_library == "legacy-css":
+        copy_legacy_styles(ui_components, module)
 
     validate_module(output_dir + "/frontend/", module)
     update_progress(artifacts_dir, module, "completed")
@@ -213,11 +254,20 @@ for module in frontend_modules:
     # ANALYZE: Source component understanding
     source_code = read_module(source_path, module)
 
+    # ANALYZE-UI: Identify UI components and patterns
+    ui_components = analyze_ui_patterns(source_code, module)
+
     # PRESERVE: Create characterization tests
     create_characterization_tests(source_code, module)
 
     # IMPROVE: Transform to Next.js (API client calls existing backend)
     transform_module(source_code, module, target_framework)
+
+    # IMPROVE-UI: Transform UI components using target UI library
+    if ui_components and ui_library != "legacy-css":
+        transform_ui_components(ui_components, module, ui_library, ui_component_map)
+    elif ui_components and ui_library == "legacy-css":
+        copy_legacy_styles(ui_components, module)
 
     # Validate: Build and test (no DB validation)
     validate_module(output_dir, module)
@@ -345,6 +395,7 @@ Arguments: $ARGUMENTS
    - Read `.migrate-config.yaml`
    - Extract: `source_path`, `target_framework`, `artifacts_dir`, `output_dir`
    - Extract: `target_architecture` (default: `fullstack-monolith`), `target_framework_backend`, `db_access_from`
+   - Extract: `target_ui_library` (default: `legacy-css`) - CRITICAL for UI modernization
    - IF file not found: Inform user to run `/jikime:migrate-2-plan` first
 
 3. **Load migration plan**:
@@ -355,15 +406,23 @@ Arguments: $ARGUMENTS
    - IF `--module`: Filter to specified module only
 
 4. **Initialize target project** (by `target_architecture`):
-   - **fullstack-monolith**: Single Next.js project in `{output_dir}/`, DB setup if applicable
-   - **frontend-backend**: `{output_dir}/shared/` + `{output_dir}/frontend/` + `{output_dir}/backend/`, DB in backend
-   - **frontend-only**: Single Next.js project in `{output_dir}/`, API client setup, no DB
+   - **fullstack-monolith**: Single Next.js project in `{output_dir}/`, UI library setup, DB setup if applicable
+   - **frontend-backend**: `{output_dir}/shared/` + `{output_dir}/frontend/` (with UI library) + `{output_dir}/backend/`, DB in backend
+   - **frontend-only**: Single Next.js project in `{output_dir}/`, UI library setup, API client setup, no DB
+   - **UI library setup** (if `target_ui_library` != `legacy-css`):
+     - `npx shadcn@latest init` (or equivalent for chosen library)
+     - Add base components: `npx shadcn@latest add button input card dialog tabs form`
+     - Configure Tailwind CSS and design tokens
    - IF `--dry-run`: Report initialization plan without executing
 
 5. **Execute DDD cycle per module** (by `target_architecture`):
-   - **fullstack-monolith**: Standard ANALYZE → ANALYZE-DB → PRESERVE → PRESERVE-DB → IMPROVE → IMPROVE-DB → validate
-   - **frontend-backend**: Sub-Phase 1 (shared) → Sub-Phase 2 (backend modules) → Sub-Phase 3 (frontend modules) → Sub-Phase 4 (integration)
-   - **frontend-only**: ANALYZE → PRESERVE → IMPROVE → validate (no DB steps)
+   - **fullstack-monolith**: Standard ANALYZE → ANALYZE-DB → ANALYZE-UI → PRESERVE → PRESERVE-DB → IMPROVE → IMPROVE-DB → IMPROVE-UI → validate
+   - **frontend-backend**: Sub-Phase 1 (shared) → Sub-Phase 2 (backend modules) → Sub-Phase 3 (frontend modules with UI transformation) → Sub-Phase 4 (integration)
+   - **frontend-only**: ANALYZE → ANALYZE-UI → PRESERVE → IMPROVE → IMPROVE-UI → validate (no DB steps)
+   - **IMPROVE-UI step** (if `target_ui_library` != `legacy-css`):
+     - Transform legacy HTML/CSS to modern UI library components
+     - Use component mapping from migration_plan.md
+     - DO NOT copy legacy CSS - use UI library's theming system
    - After each module: update `{artifacts_dir}/progress.yaml`
    - IF `--dry-run`: Report each module's plan without executing
 
@@ -379,11 +438,12 @@ Execute NOW. Do NOT just describe.
 
 ---
 
-Version: 3.3.0
+Version: 3.4.0
 Changelog:
+- v3.4.0: Added UI-aware DDD cycle (ANALYZE-UI, IMPROVE-UI); Added target_ui_library config support; Added UI library initialization in project setup; Modern UI library components replace legacy CSS (shadcn, MUI, Chakra); Legacy CSS only preserved when explicitly requested
 - v3.3.0: Added EXECUTION DIRECTIVE with $ARGUMENTS parsing and step-by-step execution flow
 - v3.2.0: Added architecture-specific execution flows (fullstack-monolith, frontend-backend, frontend-only); Added sub-phase execution for frontend-backend; Architecture field in progress.yaml
 - v3.1.0: Added DB-aware DDD cycle (ANALYZE-DB, PRESERVE-DB, IMPROVE-DB); Added database setup in project initialization; Added DB quality validation
 - v3.0.0: Removed redundant source/target options; Config-first approach; All settings from .migrate-config.yaml
 - v2.1.0: Initial DDD-based execution command
-Methodology: DDD (ANALYZE-PRESERVE-IMPROVE)
+Methodology: DDD (ANALYZE-PRESERVE-IMPROVE) with UI modernization

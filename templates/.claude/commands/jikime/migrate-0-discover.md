@@ -130,14 +130,29 @@ Question 6: (Fullstack only) Target DB ORM
   - Other (manual input)
 
   → Sets: target_db_orm
+
+Question 7: UI Component Library
+  "Which UI component library for the target?"
+  Options (dynamic from installed skills, top 3 + Other):
+  - shadcn/ui (Recommended) - Modern, accessible, customizable
+  - Material UI (MUI) - Comprehensive, enterprise-ready
+  - Chakra UI - Simple, modular, accessible
+  - Keep legacy CSS (copy existing styles)
+  - Other (manual input)
+
+  → Sets: target_ui_library
 ```
+
+**IMPORTANT**: This question is critical for modernizing the frontend.
+- If user selects a modern UI library, migration will convert legacy components to modern equivalents
+- If "Keep legacy CSS" is selected, existing styles will be preserved (not recommended for modernization)
 
 #### Conditional Flow Summary
 
 | Architecture | Questions Asked |
 |-------------|----------------|
-| **Fullstack** | Q1 → Q2 → Q5 → Q6 (4 questions) |
-| **Separated** | Q1 → Q2 → Q3 → Q4 → Q5 (5 questions) |
+| **Fullstack** | Q1 → Q2 → Q5 → Q6 → Q7 (5 questions) |
+| **Separated** | Q1 → Q2 → Q3 → Q4 → Q5 → Q7 (6 questions) |
 
 #### Derived Values
 
@@ -150,6 +165,7 @@ Values automatically derived from user selections:
 | `target_framework_backend` | _(not set)_ | From Q3 |
 | `target_backend_language` | _(not set)_ | From Q3 |
 | `target_db_orm` | From Q6 | _(set in Plan phase based on backend)_ |
+| `target_ui_library` | From Q7 | From Q7 |
 
 ### Step 2: Create `.migrate-config.yaml`
 
@@ -176,6 +192,7 @@ target_backend_language: ""                # (separated only) Backend language
 db_access_from: frontend                   # frontend | backend | both | none
 target_db_orm: prisma                      # Target ORM (fullstack: from Q6, separated: set in Plan)
 db_schema_source: env                      # env | file | none
+target_ui_library: shadcn                  # UI library (shadcn, mui, chakra, legacy-css, other)
 ```
 
 **If `--quick` is specified**: Set all target fields to `"pending"` and skip interactive selection.
@@ -212,6 +229,7 @@ db_schema_source: env                      # env | file | none
 - **DB Access**: Backend only
 - **Target ORM**: (to be decided in Plan phase)
 - **Schema Extraction**: From .env (DATABASE_URL)
+- **UI Library**: shadcn/ui (modern components will replace legacy CSS)
 
 ## Config Created
 `.migrate-config.yaml` has been initialized with full target stack configuration.
@@ -236,6 +254,7 @@ Run `/jikime:migrate-1-analyze` to perform deep analysis.
 | `db_access_from` | Step 0 | Step 2, 3 |
 | `target_db_orm` | Step 0 (fullstack) or Step 2 (separated) | Step 3 |
 | `db_schema_source` | Step 0 | Step 1, 3 |
+| `target_ui_library` | Step 0 | Step 2, 3 |
 | `artifacts_dir` | Step 0 (default) or Step 1 | Step 2, 3, 4 |
 | `output_dir` | Step 0 (default) or Step 3 | Step 3, 4 |
 | `db_type` | Step 0 | Step 1, 2, 3, 4 |
@@ -353,14 +372,19 @@ Arguments: $ARGUMENTS
       - Use AskUserQuestion with context-dependent options
       - Store result as `target_db_orm`
 
-   h. **Derive values**:
+   h. **Q7: UI Component Library**
+      - Use AskUserQuestion with top options: shadcn/ui (Recommended), MUI, Chakra UI, Keep legacy CSS, Other
+      - Store result as `target_ui_library`
+      - This determines how legacy components will be transformed
+
+   i. **Derive values**:
       - Fullstack: `db_access_from` = "frontend"
       - Separated without Q4: `db_access_from` = "backend" (default)
 
 5. **Create `.migrate-config.yaml`**:
    - Derive `project_name` from source path
    - Set all detected values (source_framework, db_type, db_orm, source_architecture)
-   - Set all interactive selection values (target_architecture, target_framework, target_framework_backend, target_backend_language, db_access_from, target_db_orm, db_schema_source)
+   - Set all interactive selection values (target_architecture, target_framework, target_framework_backend, target_backend_language, db_access_from, target_db_orm, db_schema_source, target_ui_library)
    - Set default `artifacts_dir` and `output_dir`
 
 6. **Generate Discovery Report** to user in F.R.I.D.A.Y. format:
@@ -368,7 +392,7 @@ Arguments: $ARGUMENTS
    - Database Overview (DB type, ORM, models, migrations)
    - Architecture Overview (pattern, confidence, indicators)
    - Complexity Score (1-10)
-   - Target Stack (architecture, frontend, backend, DB access, ORM, schema extraction)
+   - Target Stack (architecture, frontend, backend, DB access, ORM, schema extraction, UI library)
    - Config Created confirmation
    - Next Step: `/jikime:migrate-1-analyze`
 
@@ -376,8 +400,9 @@ Execute NOW. Do NOT just describe.
 
 ---
 
-Version: 4.0.0
+Version: 4.1.0
 Changelog:
+- v4.1.0: Added Q7 UI Component Library selection (shadcn, MUI, Chakra, legacy-css); Added target_ui_library to config schema; Updated conditional flow (Fullstack: 5 questions, Separated: 6 questions); UI library choice determines component modernization strategy
 - v4.0.0: Replaced --target with interactive stack selection (Step 1.5); Added 6 conditional AskUserQuestion flow; Extended .migrate-config.yaml schema with target_architecture, target_framework_backend, target_backend_language, db_access_from, target_db_orm, db_schema_source; Added Target Stack to discovery report; Dynamic skill-based option detection
 - v3.3.0: Added EXECUTION DIRECTIVE with $ARGUMENTS parsing and step-by-step execution flow
 - v3.2.0: Added source architecture pattern detection (source_architecture field); Added Architecture Overview in discovery report
