@@ -1,7 +1,7 @@
 # JikiME-ADK Skills Catalog
 
-> Auto-generated on 2026-01-25 16:31
-> Total Skills: **59**
+> Auto-generated on 2026-02-06 23:55
+> Total Skills: **67**
 
 ## Overview
 
@@ -11,12 +11,14 @@
 | **foundation** | 5 | `jikime-foundation-claude`, `jikime-foundation-context`, `jikime-foundation-core` +2 more |
 | **framework** | 3 | `jikime-framework-nextjs@14`, `jikime-framework-nextjs@15`, `jikime-framework-nextjs@16` |
 | **lang** | 7 | `jikime-lang-flutter`, `jikime-lang-go`, `jikime-lang-java` +4 more |
-| **library** | 4 | `jikime-library-mermaid`, `jikime-library-shadcn`, `jikime-library-vercel-ai-sdk` +1 more |
+| **library** | 5 | `jikime-library-mermaid`, `jikime-library-shadcn`, `jikime-library-tds-react-native` +2 more |
 | **marketing** | 10 | `jikime-marketing-ab-test`, `jikime-marketing-analytics`, `jikime-marketing-copywriting` +7 more |
-| **migration** | 3 | `jikime-migration-ast-grep`, `jikime-migration-patterns-auth`, `jikime-migration-to-nextjs` |
+| **migrate** | 1 | `migrate-to-nextjs` |
+| **migration** | 5 | `jikime-migration-angular-to-nextjs`, `jikime-migration-ast-grep`, `jikime-migration-jquery-to-react` +2 more |
+| **mobile** | 1 | `jikime-mobile-react-native` |
 | **platform** | 4 | `jikime-platform-clerk`, `jikime-platform-supabase`, `jikime-platform-vercel` +1 more |
-| **tool** | 1 | `jikime-tool-ast-grep` |
-| **workflow** | 17 | `jikime-workflow-codemap`, `jikime-workflow-ddd`, `jikime-workflow-docs` +14 more |
+| **tool** | 3 | `jikime-tool-agent-browser`, `jikime-tool-ast-grep`, `jikime-tool-mcp-builder` |
+| **workflow** | 18 | `jikime-workflow-changelog`, `jikime-workflow-codemap`, `jikime-workflow-ddd` +15 more |
 
 ---
 
@@ -60,12 +62,13 @@
 | `jikime-lang-python` | Python 3.13+ development specialist covering FastAPI, Dja... | language, python, fastapi | No |
 | `jikime-lang-typescript` | TypeScript 5.9+ development specialist covering React 19,... | language, typescript, react | No |
 
-## Library Skills (4)
+## Library Skills (5)
 
 | Skill | Description | Tags | Invocable |
 |-------|-------------|------|-----------|
 | `jikime-library-mermaid` | Enterprise Mermaid diagramming skill for Claude Code usin... | library, mermaid, diagrams | No |
 | `jikime-library-shadcn` | Shadcn UI - Professional implementation guide | library, shadcn, ui | No |
+| `jikime-library-tds-react-native` | Toss Design System (TDS) React Native component library b... | - | No |
 | `jikime-library-vercel-ai-sdk` | Vercel AI SDK v5/v6 implementation guide with useChat, to... | library, ai, vercel | No |
 | `jikime-library-zod` | Zod schema validation and React Hook Form integration for... | library, zod, validation | No |
 
@@ -84,13 +87,27 @@
 | `jikime-marketing-psychology` | Marketing psychology and mental models specialist for app... | marketing, psychology, mental-models | Yes |
 | `jikime-marketing-seo` | SEO audit and optimization specialist for technical SEO, ... | marketing, seo, technical-seo | Yes |
 
-## Migration Skills (3)
+## Migrate Skills (1)
 
 | Skill | Description | Tags | Invocable |
 |-------|-------------|------|-----------|
+| `migrate-to-nextjs` | | | migration, nextjs, react | No |
+
+## Migration Skills (5)
+
+| Skill | Description | Tags | Invocable |
+|-------|-------------|------|-----------|
+| `jikime-migration-angular-to-nextjs` | | | migration, angular, nextjs | No |
 | `jikime-migration-ast-grep` | AST-based code transformation skill using ast-grep. Struc... | migration, ast, code-transformation | No |
+| `jikime-migration-jquery-to-react` | | | migration, jquery, react | No |
 | `jikime-migration-patterns-auth` | Authentication migration patterns for Next.js application... | migration, auth, nextauth | No |
-| `jikime-migration-to-nextjs` | Legacy to Next.js 16 migration workflow specialist. Analy... | migration, nextjs, react | No |
+| `jikime-migration-smart-rebuild` | AI-powered legacy site rebuilding workflow. Captures scre... | migration, rebuild, legacy | Yes |
+
+## Mobile Skills (1)
+
+| Skill | Description | Tags | Invocable |
+|-------|-------------|------|-----------|
+| `jikime-mobile-react-native` | React Native and Expo best practices for building perform... | mobile, react-native, expo | No |
 
 ## Platform Skills (4)
 
@@ -101,16 +118,19 @@
 | `jikime-platform-vercel` | Vercel edge deployment specialist covering Edge Functions... | platform, vercel, deployment | No |
 | `jikime-platform-vercel-react` | React and Next.js performance optimization guidelines fro... | platform, vercel, react | No |
 
-## Tool Skills (1)
+## Tool Skills (3)
 
 | Skill | Description | Tags | Invocable |
 |-------|-------------|------|-----------|
+| `jikime-tool-agent-browser` | Automates browser interactions for web testing, form fill... | - | No |
 | `jikime-tool-ast-grep` | AST-based structural code search, security scanning, and ... | tool, ast, code-analysis | No |
+| `jikime-tool-mcp-builder` | MCP (Model Context Protocol) server development specialis... | - | No |
 
-## Workflow Skills (17)
+## Workflow Skills (18)
 
 | Skill | Description | Tags | Invocable |
 |-------|-------------|------|-----------|
+| `jikime-workflow-changelog` | Automated changelog generation from Git commits. Transfor... | - | No |
 | `jikime-workflow-codemap` | Comprehensive codebase architecture mapping with AST anal... | workflow, codemap, architecture | No |
 | `jikime-workflow-ddd` | Domain-Driven Development workflow specialist using ANALY... | workflow, ddd, refactoring | No |
 | `jikime-workflow-docs` | Documentation generation patterns for technical specs, AP... | workflow, documentation, sphinx | No |
@@ -135,17 +155,23 @@
 
 | Keyword | Skills |
 |---------|--------|
+| $ | `jikime-migration-jquery-to-react` |
+| $.ajax | `jikime-migration-jquery-to-react` |
+| @toss/tds-react-native | `jikime-library-tds-react-native` |
 | a/b test | `jikime-marketing-ab-test` |
 | ab테스트 | `jikime-marketing-ab-test` |
 | activation | `jikime-marketing-onboarding` |
 | adversarial | `jikime-workflow-parallel` |
 | agent | `jikime-foundation-claude` |
+| agent-browser | `jikime-tool-agent-browser` |
 | aha moment | `jikime-marketing-onboarding` |
 | ai 애플리케이션 | `jikime-library-vercel-ai-sdk` |
 | ai-sdk | `jikime-library-vercel-ai-sdk` |
 | analytics | `jikime-marketing-analytics` |
 | analyze | `jikime-workflow-ddd` |
-| angular-to-react | `jikime-migration-to-nextjs` |
+| angular | `jikime-migration-angular-to-nextjs` |
+| angular-to-nextjs | `jikime-migration-angular-to-nextjs` |
+| angular-to-react | `jikime-migration-angular-to-nextjs`, `migrate-to-nextjs` |
 | api reference | `jikime-workflow-jit-docs` |
 | app-router | `jikime-framework-nextjs@14` |
 | architecture | `jikime-domain-architecture`, `jikime-foundation-core`, `jikime-foundation-philosopher` |
@@ -155,37 +181,31 @@
 | async params | `jikime-framework-nextjs@15` |
 | auth migration | `jikime-migration-patterns-auth` |
 | auth0 | `jikime-migration-patterns-auth` |
+| automation | `jikime-tool-agent-browser` |
 | backend | `jikime-domain-backend` |
 | behavior | `jikime-workflow-ddd` |
+| behavior comparison | `jikime-tool-agent-browser` |
 | best practices | `jikime-workflow-jit-docs` |
 | beta launch | `jikime-marketing-launch` |
 | blob | `jikime-platform-vercel` |
 | boilerplate | `jikime-workflow-templates` |
 | bottleneck | `jikime-workflow-performance` |
 | branch | `jikime-workflow-worktree` |
+| browser | `jikime-tool-agent-browser` |
 | bun | `jikime-lang-javascript` |
 | bundle | `jikime-platform-vercel-react` |
 | cachelife | `jikime-framework-nextjs@16` |
 | cachetag | `jikime-framework-nextjs@16` |
 | capability eval | `jikime-workflow-eval` |
+| changelog | `jikime-workflow-changelog` |
+| changelog.md | `jikime-workflow-changelog` |
 | characterization | `jikime-workflow-ddd` |
 | claude code | `jikime-foundation-claude` |
 | clerk | `jikime-migration-patterns-auth` |
 | code structure | `jikime-workflow-codemap` |
 | code template | `jikime-workflow-templates` |
 | code transformation | `jikime-migration-ast-grep` |
-| code-search | `jikime-tool-ast-grep` |
-| codemap | `jikime-workflow-codemap`, `jikime-workflow-sync` |
-| cognitive bias | `jikime-marketing-psychology` |
-| command | `jikime-foundation-claude` |
-| commit | `jikime-workflow-sync` |
-| composer | `jikime-lang-php` |
-| concurrent | `jikime-workflow-parallel` |
-| consumer behavior | `jikime-marketing-psychology` |
-| conversion | `jikime-marketing-page-cro` |
-| conversion tracking | `jikime-marketing-analytics` |
-| copywriting | `jikime-marketing-copywriting` |
-| ... | +297 more keywords |
+| ... | +358 more keywords |
 
 ---
 

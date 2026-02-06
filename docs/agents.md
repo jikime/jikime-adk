@@ -6,60 +6,112 @@ JikiME-ADK의 전문화된 에이전트 카탈로그입니다.
 
 ## 개요
 
-JikiME-ADK는 26개의 전문화된 에이전트를 제공합니다:
-- **Manager Agents (8개)**: 워크플로우 조율 및 프로세스 관리
-- **Specialist Agents (14개)**: 도메인별 전문 작업 수행
+JikiME-ADK는 57개의 전문화된 에이전트를 제공합니다:
+- **Manager Agents (12개)**: 워크플로우 조율 및 프로세스 관리
+- **Specialist Agents (37개)**: 도메인별 전문 작업 수행
+- **Designer Agents (1개)**: UI/UX 디자인 및 디자인 시스템
+- **Orchestration Agents (3개)**: 멀티 에이전트 조율 및 작업 분배
 - **Builder Agents (4개)**: 새로운 에이전트/커맨드/스킬/플러그인 생성
 
 ### 에이전트 맵
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    JikiME-ADK Agent Catalog                      │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌─ Manager Agents (워크플로우 조율) ─────────────────────────┐  │
-│  │                                                              │
-│  │  manager-spec        SPEC 문서 생성 (EARS 형식)            │
-│  │  manager-strategy    구현 전략 수립                         │
-│  │  manager-ddd         DDD 구현 (ANALYZE-PRESERVE-IMPROVE)    │
-│  │  manager-project     프로젝트 초기화 및 설정                 │
-│  │  manager-docs        문서 동기화                            │
-│  │  manager-quality     품질 검증 (TRUST 5)                    │
-│  │  manager-git         Git 워크플로우                         │
-│  │  manager-claude-code Claude Code 설정 관리                  │
-│  │                                                              │
-│  └──────────────────────────────────────────────────────────────┘
-│                                                                  │
-│  ┌─ Specialist Agents (도메인 전문가) ────────────────────────┐  │
-│  │                                                              │
-│  │  architect         시스템 아키텍처 설계                      │
-│  │  backend           API 개발, 서버 로직                      │
-│  │  frontend          React 컴포넌트, UI 구현                   │
-│  │  security-auditor  보안 감사 (OWASP)                        │
-│  │  devops            CI/CD, 인프라, 배포 자동화                │
-│  │  optimizer         성능 최적화, 병목 분석                    │
-│  │  debugger          디버깅, 에러 분석                        │
-│  │  e2e-tester        E2E 테스트 (Playwright)                  │
-│  │  test-guide        테스트 전략 및 가이드                    │
-│  │  refactorer        리팩토링/클린업                          │
-│  │  build-fixer       빌드/타입 에러 수정                       │
-│  │  reviewer          코드 리뷰, PR 리뷰                       │
-│  │  documenter        API/코드 문서화                          │
-│  │  planner           구현 계획 수립                            │
-│  │                                                              │
-│  └──────────────────────────────────────────────────────────────┘
-│                                                                  │
-│  ┌─ Builder Agents (생성 도구) ───────────────────────────────┐  │
-│  │                                                              │
-│  │  agent-builder     새 에이전트 정의 생성                     │
-│  │  command-builder   새 슬래시 커맨드 생성                     │
-│  │  skill-builder     새 스킬 정의 생성                        │
-│  │  plugin-builder    새 플러그인 패키지 생성                   │
-│  │                                                              │
-│  └──────────────────────────────────────────────────────────────┘
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                      JikiME-ADK Agent Catalog (57)                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  ┌─ Manager Agents (워크플로우 조율) ─────────────────────────────────┐  │
+│  │                                                                      │
+│  │  manager-spec        SPEC 문서 생성 (EARS 형식)                     │
+│  │  manager-strategy    구현 전략 수립                                  │
+│  │  manager-ddd         DDD 구현 (ANALYZE-PRESERVE-IMPROVE)            │
+│  │  manager-project     프로젝트 초기화 및 설정                         │
+│  │  manager-docs        문서 동기화                                     │
+│  │  manager-quality     품질 검증 (TRUST 5)                            │
+│  │  manager-git         Git 워크플로우                                  │
+│  │  manager-claude-code Claude Code 설정 관리                          │
+│  │  manager-database    DB 스키마 설계, 쿼리 최적화                     │
+│  │  manager-dependency  패키지 업데이트, 취약점 관리                    │
+│  │  manager-data        데이터 파이프라인, ETL                         │
+│  │  manager-context     컨텍스트/토큰 관리                              │
+│  │                                                                      │
+│  └──────────────────────────────────────────────────────────────────────┘
+│                                                                          │
+│  ┌─ Specialist Agents (도메인 전문가) ──────────────────────────────────┐│
+│  │                                                                      │
+│  │  [Core]                                                              │
+│  │  architect          시스템 아키텍처 설계                             │
+│  │  backend            API 개발, 서버 로직                              │
+│  │  frontend           React 컴포넌트, UI 구현                          │
+│  │  security-auditor   보안 감사 (OWASP)                                │
+│  │  devops             CI/CD, 인프라, 배포 자동화                       │
+│  │  optimizer          성능 최적화, 병목 분석                           │
+│  │  debugger           디버깅, 에러 분석                                │
+│  │                                                                      │
+│  │  [Testing]                                                           │
+│  │  e2e-tester         E2E 테스트 (Playwright)                          │
+│  │  test-guide         테스트 전략 및 가이드                            │
+│  │                                                                      │
+│  │  [Code Quality]                                                      │
+│  │  refactorer         리팩토링/클린업                                  │
+│  │  build-fixer        빌드/타입 에러 수정                              │
+│  │  reviewer           코드 리뷰, PR 리뷰                               │
+│  │  documenter         API/코드 문서화                                  │
+│  │  planner            구현 계획 수립                                   │
+│  │                                                                      │
+│  │  [Language/Framework Specialists]                                    │
+│  │  migrator           레거시 현대화, 프레임워크 마이그레이션           │
+│  │  specialist-angular Angular 15+, NgRx, RxJS, 마이크로 프론트엔드     │
+│  │  specialist-api     REST/GraphQL API 설계, OpenAPI                   │
+│  │  specialist-java    Java 21+, Spring Boot, JPA                       │
+│  │  specialist-javascript ES2023+, Node.js 20+, 비동기 패턴             │
+│  │  specialist-spring  Spring Security, Data, Cloud                     │
+│  │  specialist-nextjs  Next.js App Router, RSC, Server Actions          │
+│  │  specialist-go      Go, Fiber/Gin, GORM                              │
+│  │  specialist-php     PHP 8.3+, Laravel, Symfony                       │
+│  │  specialist-postgres PostgreSQL, pgvector, RLS, JSONB                │
+│  │  specialist-python  Python 3.11+, FastAPI, Django                    │
+│  │  specialist-rust    Rust 2021, 메모리 안전, 시스템 프로그래밍        │
+│  │  specialist-sql     PostgreSQL, MySQL, SQL Server, Oracle            │
+│  │  specialist-typescript TypeScript 5.0+, 고급 타입, e2e 타입 안전     │
+│  │  specialist-vue     Vue 3, Composition API, Nuxt 3, Pinia            │
+│  │  specialist-graphql GraphQL, Apollo Federation, 구독                 │
+│  │  specialist-microservices 마이크로서비스, Kubernetes, 서비스 메시    │
+│  │  specialist-mobile  React Native, Flutter, 모바일 앱                 │
+│  │  specialist-electron Electron 데스크톱 앱, 크로스 플랫폼             │
+│  │  specialist-websocket WebSocket, Socket.IO, 실시간 통신              │
+│  │  fullstack          풀스택 개발, DB → API → UI                       │
+│  │                                                                      │
+│  │  [Research]                                                          │
+│  │  analyst            기술 리서치, 경쟁 분석                           │
+│  │  explorer           코드베이스 탐색, 검색                            │
+│  │                                                                      │
+│  └──────────────────────────────────────────────────────────────────────┘
+│                                                                          │
+│  ┌─ Designer Agents (UI/UX 전문가) ─────────────────────────────────────┐│
+│  │                                                                      │
+│  │  designer-ui        UI 디자인 시스템, 컴포넌트 라이브러리, 접근성   │
+│  │                                                                      │
+│  └──────────────────────────────────────────────────────────────────────┘
+│                                                                          │
+│  ┌─ Orchestration Agents (멀티 에이전트 조율) ─────────────────────────┐ │
+│  │                                                                      │
+│  │  orchestrator       워크플로우 오케스트레이션, 파이프라인 조율       │
+│  │  coordinator        멀티 에이전트 조율, 결과 통합                    │
+│  │  dispatcher         작업 분배, 로드 밸런싱, 우선순위 스케줄링        │
+│  │                                                                      │
+│  └──────────────────────────────────────────────────────────────────────┘
+│                                                                          │
+│  ┌─ Builder Agents (생성 도구) ──────────────────────────────────────┐   │
+│  │                                                                      │
+│  │  agent-builder      새 에이전트 정의 생성                            │
+│  │  command-builder    새 슬래시 커맨드 생성                            │
+│  │  skill-builder      새 스킬 정의 생성                                │
+│  │  plugin-builder     새 플러그인 패키지 생성                          │
+│  │                                                                      │
+│  └──────────────────────────────────────────────────────────────────────┘
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -277,7 +329,127 @@ JikiME-ADK는 26개의 전문화된 에이전트를 제공합니다:
 
 ---
 
-## Expert Agents
+### manager-database
+
+**역할**: 데이터베이스 관리 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- DB 스키마 설계 및 정규화
+- 쿼리 성능 최적화
+- 인덱스 전략 수립
+- 백업 및 복구 계획
+- 보안 및 접근 제어
+
+**체크리스트**:
+- [ ] 쿼리 실행 시간 < 100ms
+- [ ] 인덱스 히트율 > 99%
+- [ ] 커넥션 풀 최적화
+- [ ] 백업 검증 완료
+- [ ] 복구 절차 테스트 완료
+
+**호출 시점**:
+- DB 스키마 설계/변경 시
+- 쿼리 성능 이슈 발생 시
+
+---
+
+### manager-dependency
+
+**역할**: 의존성 관리 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | haiku |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- 의존성 감사 및 분석
+- 보안 취약점 수정
+- 버전 호환성 관리
+- 업데이트 전략 수립
+
+**업데이트 전략**:
+
+| 전략 | 위험도 | 사용 시점 |
+|------|--------|---------|
+| Patch Only | 낮음 | 프로덕션 핫픽스 |
+| Minor Updates | 중간 | 정기 유지보수 |
+| Major Updates | 높음 | 계획된 업그레이드 |
+| Security Only | 낮음 | 보안 취약점 발생 |
+
+**호출 시점**:
+- 의존성 업데이트 필요 시
+- 보안 취약점 발견 시
+
+---
+
+### manager-data
+
+**역할**: 데이터 엔지니어링 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- 데이터 파이프라인 설계 및 구현
+- ETL/ELT 프로세스 최적화
+- 데이터 품질 및 검증
+- 데이터 모델링 (차원/문서)
+
+**파이프라인 패턴**:
+
+| 패턴 | 사용 시점 | 도구 |
+|------|---------|------|
+| Batch ETL | 일/시간 단위 로드 | Airflow, dbt |
+| Streaming | 실시간 데이터 | Kafka, Flink |
+| CDC | 변경 캡처 | Debezium |
+| ELT | 클라우드 웨어하우스 | Snowflake, BigQuery |
+
+**호출 시점**:
+- 데이터 파이프라인 설계 시
+- 데이터 품질 이슈 발생 시
+
+---
+
+### manager-context
+
+**역할**: 컨텍스트/토큰 관리 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | haiku |
+| Tools | Read, Write, Edit, Glob, Grep |
+
+**핵심 기능**:
+- 컨텍스트 윈도우 최적화
+- 세션 상태 관리
+- 토큰 예산 관리
+- 컨텍스트 검색 및 로딩
+
+**토큰 관리 전략**:
+
+| Zone | 사용량 | 조치 |
+|------|--------|-----|
+| Green | 0-60% | 정상 운영 |
+| Yellow | 60-75% | 압축 시작 |
+| Orange | 75-85% | 비필수 항목 아카이브 |
+| Red | 85-95% | 적극적 최적화 |
+| Critical | 95%+ | 긴급 조치 |
+
+**호출 시점**:
+- 컨텍스트 최적화 필요 시
+- 토큰 예산 관리 시
+
+---
+
+## Specialist Agents
 
 ### architect
 
@@ -553,6 +725,887 @@ docs/
 
 ---
 
+### migrator
+
+**역할**: 레거시 현대화 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- 레거시 코드 분석 및 평가
+- 기술 스택 현대화
+- 프레임워크 마이그레이션
+- 점진적 변환 전략
+
+**마이그레이션 패턴**:
+
+| 패턴 | 설명 | 사용 시점 |
+|------|------|---------|
+| Strangler Fig | 점진적 컴포넌트 교체 | 대규모 모놀리스 |
+| Branch by Abstraction | 추상화 후 교체 | 핵심 의존성 |
+| Parallel Run | 양쪽 버전 동시 실행 | 중요 시스템 |
+| Feature Toggle | 구현 간 전환 | 점진적 롤아웃 |
+
+**호출 시점**:
+- 레거시 현대화 시
+- 프레임워크 마이그레이션 시
+
+---
+
+### specialist-java
+
+**역할**: Java 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Java 21+ 개발 (최신 기능 활용)
+- Spring Boot 3.x 애플리케이션
+- JPA/Hibernate 최적화
+- 마이크로서비스 설계
+
+**Java 21+ 주요 기능**:
+
+| 기능 | 사용 시점 | 예시 |
+|------|---------|------|
+| Virtual Threads | 높은 동시성 | `Thread.startVirtualThread()` |
+| Pattern Matching | 타입 체크 | `if (obj instanceof String s)` |
+| Records | 데이터 캐리어 | `record User(String name)` |
+| Sealed Classes | 도메인 모델링 | `sealed interface Shape` |
+
+**호출 시점**:
+- Java/Spring Boot 개발 시
+- 엔터프라이즈 애플리케이션 구현 시
+
+---
+
+### specialist-spring
+
+**역할**: Spring 생태계 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Spring Boot 3.x 설정
+- Spring Security 구성
+- Spring Data JPA 최적화
+- Spring Cloud 마이크로서비스
+
+**주요 설정 포인트**:
+
+| 영역 | 핵심 설정 |
+|------|----------|
+| Security | OAuth2/JWT, CORS, CSRF |
+| Data | HikariCP, EntityGraph, Batch |
+| Actuator | 헬스체크, 메트릭스 |
+| Cloud | Config Server, Discovery |
+
+**호출 시점**:
+- Spring 기반 프로젝트 설정 시
+- Spring Security 구성 시
+
+---
+
+### specialist-nextjs
+
+**역할**: Next.js 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Next.js 14/15/16 App Router
+- React Server Components (RSC)
+- Server Actions
+- 성능 최적화
+
+**App Router 컨벤션**:
+
+| 파일 | 목적 |
+|------|------|
+| `page.tsx` | 라우트 UI 컴포넌트 |
+| `layout.tsx` | 공유 레이아웃 |
+| `loading.tsx` | 로딩 UI (Suspense) |
+| `error.tsx` | 에러 바운더리 |
+| `route.ts` | API 엔드포인트 |
+
+**호출 시점**:
+- Next.js 개발 시
+- RSC/Server Actions 구현 시
+
+---
+
+### specialist-go
+
+**역할**: Go 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Go 1.22+ 개발
+- Fiber/Gin 웹 프레임워크
+- GORM 데이터베이스 접근
+- 동시성 프로그래밍
+
+**Go 패턴**:
+
+| 패턴 | 설명 | 예시 |
+|------|------|------|
+| Error Wrapping | 에러에 컨텍스트 추가 | `fmt.Errorf("op: %w", err)` |
+| Options Pattern | 유연한 설정 | `WithTimeout(time.Second)` |
+| Interface Segregation | 작은 인터페이스 | `type Reader interface` |
+| Worker Pool | 제한된 동시성 | `sem := make(chan struct{}, n)` |
+
+**호출 시점**:
+- Go 마이크로서비스 개발 시
+- CLI 도구 개발 시
+
+---
+
+### specialist-postgres
+
+**역할**: PostgreSQL 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- PostgreSQL 16+ 고급 기능
+- pgvector 임베딩 검색
+- Row Level Security (RLS)
+- JSONB 데이터 타입
+
+**고급 기능 예시**:
+
+| 기능 | 용도 |
+|------|------|
+| pgvector | AI 임베딩 유사도 검색 |
+| RLS | 행 수준 접근 제어 |
+| JSONB | 반정형 데이터 저장 |
+| Partitioning | 대용량 테이블 성능 |
+
+**호출 시점**:
+- PostgreSQL 고급 기능 사용 시
+- 데이터베이스 성능 튜닝 시
+
+---
+
+### specialist-angular
+
+**역할**: Angular 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Angular 15+ 개발 (standalone components, signals)
+- NgRx 상태 관리 (Store, Effects, Selectors)
+- RxJS 반응형 프로그래밍
+- 마이크로 프론트엔드 아키텍처 (Module Federation)
+
+**Angular 최신 기능**:
+
+| 기능 | 사용 시점 | 예시 |
+|------|---------|------|
+| Standalone Components | 모듈 없는 컴포넌트 | `@Component({ standalone: true })` |
+| Signals | 반응형 상태 | `signal()`, `computed()`, `effect()` |
+| Control Flow | 템플릿 제어 | `@if`, `@for`, `@switch` |
+| Deferrable Views | 지연 로딩 | `@defer { }` |
+
+**호출 시점**:
+- Angular 애플리케이션 개발 시
+- NgRx 상태 관리 구현 시
+
+---
+
+### specialist-javascript
+
+**역할**: JavaScript 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- ES2023+ 최신 기능 활용
+- Node.js 20+ 개발
+- 비동기 패턴 (Promise, async/await)
+- 브라우저/서버 JavaScript 통합
+
+**ES2023+ 주요 기능**:
+
+| 기능 | 설명 | 예시 |
+|------|------|------|
+| Optional Chaining | 안전한 속성 접근 | `obj?.prop?.method?.()` |
+| Nullish Coalescing | 기본값 처리 | `value ?? 'default'` |
+| Private Fields | 클래스 캡슐화 | `#privateField` |
+| Top-level Await | 모듈 비동기 | `await import()` |
+
+**호출 시점**:
+- JavaScript 애플리케이션 개발 시
+- Node.js 서버/CLI 개발 시
+
+---
+
+### specialist-php
+
+**역할**: PHP 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- PHP 8.3+ 최신 기능 (Typed class constants, Override attribute)
+- Laravel 11 / Symfony 7 프레임워크
+- Async PHP (Swoole, ReactPHP)
+- Eloquent ORM / Doctrine ORM
+
+**PHP 8.3+ 주요 기능**:
+
+| 기능 | 설명 | 예시 |
+|------|------|------|
+| Typed Class Constants | 상수 타입 선언 | `public const string NAME` |
+| #[Override] | 메서드 오버라이드 명시 | `#[Override]` |
+| json_validate() | JSON 검증 | `json_validate($json)` |
+| Readonly Classes | 불변 클래스 | `readonly class User` |
+
+**호출 시점**:
+- PHP/Laravel/Symfony 프로젝트 개발 시
+- 레거시 PHP 현대화 시
+
+---
+
+### specialist-python
+
+**역할**: Python 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Python 3.11+ 최신 기능 활용
+- FastAPI / Django 웹 프레임워크
+- 비동기 프로그래밍 (asyncio)
+- 데이터 과학 (pandas, numpy)
+
+**Python 3.11+ 주요 기능**:
+
+| 기능 | 설명 | 예시 |
+|------|------|------|
+| Exception Groups | 다중 예외 처리 | `except* ExceptionGroup` |
+| Task Groups | 구조화된 동시성 | `async with TaskGroup()` |
+| TOML Parser | 설정 파일 파싱 | `tomllib.load()` |
+| Pattern Matching | 구조적 패턴 | `match value: case ...` |
+
+**호출 시점**:
+- Python/FastAPI/Django 프로젝트 개발 시
+- 데이터 파이프라인 구현 시
+
+---
+
+### specialist-rust
+
+**역할**: Rust 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Rust 2021 에디션 개발
+- 소유권과 메모리 안전성 패턴
+- 비동기 프로그래밍 (Tokio, async-std)
+- 시스템 프로그래밍 및 FFI
+
+**Rust 핵심 패턴**:
+
+| 패턴 | 설명 | 사용 시점 |
+|------|------|---------|
+| Ownership | 메모리 소유권 전달 | 리소스 이전 |
+| Borrowing | 참조를 통한 접근 | 임시 접근 |
+| Lifetimes | 참조 유효 범위 | 복잡한 참조 관계 |
+| RAII | 리소스 자동 해제 | 파일, 락 관리 |
+
+**호출 시점**:
+- Rust 애플리케이션 개발 시
+- 시스템 프로그래밍/CLI 개발 시
+
+---
+
+### specialist-sql
+
+**역할**: 멀티 데이터베이스 SQL 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- 크로스 플랫폼 SQL 최적화 (PostgreSQL, MySQL, SQL Server, Oracle)
+- 실행 계획 분석 및 튜닝
+- 인덱스 전략 수립
+- 데이터 웨어하우스 패턴
+
+**고급 쿼리 패턴**:
+
+| 패턴 | 용도 |
+|------|------|
+| CTEs | 복잡한 쿼리 가독성 |
+| Recursive Queries | 계층 데이터 처리 |
+| Window Functions | 분석 및 순위 |
+| PIVOT/UNPIVOT | 데이터 변환 |
+
+**호출 시점**:
+- 쿼리 성능 최적화 시
+- 데이터 웨어하우스 설계 시
+
+---
+
+### specialist-typescript
+
+**역할**: TypeScript 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- TypeScript 5.0+ 고급 기능
+- 타입 레벨 프로그래밍
+- 엔드투엔드 타입 안전성 (tRPC, Prisma)
+- 모노레포 TypeScript 설정
+
+**고급 타입 패턴**:
+
+| 패턴 | 용도 |
+|------|------|
+| Conditional Types | 유연한 타입 추론 |
+| Mapped Types | 타입 변환 |
+| Template Literals | 문자열 조작 |
+| Branded Types | 도메인 모델링 |
+
+**호출 시점**:
+- TypeScript 프로젝트 개발 시
+- 고급 타입 패턴 구현 시
+
+---
+
+### specialist-vue
+
+**역할**: Vue 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Vue 3 Composition API
+- Nuxt 3 풀스택 프레임워크
+- Pinia 상태 관리
+- 반응성 시스템 최적화
+
+**Vue 3 핵심 기능**:
+
+| 기능 | 설명 | 예시 |
+|------|------|------|
+| Composition API | 로직 재사용 | `setup()`, `<script setup>` |
+| Reactivity | 반응형 데이터 | `ref()`, `reactive()`, `computed()` |
+| Teleport | DOM 이동 | `<Teleport to="body">` |
+| Suspense | 비동기 컴포넌트 | `<Suspense>` |
+
+**호출 시점**:
+- Vue/Nuxt 애플리케이션 개발 시
+- Pinia 상태 관리 구현 시
+
+---
+
+### specialist-api
+
+**역할**: API 설계 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Glob, Grep |
+
+**핵심 기능**:
+- REST API 설계 (리소스 모델링, 버전 관리)
+- GraphQL 스키마 설계
+- OpenAPI 3.0/3.1 스펙 작성
+- API 게이트웨이 패턴
+
+**API 설계 원칙**:
+
+| 원칙 | 설명 |
+|------|------|
+| 리소스 중심 | 명사 기반 URI, CRUD 매핑 |
+| 버전 관리 | URL 또는 Header 기반 버전 |
+| 오류 처리 | RFC 7807 Problem Details |
+| 페이지네이션 | Cursor/Offset 기반 |
+
+**호출 시점**:
+- API 설계 및 문서화 시
+- OpenAPI 스펙 작성 시
+
+---
+
+### specialist-graphql
+
+**역할**: GraphQL 아키텍처 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | opus |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- GraphQL 스키마 설계 및 진화
+- Apollo Federation 아키텍처
+- N+1 쿼리 방지 (DataLoader)
+- Subscription 구현
+
+**최적화 전략**:
+
+| 문제 | 해결책 |
+|------|--------|
+| N+1 쿼리 | DataLoader 배칭 |
+| 깊은 쿼리 | Depth 제한 |
+| 큰 응답 | Complexity 분석 |
+| 반복 쿼리 | Persisted Queries |
+
+**호출 시점**:
+- GraphQL API 설계 시
+- Apollo Federation 구성 시
+
+---
+
+### specialist-microservices
+
+**역할**: 마이크로서비스 아키텍처 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | opus |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- 서비스 경계 정의 (DDD 기반)
+- 통신 패턴 설계 (sync/async)
+- 서비스 메시 구성 (Istio)
+- 분산 데이터 관리
+
+**설계 원칙**:
+
+| 원칙 | 설명 |
+|------|------|
+| Single Responsibility | 서비스당 하나의 비즈니스 기능 |
+| Database per Service | 공유 데이터베이스 금지 |
+| API-First | 구현 전 계약 정의 |
+| Stateless | 외부 상태 저장소 |
+
+**호출 시점**:
+- 마이크로서비스 설계 시
+- Kubernetes 배포 구성 시
+
+---
+
+### specialist-mobile
+
+**역할**: 모바일 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- React Native 0.82+ / Flutter 개발
+- 크로스 플랫폼 코드 공유 (80%+)
+- 오프라인 우선 아키텍처
+- 네이티브 모듈 통합
+
+**성능 목표**:
+
+| 지표 | 목표 |
+|------|------|
+| Cold Start | < 1.5초 |
+| 메모리 사용 | < 120MB |
+| 프레임 레이트 | 60 FPS |
+| 앱 크기 | < 40MB |
+
+**호출 시점**:
+- React Native / Flutter 앱 개발 시
+- 오프라인 기능 구현 시
+
+---
+
+### specialist-electron
+
+**역할**: Electron 데스크톱 앱 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- Electron Forge / Builder 구성
+- Main-Renderer IPC 통신
+- 네이티브 모듈 통합
+- 자동 업데이트 (electron-updater)
+
+**보안 체크리스트**:
+
+| 항목 | 설명 |
+|------|------|
+| contextIsolation | true (필수) |
+| nodeIntegration | false (권장) |
+| sandbox | true (권장) |
+| CSP | 엄격한 정책 |
+
+**호출 시점**:
+- Electron 앱 개발 시
+- 데스크톱 배포 구성 시
+
+---
+
+### specialist-websocket
+
+**역할**: 실시간 통신 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- WebSocket 서버 아키텍처
+- Socket.IO + Redis 클러스터링
+- 연결 관리 및 확장
+- Presence 및 메시지 히스토리
+
+**성능 목표**:
+
+| 지표 | 목표 |
+|------|------|
+| 노드당 연결 | 50K 동시 |
+| 메시지 지연 | < 10ms p99 |
+| 처리량 | 100K msg/sec |
+| 재연결 시간 | < 2초 |
+
+**호출 시점**:
+- 실시간 기능 구현 시
+- 채팅/알림 시스템 개발 시
+
+---
+
+### fullstack
+
+**역할**: 풀스택 개발 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | opus |
+| Tools | Read, Write, Edit, Bash, Glob, Grep, TodoWrite, Task |
+
+**핵심 기능**:
+- 종단 간 기능 구현 (DB → API → UI)
+- 다른 specialist 에이전트 조율
+- 전체 스택 아키텍처 결정
+- 통합 테스트 전략
+
+**작업 범위**:
+
+| 계층 | 담당 영역 |
+|------|----------|
+| DB | 스키마 설계, 쿼리 최적화 |
+| Backend | API 설계, 비즈니스 로직 |
+| Frontend | UI 컴포넌트, 상태 관리 |
+| DevOps | 배포, 모니터링 |
+
+**호출 시점**:
+- 종단 간 기능 구현 시
+- 여러 계층에 걸친 작업 시
+
+---
+
+### analyst
+
+**역할**: 리서치 및 분석 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Grep, Glob, WebFetch, WebSearch |
+
+**핵심 기능**:
+- 기술 리서치 및 평가
+- 경쟁 분석
+- 의사결정 지원
+- 지식 종합
+
+**분석 프레임워크**:
+
+| 유형 | 목적 | 산출물 |
+|------|------|--------|
+| Technical | 기술 평가 | 비교 매트릭스 |
+| Competitive | 시장 포지셔닝 | 경쟁사 프로필 |
+| Feasibility | 프로젝트 타당성 | 리스크/기회 보고서 |
+| Trend | 미래 전망 | 트렌드 분석 |
+
+**호출 시점**:
+- 기술 의사결정 전 리서치 시
+- 경쟁 분석 필요 시
+
+---
+
+### explorer
+
+**역할**: 코드베이스 탐색 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | haiku |
+| Tools | Read, Grep, Glob |
+
+**핵심 기능**:
+- 코드 패턴 검색
+- 구현 발견
+- 사용처 추적
+- 아키텍처 탐색
+
+**검색 전략**:
+
+| 전략 | 사용 시점 | 도구 |
+|------|---------|------|
+| File Pattern | 파일명으로 찾기 | Glob |
+| Content Search | 코드 패턴 찾기 | Grep |
+| Definition | 선언 찾기 | Grep + Read |
+| Usage | 참조 찾기 | Grep |
+
+**호출 시점**:
+- 코드 탐색 시
+- `/jikime:learn` 명령 실행 시
+
+---
+
+## Orchestration Agents
+
+### orchestrator
+
+**역할**: 워크플로우 오케스트레이션 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- 워크플로우 설계 및 조율
+- 파이프라인 코디네이션
+- 프로세스 자동화
+- 상태 관리
+
+**워크플로우 패턴**:
+
+| 패턴 | 사용 시점 | 설명 |
+|------|---------|------|
+| Sequential | 의존적 단계 | A → B → C |
+| Parallel | 독립적 단계 | A, B, C 동시 |
+| Fan-out/Fan-in | 분산 처리 | 분할, 처리, 집계 |
+| Saga | 분산 트랜잭션 | 보상 액션 |
+| Pipeline | 데이터 처리 | 스테이지 통과 |
+
+**호출 시점**:
+- 복잡한 다단계 프로세스 조율 시
+- 워크플로우 자동화 시
+
+---
+
+### coordinator
+
+**역할**: 멀티 에이전트 코디네이터
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Bash, Glob, Grep |
+
+**핵심 기능**:
+- 에이전트 팀 구성
+- 작업 분배 및 스케줄링
+- 결과 통합 및 종합
+- 충돌 해결
+
+**코디네이션 패턴**:
+
+| 패턴 | 설명 |
+|------|------|
+| Parallel Execution | 여러 에이전트 동시 실행 |
+| Sequential Chain | 에이전트 체인 순차 실행 |
+| Fan-out/Fan-in | 분산 후 결과 통합 |
+
+**에이전트 선택 매트릭스**:
+
+| 작업 유형 | 주 에이전트 | 보조 에이전트 |
+|---------|-----------|--------------|
+| 아키텍처 | architect | analyst, specialist-* |
+| 구현 | backend/frontend | debugger, test-guide |
+| 마이그레이션 | migrator | specialist-*, manager-database |
+| 보안 | security-auditor | backend, analyst |
+
+**호출 시점**:
+- 여러 에이전트 협업 필요 시
+- 복잡한 작업 분해 시
+
+---
+
+### dispatcher
+
+**역할**: 작업 분배 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | haiku |
+| Tools | Read, Write, Edit, Glob, Grep |
+
+**핵심 기능**:
+- 작업 큐 관리
+- 로드 밸런싱
+- 우선순위 스케줄링
+- 리소스 최적화
+
+**분배 전략**:
+
+| 전략 | 사용 시점 | 설명 |
+|------|---------|------|
+| Round-Robin | 균등 분배 | 에이전트 순환 |
+| Weighted | 용량 기반 | 능력에 비례 |
+| Least-Loaded | 부하 균형 | 가장 한가한 곳 |
+| Affinity | 스킬 매칭 | 전문가에게 할당 |
+| Priority | 마감 기한 기반 | 긴급 작업 우선 |
+
+**성능 지표**:
+- 분배 지연 < 50ms
+- 로드 분산 < 10%
+- 작업 완료율 > 99%
+- 마감 준수율 > 95%
+
+**호출 시점**:
+- 대량 작업 분배 시
+- 에이전트 부하 관리 시
+
+---
+
+## Builder Agents
+
+### agent-builder
+
+**역할**: 에이전트 정의 생성
+
+새로운 에이전트 정의 파일을 JikiME-ADK 형식에 맞게 생성합니다.
+
+**생성 파일**: `.claude/agents/jikime/{agent-name}.md`
+
+---
+
+### command-builder
+
+**역할**: 슬래시 커맨드 생성
+
+새로운 슬래시 커맨드 정의 파일을 생성합니다.
+
+**생성 파일**: `.claude/commands/jikime/{command-name}.md`
+
+---
+
+### skill-builder
+
+**역할**: 스킬 정의 생성
+
+Progressive Disclosure 패턴에 따른 스킬 파일을 생성합니다.
+
+**생성 파일**: `.claude/skills/jikime-{type}-{name}/SKILL.md`
+
+---
+
+### plugin-builder
+
+**역할**: 플러그인 패키지 생성
+
+JikiME-ADK 플러그인 패키지 구조를 생성합니다.
+
+**생성 디렉토리**: `packages/{plugin-name}/`
+
+---
+
+## Designer Agents
+
+### designer-ui
+
+**역할**: UI 디자인 및 디자인 시스템 전문가
+
+| 속성 | 값 |
+|------|-----|
+| Model | sonnet |
+| Tools | Read, Write, Edit, Glob, Grep |
+
+**핵심 기능**:
+- 디자인 시스템 생성 및 유지보수
+- 컴포넌트 라이브러리 아키텍처
+- 디자인 토큰 관리
+- 접근성 준수 (WCAG 2.1 AA)
+
+**디자인 시스템 아키텍처**:
+
+| 계층 | 구성 요소 |
+|------|----------|
+| Design Tokens | 색상, 타이포그래피, 간격, 그림자 |
+| Core Components | Button, Input, Card, Modal, Table |
+| Patterns | Navigation, Forms, Data Display |
+| Templates | 페이지 레이아웃, 앱 쉘 |
+
+**접근성 기준**:
+
+| 항목 | 요구사항 |
+|------|----------|
+| 색상 대비 | 일반 텍스트 4.5:1, 큰 텍스트 3:1 |
+| 키보드 | 모든 인터랙티브 요소 포커스 가능 |
+| 스크린 리더 | 시맨틱 HTML, ARIA 레이블 |
+| 모션 | prefers-reduced-motion 지원 |
+
+**호출 시점**:
+- 디자인 시스템 구축 시
+- 컴포넌트 라이브러리 개발 시
+- 접근성 개선 시
+
 ---
 
 ## 에이전트 선택 가이드
@@ -561,7 +1614,7 @@ docs/
 
 ```
 1. 읽기 전용 코드베이스 탐색?
-   → Explore subagent 사용
+   → explorer subagent 사용
 
 2. 외부 문서/API 조사 필요?
    → WebSearch, WebFetch, Context7 MCP 도구 사용
@@ -569,11 +1622,23 @@ docs/
 3. 도메인 전문성 필요?
    → specialist subagent 사용 (backend, frontend, debugger 등)
 
-4. 워크플로우 조율 필요?
+4. 언어/프레임워크별 전문성?
+   → specialist-[lang] subagent 사용 (specialist-java, specialist-go 등)
+
+5. 워크플로우 조율 필요?
    → manager-[workflow] subagent 사용
 
-5. 복잡한 다단계 작업?
+6. 복잡한 다단계 작업?
    → manager-strategy subagent 사용
+
+7. 멀티 에이전트 조율?
+   → coordinator 또는 orchestrator subagent 사용
+
+8. 레거시 마이그레이션?
+   → migrator subagent 사용
+
+9. 새 에이전트/커맨드/스킬 생성?
+   → [type]-builder subagent 사용
 ```
 
 ### 명령어 → 에이전트 매핑
@@ -592,10 +1657,30 @@ docs/
 | `/jikime:security` | security-auditor |
 | `/jikime:test` | test-guide |
 | `/jikime:e2e` | e2e-tester |
-| `/jikime:learn` | (Explore subagent) |
+| `/jikime:learn` | explorer |
 | `/jikime:refactor` | refactorer |
 | `/jikime:friday` | (F.R.I.D.A.Y. orchestration) |
-| `/jikime:migrate-*` | (F.R.I.D.A.Y. orchestration) |
+| `/jikime:migrate-*` | migrator |
+| `/jikime:smart-rebuild` | migrator + specialist-nextjs |
+
+### 기술 스택 → 에이전트 매핑
+
+| 기술 스택 | 에이전트 |
+|----------|---------|
+| Java/Spring Boot | specialist-java, specialist-spring |
+| Next.js/React | specialist-nextjs |
+| Go | specialist-go |
+| PostgreSQL | specialist-postgres, manager-database |
+| GraphQL | specialist-graphql, specialist-api |
+| 마이크로서비스/K8s | specialist-microservices |
+| React Native/Flutter | specialist-mobile |
+| Electron | specialist-electron |
+| WebSocket/Socket.IO | specialist-websocket |
+| 데이터 파이프라인 | manager-data |
+| 의존성 관리 | manager-dependency |
+| 레거시 코드 | migrator |
+| 디자인 시스템 | designer-ui |
+| 풀스택 기능 | fullstack |
 
 ---
 
@@ -623,7 +1708,26 @@ manager-ddd ─→ architect (아키텍처 자문)
             ─→ test-guide (테스트 전략)
 ```
 
+### Multi-Agent Coordination
+
+```
+coordinator
+    ├─→ backend (API 구현)
+    ├─→ frontend (UI 구현)
+    ├─→ test-guide (테스트 케이스)
+    └─→ [통합] → manager-quality (품질 검증)
+```
+
+### Task Distribution
+
+```
+dispatcher
+    ├─→ 우선순위 높음 → specialist-java (빠른 응답)
+    ├─→ 우선순위 중간 → specialist-go (일반 처리)
+    └─→ 우선순위 낮음 → (배치 처리)
+```
+
 ---
 
-Version: 3.0.0
-Last Updated: 2026-01-23
+Version: 5.1.0
+Last Updated: 2026-02-06

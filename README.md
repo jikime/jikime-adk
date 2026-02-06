@@ -54,9 +54,9 @@ MoAI-ADK의 구조와 흐름을 깊이 분석했고, 그 단단한 철학적 기
 | 기능 | 설명 | 문서 |
 |------|------|------|
 | **SPEC-First DDD** | ANALYZE-PRESERVE-IMPROVE 사이클로 동작 보존 개발 | [DDD 문서](./docs/tdd-ddd.md) |
-| **26개 전문 에이전트** | Manager 8, Specialist 14, Builder 4 에이전트 자동 위임 | [에이전트 카탈로그](./docs/agents.md) |
+| **57개 전문 에이전트** | Manager 12, Specialist 37, Designer 1, Orchestration 3, Builder 4 에이전트 자동 위임 | [에이전트 카탈로그](./docs/agents.md) |
 | **레거시 마이그레이션** | Vue.js, React CRA, Angular 등 → Next.js 16 자동 전환 | [마이그레이션 가이드](./docs/migration.md) |
-| **60개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 카탈로그](./docs/skills-catalog.md) |
+| **67개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 카탈로그](./docs/skills-catalog.md) |
 | **세션 메모리** | 세션 간 컨텍스트 연속성, 하이브리드 벡터+텍스트 검색 | [메모리 시스템](./docs/memory.md) |
 | **품질 보증** | TRUST 5 프레임워크 + LSP 품질 게이트 | [품질 가이드](./docs/rules.md) |
 | **LLM 프로바이더 라우터** | OpenAI, Gemini, GLM, Ollama 전환 | [라우터 문서](./docs/provider-router.md) |

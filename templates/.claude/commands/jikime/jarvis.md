@@ -354,6 +354,18 @@ IF no_progress_count >= 3:
 | Refactoring | refactorer |
 | Security fixes | security-auditor |
 | Performance | optimizer |
+| Java/Spring Boot | specialist-java, specialist-spring |
+| Next.js/React | specialist-nextjs |
+| Go development | specialist-go |
+| PostgreSQL/DB | specialist-postgres, manager-database |
+| Data pipelines | manager-data |
+| Dependencies | manager-dependency |
+| Legacy migration | migrator |
+| Research/Analysis | analyst |
+| Code exploration | explorer |
+| Multi-agent tasks | coordinator |
+| Complex workflows | orchestrator |
+| Task distribution | dispatcher |
 
 ---
 

@@ -302,11 +302,27 @@ J.A.R.V.I.S.가 작업 복잡도를 분석하여 최적 전략을 자동 선택:
 |-----------|--------------|
 | 백엔드 로직 | backend |
 | 프론트엔드 컴포넌트 | frontend |
+| 풀스택 기능 (DB→API→UI) | fullstack |
 | 테스트 생성 | test-guide |
 | 버그 수정 | debugger |
 | 리팩토링 | refactorer |
 | 보안 수정 | security-auditor |
 | 성능 최적화 | optimizer |
+| API 설계 | specialist-api |
+| GraphQL 스키마 | specialist-graphql |
+| 마이크로서비스 아키텍처 | specialist-microservices |
+| 모바일 앱 (RN/Flutter) | specialist-mobile |
+| 데스크톱 앱 (Electron) | specialist-electron |
+| 실시간 통신 (WebSocket) | specialist-websocket |
+| UI 디자인 시스템 | designer-ui |
+| Angular 15+ 개발 | specialist-angular |
+| JavaScript/Node.js 개발 | specialist-javascript |
+| PHP/Laravel/Symfony 개발 | specialist-php |
+| Python/FastAPI/Django 개발 | specialist-python |
+| Rust 시스템 프로그래밍 | specialist-rust |
+| SQL 쿼리 최적화 | specialist-sql |
+| TypeScript 고급 타입 | specialist-typescript |
+| Vue/Nuxt 개발 | specialist-vue |
 
 ## Output Format
 

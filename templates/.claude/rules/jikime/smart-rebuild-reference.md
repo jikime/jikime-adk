@@ -43,6 +43,7 @@ Usage, Options, Supported Frameworks 참조 문서.
 | `capture` | 사이트 크롤링 및 스크린샷 캡처 |
 | `analyze` | 소스 분석 및 매핑 생성 |
 | `generate frontend` | 프론트엔드 생성 (Mock 데이터 포함) |
+| `backend-init` | 🔴 백엔드 프로젝트 초기화 (NEW!) |
 | `generate backend` | 백엔드 API 생성 |
 | `generate connect` | 프론트엔드와 백엔드 연동 |
 | `generate hitl` | HITL 수동 실행 (generate frontend에 통합됨) |
@@ -125,6 +126,94 @@ Usage, Options, Supported Frameworks 참조 문서.
 | `--approve=ID` | 섹션 승인 | - |
 | `--skip=ID` | 섹션 스킵 | - |
 | `--reset` | 상태 초기화 | `false` |
+
+### 🔴 backend-init 옵션 (NEW!)
+
+백엔드 프로젝트를 초기화합니다. Phase G-0에서 사용됩니다.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--framework` | 백엔드 프레임워크 | `spring-boot` |
+| `--output` | 백엔드 출력 디렉토리 | `./output/backend` |
+| `--db-type` | 데이터베이스 타입 | `mysql` |
+| `--db-url` | DB 연결 URL | (AskUserQuestion) |
+| `--port` | 서버 포트 | 프레임워크별 기본값 |
+
+**지원 프레임워크:**
+
+| 값 | 프레임워크 | 언어 | 기본 포트 |
+|----|-----------|------|----------|
+| `spring-boot` | Spring Boot 3.x | Java 21 | 8080 |
+| `fastapi` | FastAPI | Python 3.12+ | 8000 |
+| `go-fiber` | Go Fiber | Go 1.22+ | 3001 |
+| `nestjs` | NestJS | Node.js 20+ | 3001 |
+
+**프레임워크별 초기화 매트릭스:**
+
+| 항목 | Spring Boot | FastAPI | Go Fiber | NestJS |
+|------|-------------|---------|----------|--------|
+| **프로젝트 초기화** | Spring Initializr | `uv init` | `go mod init` | `nest new` |
+| **의존성 파일** | build.gradle | pyproject.toml | go.mod | package.json |
+| **설정 파일** | application.yml | .env | config.yaml | .env |
+| **DB ORM** | JPA/Hibernate | SQLAlchemy | GORM | TypeORM |
+| **서버 실행** | `./gradlew bootRun` | `uvicorn main:app` | `go run main.go` | `npm run start:dev` |
+
+**사용 예시:**
+```bash
+# Spring Boot (Java) 프로젝트 초기화
+/jikime:smart-rebuild backend-init --framework spring-boot
+
+# FastAPI (Python) 프로젝트 초기화
+/jikime:smart-rebuild backend-init --framework fastapi
+
+# Go Fiber 프로젝트 초기화
+/jikime:smart-rebuild backend-init --framework go-fiber
+
+# NestJS (Node.js) 프로젝트 초기화
+/jikime:smart-rebuild backend-init --framework nestjs
+```
+
+### generate backend 옵션
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--api-mapping` | API 매핑 파일 | `./api-mapping.json` |
+| `--output` | 백엔드 출력 디렉토리 | `./output/backend` |
+| `--page <id>` | 🔴 특정 페이지 API만 생성 | (전체) |
+| `--common-only` | 🔴 공통 API만 생성 (인증 등) | - |
+| `--skip-common` | 🔴 공통 API 스킵 (이미 생성된 경우) | - |
+| `--framework` | 타겟 백엔드 프레임워크 | backend-init에서 설정 |
+| `--db-url` | DB 연결 URL | `.env`에서 읽기 |
+
+**페이지별 백엔드 생성:**
+```bash
+# 공통 API 먼저 생성
+/jikime:smart-rebuild generate backend --common-only
+
+# 특정 페이지 API만 생성
+/jikime:smart-rebuild generate backend --page 3 --skip-common
+
+# 전체 API 생성 (기존 방식)
+/jikime:smart-rebuild generate backend
+```
+
+### generate connect 옵션 (🔴 Updated!)
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--frontend-dir` | 프론트엔드 디렉토리 | `./output/frontend` |
+| `--page <id>` | 🔴 특정 페이지만 연동 | (전체) |
+| `--api-url` | 백엔드 API URL | `http://localhost:8080` |
+| `--dry-run` | 변경 사항 미리보기 (실제 수정 안 함) | - |
+
+**페이지별 연동:**
+```bash
+# 특정 페이지만 연동
+/jikime:smart-rebuild generate connect --page 3
+
+# 전체 연동 (기존 방식)
+/jikime:smart-rebuild generate connect
+```
 
 ---
 
@@ -221,26 +310,140 @@ Usage, Options, Supported Frameworks 참조 문서.
 
 ---
 
+## api-mapping.json 구조 (🔴 NEW!)
+
+페이지별 점진적 백엔드 연동을 위한 API 의존성 매핑 파일.
+
+```json
+{
+  "version": "1.0",
+  "createdAt": "2026-02-06T10:00:00Z",
+  "sourceFramework": "php-pure",
+  "targetBackend": "java",
+
+  "commonApis": [
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "required": true,
+      "sourceFile": "login.php",
+      "generated": false,
+      "connected": false
+    },
+    {
+      "path": "/api/users/me",
+      "method": "GET",
+      "required": true,
+      "sourceFile": "session.php",
+      "generated": false,
+      "connected": false
+    }
+  ],
+
+  "pageApis": {
+    "1": [],
+    "3": [
+      {
+        "path": "/api/products",
+        "method": "GET",
+        "sourceFile": "product_list.php",
+        "table": "products",
+        "params": ["category", "page", "limit"],
+        "generated": false,
+        "connected": false
+      }
+    ],
+    "5": [
+      {
+        "path": "/api/products/:id",
+        "method": "GET",
+        "sourceFile": "product_detail.php",
+        "table": "products",
+        "generated": false,
+        "connected": false
+      }
+    ]
+  },
+
+  "entities": [
+    {
+      "name": "Product",
+      "table": "products",
+      "fields": [
+        { "name": "id", "type": "BIGINT", "javaType": "Long" },
+        { "name": "name", "type": "VARCHAR(255)", "javaType": "String" },
+        { "name": "price", "type": "DECIMAL(10,2)", "javaType": "BigDecimal" }
+      ]
+    }
+  ]
+}
+```
+
+**주요 필드:**
+
+| 필드 | 설명 |
+|------|------|
+| `commonApis` | 모든 페이지에서 공통으로 필요한 API (인증 등) |
+| `commonApis[].required` | true면 첫 동적 페이지 연동 시 반드시 생성 |
+| `pageApis` | 페이지 ID별 필요한 API 목록 |
+| `pageApis[pageId][]` | 해당 페이지에서 호출하는 API들 |
+| `*.generated` | API 생성 완료 여부 |
+| `*.connected` | 프론트엔드 연동 완료 여부 |
+| `entities` | DB 테이블 → Java Entity 매핑 정보 |
+
+---
+
 ## Output Structure
 
 ```
 {output}/
 ├── capture/
-│   ├── sitemap.json     # 캡처 인덱스 + captured 상태
-│   ├── *.png            # 스크린샷 (캡처된 페이지만)
-│   └── *.html           # HTML (캡처된 페이지만)
-├── mapping.json         # 소스 ↔ 캡처 매핑
-├── backend/
-│   └── src/main/java/   # Spring Boot
-└── frontend/
+│   ├── sitemap.json          # 캡처 인덱스 + captured 상태
+│   ├── *.png                 # 스크린샷 (캡처된 페이지만)
+│   ├── *.html                # HTML (캡처된 페이지만)
+│   └── hitl/                 # HITL 비교 결과
+│       └── page_{N}/
+│
+├── mapping.json              # 소스 ↔ 캡처 매핑
+├── api-mapping.json          # 🔴 API 의존성 매핑 (NEW!)
+│
+├── backend/                  # 🔴 Spring Boot 프로젝트 (상세화)
+│   ├── build.gradle
+│   ├── settings.gradle
+│   └── src/main/
+│       ├── java/com/example/api/
+│       │   ├── ApiApplication.java
+│       │   ├── config/
+│       │   │   └── CorsConfig.java
+│       │   ├── controller/
+│       │   │   ├── AuthController.java      # 공통 API
+│       │   │   ├── ProductController.java   # 페이지별 API
+│       │   │   └── MemberController.java
+│       │   ├── service/
+│       │   │   ├── AuthService.java
+│       │   │   ├── ProductService.java
+│       │   │   └── MemberService.java
+│       │   ├── repository/
+│       │   │   ├── ProductRepository.java
+│       │   │   └── MemberRepository.java
+│       │   └── entity/
+│       │       ├── Product.java
+│       │       └── Member.java
+│       └── resources/
+│           └── application.yml
+│
+└── frontend/                 # Next.js 프로젝트
+    ├── .env.local            # 🔴 API_URL 설정
     └── src/
         ├── app/                    # Next.js App Router
         │   ├── page.tsx            # 홈 (섹션 컴포넌트 조합)
         │   └── about-us/page.tsx   # 섹션 컴포넌트 import
-        ├── styles/                 # 🔴 원본 CSS 저장
+        ├── lib/
+        │   └── api-client.ts       # 🔴 API 클라이언트
+        ├── styles/                 # 원본 CSS 저장
         │   ├── legacy/             # fetch한 CSS 파일들
         │   └── legacy-imports.css
-        └── components/             # 🔴 섹션 컴포넌트
+        └── components/             # 섹션 컴포넌트
             ├── common/             # 공통 (헤더, 푸터)
             ├── home/               # 홈 페이지 섹션들
             └── about-us/           # about-us 섹션들
@@ -264,6 +467,50 @@ Usage, Options, Supported Frameworks 참조 문서.
 - SCRIPTS_DIR 경로 확인
 - npm install 실행 여부 확인
 
+### 🔴 백엔드 연동 문제 (NEW!)
+
+#### CORS 오류
+```
+Access to fetch at 'http://localhost:8080/api/...' has been blocked by CORS policy
+```
+**해결:**
+- Spring Boot의 `CorsConfig.java` 확인
+- `allowedOrigins`에 `http://localhost:3000` 추가
+
+#### API 연결 실패
+```
+Error: fetch failed / ECONNREFUSED
+```
+**해결:**
+- 백엔드 서버 실행 여부 확인: `./gradlew bootRun`
+- `.env.local`의 `NEXT_PUBLIC_API_URL` 확인
+- 포트 충돌 확인: `lsof -i :8080`
+
+#### DB 연결 오류
+```
+Cannot acquire connection from data source
+```
+**해결:**
+- `application.yml`의 DB 설정 확인
+- DB 서버 실행 여부 확인
+- 사용자 권한 확인
+
+#### 공통 API 누락
+```
+401 Unauthorized (인증 API 없이 호출)
+```
+**해결:**
+- `generate backend --common-only` 먼저 실행
+- 또는 인증이 필요 없는 API는 `@PermitAll` 추가
+
+#### Entity 타입 불일치
+```
+Could not determine recommended JdbcType for ...
+```
+**해결:**
+- `api-mapping.json`의 `entities[].fields` 타입 확인
+- SQL 타입 → Java 타입 매핑 확인
+
 ---
 
-Version: 1.0.0
+Version: 2.0.0

@@ -69,214 +69,121 @@ Smart Rebuild:    스크린샷 + 소스 → AI가 새로 생성 (클린 코드)
 
 ---
 
-## 3. 워크플로우
+## 3. 전체 워크플로우
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 1: Capture (캡처)                                         │
-├─────────────────────────────────────────────────────────────────┤
-│  Playwright로 사이트 크롤링                                      │
-│  ├── 모든 페이지 URL 수집 (재귀적)                               │
-│  ├── 각 페이지 스크린샷 (fullPage)                               │
-│  ├── HTML 저장                                                   │
-│  └── sitemap.json 생성                                           │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 2: Analyze (분석 & 매핑)                                  │
-├─────────────────────────────────────────────────────────────────┤
-│  레거시 소스 분석                                                │
-│  ├── URL ↔ 소스 파일 매칭                                       │
-│  ├── 정적/동적 자동 분류                                         │
-│  ├── SQL 쿼리 추출 (동적인 경우)                                 │
-│  ├── DB 스키마 분석                                              │
-│  └── mapping.json 생성                                           │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 3a: Generate Frontend (Mock 데이터)                       │
-├─────────────────────────────────────────────────────────────────┤
-│  정적 페이지: 스크린샷 + HTML → Next.js 정적 페이지               │
-│  동적 페이지: Mock 데이터로 UI 렌더링 (경고 배너 표시)             │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 3b: Generate Backend                                      │
-├─────────────────────────────────────────────────────────────────┤
-│  SQL → Java Entity/Repository/Controller                         │
-│  application.properties, pom.xml 생성                            │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  Phase 3c: Generate Connect                                      │
-├─────────────────────────────────────────────────────────────────┤
-│  Mock 데이터 → 실제 API 호출로 교체                               │
-│  .env.local 생성 (API_URL 설정)                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 1: Capture (링크 수집) - Lazy Capture 방식                            │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Playwright로 사이트 크롤링                                                  │
+│  ├── 🔴 링크만 수집 (HTML/스크린샷 캡처 안 함!)                              │
+│  ├── sitemap.json 생성 (captured: false)                                    │
+│  └── --prefetch 옵션 시에만 전체 캡처                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 2: Analyze (분석 & 매핑)                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  레거시 소스 분석                                                            │
+│  ├── URL ↔ 소스 파일 매칭                                                   │
+│  ├── 정적/동적 자동 분류                                                     │
+│  ├── SQL 쿼리 추출 (동적인 경우)                                             │
+│  ├── 🔴 API 의존성 추출 → api-mapping.json 생성                              │
+│  └── mapping.json 생성                                                       │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  Phase 3: Generate Frontend (페이지별 처리)                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  Phase A: 프로젝트 초기화 (첫 페이지만)                                       │
+│  Phase B: 페이지 기본 코드 생성                                               │
+│    ├── Step 0: 🔴 Lazy Capture 체크 (captured=false면 캡처)                  │
+│    ├── Step 1: sitemap.json 읽기                                             │
+│    ├── Step 2: 스크린샷 읽기 (시각 분석)                                     │
+│    ├── Step 3: HTML 읽기 (텍스트/이미지 추출)                                │
+│    ├── Step 3.5: 🔴 원본 CSS Fetch (첫 페이지만)                             │
+│    ├── Step 4: 🔴 섹션별 컴포넌트 생성 (data-section-id 포함!)               │
+│    └── Step 5: page.tsx 생성 (섹션 컴포넌트 조합)                            │
+│  Phase C: 개발 서버 실행                                                      │
+│  Phase D: AskUserQuestion (다음 작업 선택)                                    │
+│    ├── HITL 세부 조정 → Phase E                                              │
+│    ├── 🔴 백엔드 연동 → Phase G (동적 페이지만)                              │
+│    ├── 다음 페이지 → Phase B                                                 │
+│    └── 직접 입력                                                              │
+│  Phase E: HITL 루프 (섹션별 비교 & 수정)                                      │
+│  Phase F: 페이지 완료                                                         │
+│  🔴 Phase G: 백엔드 연동 (페이지별 점진적 연동)                               │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. Phase 1: Capture (캡처)
+## 4. Phase 1: Capture (링크 수집)
 
-### 4.1 Playwright 크롤링
+### 4.1 Lazy Capture 방식
 
-```typescript
-const { chromium } = require('playwright');
+**기본 동작:** 링크만 수집하고, HTML + 스크린샷은 `generate --page N` 단계에서 캡처합니다.
 
-async function crawlAndCapture(startUrl: string) {
-  const browser = await chromium.launch();
-  const baseUrl = new URL(startUrl).origin;
+| 옵션 | 동작 |
+|------|------|
+| (기본) | 링크만 수집 → `captured: false` |
+| `--prefetch` | 모든 페이지 HTML + 스크린샷 캡처 → `captured: true` |
 
-  const visited = new Set<string>();
-  const toVisit: string[] = [startUrl];
-  const results = [];
+**장점:**
+- 불필요한 캡처 시간 절약
+- 페이지별 점진적 처리 가능
+- 실제 필요한 페이지만 캡처
 
-  while (toVisit.length > 0) {
-    const batch = toVisit.splice(0, 5); // 동시 5개 처리
+### 4.2 캡처 옵션
 
-    const promises = batch.map(async (url) => {
-      if (visited.has(url)) return null;
-      visited.add(url);
-      return await capturePage(browser, url, baseUrl);
-    });
+| 옵션 | 설명 | 기본값 |
+|------|------|--------|
+| `--merge` | 기존 sitemap.json에 새 route만 추가 | ✅ (기본) |
+| `--force` | sitemap 새로 생성 (기존 덮어쓰기) | - |
+| `--prefetch` | 모든 페이지 HTML + 스크린샷 미리 캡처 | - |
+| `--clean` | 더 이상 존재하지 않는 route 제거 | - |
+| `--max-pages` | 최대 캡처 페이지 수 | `100` |
+| `--login` | 로그인 필요 시 (브라우저 열림) | - |
 
-    const batchResults = await Promise.all(promises);
-
-    for (const result of batchResults) {
-      if (!result) continue;
-      results.push(result);
-
-      // 새로운 링크 추가
-      for (const link of result.links) {
-        if (!visited.has(link) && !toVisit.includes(link)) {
-          toVisit.push(link);
-        }
-      }
-    }
-  }
-
-  await browser.close();
-  return results;
-}
-```
-
-### 4.2 페이지 캡처
-
-```typescript
-async function capturePage(browser, url, baseUrl) {
-  const page = await browser.newPage();
-
-  await page.goto(url, { waitUntil: 'networkidle' });
-
-  // Lazy loading 해결: 전체 스크롤
-  await autoScroll(page);
-
-  // 전체 페이지 스크린샷
-  await page.screenshot({
-    path: `./output/${filename}.png`,
-    fullPage: true
-  });
-
-  // HTML 저장
-  const html = await page.content();
-
-  // 내부 링크 수집
-  const links = await page.$$eval('a[href]', (anchors, base) => {
-    return anchors
-      .map(a => a.href)
-      .filter(href => href.startsWith(base));
-  }, baseUrl);
-
-  return { url, screenshot, html, links };
-}
-```
-
-### 4.3 Lazy Loading 처리
-
-```typescript
-async function autoScroll(page) {
-  await page.evaluate(async () => {
-    await new Promise((resolve) => {
-      let totalHeight = 0;
-      const distance = 500;
-      const maxHeight = 50000;
-
-      const timer = setInterval(() => {
-        window.scrollBy(0, distance);
-        totalHeight += distance;
-
-        if (totalHeight >= document.body.scrollHeight || totalHeight >= maxHeight) {
-          clearInterval(timer);
-          window.scrollTo(0, 0);
-          resolve();
-        }
-      }, 100);
-    });
-  });
-}
-```
-
-### 4.4 인증 페이지 처리
-
-`--login` 옵션을 사용하면 로그인과 캡처가 한 번에 진행됩니다.
-
-```bash
-# 인증 필요 시: 로그인 → 캡처 한 번에 진행
-/jikime:smart-rebuild capture https://example.com --login --output=./capture
-```
-
-**동작 방식:**
-1. 브라우저가 열림 (headless: false)
-2. 사용자가 직접 로그인 수행
-3. 터미널에서 **Enter 입력** → 세션 자동 저장
-4. headless 모드로 전환하여 캡처 진행
-
-```typescript
-// --login 옵션 처리 내부 로직
-async function crawlAndCapture(url: string, options: CaptureOptions) {
-  if (options.login) {
-    // 1. 브라우저 열고 로그인 페이지 이동
-    const browser = await chromium.launch({ headless: false });
-    const page = await context.newPage();
-    await page.goto(url);
-
-    // 2. 사용자 로그인 대기
-    await waitForUserInput('로그인 완료 후 Enter를 누르세요...');
-
-    // 3. 세션 저장
-    await context.storageState({ path: `${outputDir}/auth.json` });
-
-    // 4. headless 모드로 재시작하여 캡처 진행
-    await browser.close();
-    browser = await chromium.launch({ headless: true });
-    context = await browser.newContext({ storageState: sessionFile });
-  }
-
-  // 캡처 진행...
-}
-```
-
-**세션 재사용 (반복 캡처 시):**
-```bash
-# 이전에 저장된 세션 파일 사용
-/jikime:smart-rebuild capture https://example.com --auth=./capture/auth.json
-```
-
-### 4.5 출력: sitemap.json
+### 4.3 sitemap.json 구조
 
 ```json
 {
   "baseUrl": "https://example.com",
-  "capturedAt": "2026-02-04T10:00:00Z",
-  "totalPages": 47,
+  "createdAt": "2026-02-05T10:00:00Z",
+  "updatedAt": "2026-02-06T14:30:00Z",
+  "totalPages": 15,
+  "summary": {
+    "pending": 13,
+    "in_progress": 1,
+    "completed": 1,
+    "captured": 2
+  },
   "pages": [
     {
-      "url": "https://example.com/about",
-      "screenshot": "about.png",
-      "html": "about.html",
-      "title": "회사 소개",
-      "links": ["/", "/contact", "/products"]
+      "id": 1,
+      "url": "https://example.com/",
+      "title": "홈페이지",
+      "captured": true,
+      "screenshot": "page_1_home.png",
+      "html": "page_1_home.html",
+      "status": "completed",
+      "type": "static",
+      "hasApi": false,
+      "capturedAt": "2026-02-06T10:00:00Z"
+    },
+    {
+      "id": 2,
+      "url": "https://example.com/products",
+      "title": "상품 목록",
+      "captured": false,
+      "screenshot": null,
+      "html": null,
+      "status": "pending",
+      "type": "dynamic",
+      "hasApi": true,
+      "apis": ["/api/products"],
+      "capturedAt": null
     }
   ]
 }
@@ -286,484 +193,422 @@ async function crawlAndCapture(url: string, options: CaptureOptions) {
 
 ## 5. Phase 2: Analyze (분석 & 매핑)
 
-### 5.1 소스 분석 알고리즘
+### 5.1 API 의존성 추출
 
-```typescript
-interface PageAnalysis {
-  path: string;
-  type: 'static' | 'dynamic';
-  reason: string[];
-  dbQueries: string[];
-}
+레거시 소스에서 페이지별 필요한 API 엔드포인트를 자동으로 식별합니다.
 
-function classifyPage(phpFile: string): PageAnalysis {
-  const content = readFile(phpFile);
-  const reasons = [];
-  const dbQueries = [];
+```javascript
+// PHP 파일에서 SQL 쿼리 추출
+const sqlPatterns = [
+  { pattern: /SELECT\s+.+\s+FROM\s+(\w+)/gi, method: 'GET' },
+  { pattern: /INSERT\s+INTO\s+(\w+)/gi, method: 'POST' },
+  { pattern: /UPDATE\s+(\w+)\s+SET/gi, method: 'PUT' },
+  { pattern: /DELETE\s+FROM\s+(\w+)/gi, method: 'DELETE' },
+];
 
-  // 1. SQL 쿼리 체크
-  const sqlPatterns = [
-    /SELECT\s+.+\s+FROM/gi,
-    /INSERT\s+INTO/gi,
-    /UPDATE\s+.+\s+SET/gi,
-    /DELETE\s+FROM/gi,
-  ];
-
-  for (const pattern of sqlPatterns) {
-    const matches = content.match(pattern);
-    if (matches) {
-      dbQueries.push(...matches);
-      reasons.push('SQL 쿼리 발견');
-    }
-  }
-
-  // 2. DB 연결 함수 체크
-  if (/mysqli_query|\$pdo->query|\$wpdb->/g.test(content)) {
-    reasons.push('DB 연결 함수');
-  }
-
-  // 3. 세션 체크
-  if (/\$_SESSION|session_start/g.test(content)) {
-    reasons.push('세션 사용');
-  }
-
-  // 4. POST 처리 체크
-  if (/\$_POST|\$_REQUEST/g.test(content)) {
-    reasons.push('POST 데이터 처리');
-  }
-
-  return {
-    path: phpFile,
-    type: reasons.length > 0 ? 'dynamic' : 'static',
-    reason: reasons,
-    dbQueries,
-  };
-}
+// 테이블명 → API 엔드포인트 변환
+// members → /api/members
+// product_list → /api/products
 ```
 
-### 5.2 출력: mapping.json
+### 5.2 api-mapping.json 구조
 
 ```json
 {
-  "project": {
-    "name": "example-migration",
-    "sourceUrl": "https://example.com",
-    "sourcePath": "./legacy-php"
-  },
+  "version": "1.0",
+  "createdAt": "2026-02-06T10:00:00Z",
+  "sourceFramework": "php-pure",
+  "targetBackend": "java",
 
-  "summary": {
-    "totalPages": 47,
-    "static": 12,
-    "dynamic": 35
-  },
-
-  "pages": [
+  "commonApis": [
     {
-      "id": "page_001",
-
-      "capture": {
-        "url": "https://example.com/about",
-        "screenshot": "captures/about.png",
-        "html": "captures/about.html"
-      },
-
-      "source": {
-        "file": "about.php",
-        "type": "static",
-        "reason": []
-      },
-
-      "output": {
-        "frontend": {
-          "path": "/app/about/page.tsx",
-          "type": "static-page"
-        }
-      }
+      "path": "/api/auth/login",
+      "method": "POST",
+      "required": true,
+      "sourceFile": "login.php",
+      "generated": false,
+      "connected": false
     },
-
     {
-      "id": "page_002",
-
-      "capture": {
-        "url": "https://example.com/members",
-        "screenshot": "captures/members.png",
-        "html": "captures/members.html"
-      },
-
-      "source": {
-        "file": "members/list.php",
-        "type": "dynamic",
-        "reason": ["SQL 쿼리 발견", "세션 사용"]
-      },
-
-      "database": {
-        "queries": [
-          {
-            "raw": "SELECT * FROM members WHERE status = 'active'",
-            "table": "members",
-            "type": "SELECT"
-          }
-        ]
-      },
-
-      "output": {
-        "backend": {
-          "entity": "Member.java",
-          "repository": "MemberRepository.java",
-          "controller": "MemberController.java",
-          "endpoint": "GET /api/members"
-        },
-        "frontend": {
-          "path": "/app/members/page.tsx",
-          "type": "dynamic-page",
-          "apiCalls": ["GET /api/members"]
-        }
-      }
+      "path": "/api/users/me",
+      "method": "GET",
+      "required": true,
+      "sourceFile": "session.php",
+      "generated": false,
+      "connected": false
     }
   ],
 
-  "database": {
-    "tables": [
+  "pageApis": {
+    "1": [],
+    "3": [
       {
-        "name": "members",
-        "columns": [
-          {"name": "id", "type": "INT", "primary": true},
-          {"name": "email", "type": "VARCHAR(255)"},
-          {"name": "name", "type": "VARCHAR(100)"},
-          {"name": "status", "type": "ENUM('active','inactive')"}
-        ]
+        "path": "/api/products",
+        "method": "GET",
+        "sourceFile": "product_list.php",
+        "table": "products",
+        "params": ["category", "page", "limit"],
+        "generated": false,
+        "connected": false
       }
     ]
-  }
+  },
+
+  "entities": [
+    {
+      "name": "Product",
+      "table": "products",
+      "fields": [
+        { "name": "id", "type": "BIGINT", "javaType": "Long" },
+        { "name": "name", "type": "VARCHAR(255)", "javaType": "String" },
+        { "name": "price", "type": "DECIMAL(10,2)", "javaType": "BigDecimal" }
+      ]
+    }
+  ]
 }
 ```
+
+**필드 설명:**
+
+| 필드 | 설명 |
+|------|------|
+| `commonApis` | 모든 페이지에서 공통으로 필요한 API (인증 등) |
+| `commonApis[].required` | true면 첫 동적 페이지 연동 시 반드시 생성 |
+| `pageApis` | 페이지 ID별 필요한 API 목록 |
+| `*.generated` | API 생성 완료 여부 |
+| `*.connected` | 프론트엔드 연동 완료 여부 |
 
 ---
 
-## 6. Phase 3: Generate (코드 생성) - 3단계 워크플로우
+## 6. Phase 3: Generate Frontend
 
-**UI 우선 개발 전략:** 프론트엔드를 먼저 생성하여 UI를 확인한 후, 백엔드를 생성하고 연동합니다.
+### 6.1 HARD RULES (절대 위반 금지!)
 
-### 6.1 Phase 3a: Generate Frontend (Mock 데이터)
+| # | 규칙 | 설명 |
+|---|------|------|
+| 1 | **스크린샷 필수 분석** | 코드 작성 전 반드시 스크린샷을 Read하고 시각적으로 분석 |
+| 2 | **HTML 구조 복사** | `<header>`, `<nav>`, `<main>`, `<footer>` 구조 그대로 유지 |
+| 3 | **원본 텍스트 유지** | HTML에서 추출한 텍스트를 번역 없이 원본 그대로 사용 |
+| 4 | **원본 이미지 URL** | HTML의 `<img src="...">` URL을 그대로 사용 |
+| 5 | **원본 CSS Fetch** | 원본 사이트의 CSS를 WebFetch로 가져와 `src/styles/`에 저장 |
+| 6 | **섹션 컴포넌트 분리** | 섹션별로 `components/{route}/*-section.tsx` 파일 생성 |
+| 7 | **섹션 식별자 필수** | 모든 주요 섹션에 `data-section-id` 속성 추가 (HITL 비교용) |
+| 8 | **스크린샷 기반 스타일** | 색상, 폰트 크기, 간격은 스크린샷에서 추출 |
+| 9 | **kebab-case 네이밍** | 폴더/파일명은 반드시 kebab-case (`about-us/`, `hero-section.tsx`) |
 
-**목적:** UI를 먼저 확인할 수 있도록 Mock 데이터와 함께 프론트엔드 생성
+### 6.2 파일/폴더 네이밍 규칙
 
-```bash
-/jikime:smart-rebuild generate frontend --mapping=./mapping.json
-```
+| 대상 | 규칙 | ✅ 올바른 예시 | ❌ 잘못된 예시 |
+|------|------|---------------|---------------|
+| **라우트 폴더** | kebab-case | `about-us/`, `contact-form/` | `aboutUs/`, `ContactForm/` |
+| **페이지 파일** | page.tsx (고정) | `about-us/page.tsx` | `AboutUs.tsx` |
+| **컴포넌트 파일** | kebab-case | `header-nav.tsx`, `hero-section.tsx` | `HeaderNav.tsx` |
 
-**정적 페이지:**
-```tsx
-// app/about/page.tsx
-export default function AboutPage() {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">회사 소개</h1>
-      <div className="prose max-w-none">
-        {/* HTML에서 추출한 콘텐츠 */}
-      </div>
-    </div>
-  );
-}
-```
+### 6.3 섹션 컴포넌트 분리
 
-**동적 페이지 (Mock 데이터 포함):**
-```tsx
-// app/members/page.tsx
-// Type: Dynamic Page (Mock Data)
-// TODO: Replace mock data with real API call after backend is ready
-
-interface Member {
-  id: number;
-  name: string;
-  description: string;
-  createdAt: string;
-}
-
-// ⚠️ MOCK DATA - Will be replaced by generate connect
-const mockMembers: Member[] = [
-  { id: 1, name: 'Member 1', description: 'Description 1', createdAt: '2026-02-04' },
-  { id: 2, name: 'Member 2', description: 'Description 2', createdAt: '2026-02-04' },
-];
-
-// ⚠️ MOCK FUNCTION - Will be replaced by real API call
-async function getMembers(): Promise<Member[]> {
-  return Promise.resolve(mockMembers);
-}
-
-export default async function MembersPage() {
-  const members = await getMembers();
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">회원 목록</h1>
-
-      {/* Mock Data Banner */}
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-        <p className="text-yellow-700">
-          ⚠️ 현재 Mock 데이터를 사용 중입니다. 백엔드 연동 후 실제 데이터로 교체됩니다.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-3 gap-4">
-        {members.map(member => (
-          <MemberCard key={member.id} member={member} />
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-### 6.2 Phase 3b: Generate Backend
-
-**목적:** Java Spring Boot API 생성
-
-```bash
-/jikime:smart-rebuild generate backend --mapping=./mapping.json
-```
-
-**Entity (스키마 정보 반영):**
-```java
-// Member.java
-@Entity
-@Table(name = "members")
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class Member {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "email", nullable = false)
-    private String email;
-
-    @Column(name = "name")
-    private String name;
-
-    @Column(name = "status")
-    private String status;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-}
-```
-
-**Repository:**
-```java
-// MemberRepository.java
-@Repository
-public interface MemberRepository extends JpaRepository<Member, Long> {
-    // TODO: Add custom query methods based on SQL analysis
-}
-```
-
-**Controller (CRUD + CORS):**
-```java
-// MemberController.java
-@RestController
-@RequestMapping("/api/members")
-@RequiredArgsConstructor
-@CrossOrigin(origins = "*")
-public class MemberController {
-
-    private final MemberRepository memberRepository;
-
-    @GetMapping
-    public ResponseEntity<List<Member>> getAll() {
-        return ResponseEntity.ok(memberRepository.findAll());
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Member> getById(@PathVariable Long id) {
-        return memberRepository.findById(id)
-            .map(ResponseEntity::ok)
-            .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping
-    public ResponseEntity<Member> create(@RequestBody Member member) {
-        return ResponseEntity.ok(memberRepository.save(member));
-    }
-    // ... PUT, DELETE
-}
-```
-
-### 6.3 Phase 3c: Generate Connect
-
-**목적:** Mock 데이터를 실제 API 호출로 교체
-
-```bash
-/jikime:smart-rebuild generate connect --mapping=./mapping.json
-```
-
-**변환 결과:**
-```tsx
-// app/members/page.tsx
-// Type: Dynamic Page (Connected to API)
-// ✅ Connected to backend API
-
-interface Member {
-  id: number;
-  name: string;
-  description: string;
-  createdAt: string;
-}
-
-async function getMembers(): Promise<Member[]> {
-  const res = await fetch(`http://localhost:8080/api/members`, {
-    cache: 'no-store',
-  });
-
-  if (!res.ok) {
-    throw new Error('Failed to fetch members');
-  }
-
-  return res.json();
-}
-
-export default async function MembersPage() {
-  const members = await getMembers();
-
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">회원 목록</h1>
-      <div className="grid grid-cols-3 gap-4">
-        {members.map(member => (
-          <MemberCard key={member.id} member={member} />
-        ))}
-      </div>
-    </div>
-  );
-}
-```
-
-**생성되는 .env.local:**
-```bash
-# API Configuration
-API_URL=http://localhost:8080
-NEXT_PUBLIC_API_URL=http://localhost:8080
-```
-
----
-
-## 7. 스킬 구조
+**모든 섹션은 별도 컴포넌트 파일로 분리하고, page.tsx에서 조합합니다.**
 
 ```
-skills/jikime-migration-smart-rebuild/
-├── SKILL.md                    # 스킬 정의
-├── rules/
-│   ├── overview.md             # 전체 워크플로우 가이드
-│   ├── phase-1-capture.md      # 캡처 단계 상세
-│   ├── phase-2-analyze.md      # 분석 단계 상세
-│   ├── phase-3-generate.md     # 생성 단계 상세
-│   └── troubleshooting.md      # 문제 해결
+src/
+├── app/
+│   └── about-us/
+│       └── page.tsx              # 섹션 컴포넌트 조합
 │
-└── scripts/                    # CLI 도구
-    ├── package.json
-    ├── bin/
-    │   └── smart-rebuild.ts    # CLI 엔트리포인트
-    ├── capture/
-    │   ├── crawl.ts            # 사이트 크롤링
-    │   ├── auth.ts             # 인증 처리
-    │   └── screenshot.ts       # 스크린샷 캡처
-    ├── analyze/
-    │   ├── classify.ts         # 정적/동적 분류
-    │   ├── match.ts            # 소스 ↔ 캡처 매칭
-    │   └── extract-sql.ts      # SQL 쿼리 추출
-    └── generate/
-        ├── frontend.ts         # Next.js 코드 생성
-        └── backend.ts          # Java API 코드 생성
+└── components/
+    └── about-us/                 # 페이지별 컴포넌트 폴더 (kebab-case!)
+        ├── hero-section.tsx      # data-section-id="01-hero"
+        ├── team-section.tsx      # data-section-id="02-team"
+        └── contact-section.tsx   # data-section-id="03-contact"
+```
+
+**섹션 컴포넌트 예시:**
+```tsx
+// components/about-us/hero-section.tsx
+export function HeroSection() {
+  return (
+    <section data-section-id="01-hero" className="...">
+      {/* 🔴 원본 HTML 텍스트 그대로! */}
+      <h1>About Our Company</h1>
+      <p>We are a leading provider of...</p>
+      <img src="https://example.com/images/hero.jpg" alt="Hero" />
+    </section>
+  );
+}
+```
+
+**page.tsx 템플릿:**
+```tsx
+// app/about-us/page.tsx
+import { HeroSection } from '@/components/about-us/hero-section';
+import { TeamSection } from '@/components/about-us/team-section';
+import { ContactSection } from '@/components/about-us/contact-section';
+
+export default function AboutUsPage() {
+  return (
+    <div>
+      <HeroSection />
+      <TeamSection />
+      <ContactSection />
+    </div>
+  );
+}
+```
+
+### 6.4 원본 CSS Fetch
+
+**첫 페이지 생성 시 원본 CSS를 가져와서 저장합니다.**
+
+```
+src/styles/
+├── legacy/              # 원본 사이트에서 가져온 CSS
+│   ├── main.css
+│   └── style.css
+└── legacy-imports.css   # 레거시 CSS 통합 import
+```
+
+**layout.tsx에서 import:**
+```tsx
+// src/app/layout.tsx
+import '@/styles/legacy-imports.css';  // 🔴 레거시 CSS
+import './globals.css';                 // Tailwind
 ```
 
 ---
 
-## 8. CLI 명령어
+## 7. Phase E: HITL 루프 (Human-In-The-Loop)
 
-### 8.1 전체 프로세스
+### 7.1 워크플로우
+
+```
+E-1. hitl-refine.ts 실행 (Bash)
+     → 원본 사이트 캡처 + 로컬 사이트 캡처 + DOM 비교
+         ↓
+E-2. JSON 결과 파싱
+     → overallMatch%, issues[], suggestions[] 추출
+         ↓
+E-3. AskUserQuestion
+     "{섹션} 일치율 {N}%. 어떻게 처리할까요?"
+     options: [승인, 수정 필요, 스킵]
+         ↓
+E-4. 응답별 처리
+     승인 → E-5
+     수정 필요 → 코드 Edit → E-1로 돌아가기 (재캡처!)
+     스킵 → E-5
+         ↓
+E-5. 다음 섹션 체크
+     남은 섹션 있음 → E-1로 돌아가기
+     모든 섹션 완료 → Phase F
+```
+
+### 7.2 data-section-id 규칙
+
+**HITL 비교를 위해 모든 섹션에 `data-section-id` 속성 필수!**
+
+```
+{순번}-{섹션명}
+예: 01-header, 02-nav, 03-hero, 04-features, 05-footer
+```
+
+| 원본 HTML | 로컬 React |
+|-----------|------------|
+| `<header id="main-header">` | `<header data-section-id="01-header">` |
+| `<section class="hero">` | `<section data-section-id="02-hero">` |
+| `<footer>` | `<footer data-section-id="05-footer">` |
+
+---
+
+## 8. Phase G: 백엔드 연동 (페이지별 점진적 연동)
+
+### 8.1 개요
+
+**기존 방식 문제점:**
+```
+모든 FE 완료 → BE 일괄 생성 → 일괄 연동
+→ 피드백 루프가 너무 김, 문제 발견이 늦음
+```
+
+**새로운 방식:**
+```
+1페이지 FE 완료 → 해당 페이지 API 생성 → 연동 → 즉시 확인
+→ 빠른 피드백, 조기 문제 발견
+```
+
+### 8.2 Phase G 워크플로우
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Phase G: 백엔드 연동 (페이지별 점진적 연동)                      │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  G-1. 공통 API 체크                                              │
+│       IF api-mapping.json의 commonApis 중 미생성 API 있음:       │
+│         → 공통 API 먼저 생성 (인증, 사용자 정보 등)               │
+│                                                                  │
+│  G-2. 페이지 전용 API 생성                                       │
+│       - api-mapping.json에서 pageApis[{pageId}] 추출            │
+│       - Spring Boot: Controller + Service + Repository 생성     │
+│       - Entity 클래스 생성 (entities[] 참조)                     │
+│                                                                  │
+│  G-3. Frontend Connect                                           │
+│       - Mock 데이터 → fetch API 호출로 교체                      │
+│       - .env.local에 NEXT_PUBLIC_API_URL 설정                   │
+│                                                                  │
+│  G-4. 통합 테스트                                                │
+│       - BE 서버 실행: ./gradlew bootRun                          │
+│       - FE 서버 실행: npm run dev                                │
+│       - 실제 동작 확인                                           │
+│                                                                  │
+│  G-5. AskUserQuestion                                            │
+│       "연동 완료! 다음 작업은?"                                  │
+│       options: [HITL 재조정, 다음 페이지, 직접 입력]              │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 8.3 generate backend 옵션
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--api-mapping` | API 매핑 파일 | `./api-mapping.json` |
+| `--page <id>` | 특정 페이지 API만 생성 | (전체) |
+| `--common-only` | 공통 API만 생성 (인증 등) | - |
+| `--skip-common` | 공통 API 스킵 (이미 생성된 경우) | - |
+
+```bash
+# 공통 API 먼저 생성
+/jikime:smart-rebuild generate backend --common-only
+
+# 특정 페이지 API만 생성
+/jikime:smart-rebuild generate backend --page 3 --skip-common
+```
+
+### 8.4 generate connect 옵션
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--frontend-dir` | 프론트엔드 디렉토리 | `./output/frontend` |
+| `--page <id>` | 특정 페이지만 연동 | (전체) |
+| `--api-url` | 백엔드 API URL | `http://localhost:8080` |
+
+---
+
+## 9. 출력 구조
+
+```
+{output}/
+├── capture/
+│   ├── sitemap.json          # 캡처 인덱스 + captured 상태
+│   ├── *.png                 # 스크린샷 (캡처된 페이지만)
+│   ├── *.html                # HTML (캡처된 페이지만)
+│   └── hitl/                 # HITL 비교 결과
+│
+├── mapping.json              # 소스 ↔ 캡처 매핑
+├── api-mapping.json          # 🔴 API 의존성 매핑
+│
+├── backend/                  # Spring Boot 프로젝트
+│   └── src/main/java/com/example/api/
+│       ├── controller/
+│       │   ├── AuthController.java
+│       │   └── ProductController.java
+│       ├── service/
+│       ├── repository/
+│       └── entity/
+│
+└── frontend/                 # Next.js 프로젝트
+    ├── .env.local            # API_URL 설정
+    └── src/
+        ├── app/
+        │   ├── page.tsx
+        │   └── about-us/page.tsx
+        ├── lib/
+        │   └── api-client.ts
+        ├── styles/
+        │   ├── legacy/       # 원본 CSS
+        │   └── legacy-imports.css
+        └── components/
+            ├── common/
+            └── about-us/
+                ├── hero-section.tsx
+                └── team-section.tsx
+```
+
+---
+
+## 10. CLI 명령어
+
+### 10.1 전체 프로세스
 
 ```bash
 /jikime:smart-rebuild https://example.com --source=./legacy-php
 ```
 
-### 8.2 단계별 실행
+### 10.2 단계별 실행
 
 ```bash
-# Phase 1: 캡처 (인증 불필요)
+# Phase 1: 캡처 (링크만 수집 - 기본)
 /jikime:smart-rebuild capture https://example.com --output=./capture
 
-# Phase 1: 캡처 (인증 필요 - 로그인 후 캡처 진행)
+# Phase 1: 캡처 (전체 미리 캡처)
+/jikime:smart-rebuild capture https://example.com --prefetch --output=./capture
+
+# Phase 1: 캡처 (로그인 필요)
 /jikime:smart-rebuild capture https://example.com --login --output=./capture
 
 # Phase 2: 분석 & 매핑
 /jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
 
-# Phase 3a: 프론트엔드 생성 (Mock 데이터)
-/jikime:smart-rebuild generate frontend --mapping=./mapping.json --framework=nextjs  # nextjs 지원
+# Phase 3: 프론트엔드 생성 (페이지별)
+/jikime:smart-rebuild generate frontend --page 1
+/jikime:smart-rebuild generate frontend --next
+/jikime:smart-rebuild generate frontend --status
 
-# Phase 3b: 백엔드 생성
-/jikime:smart-rebuild generate backend --mapping=./mapping.json --framework=java     # java 지원
+# Phase 3: 백엔드 생성 (페이지별)
+/jikime:smart-rebuild generate backend --common-only
+/jikime:smart-rebuild generate backend --page 3 --skip-common
 
-# Phase 3c: 프론트엔드 ↔ 백엔드 연동
-/jikime:smart-rebuild generate connect --mapping=./mapping.json --api-base=http://localhost:8080
+# Phase 3: 연동 (페이지별)
+/jikime:smart-rebuild generate connect --page 3
 ```
-
-### 8.4 지원 프레임워크
-
-| 구분 | 지원 프레임워크 | 기본값 |
-|------|----------------|--------|
-| **Frontend** | `nextjs` | nextjs |
-| **Backend** | `java` (Spring Boot) | java |
-
-> 💡 향후 지원 예정: Frontend (nuxt, react), Backend (go, python, nodejs)
-
-### 8.3 옵션
-
-**capture 옵션:**
-| 옵션 | 설명 | 기본값 |
-|------|------|--------|
-| `--output` | 출력 디렉토리 | `./capture` |
-| `--max-pages` | 최대 캡처 페이지 수 | `100` |
-| `--concurrency` | 동시 처리 수 | `5` |
-| `--login` | 로그인 필요 시 (브라우저 열림 → 로그인 → 캡처) | - |
-| `--auth` | 기존 세션 파일 재사용 | - |
-| `--exclude` | 제외할 URL 패턴 | `/admin/*,/api/*` |
-
-**analyze 옵션:**
-| 옵션 | 설명 | 기본값 |
-|------|------|--------|
-| `--source` | 레거시 소스 경로 | `./source` |
-| `--capture` | 캡처 디렉토리 | `./capture` |
-| `--output` | 매핑 파일 출력 | `./mapping.json` |
-| `--db-schema` | DB 스키마 파일 (prisma, sql, json) | - |
-| `--db-from-env` | .env의 DATABASE_URL에서 스키마 추출 | - |
-
-**generate frontend 옵션:**
-| 옵션 | 설명 | 기본값 |
-|------|------|--------|
-| `--mapping` | 매핑 파일 | `./mapping.json` |
-| `--output` | 출력 디렉토리 | `./output/frontend` |
-| `--framework` | 프론트엔드 프레임워크 | `nextjs` |
-| `--style` | CSS 프레임워크 | `tailwind` |
-
-**generate backend 옵션:**
-| 옵션 | 설명 | 기본값 |
-|------|------|--------|
-| `--mapping` | 매핑 파일 | `./mapping.json` |
-| `--output` | 출력 디렉토리 | `./output/backend` |
-| `--framework` | 백엔드 프레임워크 | `java` |
-
-**generate connect 옵션:**
-| 옵션 | 설명 | 기본값 |
-|------|------|--------|
-| `--mapping` | 매핑 파일 | `./mapping.json` |
-| `--frontend-dir` | 프론트엔드 디렉토리 | `./output/frontend` |
-| `--api-base` | API 기본 URL | `http://localhost:8080` |
 
 ---
 
-## 9. 기존 F.R.I.D.A.Y.와의 관계
+## 11. Troubleshooting
+
+### 캡처 실패
+- Playwright 브라우저 설치 확인: `npx playwright install chromium`
+- 타임아웃 조정: `--timeout=60000`
+
+### 로그인 필요 사이트
+- `--login` 옵션 사용
+- 브라우저에서 로그인 완료 후 Enter
+
+### HITL 스크립트 실행 안 됨
+- SCRIPTS_DIR 경로 확인
+- npm install 실행 여부 확인
+
+### CORS 오류
+```
+Access to fetch at 'http://localhost:8080/api/...' has been blocked by CORS policy
+```
+**해결:** Spring Boot의 `CorsConfig.java` 확인, `allowedOrigins`에 `http://localhost:3000` 추가
+
+### API 연결 실패
+```
+Error: fetch failed / ECONNREFUSED
+```
+**해결:**
+- 백엔드 서버 실행 여부 확인: `./gradlew bootRun`
+- `.env.local`의 `NEXT_PUBLIC_API_URL` 확인
+
+### DB 연결 오류
+```
+Cannot acquire connection from data source
+```
+**해결:** `application.yml`의 DB 설정 확인, DB 서버 실행 여부 확인
+
+---
+
+## 12. 기존 F.R.I.D.A.Y.와의 관계
 
 | 항목 | F.R.I.D.A.Y. | Smart Rebuild |
 |------|-------------|---------------|
@@ -777,46 +622,13 @@ skills/jikime-migration-smart-rebuild/
 
 ---
 
-## 10. 향후 확장
+## 13. 참고 문서
 
-### 10.1 지원 소스 확장
-- PHP (완료)
-- ASP.NET
-- JSP
-- Ruby on Rails
-
-### 10.2 지원 타겟 확장
-- Backend: Java, Node.js, Go, Python
-- Frontend: Next.js, Nuxt.js, SvelteKit
-
-### 10.3 AI 기능 강화
-- 스크린샷에서 디자인 토큰 자동 추출
-- 컴포넌트 자동 분류 및 생성
-- 비즈니스 로직 자동 추론
+- `templates/.claude/commands/jikime/smart-rebuild.md` - 명령어 정의
+- `templates/.claude/rules/jikime/smart-rebuild-execution.md` - 상세 실행 절차
+- `templates/.claude/rules/jikime/smart-rebuild-reference.md` - 옵션 및 참조
 
 ---
 
-## 11. 참고
-
-### 11.1 테스트 결과
-
-**테스트 사이트:** https://wvctesol.com
-
-```
-✅ 크롤링 완료: 22개 페이지 (약 1분)
-✅ 전체 페이지 스크린샷 캡처 성공
-✅ HTML 저장 성공
-✅ sitemap.json 생성 성공
-✅ 88개+ 내부 링크 자동 발견
-```
-
-### 11.2 관련 문서
-
-- F.R.I.D.A.Y. 마이그레이션 오케스트레이터
-- JikiME-ADK 스킬 개발 가이드
-- Playwright 공식 문서
-
----
-
-**작성일:** 2026-02-04
-**버전:** 1.2.0
+**작성일:** 2026-02-06
+**버전:** 2.0.0

@@ -300,14 +300,17 @@ WHY: Standardized skill generation ensures consistency and discoverability.
 
 ### Selection Decision Tree
 
-1. Read-only codebase exploration? Use the Explore subagent
+1. Read-only codebase exploration? Use the explorer subagent
 2. External documentation or API research needed? Use WebSearch, WebFetch, Context7 MCP tools
 3. Domain expertise needed? Use the specialist subagent (backend, frontend, debugger, etc.)
-4. Workflow coordination needed? Use the manager-[workflow] subagent
-5. Complex multi-step tasks? Use the manager-strategy subagent
-6. Create new agents/commands/skills? Use the [type]-builder subagent
+4. Language/framework specific? Use specialist-[lang] subagent (specialist-java, specialist-go, etc.)
+5. Workflow coordination needed? Use the manager-[workflow] subagent
+6. Complex multi-step tasks? Use the manager-strategy subagent
+7. Multi-agent coordination? Use the coordinator or orchestrator subagent
+8. Create new agents/commands/skills? Use the [type]-builder subagent
+9. Legacy migration? Use the migrator subagent
 
-### Manager Agents (8)
+### Manager Agents (12)
 
 - manager-spec: SPEC document creation, EARS format, requirements analysis
 - manager-ddd: Domain-driven development, ANALYZE-PRESERVE-IMPROVE cycle, behavior preservation
@@ -317,12 +320,17 @@ WHY: Standardized skill generation ensures consistency and discoverability.
 - manager-strategy: System design, architecture decisions, trade-off analysis
 - manager-git: Git operations, branching strategy, merge management
 - manager-claude-code: Claude Code configuration, skills, agents, commands
+- manager-database: Database schema design, query optimization, DBA operations
+- manager-dependency: Package updates, vulnerability remediation, version management
+- manager-data: Data pipelines, ETL, data modeling, data quality
+- manager-context: Context window optimization, session state, token management
 
-### Specialist Agents (14)
+### Specialist Agents (37)
 
 - architect: System design, architecture decisions, component design
 - backend: API development, server-side logic, database integration
 - frontend: React components, UI implementation, client-side code
+- fullstack: End-to-end feature development, DB → API → UI integration
 - security-auditor: Security analysis, vulnerability assessment, OWASP compliance
 - devops: CI/CD pipelines, infrastructure, deployment automation
 - optimizer: Performance optimization, profiling, bottleneck analysis
@@ -334,6 +342,38 @@ WHY: Standardized skill generation ensures consistency and discoverability.
 - reviewer: Code review, PR review, quality assessment
 - documenter: API documentation, code documentation generation
 - planner: Task planning, decomposition, estimation
+- migrator: Legacy modernization, framework migration, codebase transformation
+- specialist-api: REST/GraphQL API design, OpenAPI specs, versioning
+- specialist-angular: Angular 15+, NgRx, RxJS, micro-frontend architecture
+- specialist-java: Java 21+, Spring Boot, JPA, enterprise patterns
+- specialist-javascript: ES2023+, Node.js 20+, async patterns, full-stack JS
+- specialist-spring: Spring ecosystem, Security, Data, Cloud
+- specialist-nextjs: Next.js App Router, RSC, Server Actions
+- specialist-go: Go, Fiber/Gin, GORM, concurrent programming
+- specialist-php: PHP 8.3+, Laravel, Symfony, async PHP
+- specialist-postgres: PostgreSQL, pgvector, RLS, JSONB
+- specialist-python: Python 3.11+, FastAPI, Django, async patterns
+- specialist-rust: Rust 2021, memory safety, ownership, systems programming
+- specialist-sql: PostgreSQL, MySQL, SQL Server, Oracle query optimization
+- specialist-typescript: TypeScript 5.0+, advanced types, e2e type safety
+- specialist-vue: Vue 3, Composition API, Nuxt 3, Pinia
+- specialist-graphql: GraphQL schema design, Apollo Federation, subscriptions
+- specialist-microservices: Distributed systems, Kubernetes, service mesh
+- specialist-mobile: React Native, Flutter, cross-platform mobile
+- specialist-electron: Electron desktop apps, cross-platform native
+- specialist-websocket: WebSocket, Socket.IO, real-time communication
+- analyst: Technical research, competitive analysis, decision support
+- explorer: Codebase search, implementation discovery, code navigation
+
+### Designer Agents (1)
+
+- designer-ui: UI design systems, component libraries, design tokens, accessibility
+
+### Orchestration Agents (3)
+
+- orchestrator: Workflow orchestration, pipeline coordination, process automation
+- coordinator: Multi-agent coordination, task distribution, result aggregation
+- dispatcher: Task queue management, load balancing, priority scheduling
 
 ### Builder Agents (4)
 

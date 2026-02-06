@@ -1,9 +1,9 @@
 # JikiME-ADK Skills Catalog
-# Auto-generated on 2026-01-25 16:31
+# Auto-generated on 2026-02-06 23:55
 
 version: '1.0.0'
-generated_at: '2026-01-25T16:31:46.562194'
-total_skills: 59
+generated_at: '2026-02-06T23:55:49.967027'
+total_skills: 67
 
 # Skills by domain
 domains:
@@ -44,10 +44,11 @@ domains:
       - jikime-lang-typescript
 
   library:
-    count: 4
+    count: 5
     skills:
       - jikime-library-mermaid
       - jikime-library-shadcn
+      - jikime-library-tds-react-native
       - jikime-library-vercel-ai-sdk
       - jikime-library-zod
 
@@ -65,12 +66,24 @@ domains:
       - jikime-marketing-psychology
       - jikime-marketing-seo
 
-  migration:
-    count: 3
+  migrate:
+    count: 1
     skills:
+      - migrate-to-nextjs
+
+  migration:
+    count: 5
+    skills:
+      - jikime-migration-angular-to-nextjs
       - jikime-migration-ast-grep
+      - jikime-migration-jquery-to-react
       - jikime-migration-patterns-auth
-      - jikime-migration-to-nextjs
+      - jikime-migration-smart-rebuild
+
+  mobile:
+    count: 1
+    skills:
+      - jikime-mobile-react-native
 
   platform:
     count: 4
@@ -81,13 +94,16 @@ domains:
       - jikime-platform-vercel-react
 
   tool:
-    count: 1
+    count: 3
     skills:
+      - jikime-tool-agent-browser
       - jikime-tool-ast-grep
+      - jikime-tool-mcp-builder
 
   workflow:
-    count: 17
+    count: 18
     skills:
+      - jikime-workflow-changelog
       - jikime-workflow-codemap
       - jikime-workflow-ddd
       - jikime-workflow-docs
@@ -262,6 +278,12 @@ skills:
     user_invocable: false
     tags: ["library", "shadcn", "ui", "components", "tailwind"]
 
+  - name: jikime-library-tds-react-native
+    domain: library
+    description: "Toss Design System (TDS) React Native component library built on top of React Native/Expo. Use with jikime-mobile-react-native for complete mobile development patterns."
+    version: 1.0.0
+    user_invocable: false
+
   - name: jikime-library-vercel-ai-sdk
     domain: library
     description: "Vercel AI SDK v5/v6 implementation guide with useChat, tool(), streamText, AI Elements, and ToolLoopAgent patterns. Use when building AI-powered applications with Next.js."
@@ -346,12 +368,26 @@ skills:
     user_invocable: true
     tags: ["marketing", "seo", "technical-seo", "on-page", "search"]
 
+  - name: jikime-migration-angular-to-nextjs
+    domain: migration
+    description: "|"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["migration", "angular", "nextjs", "react", "rxjs"]
+
   - name: jikime-migration-ast-grep
     domain: migration
     description: "AST-based code transformation skill using ast-grep. Structural code search and automated migration patterns for legacy code conversion."
     version: 1.0.0
     user_invocable: false
     tags: ["migration", "ast", "code-transformation", "legacy", "refactoring"]
+
+  - name: jikime-migration-jquery-to-react
+    domain: migration
+    description: "|"
+    version: 2.1.0
+    user_invocable: false
+    tags: ["migration", "jquery", "react", "javascript", "typescript"]
 
   - name: jikime-migration-patterns-auth
     domain: migration
@@ -360,12 +396,19 @@ skills:
     user_invocable: false
     tags: ["migration", "auth", "nextauth", "clerk", "oauth"]
 
-  - name: jikime-migration-to-nextjs
+  - name: jikime-migration-smart-rebuild
     domain: migration
-    description: "Legacy to Next.js 16 migration workflow specialist. Analyzes legacy projects (Vue, React CRA, Angular, Svelte) and orchestrates migration to modern Next.js 16 App Router architecture."
+    description: "AI-powered legacy site rebuilding workflow. Captures screenshots, analyzes source code, and generates modern frontend/backend code. Claude Code reads screenshots and writes actual code. Use when rebuilding legacy PHP, WordPress, or similar sites to Next.js, React, or other modern frameworks."
+    version: 2.0.0
+    user_invocable: true
+    tags: ["migration", "rebuild", "legacy", "screenshot", "nextjs"]
+
+  - name: jikime-mobile-react-native
+    domain: mobile
+    description: "React Native and Expo best practices for building performant mobile apps. Use when building React Native components, optimizing list performance, implementing animations, or working with native modules. Triggers on tasks involving React Native, Expo, mobile performance, or native platform APIs."
     version: 1.0.0
     user_invocable: false
-    tags: ["migration", "nextjs", "react", "vue", "angular"]
+    tags: ["mobile", "react-native", "expo", "performance", "animation"]
 
   - name: jikime-platform-clerk
     domain: platform
@@ -376,8 +419,8 @@ skills:
 
   - name: jikime-platform-supabase
     domain: platform
-    description: "Supabase specialist covering PostgreSQL 16, pgvector, RLS, real-time subscriptions, and Edge Functions. Use when building full-stack apps with Supabase backend."
-    version: 1.0.0
+    description: "Supabase specialist covering PostgreSQL 16, pgvector, RLS, real-time subscriptions, Edge Functions, and Postgres performance optimization. Use when building full-stack apps with Supabase backend or optimizing database performance."
+    version: 3.0.0
     user_invocable: false
     tags: ["platform", "supabase", "postgresql", "realtime", "auth"]
 
@@ -395,12 +438,30 @@ skills:
     user_invocable: false
     tags: ["platform", "vercel", "react", "nextjs", "performance"]
 
+  - name: jikime-tool-agent-browser
+    domain: tool
+    description: "Automates browser interactions for web testing, form filling, screenshots, and data extraction. Use when the user needs to navigate websites, interact with web pages, fill forms, take screenshots, test web applications, or extract information from web pages."
+    version: 1.0.0
+    user_invocable: false
+
   - name: jikime-tool-ast-grep
     domain: tool
     description: "AST-based structural code search, security scanning, and refactoring using ast-grep (sg CLI). Supports 40+ languages with pattern matching and code transformation."
     version: 1.0.0
     user_invocable: false
     tags: ["tool", "ast", "code-analysis", "refactoring", "security-scan"]
+
+  - name: jikime-tool-mcp-builder
+    domain: tool
+    description: "MCP (Model Context Protocol) server development specialist with 4-phase workflow - Research, Implementation, Review, and Evaluation. Supports Python (FastMCP) and Node/TypeScript (MCP SDK)."
+    version: 1.0.0
+    user_invocable: false
+
+  - name: jikime-workflow-changelog
+    domain: workflow
+    description: "Automated changelog generation from Git commits. Transforms commit history into user-friendly release notes with proper categorization, breaking change detection, and multiple output formats."
+    version: 1.0.0
+    user_invocable: false
 
   - name: jikime-workflow-codemap
     domain: workflow
@@ -520,3 +581,10 @@ skills:
     version: 1.0.0
     user_invocable: false
     tags: ["workflow", "git", "worktree", "parallel-development", "isolation"]
+
+  - name: migrate-to-nextjs
+    domain: migrate
+    description: "|"
+    version: 2.1.0
+    user_invocable: false
+    tags: ["migration", "nextjs", "react", "vue", "angular"]
