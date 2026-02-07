@@ -1,5 +1,5 @@
 ---
-name: migrate-to-nextjs
+name: jikime-migration-to-nextjs
 description: |
   Legacy to Next.js 16 migration workflow specialist. Analyzes legacy projects
   (Vue, React CRA, Angular, Svelte) and orchestrates migration to modern

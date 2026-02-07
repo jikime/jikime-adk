@@ -14,7 +14,7 @@ progressive_disclosure:
 triggers:
   keywords: ["changelog", "release notes", "version history", "what's new", "release", "CHANGELOG.md"]
   phases: ["sync"]
-  agents: ["manager-git", "documenter", "scribe"]
+  agents: ["manager-git", "documenter"]
   languages: []
 ---
 

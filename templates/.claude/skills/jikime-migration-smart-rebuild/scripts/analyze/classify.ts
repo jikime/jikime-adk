@@ -609,9 +609,40 @@ export async function analyzeSource(options: AnalyzeOptions): Promise<Mapping> {
   // 결과 저장
   fs.writeFileSync(outputFile, JSON.stringify(mapping, null, 2));
 
+  // 🔴 상태 파일 업데이트 (이전 capture 정보 + source 정보 추가)
+  const stateFile = path.join(capturePath, '.smart-rebuild-state.json');
+  let state: Record<string, unknown> = {};
+  if (fs.existsSync(stateFile)) {
+    state = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+  }
+  state.updatedAt = new Date().toISOString();
+  state.sourceDir = sourcePath;
+  state.mappingFile = outputFile;
+  state.framework = activeFramework;
+  state.summary = { static: staticCount, dynamic: dynamicCount, unknown: unknownCount };
+  fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
+  console.log(`💾 상태 업데이트: ${stateFile}`);
+
   console.log(`\n✅ 분석 완료!`);
   console.log(`📊 정적: ${staticCount}, 동적: ${dynamicCount}, 미확인: ${unknownCount}`);
   console.log(`📁 결과: ${outputFile}`);
+
+  // 🔴 다음 단계 안내 (직관적인 명령어 제공)
+  const outputDir = path.dirname(outputFile);
+  console.log(`\n${'─'.repeat(60)}`);
+  console.log(`📌 다음 단계:`);
+  console.log(`${'─'.repeat(60)}`);
+  console.log(`\n  1️⃣  Phase 3: Generate Frontend (페이지 생성)`);
+  console.log(`      /jikime:smart-rebuild generate frontend --mapping=${outputFile} --capture=${capturePath} --page 1`);
+  console.log(`\n  2️⃣  전체 진행 상황 확인`);
+  console.log(`      /jikime:smart-rebuild generate frontend --status --capture=${capturePath}`);
+  if (dynamicCount > 0) {
+    console.log(`\n  💡 동적 페이지 ${dynamicCount}개 발견 - 백엔드 연동이 필요합니다.`);
+    console.log(`      /jikime:smart-rebuild backend-init --framework spring-boot`);
+  }
+  console.log(`\n  💾 상태 파일 업데이트됨: ${stateFile}`);
+  console.log(`     (경로 정보가 저장되어 다음 단계에서 자동 완성됩니다)`);
+  console.log(`\n${'─'.repeat(60)}`);
 
   return mapping;
 }

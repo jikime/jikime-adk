@@ -12,7 +12,7 @@ progressive_disclosure:
 # Trigger Conditions for Level 2 Loading
 triggers:
   keywords: ["browser", "automation", "screenshot", "web test", "form fill", "scraping", "agent-browser", "verify", "migration verify", "behavior comparison"]
-  phases: ["run", "verify"]
+  phases: ["run", "sync"]
   agents: ["e2e-tester", "frontend", "manager-ddd"]
   languages: ["typescript", "javascript"]
 

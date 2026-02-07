@@ -382,6 +382,25 @@ cd "{SCRIPTS_DIR}" && npm install
 cd "{SCRIPTS_DIR}" && npx playwright install chromium
 ```
 
+### Step 2.5: 🔴 상태 파일 확인 (경로 자동 완성용)
+
+**capture 이후 단계에서는 상태 파일을 읽어서 경로 자동 완성:**
+
+```
+# 1. capture 디렉토리에서 상태 파일 찾기
+Glob: "**/capture/.smart-rebuild-state.json" 또는 "**/.smart-rebuild-state.json"
+
+# 2. 상태 파일이 있으면 읽기
+Read: {found_state_file}
+
+# 3. 상태 파일에서 경로 추출:
+#    - captureDir: capture 디렉토리 경로
+#    - sourceDir: 소스 디렉토리 경로 (analyze 이후)
+#    - mappingFile: mapping.json 경로 (analyze 이후)
+```
+
+**🔴 IMPORTANT:** 사용자가 경로를 입력하지 않으면 상태 파일의 경로를 기본값으로 사용!
+
 ### Step 3: Execute Based on Subcommand
 
 **Case: capture**

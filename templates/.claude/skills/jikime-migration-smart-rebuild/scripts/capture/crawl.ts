@@ -12,6 +12,7 @@ interface CaptureOptions {
   timeout?: number;
   login?: boolean;  // 로그인 필요 시 true
   dedupeByTemplate?: boolean;  // 템플릿 기준 중복 제거 (기본: true)
+  prefetch?: boolean;  // 🔴 Lazy Capture: true면 모든 페이지 미리 캡처, false면 링크만 수집 (기본: false)
 }
 
 interface PageResult {
@@ -21,8 +22,10 @@ interface PageResult {
   urlPattern?: string;  // URL 패턴 (예: /customer/nt_list.php?page={page})
   title: string;
   h1: string;
-  screenshot: string;
-  html: string;
+  captured: boolean;  // 🔴 Lazy Capture: HTML + 스크린샷 캡처 여부
+  screenshot: string | null;  // 캡처되면 파일명, 미캡처 시 null
+  html: string | null;        // 캡처되면 파일명, 미캡처 시 null
+  capturedAt: string | null;  // 캡처 시간
   links: string[];
   images: string[];  // 페이지 내 이미지 URL 목록
   skippedUrls?: string[];  // 같은 템플릿으로 스킵된 URL들
@@ -30,11 +33,18 @@ interface PageResult {
 
 interface Sitemap {
   baseUrl: string;
-  capturedAt: string;
+  createdAt: string;       // sitemap 생성 시간
+  updatedAt: string;       // 마지막 업데이트 시간
   totalPages: number;
   totalTemplates: number;  // 고유 템플릿 수
   skippedUrls: number;     // 스킵된 URL 수
   dedupeByTemplate: boolean;
+  summary: {
+    pending: number;
+    in_progress: number;
+    completed: number;
+    captured: number;      // 🔴 Lazy Capture: 캡처 완료된 페이지 수
+  };
   pages: PageResult[];
 }
 
@@ -139,19 +149,21 @@ async function autoScroll(page: Page): Promise<void> {
 }
 
 /**
- * 단일 페이지 캡처
+ * 단일 페이지 캡처 (또는 링크만 수집)
+ * @param prefetch - true: 스크린샷 + HTML 캡처, false: 링크만 수집 (Lazy Capture)
  */
 async function capturePage(
   context: BrowserContext,
   url: string,
   baseUrl: string,
   outputDir: string,
-  timeout: number
+  timeout: number,
+  prefetch: boolean = false  // 🔴 Lazy Capture: 기본값 false (링크만 수집)
 ): Promise<PageResult | null> {
   const page = await context.newPage();
 
   try {
-    console.log(`📸 캡처 중: ${url}`);
+    console.log(prefetch ? `📸 캡처 중: ${url}` : `🔗 링크 수집 중: ${url}`);
 
     await page.goto(url, {
       waitUntil: 'domcontentloaded',
@@ -161,21 +173,33 @@ async function capturePage(
     // 추가 로딩 대기
     await page.waitForTimeout(2000);
 
-    // Lazy loading 해결
-    await autoScroll(page);
-    await page.waitForTimeout(500);
+    // Lazy loading 해결 (prefetch 모드에서만 전체 스크롤)
+    if (prefetch) {
+      await autoScroll(page);
+      await page.waitForTimeout(500);
+    }
 
     const filename = urlToFilename(url);
+    let screenshotFile: string | null = null;
+    let htmlFile: string | null = null;
+    let capturedAt: string | null = null;
 
-    // 스크린샷 저장
-    await page.screenshot({
-      path: path.join(outputDir, `${filename}.png`),
-      fullPage: true,
-    });
+    // 🔴 Lazy Capture: prefetch가 true일 때만 스크린샷 + HTML 캡처
+    if (prefetch) {
+      // 스크린샷 저장
+      await page.screenshot({
+        path: path.join(outputDir, `${filename}.png`),
+        fullPage: true,
+      });
 
-    // HTML 저장
-    const html = await page.content();
-    fs.writeFileSync(path.join(outputDir, `${filename}.html`), html);
+      // HTML 저장
+      const html = await page.content();
+      fs.writeFileSync(path.join(outputDir, `${filename}.html`), html);
+
+      screenshotFile = `${filename}.png`;
+      htmlFile = `${filename}.html`;
+      capturedAt = new Date().toISOString();
+    }
 
     // 페이지 정보 추출
     const pageInfo = await page.evaluate((base: string) => {
@@ -222,8 +246,10 @@ async function capturePage(
       url,
       title: pageInfo.title,
       h1: pageInfo.h1,
-      screenshot: `${filename}.png`,
-      html: `${filename}.html`,
+      captured: prefetch,  // 🔴 Lazy Capture 상태
+      screenshot: screenshotFile,
+      html: htmlFile,
+      capturedAt: capturedAt,
       links: pageInfo.links,
       images: pageInfo.images,
     };
@@ -232,6 +258,66 @@ async function capturePage(
     return null;
   } finally {
     await page.close();
+  }
+}
+
+/**
+ * 🔴 단일 페이지 캡처 (generate 단계에서 호출)
+ * Lazy Capture 모드에서 특정 페이지만 캡처할 때 사용
+ */
+export async function captureSinglePage(
+  url: string,
+  outputDir: string,
+  authFile?: string,
+  timeout: number = 30000
+): Promise<{ screenshot: string; html: string; capturedAt: string } | null> {
+  const browser = await chromium.launch({ headless: true });
+
+  const contextOptions: { storageState?: string } = {};
+  if (authFile && fs.existsSync(authFile)) {
+    contextOptions.storageState = authFile;
+  }
+  const context = await browser.newContext(contextOptions);
+
+  try {
+    const page = await context.newPage();
+
+    console.log(`📸 페이지 캡처 중: ${url}`);
+
+    await page.goto(url, {
+      waitUntil: 'domcontentloaded',
+      timeout: timeout,
+    });
+
+    await page.waitForTimeout(2000);
+    await autoScroll(page);
+    await page.waitForTimeout(500);
+
+    const filename = urlToFilename(url);
+
+    // 스크린샷 저장
+    await page.screenshot({
+      path: path.join(outputDir, `${filename}.png`),
+      fullPage: true,
+    });
+
+    // HTML 저장
+    const html = await page.content();
+    fs.writeFileSync(path.join(outputDir, `${filename}.html`), html);
+
+    await page.close();
+
+    return {
+      screenshot: `${filename}.png`,
+      html: `${filename}.html`,
+      capturedAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    console.error(`❌ 캡처 에러: ${url} - ${(error as Error).message}`);
+    return null;
+  } finally {
+    await context.close();
+    await browser.close();
   }
 }
 
@@ -251,6 +337,7 @@ export async function crawlAndCapture(
     timeout = 30000,
     login = false,
     dedupeByTemplate = true,  // 기본값: 템플릿 기준 중복 제거 활성화
+    prefetch = false,  // 🔴 Lazy Capture: 기본값 false (링크만 수집)
   } = options;
 
   // 출력 디렉토리 생성
@@ -278,6 +365,7 @@ export async function crawlAndCapture(
   console.log(`📁 출력 디렉토리: ${outputDir}`);
   console.log(`📄 최대 페이지: ${maxPages}`);
   console.log(`🔄 템플릿 중복 제거: ${dedupeByTemplate ? '활성화' : '비활성화'}`);
+  console.log(`📸 캡처 모드: ${prefetch ? '즉시 캡처 (--prefetch)' : '🔴 Lazy Capture (링크만 수집)'}`);
 
   let browser: Browser;
   let context: BrowserContext;
@@ -362,7 +450,8 @@ export async function crawlAndCapture(
 
     const promises = batch.map(async (url) => {
       const template = extractTemplate(url);
-      const result = await capturePage(context, url, baseUrl, outputDir, timeout);
+      // 🔴 Lazy Capture: prefetch 파라미터 전달
+      const result = await capturePage(context, url, baseUrl, outputDir, timeout, prefetch);
 
       // 결과에 템플릿 정보 추가
       if (result) {
@@ -433,15 +522,27 @@ export async function crawlAndCapture(
   const pagesWithId = results.map((page, index) => ({
     ...page,
     id: page.id ?? index + 1,  // 1-based 페이지 번호
+    status: 'pending' as const,  // 초기 상태
   }));
 
+  // 🔴 Lazy Capture: summary 계산
+  const capturedCount = pagesWithId.filter(p => p.captured).length;
+
+  const now = new Date().toISOString();
   const sitemap: Sitemap = {
     baseUrl,
-    capturedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
     totalPages: pagesWithId.length,
     totalTemplates: visitedTemplates.size,
     skippedUrls: totalSkipped,
     dedupeByTemplate,
+    summary: {
+      pending: pagesWithId.length,
+      in_progress: 0,
+      completed: 0,
+      captured: capturedCount,  // 🔴 Lazy Capture: 캡처 완료된 페이지 수
+    },
     pages: pagesWithId,
   };
 
@@ -450,12 +551,44 @@ export async function crawlAndCapture(
     JSON.stringify(sitemap, null, 2)
   );
 
+  // 🔴 상태 파일 저장 (다음 단계에서 경로 정보 재사용)
+  const stateFile = path.join(outputDir, '.smart-rebuild-state.json');
+  const state = {
+    version: '1.0',
+    createdAt: now,
+    updatedAt: now,
+    captureDir: outputDir,
+    baseUrl: baseUrl,
+    totalPages: pagesWithId.length,
+    // source는 analyze 단계에서 추가됨
+  };
+  fs.writeFileSync(stateFile, JSON.stringify(state, null, 2));
+  console.log(`💾 상태 저장: ${stateFile}`);
+
   console.log(`\n✅ 크롤링 완료!`);
-  console.log(`📊 총 ${results.length}개 페이지 캡처 (${visitedTemplates.size}개 고유 템플릿)`);
+  console.log(`📊 총 ${results.length}개 페이지 발견 (${visitedTemplates.size}개 고유 템플릿)`);
+  if (prefetch) {
+    console.log(`📸 ${capturedCount}개 페이지 캡처 완료 (--prefetch 모드)`);
+  } else {
+    console.log(`🔗 Lazy Capture 모드: 링크만 수집됨 (캡처는 generate 단계에서 수행)`);
+  }
   if (dedupeByTemplate && totalSkipped > 0) {
     console.log(`⏭️  ${totalSkipped}개 중복 URL 스킵 (템플릿 기준 중복 제거)`);
   }
   console.log(`📁 결과: ${outputDir}/sitemap.json`);
+
+  // 🔴 다음 단계 안내 (직관적인 명령어 제공)
+  console.log(`\n${'─'.repeat(60)}`);
+  console.log(`📌 다음 단계:`);
+  console.log(`${'─'.repeat(60)}`);
+  console.log(`\n  1️⃣  Phase 2: Analyze (레거시 소스 분석)`);
+  console.log(`      /jikime:smart-rebuild analyze --source=<소스경로> --capture=${outputDir}`);
+  console.log(`      예: /jikime:smart-rebuild analyze --source=./public_html --capture=${outputDir}`);
+  console.log(`\n  2️⃣  Phase 3: Generate Frontend (소스 분석 없이 바로 페이지 생성)`);
+  console.log(`      /jikime:smart-rebuild generate frontend --capture=${outputDir} --page 1`);
+  console.log(`\n  💡 상태 파일 저장됨: ${outputDir}/.smart-rebuild-state.json`);
+  console.log(`     (다음 단계에서 --capture 경로 자동 완성에 사용)`);
+  console.log(`\n${'─'.repeat(60)}`);
 
   return sitemap;
 }

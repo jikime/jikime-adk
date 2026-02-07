@@ -10,7 +10,7 @@ tags: ["migration", "angular", "nextjs", "react", "rxjs", "app-router"]
 triggers:
   keywords: ["angular", "ng", "angular-to-react", "angular-to-nextjs", "NgModule", "RxJS", "앵귤러"]
   phases: ["plan", "run"]
-  agents: ["manager-migrate-nextjs", "frontend"]
+  agents: ["migrator", "frontend"]
   languages: ["typescript"]
 # Progressive Disclosure Configuration
 progressive_disclosure:

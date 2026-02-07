@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { crawlAndCapture } from '../capture/crawl';
+import { crawlAndCapture, captureSinglePage } from '../capture/crawl';
 import { analyzeSource } from '../analyze/classify';
 import { generateFrontend } from '../generate/frontend';
 import { generateBackend } from '../generate/backend';
@@ -19,7 +19,7 @@ program
 // Capture command
 program
   .command('capture <url>')
-  .description('Capture screenshots and HTML from a live site')
+  .description('Capture links from a live site (Lazy Capture mode by default)')
   .option('-o, --output <dir>', 'Output directory', './capture')
   .option('-m, --max-pages <n>', 'Maximum pages to capture', '100')
   .option('-c, --concurrency <n>', 'Concurrent page captures', '5')
@@ -27,10 +27,12 @@ program
   .option('-e, --exclude <patterns>', 'URL patterns to exclude', '/admin/*,/api/*')
   .option('-t, --timeout <ms>', 'Page load timeout', '30000')
   .option('--login', 'Open browser for login, then capture')
+  .option('--prefetch', '🔴 Capture all pages immediately (default: Lazy Capture - links only)')
   .action(async (url, options) => {
     console.log('🚀 Smart Rebuild - Capture Phase');
     console.log(`📍 Target: ${url}`);
     console.log(`📁 Output: ${options.output}`);
+    console.log(`📸 Mode: ${options.prefetch ? 'Prefetch (즉시 캡처)' : 'Lazy Capture (링크만 수집)'}`);
 
     await crawlAndCapture(url, {
       outputDir: options.output,
@@ -40,7 +42,42 @@ program
       exclude: options.exclude.split(','),
       timeout: parseInt(options.timeout),
       login: options.login || false,
+      prefetch: options.prefetch || false,  // 🔴 Lazy Capture: 기본값 false
     });
+  });
+
+// 🔴 Capture single page command (for generate phase)
+program
+  .command('capture-page <url>')
+  .description('Capture a single page (used by generate phase for Lazy Capture)')
+  .option('-o, --output <dir>', 'Output directory', './capture')
+  .option('-a, --auth <file>', 'Auth session file (JSON)')
+  .option('-t, --timeout <ms>', 'Page load timeout', '30000')
+  .action(async (url, options) => {
+    console.log('📸 Smart Rebuild - Single Page Capture');
+    console.log(`📍 URL: ${url}`);
+    console.log(`📁 Output: ${options.output}`);
+
+    const result = await captureSinglePage(
+      url,
+      options.output,
+      options.auth,
+      parseInt(options.timeout)
+    );
+
+    if (result) {
+      console.log(`✅ 캡처 완료!`);
+      console.log(`   스크린샷: ${result.screenshot}`);
+      console.log(`   HTML: ${result.html}`);
+      console.log(`   시간: ${result.capturedAt}`);
+      // JSON 결과 출력 (프로그래매틱 사용용)
+      console.log(`\n<!-- CAPTURE_RESULT_JSON_START -->`);
+      console.log(JSON.stringify(result, null, 2));
+      console.log(`<!-- CAPTURE_RESULT_JSON_END -->`);
+    } else {
+      console.error('❌ 캡처 실패');
+      process.exit(1);
+    }
   });
 
 // Analyze command
@@ -208,6 +245,7 @@ program
   .option('-b, --backend <type>', 'Backend framework', 'java')
   .option('-f, --frontend <type>', 'Frontend framework', 'nextjs')
   .option('--login', 'Open browser for login before capture')
+  .option('--prefetch', '🔴 Capture all pages immediately (default: Lazy Capture)')
   .option('--db-schema <file>', 'Database schema file (prisma, sql, json)')
   .option('--db-from-env', 'Extract schema from DATABASE_URL in .env')
   .option('--env-path <file>', 'Path to .env file', '.env')
@@ -217,14 +255,16 @@ program
     console.log(`📍 Target: ${url}`);
     console.log(`📂 Source: ${options.source}`);
     console.log(`📁 Output: ${options.output}`);
+    console.log(`📸 Capture Mode: ${options.prefetch ? 'Prefetch (즉시 캡처)' : 'Lazy Capture (링크만 수집)'}`);
 
-    // Phase 1: Capture
+    // Phase 1: Capture (🔴 Lazy Capture by default)
     console.log('\n📸 Phase 1: Capture');
     await crawlAndCapture(url, {
       outputDir: `${options.output}/capture`,
       maxPages: 100,
       concurrency: 5,
       login: options.login || false,
+      prefetch: options.prefetch || false,  // 🔴 Lazy Capture: 기본값 false
     });
 
     // Phase 2: Analyze

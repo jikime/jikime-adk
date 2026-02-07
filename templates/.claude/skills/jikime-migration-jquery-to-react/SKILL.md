@@ -11,7 +11,7 @@ tags: ["migration", "jquery", "react", "javascript", "typescript", "legacy"]
 triggers:
   keywords: ["jquery", "$", "$.ajax", "jquery-to-react", "migrate jquery", "convert jquery", "제이쿼리"]
   phases: ["plan", "run"]
-  agents: ["manager-migrate-react", "frontend"]
+  agents: ["migrator", "frontend"]
   languages: ["javascript", "typescript"]
 # Progressive Disclosure Configuration
 progressive_disclosure:

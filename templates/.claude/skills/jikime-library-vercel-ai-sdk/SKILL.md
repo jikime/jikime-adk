@@ -25,6 +25,12 @@ allowed-tools:
   - Glob
   - mcp__context7__resolve-library-id
   - mcp__context7__query-docs
+
+# Related Skills
+related_skills:
+  - jikime-library-streamdown         # Streaming-optimized Markdown renderer for AI chat
+  - jikime-framework-nextjs@16        # Next.js App Router integration
+  - jikime-lang-typescript            # TypeScript patterns
 ---
 
 # JikiME Vercel AI SDK Skill
