@@ -187,6 +187,47 @@ ELSE:
 3. Read: {capture}/{page.html}        # 🔴 텍스트/이미지 추출
 ```
 
+### 🔴 Step 3.3: 섹션 감지 & sitemap.json 업데이트 (HITL 필수!)
+
+**HTML에서 시맨틱 섹션 자동 감지:**
+
+```
+1. HTML 분석 → 시맨틱 섹션 감지 (header, nav, main, footer 등)
+2. 각 섹션에 ID 부여 (01, 02, 03...)
+3. sitemap.json의 해당 페이지에 sections 배열 저장
+4. HITL 비교 시 이 정보를 사용!
+```
+
+**섹션 감지 우선순위:**
+
+| 우선순위 | 원본 HTML 셀렉터 | 섹션 ID | 섹션 이름 |
+|---------|-----------------|---------|----------|
+| 1 | `header`, `#header`, `.header`, `[role="banner"]` | `01` | `header` |
+| 2 | `nav`, `#nav`, `.gnb`, `[role="navigation"]` | `02` | `nav` |
+| 3 | `.hero`, `.visual`, `.banner`, `.main-visual` | `03` | `hero` |
+| 4 | `main`, `#main`, `.content`, `[role="main"]` | `04` | `main` |
+| 5 | `section`, `.section` | `05+` | `section-N` |
+| 6 | `aside`, `.sidebar`, `[role="complementary"]` | `..` | `sidebar` |
+| 7 | `footer`, `#footer`, `[role="contentinfo"]` | `..` | `footer` |
+
+**sitemap.json 업데이트 예시:**
+
+```json
+{
+  "pages": [{
+    "id": 1,
+    "url": "https://example.com/",
+    "sections": [
+      { "id": "01", "name": "header", "label": "헤더", "selector": "header" },
+      { "id": "02", "name": "nav", "label": "내비게이션", "selector": "#gnb" },
+      { "id": "03", "name": "hero", "label": "메인 비주얼", "selector": ".hero" },
+      { "id": "04", "name": "main", "label": "메인 콘텐츠", "selector": "main" },
+      { "id": "05", "name": "footer", "label": "푸터", "selector": "footer" }
+    ]
+  }]
+}
+```
+
 ### Step 3.5: 원본 CSS Fetch & 저장 (첫 페이지만)
 
 ```
@@ -206,15 +247,44 @@ ELSE:
 | **페이지 파일** | page.tsx (고정) | `about-us/page.tsx` | `AboutUs.tsx` |
 | **컴포넌트 파일** | kebab-case | `hero-section.tsx` | `HeroSection.tsx` |
 
-### 🔴 섹션 식별자 규칙 (HITL 비교용)
+### 🔴 섹션 식별자 규칙 (HITL 비교용 - 필수!)
 
-모든 주요 섹션에 `data-section-id` 속성 추가:
+**Step 3.3에서 감지한 섹션 정보를 기반으로 React 컴포넌트에 `data-section-id` 추가:**
 
-| 원본 HTML | 로컬 React |
-|-----------|------------|
-| `<header>` | `<header data-section-id="01-header">` |
-| `<section class="hero">` | `<section data-section-id="03-hero">` |
-| `<footer>` | `<footer data-section-id="06-footer">` |
+| sitemap.json의 section | React 컴포넌트 |
+|------------------------|----------------|
+| `{ "id": "01", "name": "header" }` | `<header data-section-id="01-header">` |
+| `{ "id": "02", "name": "nav" }` | `<nav data-section-id="02-nav">` |
+| `{ "id": "03", "name": "hero" }` | `<section data-section-id="03-hero">` |
+| `{ "id": "04", "name": "main" }` | `<main data-section-id="04-main">` |
+| `{ "id": "05", "name": "footer" }` | `<footer data-section-id="05-footer">` |
+
+> **CRITICAL:** `data-section-id`의 형식은 반드시 `{id}-{name}`이어야 함!
+> HITL에서 `[data-section-id="01-header"]` 셀렉터로 로컬 요소를 찾음!
+
+**컴포넌트 예시:**
+
+```tsx
+// components/home/header-section.tsx
+export function HeaderSection() {
+  return (
+    <header data-section-id="01-header">  {/* 🔴 필수! sitemap.json과 일치 */}
+      <nav>...</nav>
+      <div className="logo">...</div>
+    </header>
+  );
+}
+
+// components/home/hero-section.tsx
+export function HeroSection() {
+  return (
+    <section data-section-id="03-hero">  {/* 🔴 필수! */}
+      <h1>Welcome</h1>
+      <p>...</p>
+    </section>
+  );
+}
+```
 
 ### 🔴 섹션 컴포넌트 분리 규칙
 
@@ -248,6 +318,7 @@ export default function PageName() {
 ```bash
 cd {output}/frontend && npm run dev &
 sleep 3  # 서버 시작 대기
+# 🔴 기본 포트: 3893 (http://localhost:3893)
 ```
 
 ---
@@ -267,6 +338,28 @@ AskUserQuestion:
 ---
 
 ## Phase E: HITL 루프 (🔴 핵심 워크플로우!)
+
+### 🚨🚨🚨 HITL HARD RULES (절대 위반 금지!) 🚨🚨🚨
+
+| # | 규칙 | 설명 |
+|---|------|------|
+| 1 | **🔴 혼자 결정 금지** | Claude는 절대 혼자서 승인/스킵 결정하면 안 됨! |
+| 2 | **🔴 AskUserQuestion 필수** | 모든 섹션 비교 후 반드시 사용자에게 물어봐야 함! |
+| 3 | **🔴 사용자 응답 대기** | 사용자가 선택할 때까지 다음 단계 진행 금지! |
+| 4 | **🔴 자동 skip 금지** | 일치율이 높아도 사용자 확인 없이 skip 금지! |
+| 5 | **🔴 자동 approve 금지** | 일치율 100%여도 사용자 확인 필수! |
+
+> **왜 중요한가?** HITL은 Human-in-the-Loop의 약자입니다. 사람(Human)이 루프 안에 있어야 합니다!
+> Claude가 혼자 결정하면 HITL이 아니라 그냥 자동화입니다.
+
+### 🔴 섹션 비교 셀렉터 규칙
+
+| 대상 | 셀렉터 방식 | 예시 |
+|------|------------|------|
+| **원본 페이지** | 시맨틱 셀렉터 | `header`, `.hero`, `#nav` |
+| **로컬 페이지** | data-section-id | `[data-section-id="01-header"]` |
+
+> **이유:** 원본과 로컬의 HTML 구조가 다를 수 있으므로, 로컬은 생성 시 추가한 `data-section-id`로 매칭합니다.
 
 ### E-1: hitl-refine.ts 실행 (🔴 Bash 필수!)
 

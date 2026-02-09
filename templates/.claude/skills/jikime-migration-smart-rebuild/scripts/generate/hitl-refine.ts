@@ -112,7 +112,7 @@ const VIEWPORTS: Viewport[] = [
   { name: 'mobile', width: 375, height: 812, label: '모바일 (375x812)' },
 ];
 
-const DEFAULT_LOCAL_URL = 'http://localhost:3000';
+const DEFAULT_LOCAL_URL = 'http://localhost:3893';
 const MAX_RETRIES = 5;
 
 // ============================================================
@@ -500,17 +500,28 @@ const COMPARISON_STYLES = [
   'text-align',
 ];
 
+/**
+ * 원본 셀렉터 → 로컬 data-section-id 셀렉터 변환
+ * 원본: header, .hero, #nav 등
+ * 로컬: [data-section-id="01-header"], [data-section-id="02-hero"] 등
+ */
+function getLocalSelector(section: HITLSection): string {
+  // 섹션 ID와 이름으로 data-section-id 셀렉터 생성
+  return `[data-section-id="${section.id}-${section.name}"]`;
+}
+
 async function compareDOM(
   originalPage: Page,
   localPage: Page,
-  selector: string
+  originalSelector: string,
+  localSelector: string
 ): Promise<ComparisonHints> {
   const issues: string[] = [];
   const suggestions: string[] = [];
   const details: DOMComparison[] = [];
 
-  // 메인 섹션 비교
-  const mainComparison = await compareSingleElement(originalPage, localPage, selector);
+  // 메인 섹션 비교 (원본과 로컬에서 다른 셀렉터 사용)
+  const mainComparison = await compareSingleElement(originalPage, localPage, originalSelector, localSelector);
   details.push(mainComparison);
 
   // 결과 분석
@@ -577,10 +588,11 @@ async function compareDOM(
 async function compareSingleElement(
   originalPage: Page,
   localPage: Page,
-  selector: string
+  originalSelector: string,
+  localSelector: string
 ): Promise<DOMComparison> {
   const comparison: DOMComparison = {
-    selector,
+    selector: `${originalSelector} ↔ ${localSelector}`,
     originalExists: false,
     localExists: false,
     styles: [],
@@ -588,7 +600,7 @@ async function compareSingleElement(
     childCount: { original: 0, local: 0 },
   };
 
-  // 원본 페이지 분석
+  // 원본 페이지 분석 (시맨틱 셀렉터 사용)
   const originalData = await originalPage.evaluate((sel: string) => {
     const el = document.querySelector(sel);
     if (!el) return null;
@@ -610,9 +622,9 @@ async function compareSingleElement(
       childCount: el.children.length,
       styles,
     };
-  }, selector);
+  }, originalSelector);
 
-  // 로컬 페이지 분석
+  // 로컬 페이지 분석 (🔴 data-section-id 셀렉터 사용!)
   const localData = await localPage.evaluate((sel: string) => {
     const el = document.querySelector(sel);
     if (!el) return null;
@@ -634,7 +646,7 @@ async function compareSingleElement(
       childCount: el.children.length,
       styles,
     };
-  }, selector);
+  }, localSelector);
 
   comparison.originalExists = !!originalData;
   comparison.localExists = !!localData;
@@ -690,9 +702,15 @@ async function captureSection(
   const localPath = path.join(sectionDir, `local${viewportSuffix}.png`);
 
   try {
-    // DOM 비교 수행
-    console.log('🔍 DOM 스타일 비교 중...');
-    const comparison = await compareDOM(originalPage, localPage, section.selector);
+    // 🔴 셀렉터 분리: 원본(시맨틱) vs 로컬(data-section-id)
+    const originalSelector = section.selector;
+    const localSelector = getLocalSelector(section);
+
+    console.log(`🔍 DOM 스타일 비교 중...`);
+    console.log(`   원본 셀렉터: ${originalSelector}`);
+    console.log(`   로컬 셀렉터: ${localSelector}`);
+
+    const comparison = await compareDOM(originalPage, localPage, originalSelector, localSelector);
 
     // 전체 페이지 캡처 모드
     if (section.selector === 'body') {
@@ -701,16 +719,17 @@ async function captureSection(
       return { original: originalPath, local: localPath, comparison };
     }
 
-    const origEl = await originalPage.$(section.selector);
-    const localEl = await localPage.$(section.selector);
+    const origEl = await originalPage.$(originalSelector);
+    const localEl = await localPage.$(localSelector);
 
     if (!origEl) {
-      console.log(`⚠️  원본에서 ${section.selector} 를 찾을 수 없음`);
+      console.log(`⚠️  원본에서 ${originalSelector} 를 찾을 수 없음`);
       return null;
     }
 
     if (!localEl) {
-      console.log(`⚠️  로컬에서 ${section.selector} 를 찾을 수 없음 (아직 구현되지 않았을 수 있음)`);
+      console.log(`⚠️  로컬에서 ${localSelector} 를 찾을 수 없음`);
+      console.log(`   💡 힌트: 컴포넌트에 data-section-id="${section.id}-${section.name}" 속성을 추가했는지 확인하세요`);
       // 로컬에서 요소를 찾을 수 없어도 원본은 캡처
       await origEl.screenshot({ path: originalPath });
       // 로컬은 전체 페이지 캡처로 대체

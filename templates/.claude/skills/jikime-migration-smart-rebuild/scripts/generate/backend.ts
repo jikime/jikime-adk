@@ -275,7 +275,7 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 
 # CORS Configuration
-# spring.mvc.cors.allowed-origins=http://localhost:3000
+# spring.mvc.cors.allowed-origins=http://localhost:3893
 `;
 }
 

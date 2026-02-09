@@ -62,6 +62,15 @@ Usage, Options, Supported Frameworks 참조 문서.
 | `--target-backend` | 타겟 백엔드 프레임워크 | `java` |
 | `--ui-library` | UI 컴포넌트 라이브러리 | `shadcn` |
 
+### 개발 서버 포트
+
+| 서버 | 포트 | 설명 |
+|------|------|------|
+| **Frontend (Next.js)** | `3893` | 🔴 기본 포트 (package.json에 설정됨) |
+| **Backend (Spring Boot)** | `8080` | 기본 포트 |
+| **Backend (FastAPI)** | `8000` | 기본 포트 |
+| **Backend (Go Fiber/NestJS)** | `3001` | 기본 포트 |
+
 ### 페이지별 처리 옵션
 
 | Option | Description | Example |
@@ -475,7 +484,7 @@ Access to fetch at 'http://localhost:8080/api/...' has been blocked by CORS poli
 ```
 **해결:**
 - Spring Boot의 `CorsConfig.java` 확인
-- `allowedOrigins`에 `http://localhost:3000` 추가
+- `allowedOrigins`에 `http://localhost:3893` 추가
 
 #### API 연결 실패
 ```

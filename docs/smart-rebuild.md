@@ -295,8 +295,18 @@ const sqlPatterns = [
 | 7 | **섹션 식별자 필수** | 모든 주요 섹션에 `data-section-id` 속성 추가 (HITL 비교용) |
 | 8 | **스크린샷 기반 스타일** | 색상, 폰트 크기, 간격은 스크린샷에서 추출 |
 | 9 | **kebab-case 네이밍** | 폴더/파일명은 반드시 kebab-case (`about-us/`, `hero-section.tsx`) |
+| 10 | **섹션 감지 → sitemap 저장** | 원본 HTML 분석 시 섹션 정보를 sitemap.json에 저장 (HITL 매칭용) |
 
-### 6.2 파일/폴더 네이밍 규칙
+### 6.2 개발 서버 포트
+
+| 서버 | 포트 | 설명 |
+|------|------|------|
+| **Frontend (Next.js)** | `3893` | 기본 포트 (package.json에 설정됨) |
+| **Backend (Spring Boot)** | `8080` | 기본 포트 |
+| **Backend (FastAPI)** | `8000` | 기본 포트 |
+| **Backend (Go Fiber/NestJS)** | `3001` | 기본 포트 |
+
+### 6.3 파일/폴더 네이밍 규칙
 
 | 대상 | 규칙 | ✅ 올바른 예시 | ❌ 잘못된 예시 |
 |------|------|---------------|---------------|
@@ -304,7 +314,40 @@ const sqlPatterns = [
 | **페이지 파일** | page.tsx (고정) | `about-us/page.tsx` | `AboutUs.tsx` |
 | **컴포넌트 파일** | kebab-case | `header-nav.tsx`, `hero-section.tsx` | `HeaderNav.tsx` |
 
-### 6.3 섹션 컴포넌트 분리
+### 6.4 섹션 감지 & sitemap.json 업데이트
+
+**Phase B Step 2.5에서 HTML 분석 시 섹션을 감지하고 sitemap.json에 저장:**
+
+| 우선순위 | 원본 HTML 셀렉터 | 섹션 ID | 섹션 이름 |
+|---------|-----------------|---------|----------|
+| 1 | `header`, `#header`, `.header`, `[role="banner"]` | `01` | `header` |
+| 2 | `nav`, `#nav`, `.gnb`, `[role="navigation"]` | `02` | `nav` |
+| 3 | `.hero`, `.visual`, `.banner`, `.main-visual` | `03` | `hero` |
+| 4 | `main`, `#main`, `.content`, `[role="main"]` | `04` | `main` |
+| 5 | `section`, `.section` | `05+` | `section-N` |
+| 6 | `aside`, `.sidebar`, `[role="complementary"]` | `..` | `sidebar` |
+| 7 | `footer`, `#footer`, `[role="contentinfo"]` | `..` | `footer` |
+
+**sitemap.json에 sections 배열 추가:**
+```json
+{
+  "pages": [{
+    "id": 1,
+    "url": "https://example.com/",
+    "sections": [
+      { "id": "01", "name": "header", "label": "헤더", "selector": "header" },
+      { "id": "02", "name": "nav", "label": "내비게이션", "selector": "#gnb" },
+      { "id": "03", "name": "hero", "label": "메인 비주얼", "selector": ".hero" },
+      { "id": "04", "name": "main", "label": "메인 콘텐츠", "selector": "main" },
+      { "id": "05", "name": "footer", "label": "푸터", "selector": "footer" }
+    ]
+  }]
+}
+```
+
+> **CRITICAL:** 이 섹션 정보는 HITL 비교 시 원본↔로컬 매칭에 사용됩니다!
+
+### 6.5 섹션 컴포넌트 분리
 
 **모든 섹션은 별도 컴포넌트 파일로 분리하고, page.tsx에서 조합합니다.**
 
@@ -354,7 +397,7 @@ export default function AboutUsPage() {
 }
 ```
 
-### 6.4 원본 CSS Fetch
+### 6.6 원본 CSS Fetch
 
 **첫 페이지 생성 시 원본 CSS를 가져와서 저장합니다.**
 
@@ -377,7 +420,29 @@ import './globals.css';                 // Tailwind
 
 ## 7. Phase E: HITL 루프 (Human-In-The-Loop)
 
-### 7.1 워크플로우
+### 7.1 HITL HARD RULES (절대 위반 금지!)
+
+| # | 규칙 | 설명 |
+|---|------|------|
+| 1 | **🔴 혼자 결정 금지** | Claude는 절대 혼자서 승인/스킵 결정하면 안 됨! |
+| 2 | **🔴 AskUserQuestion 필수** | 모든 섹션 비교 후 반드시 사용자에게 물어봐야 함! |
+| 3 | **🔴 사용자 응답 대기** | 사용자가 선택할 때까지 다음 단계 진행 금지! |
+| 4 | **🔴 자동 skip 금지** | 일치율이 높아도 사용자 확인 없이 skip 금지! |
+| 5 | **🔴 자동 approve 금지** | 일치율 100%여도 사용자 확인 필수! |
+
+> **왜 중요한가?** HITL은 Human-in-the-Loop의 약자입니다. 사람(Human)이 루프 안에 있어야 합니다!
+> Claude가 혼자 결정하면 HITL이 아니라 그냥 자동화입니다.
+
+### 7.2 섹션 비교 셀렉터 규칙
+
+| 대상 | 셀렉터 방식 | 예시 |
+|------|------------|------|
+| **원본 페이지** | 시맨틱 셀렉터 | `header`, `.hero`, `#nav` |
+| **로컬 페이지** | data-section-id | `[data-section-id="01-header"]` |
+
+> **이유:** 원본과 로컬의 HTML 구조가 다를 수 있으므로, 로컬은 생성 시 추가한 `data-section-id`로 매칭합니다.
+
+### 7.3 워크플로우
 
 ```
 E-1. hitl-refine.ts 실행 (Bash)
@@ -400,7 +465,7 @@ E-5. 다음 섹션 체크
      모든 섹션 완료 → Phase F
 ```
 
-### 7.2 data-section-id 규칙
+### 7.4 data-section-id 규칙
 
 **HITL 비교를 위해 모든 섹션에 `data-section-id` 속성 필수!**
 
@@ -590,7 +655,7 @@ E-5. 다음 섹션 체크
 ```
 Access to fetch at 'http://localhost:8080/api/...' has been blocked by CORS policy
 ```
-**해결:** Spring Boot의 `CorsConfig.java` 확인, `allowedOrigins`에 `http://localhost:3000` 추가
+**해결:** Spring Boot의 `CorsConfig.java` 확인, `allowedOrigins`에 `http://localhost:3893` 추가
 
 ### API 연결 실패
 ```
@@ -630,5 +695,9 @@ Cannot acquire connection from data source
 
 ---
 
-**작성일:** 2026-02-06
-**버전:** 2.0.0
+**작성일:** 2026-02-09
+**버전:** 2.2.0
+**변경 이력:**
+- v2.2.0: HITL HARD RULES 추가, 섹션 ID 매칭 시스템 추가, 개발 서버 포트 3893으로 표준화, sections 배열 구조 추가
+- v2.0.0: Phase G (페이지별 점진적 백엔드 연동), Lazy Capture 방식 추가
+- v1.0.0: 초기 버전

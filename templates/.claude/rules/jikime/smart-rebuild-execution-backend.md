@@ -194,7 +194,7 @@ public class CorsConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-            .allowedOrigins("http://localhost:3000")
+            .allowedOrigins("http://localhost:3893")
             .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
             .allowedHeaders("*")
             .allowCredentials(true);
@@ -211,7 +211,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3893"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -221,7 +221,7 @@ app.add_middleware(
 **Go Fiber (main.go):**
 ```go
 app.Use(cors.New(cors.Config{
-    AllowOrigins:     "http://localhost:3000",
+    AllowOrigins:     "http://localhost:3893",
     AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
     AllowCredentials: true,
 }))
@@ -230,7 +230,7 @@ app.Use(cors.New(cors.Config{
 **NestJS (main.ts):**
 ```typescript
 app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: 'http://localhost:3893',
     credentials: true,
 });
 ```
@@ -489,7 +489,7 @@ cd {output}/frontend && npm run dev
 ```
 AskUserQuestion:
   question: "BE 서버(localhost:8080)와 FE 서버(localhost:3000)가 실행 중입니다.
-             브라우저에서 http://localhost:3000/{route} 를 확인해주세요.
+             브라우저에서 http://localhost:3893/{route} 를 확인해주세요.
              API 연동이 정상적으로 동작하나요?"
   header: "통합 테스트"
   options:
