@@ -382,6 +382,23 @@ WHY: Standardized skill generation ensures consistency and discoverability.
 - skill-builder: Create new skill definitions
 - plugin-builder: Create new plugin packages
 
+### Team Agents (8) - Experimental
+
+Agents for Claude Code Agent Teams (v2.1.32+, requires CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1):
+
+| Agent | Model | Phase | Mode | Purpose |
+|-------|-------|-------|------|---------|
+| team-researcher | haiku | plan | plan (read-only) | Codebase exploration and research |
+| team-analyst | inherit | plan | plan (read-only) | Requirements analysis |
+| team-architect | inherit | plan | plan (read-only) | Technical design |
+| team-backend-dev | inherit | run | acceptEdits | Server-side implementation |
+| team-designer | inherit | run | acceptEdits | UI/UX design with Pencil MCP |
+| team-frontend-dev | inherit | run | acceptEdits | Client-side implementation |
+| team-tester | inherit | run | acceptEdits | Test creation with exclusive test file ownership |
+| team-quality | inherit | run | plan (read-only) | TRUST 5 quality validation |
+
+Both `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` env var AND `workflow.team.enabled: true` in `.jikime/config/workflow.yaml` are required.
+
 ---
 
 ## 5. SPEC-Based Workflow
@@ -1000,7 +1017,75 @@ lines: 20                             # Optional: number of lines
 
 ---
 
-Version: 11.3.0 (Dual Orchestrator: J.A.R.V.I.S. + F.R.I.D.A.Y.)
+## 15. Agent Teams (Experimental)
+
+JikiME-ADK supports optional Agent Teams mode for parallel phase execution.
+
+### Activation
+
+- Claude Code v2.1.32 or later
+- Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json env
+- Set `workflow.team.enabled: true` in `.jikime/config/workflow.yaml`
+
+### Mode Selection
+
+- `--team`: Force Agent Teams mode
+- `--solo`: Force sub-agent mode
+- No flag (default): System auto-selects based on complexity thresholds
+
+**Auto-Selection Thresholds** (configured in workflow.yaml):
+- Domains >= 3 (frontend, backend, database, etc.)
+- Files >= 10 affected
+- Complexity score >= 7
+
+### Team APIs
+
+| API | Purpose |
+|-----|---------|
+| TeamCreate | Initialize team structure |
+| SendMessage | Inter-teammate communication |
+| TaskCreate/Update/List/Get | Shared task coordination |
+| TeamDelete | Release team resources (call after all teammates shut down) |
+
+### Team Composition Patterns
+
+| Pattern | Roles | Use Case |
+|---------|-------|----------|
+| plan_research | researcher, analyst, architect | SPEC creation |
+| implementation | backend-dev, frontend-dev, tester | Feature implementation |
+| design_implementation | designer, backend-dev, frontend-dev, tester | UI-heavy features |
+| investigation | hypothesis-1, hypothesis-2, hypothesis-3 | Competing hypothesis debugging |
+
+### File Ownership Strategy
+
+To prevent write conflicts during parallel execution, teammates own specific file patterns:
+
+```yaml
+team-backend-dev: src/api/**, src/services/**, src/models/**
+team-frontend-dev: src/components/**, src/pages/**, src/hooks/**
+team-designer: design/**, src/styles/tokens/**
+team-tester: tests/**, **/*.test.*, **/*.spec.*
+```
+
+Shared files (src/types/**, src/utils/**) require coordination via SendMessage.
+
+### Team Hook Events
+
+- **TeammateIdle**: Validate work before accepting idle (exit 2 = keep working)
+- **TaskCompleted**: Validate deliverables before completion (exit 2 = reject)
+
+### Fallback
+
+If team mode fails or prerequisites are not met:
+- Graceful fallback to sub-agent mode
+- Continue from last completed task
+- No data loss or state corruption
+
+For complete Agent Teams workflow documentation, see Skill("jikime-workflow-team").
+
+---
+
+Version: 12.0.0 (Agent Teams Integration)
 Last Updated: 2026-01-28
 Language: English
 Core Rule: J.A.R.V.I.S. and F.R.I.D.A.Y. orchestrate; direct implementation is prohibited

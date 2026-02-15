@@ -41,7 +41,51 @@ Commands: `/jikime:0-project`, `/jikime:1-plan`, `/jikime:2-run`, `/jikime:3-syn
 
 5. Complex multi-step tasks?
    → Use the manager-strategy subagent
+
+6. Multi-domain parallel work needed?
+   → Use Agent Teams mode (--team flag or auto-detect)
 ```
+
+## Agent Teams Mode (Experimental)
+
+When complexity exceeds thresholds, use Agent Teams for parallel execution.
+
+### Activation Conditions
+
+Auto-activates when ANY of:
+- Domains >= 3 (frontend, backend, database, testing, etc.)
+- Files >= 10 affected
+- Complexity score >= 7
+
+### Team vs Sub-Agent Decision
+
+| Scenario | Mode | Reason |
+|----------|------|--------|
+| Simple single-domain task | Sub-agent | Lower overhead |
+| Multi-file same domain | Sub-agent | No coordination needed |
+| Cross-domain feature | Team | Parallel efficiency |
+| Complex debugging | Team (investigation) | Competing hypotheses |
+| UI-heavy with backend | Team (design_impl) | Designer + devs in parallel |
+
+### Team Agents
+
+| Agent | Phase | Permission | Owns |
+|-------|-------|------------|------|
+| team-researcher | plan | read-only | - |
+| team-analyst | plan | read-only | - |
+| team-architect | plan | read-only | - |
+| team-backend-dev | run | acceptEdits | src/api/**, src/services/** |
+| team-frontend-dev | run | acceptEdits | src/components/**, src/pages/** |
+| team-designer | run | acceptEdits | design/**, src/styles/tokens/** |
+| team-tester | run | acceptEdits | tests/**, **/*.test.* |
+| team-quality | run | read-only | - |
+
+### Communication Rules
+
+- **J.A.R.V.I.S./F.R.I.D.A.Y.** bridges user ↔ team communication
+- **Teammates** use SendMessage for inter-teammate coordination
+- **Shared TaskList** for self-coordinated work distribution
+- **AskUserQuestion** only from orchestrator (teammates cannot ask users)
 
 ## Context Optimization
 
@@ -74,7 +118,44 @@ frontend ─┘  (simultaneous)
 - [ ] Minimal context passed to agents
 - [ ] Correct agent selected for task domain
 
+### File Ownership Rules
+
+Prevent write conflicts during parallel execution:
+
+```yaml
+# Exclusive ownership (only this teammate can write)
+team-backend-dev:
+  - src/api/**
+  - src/services/**
+  - src/repositories/**
+  - src/models/**
+
+team-frontend-dev:
+  - src/components/**
+  - src/pages/**
+  - src/app/**
+  - src/hooks/**
+
+team-tester:
+  - tests/**
+  - **/*.test.*
+  - **/*.spec.*
+
+# Shared (coordinate via SendMessage)
+shared:
+  - src/types/**
+  - src/utils/**
+```
+
+### Fallback Behavior
+
+If team mode fails:
+1. Log warning
+2. Fall back to sequential sub-agent mode
+3. Continue from last completed task
+4. No data loss
+
 ---
 
-Version: 1.0.0
-Source: Extracted from CLAUDE.md Section 3, 4
+Version: 2.0.0
+Source: Extracted from CLAUDE.md Section 3, 4, 15

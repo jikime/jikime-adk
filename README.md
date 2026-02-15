@@ -55,6 +55,7 @@ MoAI-ADK의 구조와 흐름을 깊이 분석했고, 그 단단한 철학적 기
 |------|------|------|
 | **SPEC-First DDD** | ANALYZE-PRESERVE-IMPROVE 사이클로 동작 보존 개발 | [DDD 문서](./docs/tdd-ddd.md) |
 | **57개 전문 에이전트** | Manager 12, Specialist 37, Designer 1, Orchestration 3, Builder 4 에이전트 자동 위임 | [에이전트 카탈로그](./docs/agents.md) |
+| **Agent Teams** | 병렬 팀 기반 멀티 에이전트 오케스트레이션 (실험적 기능) | [Agent Teams](./docs/agents-team.md) |
 | **레거시 마이그레이션** | Vue.js, React CRA, Angular 등 → Next.js 16 자동 전환 | [마이그레이션 가이드](./docs/migration.md) |
 | **Smart Rebuild** | 스크린샷 + 소스 분석 기반 레거시 사이트 새로 구축 | [Smart Rebuild 가이드](./docs/smart-rebuild.md) |
 | **67개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 카탈로그](./docs/skills-catalog.md) |
@@ -204,6 +205,7 @@ IMPROVE   →  자신감 있게 변경 → (반복)
 | 문서 | 설명 |
 |------|------|
 | [에이전트 카탈로그](./docs/agents.md) | 26개 에이전트 상세 역할 |
+| [Agent Teams](./docs/agents-team.md) | 병렬 팀 기반 멀티 에이전트 오케스트레이션 |
 | [명령어 레퍼런스](./docs/commands.md) | 슬래시 명령어 및 CLI 전체 목록 |
 | [스킬 카탈로그](./docs/skills-catalog.md) | 60개 스킬 분류 및 설명 |
 | [마이그레이션 가이드](./docs/migration.md) | F.R.I.D.A.Y. 마이그레이션 워크플로우 |
