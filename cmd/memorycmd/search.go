@@ -27,6 +27,8 @@ func newSearchCmd() *cobra.Command {
 			if projectDir == "" {
 				projectDir, _ = os.Getwd()
 			}
+			// Find project root by searching for .jikime directory upward
+			projectDir = memory.FindProjectRoot(projectDir)
 
 			store, err := memory.NewStore(projectDir)
 			if err != nil {

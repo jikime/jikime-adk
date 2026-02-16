@@ -226,6 +226,7 @@ IMPROVE   →  자신감 있게 변경 → (반복)
 | [Ralph Loop](./docs/ko/ralph-loop.md) | LSP/AST-grep 피드백 루프 |
 | [Statusline](./docs/ko/statusline.md) | Claude Code 상태줄 커스터마이징 |
 | [Codemap](./docs/ko/codemap.md) | AST 기반 아키텍처 맵 |
+| [Site-Flow 통합](./docs/ko/site-flow.md) | 프로젝트 관리 및 진행 상황 추적 |
 
 ---
 

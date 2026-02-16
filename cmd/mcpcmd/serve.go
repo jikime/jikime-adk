@@ -165,6 +165,8 @@ func runServe(cmd *cobra.Command, args []string) error {
 
 	// Start file watcher for auto-indexing MD changes
 	projectDir, _ := os.Getwd()
+	// Find project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -187,6 +189,8 @@ func handleMemorySearch(ctx context.Context, req *mcp.CallToolRequest, input Mem
 	if err != nil {
 		return nil, MemorySearchOutput{}, fmt.Errorf("get working directory: %w", err)
 	}
+	// Find project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	store, err := memory.NewStore(projectDir)
 	if err != nil {
@@ -278,6 +282,8 @@ func handleMemoryGet(ctx context.Context, req *mcp.CallToolRequest, input Memory
 	if err != nil {
 		return nil, MemoryGetOutput{}, fmt.Errorf("get working directory: %w", err)
 	}
+	// Find project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	// Try reading as file path first
 	absPath := filepath.Join(projectDir, input.Path)
@@ -346,6 +352,8 @@ func handleMemoryLoad(ctx context.Context, req *mcp.CallToolRequest, input Memor
 	if err != nil {
 		return nil, MemoryLoadOutput{}, fmt.Errorf("get working directory: %w", err)
 	}
+	// Find project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	source := input.Source
 	if source == "" {
@@ -394,6 +402,8 @@ func handleMemorySave(ctx context.Context, req *mcp.CallToolRequest, input Memor
 	if err != nil {
 		return nil, MemorySaveOutput{}, fmt.Errorf("get working directory: %w", err)
 	}
+	// Find project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	// Validate type
 	validTypes := map[string]bool{
@@ -460,6 +470,8 @@ func handleMemoryStats(ctx context.Context, req *mcp.CallToolRequest, input Memo
 	if err != nil {
 		return nil, MemoryStatsOutput{}, fmt.Errorf("get working directory: %w", err)
 	}
+	// Find project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	store, err := memory.NewStore(projectDir)
 	if err != nil {
@@ -494,6 +506,8 @@ func handleMemoryReindex(ctx context.Context, req *mcp.CallToolRequest, input Me
 	if err != nil {
 		return nil, MemoryReindexOutput{}, fmt.Errorf("get working directory: %w", err)
 	}
+	// Find project root by searching for .jikime directory upward
+	projectDir = memory.FindProjectRoot(projectDir)
 
 	store, err := memory.NewStore(projectDir)
 	if err != nil {

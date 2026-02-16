@@ -54,6 +54,415 @@ Team mode is automatically activated when any of the following conditions are me
 
 ---
 
+## Quick Start Guide
+
+### Step 1: Environment Setup
+
+```bash
+# 1. Check Claude Code version (v2.1.32 or higher required)
+claude --version
+
+# 2. Set environment variable (in terminal)
+export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+
+# 3. Or add to ~/.claude/settings.json for permanent setting
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+### Step 2: Verify Project Configuration
+
+```bash
+# Initialize JikiME-ADK (skip if already done)
+jikime-adk init
+
+# Verify team settings in workflow.yaml
+cat .jikime/config/workflow.yaml | grep -A 5 "team:"
+```
+
+### Step 3: Run Team Mode
+
+```bash
+# Use team mode in Plan Phase
+/jikime:1-plan "Implement user authentication system" --team
+
+# Use team mode in Run Phase
+/jikime:2-run SPEC-AUTH-001 --team
+```
+
+---
+
+## Detailed Usage Guide
+
+### Scenario 1: New Feature Development (Full Stack)
+
+When developing a complex feature with backend, frontend, and tests in parallel:
+
+```bash
+# 1. Plan Phase - Analyze requirements as a team
+/jikime:1-plan "Implement OAuth 2.0 social login (Google, GitHub, Kakao)" --team
+
+# What happens internally:
+# - team-researcher: Analyzes existing auth code
+# - team-analyst: Identifies requirements and edge cases
+# - team-architect: Makes technical design and architecture decisions
+# → Result: SPEC-SOCIAL-LOGIN-001.md generated
+
+# 2. After SPEC approval, Run Phase - Implement as a team
+/jikime:2-run SPEC-SOCIAL-LOGIN-001 --team
+
+# What happens internally:
+# - team-backend-dev: OAuth provider integration, API endpoints
+# - team-frontend-dev: Login buttons, callback page
+# - team-tester: E2E tests, unit tests
+# - team-quality: TRUST 5 quality verification
+
+# 3. Sync after completion
+/jikime:3-sync SPEC-SOCIAL-LOGIN-001
+```
+
+### Scenario 2: UI/UX-Focused Feature Development
+
+When developing UI-focused features with a designer included:
+
+```bash
+# Use design_implementation pattern
+/jikime:2-run SPEC-DASHBOARD-001 --team --pattern=design_implementation
+
+# Team composition:
+# - team-designer: Design tokens, component styles
+# - team-backend-dev: Dashboard data API
+# - team-frontend-dev: React component implementation
+# - team-tester: Visual regression testing
+```
+
+### Scenario 3: Complex Bug Investigation
+
+When investigating multiple hypotheses in parallel:
+
+```bash
+# Use investigation pattern
+/jikime:build-fix --team
+
+# Team composition (competitive hypothesis investigation):
+# - hypothesis-1: Memory leak hypothesis
+# - hypothesis-2: Race condition hypothesis
+# - hypothesis-3: API timeout hypothesis
+# → The first hypothesis to find the cause wins
+```
+
+### Scenario 4: Pre-Production Quality Verification
+
+When quality gates are critical:
+
+```bash
+# Use quality_gate pattern
+/jikime:2-run SPEC-PAYMENT-001 --team --pattern=quality_gate
+
+# Team composition:
+# - team-backend-dev: Payment logic implementation
+# - team-frontend-dev: Payment UI implementation
+# - team-tester: Security tests, payment flow tests
+# - team-quality: TRUST 5 + security audit + performance verification
+```
+
+### Team Mode vs Solo Mode Selection Guide
+
+| Situation | Recommended Mode | Command |
+|-----------|-----------------|---------|
+| Simple bug fix | Solo | `/jikime:2-run SPEC-001 --solo` |
+| Single file modification | Solo | `/jikime:2-run SPEC-001 --solo` |
+| Multi-domain feature | Team | `/jikime:2-run SPEC-001 --team` |
+| 10+ file changes | Team | Auto-detected |
+| UI + API + DB changes | Team | `/jikime:2-run SPEC-001 --team` |
+| Complex refactoring | Team | `/jikime:2-run SPEC-001 --team` |
+
+---
+
+## Team Collaboration Patterns
+
+### SendMessage Usage Examples
+
+```javascript
+// Backend → Frontend: API ready notification
+SendMessage(
+  recipient: "frontend-dev",
+  type: "api_ready",
+  content: {
+    endpoint: "POST /api/auth/oauth/callback",
+    schema: {
+      provider: "string",
+      code: "string",
+      state: "string"
+    },
+    response: {
+      user: "User",
+      accessToken: "string",
+      refreshToken: "string"
+    }
+  }
+)
+
+// Frontend → Tester: Component ready notification
+SendMessage(
+  recipient: "tester",
+  type: "component_ready",
+  content: {
+    component: "SocialLoginButton",
+    path: "src/components/auth/SocialLoginButton.tsx",
+    testable: true,
+    props: ["provider", "onSuccess", "onError"]
+  }
+)
+
+// Tester → Quality: Tests passed notification
+SendMessage(
+  recipient: "quality",
+  type: "tests_passed",
+  content: {
+    coverage: 87,
+    passedTests: 45,
+    failedTests: 0,
+    duration: "2m 34s"
+  }
+)
+
+// Quality → Team Lead: Quality gate passed
+SendMessage(
+  recipient: "team-lead",
+  type: "quality_gate_passed",
+  content: {
+    trust5Score: 4.2,
+    securityIssues: 0,
+    performanceScore: "A",
+    recommendation: "Ready for production"
+  }
+)
+```
+
+### File Change Request Pattern
+
+```javascript
+// Frontend requesting Backend type change
+SendMessage(
+  recipient: "backend-dev",
+  type: "change_request",
+  content: {
+    file: "src/types/auth.ts",
+    requestedChange: "Add 'profileImage' field to User type",
+    reason: "Required for social login avatar display",
+    priority: "high"
+  }
+)
+
+// Backend response
+SendMessage(
+  recipient: "frontend-dev",
+  type: "change_completed",
+  content: {
+    file: "src/types/auth.ts",
+    change: "Added profileImage: string | null to User type",
+    commitRef: "abc123"
+  }
+)
+```
+
+---
+
+## Troubleshooting
+
+### Problem 1: Team Mode Not Activating
+
+**Symptom**: Sequential execution despite using `--team` flag
+
+**Solution**:
+```bash
+# 1. Check Claude Code version
+claude --version  # Must be v2.1.32 or higher
+
+# 2. Verify environment variable
+echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS  # Should be "1"
+
+# 3. Check configuration file
+cat .jikime/config/workflow.yaml | grep "team:" -A 3
+# Verify enabled: true
+
+# 4. Force activation
+/jikime:2-run SPEC-001 --team --force
+```
+
+### Problem 2: Teammate Communication Failure
+
+**Symptom**: SendMessage not being delivered
+
+**Solution**:
+```bash
+# 1. Verify team session status
+# Check if team name is correct
+
+# 2. Verify recipient name (use exact name)
+# ✅ "backend-dev"
+# ❌ "team-backend-dev"
+# ❌ "backendDev"
+
+# 3. Restart team
+/jikime:team-restart
+```
+
+### Problem 3: File Conflicts
+
+**Symptom**: Two teammates trying to modify the same file
+
+**Solution**:
+```javascript
+// 1. Request from owner instead of modifying directly
+SendMessage(
+  recipient: "backend-dev",  // File owner
+  type: "change_request",
+  content: {
+    file: "src/types/user.ts",
+    requestedChange: "Add socialProvider field",
+    reason: "Needed for OAuth integration"
+  }
+)
+
+// 2. Coordinate before modifying shared files
+// src/types/**, src/utils/** etc. require coordination via SendMessage
+```
+
+### Problem 4: Teammate Idle
+
+**Symptom**: Teammate waiting without tasks
+
+**Solution**:
+```javascript
+// Check unassigned tasks in TaskList
+TaskList()
+
+// Assign task to idle teammate
+TaskCreate(
+  subject: "Implement error handling for OAuth callback",
+  description: "Add try-catch and error UI for failed OAuth",
+  owner: "frontend-dev"  // Assign to idle teammate
+)
+```
+
+### Problem 5: Quality Gate Failure
+
+**Symptom**: team-quality rejecting work
+
+**Solution**:
+```bash
+# 1. Check quality report
+# Review failure reason in message from team-quality
+
+# 2. Common failure reasons:
+# - Test coverage below threshold (80% required)
+# - Lint errors present
+# - Security vulnerabilities found
+# - Performance criteria not met
+
+# 3. Request fix from relevant teammate
+SendMessage(
+  recipient: "tester",
+  type: "coverage_required",
+  content: {
+    current: 72,
+    required: 80,
+    uncoveredFiles: ["src/services/oauth.ts"]
+  }
+)
+```
+
+---
+
+## Best Practices
+
+### 1. Optimize Team Composition
+
+```yaml
+# Recommended team composition by project size
+small_project:  # < 5 files
+  mode: solo
+
+medium_project:  # 5-20 files
+  mode: team
+  pattern: implementation
+  roles: [backend-dev, frontend-dev, tester]
+
+large_project:  # > 20 files
+  mode: team
+  pattern: quality_gate
+  roles: [backend-dev, frontend-dev, designer, tester, quality]
+```
+
+### 2. Effective File Ownership Setup
+
+```yaml
+# Set clear boundaries
+file_ownership:
+  team-backend-dev:
+    - "src/api/**"
+    - "src/services/**"
+    - "src/repositories/**"
+    - "prisma/**"
+
+  team-frontend-dev:
+    - "src/components/**"
+    - "src/pages/**"
+    - "src/hooks/**"
+    - "src/stores/**"
+
+  # Minimize shared files
+  shared:
+    - "src/types/**"  # Only type definitions shared
+```
+
+### 3. Minimize Communication
+
+```javascript
+// ❌ Bad: Too frequent communication
+SendMessage(recipient: "frontend-dev", type: "progress", content: "Started task")
+SendMessage(recipient: "frontend-dev", type: "progress", content: "50% done")
+SendMessage(recipient: "frontend-dev", type: "progress", content: "Almost done")
+
+// ✅ Good: Only meaningful communication
+SendMessage(
+  recipient: "frontend-dev",
+  type: "api_ready",
+  content: { endpoint: "/api/users", schema: {...} }
+)
+```
+
+### 4. Utilize Quality Gates
+
+```yaml
+# Always include quality teammate for critical features
+critical_features:
+  - payment
+  - authentication
+  - user_data
+
+pattern_for_critical: quality_gate
+```
+
+### 5. Prepare for Fallback
+
+```yaml
+# Sub-Agent fallback configuration
+workflow:
+  team:
+    fallback:
+      enabled: true
+      log_level: "warn"
+      preserve_progress: true  # Preserve progress
+```
+
+---
+
 ## Team Agent List
 
 ### Plan Phase Agents (Read-Only)
@@ -499,7 +908,16 @@ When team mode fails or requirements are not met:
 
 | Item | Value |
 |------|-------|
-| **Document Version** | 1.0.0 |
+| **Document Version** | 1.1.0 |
 | **Required Claude Code** | v2.1.32+ |
 | **Status** | Experimental |
-| **Last Updated** | 2026-02-14 |
+| **Last Updated** | 2026-02-15 |
+
+---
+
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 1.1.0 | 2026-02-15 | Added Quick Start Guide, Detailed Usage Guide, Troubleshooting, Best Practices |
+| 1.0.0 | 2026-02-14 | Initial documentation |
