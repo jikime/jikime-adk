@@ -208,38 +208,88 @@ site_flow:
 **If `--quick` is specified**: Set all target fields to `"pending"` and skip interactive selection.
 **If `--skip-site-flow` is specified**: Set `site_flow.enabled` to `false` and skip site-flow registration.
 
-### Step 2.5: site-flow Site Registration
+### Step 2.5: site-flow Bootstrap (CLI Authentication & Site Registration)
 
 **Skip this step if `--skip-site-flow` is specified.**
 
-After creating `.migrate-config.yaml`, register the source site with site-flow:
+After creating `.migrate-config.yaml`, authenticate with site-flow and register the source site using the CLI bootstrap module:
+
+#### Step 2.5.0: Collect Credentials
+
+Use AskUserQuestion to collect site-flow server URL and login credentials:
 
 ```
-1. Load site-flow config:
-   - Try loadSiteFlowConfig() to detect api_url from environment or defaults
-   - IF connection fails → Set site_flow.enabled = false, warn user, continue
+Q-SF-1: "site-flow 서버 URL을 입력하세요"
+  Options:
+  - http://localhost:3000 (로컬 개발 서버)
+  - 직접 입력
 
-2. Check if site already exists:
-   - Call findSiteByUrl(client, source_site_url)
-   - IF exists → Reuse existing site (store site_id), inform user
-   - IF not exists → Create new site
+Q-SF-2: "site-flow 로그인 이메일을 입력하세요"
+  → Free text input (Other)
 
-3. Create new site (if needed):
-   - Call createSite(client, { name: project_name, url: source_site_url })
-   - Store returned site._id as site_id
-
-4. Generate API key:
-   - Call createApiKey(client, { siteId: site_id, name: "migration-{project_name}" })
-   - Store returned key as api_key (sf_xxx format)
-
-5. Save site-flow config:
-   - Call saveSiteFlowConfig({ enabled: true, api_url, api_key, site_id, site_url, registered_at })
-   - Updates .migrate-config.yaml with site_flow section
+Q-SF-3: "site-flow 로그인 비밀번호를 입력하세요"
+  → Free text input (Other)
 ```
 
-**Graceful Degradation**: If site-flow server is unreachable or any API call fails after 3 retries, set `site_flow.enabled` to `false`, display a warning, and continue the discovery process without site-flow integration.
+#### Step 2.5.1: Run Bootstrap
 
-**Note**: `createSite` requires session authentication (NextAuth). For CLI usage, ensure the site-flow server is accessible and the user is authenticated, or pre-create the site through the web UI.
+```
+import { bootstrapSiteFlow, BootstrapError } from '../lib/site-flow';
+import { saveSiteFlowConfig } from '../lib/site-flow';
+
+try {
+  const result = await bootstrapSiteFlow({
+    apiUrl: sf_api_url,           // From Q-SF-1
+    email: sf_email,              // From Q-SF-2
+    password: sf_password,        // From Q-SF-3
+    siteName: project_name,       // From Step 2
+    siteUrl: source_site_url,     // From source analysis
+    apiKeyName: `migration-${project_name}`,
+  });
+
+  // Bootstrap completes 4 steps automatically:
+  //   1. GET /api/auth/csrf → CSRF token + cookies
+  //   2. POST /api/auth/callback/credentials → session cookie
+  //   3. Find or create site (session auth)
+  //   4. Create API key (session auth)
+
+  // Save to .migrate-config.yaml
+  saveSiteFlowConfig(configPath, {
+    enabled: true,
+    apiUrl: sf_api_url,
+    apiKey: result.apiKey,        // sf_xxx format
+    siteId: result.siteId,
+    siteUrl: source_site_url,
+    registeredAt: new Date().toISOString(),
+  });
+
+  // Inform user
+  IF result.isExistingSite:
+    → "기존 사이트를 재사용합니다: {result.siteName}"
+  ELSE:
+    → "새 사이트가 등록되었습니다: {result.siteName}"
+
+} catch (error) {
+  IF error instanceof BootstrapError:
+    → Log warning: "site-flow 부트스트랩 실패 (phase: {error.phase}): {error.message}"
+  ELSE:
+    → Log warning: "site-flow 연결 실패: {error.message}"
+
+  // Graceful degradation (AC-7)
+  Set site_flow.enabled = false in config
+  Continue to Step 3 without site-flow
+}
+```
+
+**Bootstrap Authentication Flow**:
+1. **CSRF Token**: `GET /api/auth/csrf` → CSRF token + session cookies
+2. **Credentials Login**: `POST /api/auth/callback/credentials` → NextAuth session cookie (HTTP-only)
+3. **Site Registration**: `GET /api/sites` (find by URL) or `POST /api/sites` (create new) → site_id
+4. **API Key Generation**: `POST /api/api-keys` → API key (`sf_` prefix, returned once)
+
+After bootstrap, subsequent phases (1-4) use the API key for authentication (no session needed).
+
+**Graceful Degradation (AC-7)**: If bootstrap fails at any phase (CSRF, login, site creation, or API key generation), set `site_flow.enabled` to `false`, display a warning with the failure phase, and continue the discovery process without site-flow integration.
 
 ### Step 3: Generate Report
 
@@ -333,7 +383,7 @@ Run `/jikime:migrate-1-analyze` to perform deep analysis.
         ├─ AskUserQuestion: Interactive stack selection (Q1~Q7)
         ├─ Creates: .migrate-config.yaml
         │   (source_*, target_*, db_*, artifacts_dir)
-        ├─ site-flow: findSiteByUrl → createSite → createApiKey
+        ├─ site-flow: bootstrapSiteFlow (CSRF → login → site → apikey)
         │   (site_flow.enabled, site_id, api_key saved to config)
         │
         ↓
@@ -443,18 +493,18 @@ Arguments: $ARGUMENTS
    - Set all interactive selection values (target_architecture, target_framework, target_framework_backend, target_backend_language, db_access_from, target_db_orm, db_schema_source, target_ui_library)
    - Set default `artifacts_dir` and `output_dir`
 
-6. **site-flow Site Registration** (skip if `--skip-site-flow`):
+6. **site-flow Bootstrap** (skip if `--skip-site-flow`):
    - Extract `--skip-site-flow` flag from $ARGUMENTS
    - IF `--skip-site-flow`: Set `site_flow.enabled = false` in config, skip to step 7
-   - Load site-flow config: `loadSiteFlowConfig()` (detects api_url from env or defaults)
-   - Create site-flow client: `createSiteFlowClient(config)`
-   - IF connection fails: Set `site_flow.enabled = false`, warn user, continue to step 7
-   - Check existing site: `findSiteByUrl(client, source_site_url)`
-     - IF exists: Reuse site (store `site_id`), inform user
-     - IF not exists: `createSite(client, { name: project_name, url: source_site_url })`
-   - Generate API key: `createApiKey(client, { siteId: site_id, name: "migration-{project_name}" })`
-   - Save to config: `saveSiteFlowConfig({ enabled: true, api_url, api_key, site_id, site_url, registered_at })`
-   - **Graceful Degradation**: On any failure after 3 retries, set `site_flow.enabled = false`, warn, continue
+   - **Collect credentials** via AskUserQuestion:
+     - Q-SF-1: site-flow server URL (default: `http://localhost:3000`)
+     - Q-SF-2: Login email (free text)
+     - Q-SF-3: Login password (free text)
+   - **Run bootstrap**: `bootstrapSiteFlow({ apiUrl, email, password, siteName: project_name, siteUrl: source_site_url })`
+     - Bootstrap automatically: CSRF → login → find/create site → create API key
+     - On success: `saveSiteFlowConfig({ enabled: true, apiUrl, apiKey: result.apiKey, siteId: result.siteId, ... })`
+     - On `BootstrapError`: Log warning with `error.phase`, set `site_flow.enabled = false`, continue to step 7
+   - **Graceful Degradation (AC-7)**: On any failure, set `site_flow.enabled = false`, warn, continue
 
 7. **Generate Discovery Report** to user in F.R.I.D.A.Y. format:
    - Source Overview (language, framework, database, frontend)
@@ -469,8 +519,9 @@ Execute NOW. Do NOT just describe.
 
 ---
 
-Version: 5.0.0
+Version: 5.1.0
 Changelog:
+- v5.1.0: Replaced manual client-based site-flow setup with bootstrapSiteFlow() programmatic authentication; Step 2.5 now uses CLI-based NextAuth credentials login (CSRF → login → find/create site → create API key); Added credential collection via AskUserQuestion (Q-SF-1~3); Removed session auth limitation note (solved by bootstrap); Updated Workflow diagram with bootstrapSiteFlow reference; Updated EXECUTION DIRECTIVE step 6 with bootstrap flow
 - v5.0.0: Added site-flow integration (Step 2.5: site registration, API key generation via findSiteByUrl/createSite/createApiKey); Added --skip-site-flow flag; Added site_flow config section (enabled, api_url, api_key, site_id, site_url, registered_at); Updated Discovery Report with site-flow Integration status; Added site_flow fields to Config File Purpose table; Updated Workflow diagram with site-flow steps; Added EXECUTION DIRECTIVE step 6 for site-flow registration; Graceful degradation on connection failure (AC-7, AC-8)
 - v4.1.0: Added Q7 UI Component Library selection (shadcn, MUI, Chakra, legacy-css); Added target_ui_library to config schema; Updated conditional flow (Fullstack: 5 questions, Separated: 6 questions); UI library choice determines component modernization strategy
 - v4.0.0: Replaced --target with interactive stack selection (Step 1.5); Added 6 conditional AskUserQuestion flow; Extended .migrate-config.yaml schema with target_architecture, target_framework_backend, target_backend_language, db_access_from, target_db_orm, db_schema_source; Added Target Stack to discovery report; Dynamic skill-based option detection

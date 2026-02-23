@@ -125,6 +125,20 @@ export {
 export type { LoadSiteFlowConfigOptions } from './config';
 
 // ============================================================
+// 부트스트랩 (CLI 인증)
+// ============================================================
+export {
+  bootstrapSiteFlow,
+  BootstrapError,
+} from './bootstrap';
+
+export type {
+  BootstrapOptions,
+  BootstrapResult,
+  BootstrapPhase,
+} from './bootstrap';
+
+// ============================================================
 // SSE 파서
 // ============================================================
 export {
