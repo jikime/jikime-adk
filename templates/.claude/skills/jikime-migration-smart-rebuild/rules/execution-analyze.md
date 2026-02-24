@@ -1,6 +1,6 @@
 # Smart Rebuild Execution - Phase 2: Analyze
 
-Phase 2 분석 상세 실행 절차. 메인 문서: `smart-rebuild-execution.md`
+Phase 2 분석 상세 실행 절차. 메인 문서: `execution.md`
 
 ---
 

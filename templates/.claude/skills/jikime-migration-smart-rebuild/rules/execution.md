@@ -3,9 +3,9 @@
 상세 실행 절차, 코드 예시, 워크플로우 가이드.
 
 **관련 문서 (분리됨):**
-- `smart-rebuild-execution-capture.md` - Phase 1: Capture 상세
-- `smart-rebuild-execution-analyze.md` - Phase 2: Analyze 상세
-- `smart-rebuild-execution-backend.md` - Phase G: Backend 상세
+- `execution-capture.md` - Phase 1: Capture 상세
+- `execution-analyze.md` - Phase 2: Analyze 상세
+- `execution-backend.md` - Phase G: Backend 상세
 
 ---
 

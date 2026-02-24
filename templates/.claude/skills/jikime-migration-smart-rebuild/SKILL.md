@@ -226,6 +226,11 @@ sitemap.json에서 각 페이지의 상태를 추적합니다:
 | `rules/phase-2-analyze.md` | 분석 & 매핑 단계 |
 | `rules/phase-3-generate.md` | 코드 생성 단계 |
 | `rules/troubleshooting.md` | 문제 해결 가이드 |
+| `rules/execution.md` | Smart Rebuild 실행 가이드 (메인) |
+| `rules/execution-capture.md` | Phase 1: Capture 상세 실행 절차 |
+| `rules/execution-analyze.md` | Phase 2: Analyze 상세 실행 절차 |
+| `rules/execution-backend.md` | Phase G: Backend 상세 실행 절차 |
+| `rules/reference.md` | 사용법, 옵션, 지원 프레임워크 참조 |
 | `scripts/` | CLI 도구 |
 
 ## Related

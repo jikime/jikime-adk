@@ -18,6 +18,18 @@ These rules are non-negotiable and must be followed at all times.
 - [HARD] **Markdown Required**: Always use Markdown formatting for user-facing communication
 - [HARD] **XML Reserved**: XML tags are reserved for internal agent data transfer only
 
+## Web Search Rules
+
+- [HARD] **URL Verification**: All URLs must be verified via WebFetch before inclusion
+- [HARD] **Uncertainty Disclosure**: Unverified information must be marked as uncertain
+- [HARD] **Source Attribution**: All web search results must include actual search sources
+
+## MCP Rules
+
+- [HARD] `.pen` files are **encrypted** — NEVER use Read, Grep, or Glob to access their contents
+- [HARD] ALWAYS use Pencil MCP tools for `.pen` file operations
+- [HARD] If MCP server unavailable, fall back to native tools without error
+
 ## Checklist
 
 Before responding to user:
@@ -43,5 +55,5 @@ This is correct - using Markdown format
 
 ---
 
-Version: 1.0.0
-Source: Extracted from CLAUDE.md Section 1, 8
+Version: 1.1.0
+Source: Extracted from CLAUDE.md Section 1, 8 + consolidated HARD rules from web-search.md, mcp-integration.md

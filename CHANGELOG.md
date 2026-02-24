@@ -5,6 +5,28 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-02-24
+
+### Changed
+
+- **Token Performance Optimization**: Reduced session startup token load by ~40-50% (~31K tokens saved)
+  - Moved 5 Smart Rebuild rule files (~25K tokens) from `rules/jikime/` to `skills/jikime-migration-smart-rebuild/rules/` for on-demand loading
+  - Moved 4 conditional rule files (~6K tokens) to appropriate skills: `hooks.md` and `mcp-integration.md` → `jikime-foundation-claude`, `skills.md` and `web-search.md` → `jikime-foundation-core`
+  - Removed 14 duplicate `@.claude/rules/jikime/` references from `CLAUDE.md` to prevent double-loading (rules directory is auto-loaded by Claude Code)
+  - Rules directory reduced from 20 files to 11 always-needed core files
+- **`core.md`** (v1.0.0 → v1.1.0): Consolidated HARD rules from moved files (Web Search anti-hallucination policy, MCP `.pen` file encryption rules)
+- **`CLAUDE.md`**: Replaced explicit `@`-references to rules with auto-load documentation; removed redundant `@.claude/rules/` and `@.claude/contexts/` references
+- **`jikime-migration-smart-rebuild` SKILL.md**: Updated Files section to reflect 5 new rule files relocated from global rules
+
+### Performance Impact
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Rules files at startup | 20 (~55K tokens) | 11 (~24K tokens) |
+| CLAUDE.md @rules/ refs | 14 (double-load) | 0 (auto-load only) |
+| Smart Rebuild token cost | Always loaded | On-demand only |
+| Estimated startup savings | — | ~31K tokens (~40-50%) |
+
 ## [0.9.0] - 2026-02-24
 
 ### Added
@@ -93,6 +115,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Architecture pattern expansion features
 
+[0.9.1]: https://github.com/user/jikime-adk/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/user/jikime-adk/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/user/jikime-adk/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/user/jikime-adk/compare/v0.8.1...v0.8.2

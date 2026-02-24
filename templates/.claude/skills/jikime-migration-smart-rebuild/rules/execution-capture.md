@@ -1,6 +1,6 @@
 # Smart Rebuild Execution - Phase 1: Capture
 
-Phase 1 캡처 상세 실행 절차. 메인 문서: `smart-rebuild-execution.md`
+Phase 1 캡처 상세 실행 절차. 메인 문서: `execution.md`
 
 ---
 

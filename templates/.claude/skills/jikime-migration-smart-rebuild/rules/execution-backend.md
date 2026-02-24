@@ -1,6 +1,6 @@
 # Smart Rebuild Execution - Phase G: Backend
 
-Phase G 백엔드 연동 상세 실행 절차. 메인 문서: `smart-rebuild-execution.md`
+Phase G 백엔드 연동 상세 실행 절차. 메인 문서: `execution.md`
 
 ---
 

@@ -74,33 +74,18 @@ Priority 3: Sticky State (No Signal)
 
 **Output Style**:
 
-Orchestrator personality and response templates are defined in:
-- @.claude/rules/jikime/tone.md (personality traits + response format)
+Orchestrator personality and response templates are defined in `.claude/rules/jikime/tone.md` (auto-loaded).
 
 ### Rules Reference
 
-Detailed rules are defined in separate files for maintainability:
-
-@.claude/rules/jikime/core.md
-@.claude/rules/jikime/agents.md
-@.claude/rules/jikime/quality.md
-@.claude/rules/jikime/web-search.md
-@.claude/rules/jikime/interaction.md
-@.claude/rules/jikime/coding-style.md
-@.claude/rules/jikime/git-workflow.md
-@.claude/rules/jikime/hooks.md
-@.claude/rules/jikime/patterns.md
-@.claude/rules/jikime/performance.md
-@.claude/rules/jikime/security.md
-@.claude/rules/jikime/testing.md
-@.claude/rules/jikime/tone.md
-@.claude/rules/jikime/mcp-integration.md
+All rules in `.claude/rules/jikime/` are auto-loaded by Claude Code at session start.
+No explicit @-references needed — do NOT add @.claude/rules/ references here to avoid double-loading.
 
 ### Behavior Contexts
 
 Contexts define Claude's behavior mode for different situations. Commands automatically load appropriate contexts.
 
-Available contexts in @.claude/contexts/:
+Available contexts in `.claude/contexts/`:
 
 | Context | Mode | Auto-loaded by |
 |---------|------|----------------|
@@ -412,7 +397,7 @@ JikiME-ADK uses DDD (Domain-Driven Development) as its development methodology:
 - Behavior preservation through characterization tests
 - Incremental improvements with existing test validation
 
-Configuration: @.jikime/config/quality.yaml (constitution.development_mode: ddd)
+Configuration: `.jikime/config/quality.yaml` (constitution.development_mode: ddd)
 
 ### Development Command Flow
 
@@ -442,7 +427,7 @@ Use manager-ddd for:
 
 ## 6. Quality Gates
 
-See @.claude/rules/jikime/quality.md for complete quality gate specifications.
+See `.claude/rules/jikime/quality.md` (auto-loaded) for complete quality gate specifications.
 
 Quick Reference:
 
@@ -465,7 +450,7 @@ LSP-based quality validation is enforced at each workflow phase:
 | **run** | Zero errors | No LSP errors, type errors, or lint errors allowed |
 | **sync** | Clean LSP | Must be error-free before PR/sync |
 
-Configuration: @.jikime/config/quality.yaml → `constitution.lsp_quality_gates`
+Configuration: `.jikime/config/quality.yaml` → `constitution.lsp_quality_gates`
 
 LSP regression detection automatically triggers strategy pivots in J.A.R.V.I.S. workflows.
 
@@ -481,7 +466,7 @@ The following actions constitute violations:
 
 ## 7. User Interaction Architecture
 
-See @.claude/rules/jikime/interaction.md for complete interaction rules.
+See `.claude/rules/jikime/interaction.md` (auto-loaded) for complete interaction rules.
 
 Quick Reference:
 
@@ -521,7 +506,7 @@ User and language configuration is automatically loaded from:
 
 ## 9. Web Search Protocol
 
-See @.claude/rules/jikime/web-search.md for complete web search rules.
+See `.claude/rules/jikime/web-search.md` (auto-loaded) for complete web search rules.
 
 Quick Reference:
 
