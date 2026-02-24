@@ -3,18 +3,19 @@
 
 version: '1.0.0'
 generated_at: '2026-02-06T23:55:49.967027'
-total_skills: 69
+total_skills: 70
 
 # Skills by domain
 domains:
   domain:
-    count: 5
+    count: 6
     skills:
       - jikime-domain-architecture
       - jikime-domain-backend
       - jikime-domain-database
       - jikime-domain-frontend
       - jikime-domain-uiux
+      - jikime-design-tools
 
   foundation:
     count: 5
@@ -156,6 +157,13 @@ skills:
     version: 2.0.0
     user_invocable: false
     tags: ["domain", "uiux", "design-systems", "accessibility", "components"]
+
+  - name: jikime-design-tools
+    domain: domain
+    description: "Design tool integration specialist covering Pencil MCP, Figma MCP, and design-to-code export. Includes batch_design, get_screenshot, style guide, and Nova preset workflows."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["domain", "design", "pencil", "figma", "design-to-code", "mcp"]
 
   - name: jikime-foundation-claude
     domain: foundation

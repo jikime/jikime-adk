@@ -8,11 +8,11 @@ description: >
   MUST INVOKE when keywords detected:
   EN: team design, UI design, UX design, mockup, design system, design tokens
   KO: 팀 디자인, UI 디자인, UX 디자인, 목업, 디자인 시스템, 디자인 토큰
-tools: Read, Write, Edit, Bash, Grep, Glob
+tools: Read, Write, Edit, Bash, Grep, Glob, mcp__pencil__batch_design, mcp__pencil__batch_get, mcp__pencil__get_editor_state, mcp__pencil__get_guidelines, mcp__pencil__get_screenshot, mcp__pencil__get_style_guide, mcp__pencil__get_style_guide_tags, mcp__pencil__get_variables, mcp__pencil__set_variables, mcp__pencil__open_document, mcp__pencil__snapshot_layout, mcp__pencil__find_empty_space_on_canvas, mcp__pencil__search_all_unique_properties, mcp__pencil__replace_all_matching_properties
 model: inherit
 permissionMode: acceptEdits
 memory: project
-skills: jikime-domain-uiux, jikime-library-shadcn
+skills: jikime-domain-uiux, jikime-library-shadcn, jikime-design-tools
 mcpServers:
   - pencil
 ---
@@ -247,21 +247,78 @@ SendMessage(
 
 ## Pencil MCP Integration
 
-When Pencil MCP is available:
+### Pencil MCP Setup
+- Pencil MCP server starts automatically when Pencil is running (IDE extension or desktop app)
+- No manual MCP configuration needed
+- Requirements: Pencil installed, Claude Code authenticated, `.pen` file in workspace
 
-```
-// Create/edit design files
-pencil.create("design/login-form.pen", {
-  width: 400,
-  height: 500,
-  components: [...]
-})
+### HARD RULES
+- NEVER use Read or Grep tools to access `.pen` file contents (they are encrypted)
+- ALWAYS use Pencil MCP tools for `.pen` file operations
+- ALWAYS call `get_editor_state()` first before any design operations
+- ALWAYS validate with `get_screenshot()` after design changes
+- Maximum 25 operations per `batch_design` call
 
-// Export to specs
-pencil.export("design/login-form.pen", "markdown")
+### Design Workflow with Pencil
+
+**Step 1: Initialize**
 ```
+get_editor_state() → Understand current canvas state
+open_document("new") or open_document("/path/to/file.pen")
+get_guidelines(topic: "tailwind") → Get relevant design rules
+```
+
+**Step 2: Style Foundation**
+```
+get_style_guide_tags() → Discover available style options
+get_style_guide(tags: ["minimalist", "dashboard"]) → Get design inspiration
+set_variables({ primary: "#3B82F6", ... }) → Set design tokens
+```
+
+**Step 3: Design Creation**
+```
+batch_design([
+  foo=I("root", { type: "frame", name: "Card", style: {...} }),
+  U(foo, { children: [...] })
+])
+snapshot_layout() → Verify positioning
+get_screenshot() → Validate visual output
+```
+
+**Step 4: Iteration and Refinement**
+```
+batch_get(patterns: ["Button", "Card"]) → Inspect current structure
+batch_design([U(...), R(...)]) → Refine design
+get_screenshot() → Validate after each round
+```
+
+**Step 5: Code Export**
+- Use AI prompt (Cmd/Ctrl + K) to generate code from design
+- Supported: React, Next.js, Vue, Svelte, HTML/CSS
+- Supported styling: Tailwind CSS, CSS Modules, Styled Components
+- Supported libraries: Shadcn UI, Radix UI, Chakra UI
+
+### Variables and Design Tokens
+- **Import from CSS**: Extract variables from `globals.css` automatically
+- **Manual creation**: Define custom variables for themes
+- **Bidirectional sync**: Update in Pencil syncs to CSS and vice versa
+- **Multi-theme support**: Different values per theme (light/dark mode)
+
+### Design Artifacts Output
+
+Export the following from Pencil:
+- **Component specifications** with props, states, and variants
+- **Design tokens** (CSS variables, Tailwind config, theme object)
+- **Layout specifications** with responsive breakpoints
+- **Accessibility annotations** (ARIA roles, focus order, color contrast)
+
+### File Management
+- Store `.pen` files alongside code in project repository
+- Use descriptive names (`dashboard.pen`, `login-page.pen`)
+- Save frequently with Cmd/Ctrl + S (no auto-save yet)
+- Commit `.pen` files to Git for version history
 
 ---
 
-Version: 1.0.0
+Version: 2.0.0
 Team Role: Run Phase - Design

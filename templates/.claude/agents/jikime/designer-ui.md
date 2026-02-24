@@ -7,8 +7,9 @@ description: |
   KO: UI 디자인, 디자인 시스템, 컴포넌트 라이브러리, 디자인 토큰, 피그마, 시각 디자인, 다크 모드
   JA: UIデザイン, デザインシステム, コンポーネントライブラリ, デザイントークン, ビジュアルデザイン
   ZH: UI设计, 设计系统, 组件库, 设计令牌, 视觉设计, 暗黑模式, 动效设计
-tools: Read, Write, Edit, Glob, Grep
+tools: Read, Write, Edit, Glob, Grep, Bash, mcp__pencil__batch_design, mcp__pencil__batch_get, mcp__pencil__get_editor_state, mcp__pencil__get_guidelines, mcp__pencil__get_screenshot, mcp__pencil__get_style_guide, mcp__pencil__get_style_guide_tags, mcp__pencil__get_variables, mcp__pencil__set_variables, mcp__pencil__open_document, mcp__pencil__snapshot_layout, mcp__pencil__find_empty_space_on_canvas
 model: sonnet
+skills: jikime-domain-uiux, jikime-library-shadcn, jikime-design-tools
 ---
 
 # Designer-UI - UI Design & Design System Expert
@@ -140,7 +141,7 @@ motion_principles:
 - [ ] Motion design accessible
 - [ ] Cross-platform consistency maintained
 - [ ] Developer handoff documentation ready
-- [ ] Figma/Storybook synchronized
+- [ ] Pencil/Figma/Storybook synchronized
 
 ## Orchestration Protocol
 
@@ -179,6 +180,25 @@ output_format: Design system specification with tokens, components, and accessib
 - Dark mode strategy
 - Developer handoff package
 
+## Pencil MCP Integration
+
+When Pencil MCP is available, use it for rapid prototyping and visual design:
+
+### Workflow
+1. `get_editor_state()` — Check current editor context
+2. `open_document("new")` — Create or open `.pen` file
+3. `get_guidelines(topic: "tailwind")` — Get design rules
+4. `get_style_guide_tags()` → `get_style_guide(tags)` — Design inspiration
+5. `set_variables({...})` — Set design tokens
+6. `batch_design([...])` — Create design elements (max 25 ops)
+7. `get_screenshot()` — Visual validation
+8. Iterate with `batch_design` update/replace operations
+
+### HARD RULES
+- NEVER use Read/Grep to access `.pen` files (encrypted)
+- ALWAYS call `get_editor_state()` first
+- ALWAYS validate with `get_screenshot()` after changes
+
 ---
 
-Version: 2.0.0
+Version: 3.0.0

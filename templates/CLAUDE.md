@@ -94,6 +94,7 @@ Detailed rules are defined in separate files for maintainability:
 @.claude/rules/jikime/security.md
 @.claude/rules/jikime/testing.md
 @.claude/rules/jikime/tone.md
+@.claude/rules/jikime/mcp-integration.md
 
 ### Behavior Contexts
 
