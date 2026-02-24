@@ -3,7 +3,7 @@
 
 version: '1.0.0'
 generated_at: '2026-02-06T23:55:49.967027'
-total_skills: 67
+total_skills: 69
 
 # Skills by domain
 domains:
@@ -44,10 +44,11 @@ domains:
       - jikime-lang-typescript
 
   library:
-    count: 5
+    count: 6
     skills:
       - jikime-library-mermaid
       - jikime-library-shadcn
+      - jikime-library-streamdown
       - jikime-library-tds-react-native
       - jikime-library-vercel-ai-sdk
       - jikime-library-zod
@@ -66,19 +67,15 @@ domains:
       - jikime-marketing-psychology
       - jikime-marketing-seo
 
-  migrate:
-    count: 1
-    skills:
-      - migrate-to-nextjs
-
   migration:
-    count: 5
+    count: 6
     skills:
       - jikime-migration-angular-to-nextjs
       - jikime-migration-ast-grep
       - jikime-migration-jquery-to-react
       - jikime-migration-patterns-auth
       - jikime-migration-smart-rebuild
+      - jikime-migration-to-nextjs
 
   mobile:
     count: 1
@@ -101,7 +98,7 @@ domains:
       - jikime-tool-mcp-builder
 
   workflow:
-    count: 18
+    count: 19
     skills:
       - jikime-workflow-changelog
       - jikime-workflow-codemap
@@ -118,6 +115,7 @@ domains:
       - jikime-workflow-sync
       - jikime-workflow-tdd
       - jikime-workflow-templates
+      - jikime-workflow-team
       - jikime-workflow-testing
       - jikime-workflow-verify
       - jikime-workflow-worktree
@@ -278,6 +276,13 @@ skills:
     user_invocable: false
     tags: ["library", "shadcn", "ui", "components", "tailwind"]
 
+  - name: jikime-library-streamdown
+    domain: library
+    description: "Implement, configure, and customize Streamdown — a streaming-optimized React Markdown renderer with syntax highlighting, Mermaid diagrams, math rendering, and CJK support."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["library", "streamdown", "markdown", "streaming", "react"]
+
   - name: jikime-library-tds-react-native
     domain: library
     description: "Toss Design System (TDS) React Native component library built on top of React Native/Expo. Use with jikime-mobile-react-native for complete mobile development patterns."
@@ -370,7 +375,7 @@ skills:
 
   - name: jikime-migration-angular-to-nextjs
     domain: migration
-    description: "|"
+    description: "Angular to Next.js 16 migration specialist. Handles NgModule decomposition, RxJS to React patterns, Dependency Injection to Hooks, and Angular Forms to react-hook-form migration."
     version: 1.0.0
     user_invocable: false
     tags: ["migration", "angular", "nextjs", "react", "rxjs"]
@@ -384,7 +389,7 @@ skills:
 
   - name: jikime-migration-jquery-to-react
     domain: migration
-    description: "|"
+    description: "jQuery to React 19 migration specialist. Converts legacy jQuery applications to modern React with hooks, TypeScript, and component-based architecture."
     version: 2.1.0
     user_invocable: false
     tags: ["migration", "jquery", "react", "javascript", "typescript"]
@@ -561,6 +566,13 @@ skills:
     user_invocable: false
     tags: ["workflow", "templates", "boilerplate", "scaffolding", "optimization"]
 
+  - name: jikime-workflow-team
+    domain: workflow
+    description: "Agent Teams workflow orchestration for JikiME-ADK. Provides team-based parallel execution patterns for plan, run, and debug phases."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "agent-teams", "parallel", "orchestration", "team"]
+
   - name: jikime-workflow-testing
     domain: workflow
     description: "Comprehensive development workflow specialist combining DDD, debugging, performance optimization, code review, PR review, and quality assurance into unified development workflows"
@@ -582,9 +594,9 @@ skills:
     user_invocable: false
     tags: ["workflow", "git", "worktree", "parallel-development", "isolation"]
 
-  - name: migrate-to-nextjs
-    domain: migrate
-    description: "|"
+  - name: jikime-migration-to-nextjs
+    domain: migration
+    description: "Legacy to Next.js 16 migration workflow specialist. Analyzes legacy projects (Vue, React CRA, Angular, Svelte) and orchestrates migration to modern Next.js 16 App Router architecture."
     version: 2.1.0
     user_invocable: false
     tags: ["migration", "nextjs", "react", "vue", "angular"]

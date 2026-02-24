@@ -53,5 +53,9 @@ func NewHooks() *cobra.Command {
 	hooks.AddCommand(MemoryCompleteCmd)   // Stop: flush track buffer + save tool usage
 	hooks.AddCommand(EmbedBackfillCmd)    // Background: batch embedding (spawned by memory-save)
 
+	// Agent Teams hooks
+	hooks.AddCommand(TaskCompletedCmd)  // TaskCompleted: validate SPEC acceptance criteria
+	hooks.AddCommand(TeammateIdleCmd)   // TeammateIdle: validate quality gates
+
 	return hooks
 }

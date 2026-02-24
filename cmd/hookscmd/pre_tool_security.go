@@ -220,15 +220,6 @@ func checkFilePath(filePath string) (decision, reason string) {
 	normalizedOriginal := strings.ReplaceAll(filePath, "\\", "/")
 	normalizedResolved := strings.ReplaceAll(resolvedPath, "\\", "/")
 
-	// Check project boundary (DISABLED - allow editing files outside project)
-	// projectRoot := getProjectRoot()
-	// if projectRoot != "" {
-	// 	relPath, err := filepath.Rel(projectRoot, resolvedPath)
-	// 	if err != nil || strings.HasPrefix(relPath, "..") {
-	// 		return "deny", "Path traversal detected: file is outside project directory"
-	// 	}
-	// }
-
 	// Check deny patterns
 	for _, pattern := range denyCompiled {
 		if pattern.MatchString(normalizedOriginal) || pattern.MatchString(normalizedResolved) {
