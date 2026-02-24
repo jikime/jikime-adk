@@ -9,13 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Token Performance Optimization**: Reduced session startup token load by ~40-50% (~31K tokens saved)
+- **Token Performance Optimization Phase 1**: Reduced session startup token load by ~40-50% (~31K tokens saved)
   - Moved 5 Smart Rebuild rule files (~25K tokens) from `rules/jikime/` to `skills/jikime-migration-smart-rebuild/rules/` for on-demand loading
   - Moved 4 conditional rule files (~6K tokens) to appropriate skills: `hooks.md` and `mcp-integration.md` → `jikime-foundation-claude`, `skills.md` and `web-search.md` → `jikime-foundation-core`
   - Removed 14 duplicate `@.claude/rules/jikime/` references from `CLAUDE.md` to prevent double-loading (rules directory is auto-loaded by Claude Code)
   - Rules directory reduced from 20 files to 11 always-needed core files
+- **Token Performance Optimization Phase 2**: Additional ~5,900 tokens saved
+  - Trimmed 6 verbose rules files by 64% (1,501 → 546 lines): `patterns.md`, `tone.md`, `git-workflow.md`, `testing.md`, `performance.md`, `security.md`
+  - Condensed CLAUDE.md by 42% (1,080 → 630 lines): removed duplicate content in sections 6/7/9, moved detailed reference content from sections 11/11.1/12/14/15 to skills
+  - New reference files: `sequential-thinking-guide.md` and `jikime-memory-guide.md` in `jikime-foundation-claude/reference/`
 - **`core.md`** (v1.0.0 → v1.1.0): Consolidated HARD rules from moved files (Web Search anti-hallucination policy, MCP `.pen` file encryption rules)
-- **`CLAUDE.md`**: Replaced explicit `@`-references to rules with auto-load documentation; removed redundant `@.claude/rules/` and `@.claude/contexts/` references
+- **`CLAUDE.md`** (v12.0.0 → v13.0.0): Replaced explicit `@`-references with auto-load; condensed reference sections to skill pointers
 - **`jikime-migration-smart-rebuild` SKILL.md**: Updated Files section to reflect 5 new rule files relocated from global rules
 
 ### Performance Impact
@@ -23,9 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | Metric | Before | After |
 |--------|--------|-------|
 | Rules files at startup | 20 (~55K tokens) | 11 (~24K tokens) |
+| Rules file lines | 2,539 lines | 1,584 lines (-38%) |
+| CLAUDE.md lines | 1,080 lines | 630 lines (-42%) |
 | CLAUDE.md @rules/ refs | 14 (double-load) | 0 (auto-load only) |
 | Smart Rebuild token cost | Always loaded | On-demand only |
-| Estimated startup savings | — | ~31K tokens (~40-50%) |
+| Estimated total savings | — | ~37K tokens (~55-60%) |
 
 ## [0.9.0] - 2026-02-24
 

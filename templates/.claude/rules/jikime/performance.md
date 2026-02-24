@@ -4,95 +4,33 @@ Guidelines for efficient Claude Code usage and code performance.
 
 ## Model Selection Strategy
 
-### Haiku (Fast, Cost-Effective)
-
-**Use for**:
-- Simple code generation
-- Formatting and linting
-- Straightforward Q&A
-- Worker agents in multi-agent workflows
-- High-frequency, low-complexity tasks
-
-**Characteristics**:
-- 90% of Sonnet capability
-- 3x cost savings
-- Fastest response time
-
-### Sonnet (Balanced, Recommended)
-
-**Use for**:
-- Main development work
-- Complex coding tasks
-- Orchestrating multi-agent workflows
-- Code review and analysis
-- Most everyday tasks
-
-**Characteristics**:
-- Best balance of capability and cost
-- Strong coding performance
-- Good reasoning ability
-
-### Opus (Maximum Capability)
-
-**Use for**:
-- Complex architectural decisions
-- Deep reasoning requirements
-- Research and analysis
-- Critical decision-making
-- Ultrathink scenarios
-
-**Characteristics**:
-- Maximum reasoning depth
-- Best for complex problems
-- Higher cost and latency
+| Model | Use For | Characteristics |
+|-------|---------|-----------------|
+| **Haiku** | Simple generation, formatting, worker agents | 90% of Sonnet capability, 3x cost savings |
+| **Sonnet** | Main development, complex coding, orchestration | Best balance of capability and cost |
+| **Opus** | Architecture decisions, deep reasoning, ultrathink | Maximum reasoning depth, higher cost |
 
 ## Context Window Management
 
-### Critical Zone (80-100%)
+| Zone | Context | Safe Tasks |
+|------|---------|------------|
+| Safe (0-60%) | Low | Any task |
+| Caution (60-80%) | Medium | Single-file edits, docs, simple fixes |
+| Critical (80-100%) | High | Avoid refactoring, multi-file changes |
 
-Avoid these tasks when context is high:
-- Large-scale refactoring
-- Multi-file feature implementation
-- Complex debugging
-- Architectural changes
-
-### Safe Zone (0-60%)
-
-Lower context sensitivity tasks:
-- Single-file edits
-- Independent utility creation
-- Documentation updates
-- Simple bug fixes
-
-### Management Strategies
-
-```markdown
-1. Start complex tasks with fresh context
-2. Use /clear when context exceeds 70%
-3. Break large tasks into smaller sessions
-4. Summarize findings before context fills
-```
+**Strategies**: Start complex tasks with fresh context, use /clear at 70%+, break large tasks into smaller sessions.
 
 ## Tool Efficiency
 
 ### Parallel Execution
 
-```markdown
-DO: Execute independent operations in parallel
-- Multiple file reads
-- Independent searches
-- Unrelated API calls
-
-DON'T: Parallelize dependent operations
-- Read then edit same file
-- Create then modify directory
-- Sequential workflow steps
-```
+- **DO**: Execute independent operations in parallel (multiple reads, unrelated searches)
+- **DON'T**: Parallelize dependent operations (read then edit same file)
 
 ### Tool Selection
 
-| Task | Preferred Tool | Avoid |
-|------|----------------|-------|
+| Task | Preferred | Avoid |
+|------|-----------|-------|
 | Find files | Glob | Bash find |
 | Search content | Grep | Bash grep |
 | Read files | Read | Bash cat |
@@ -101,89 +39,28 @@ DON'T: Parallelize dependent operations
 
 ## Code Performance
 
-### Algorithm Complexity
+### Algorithm Complexity Targets
 
-```markdown
-Target:
 - O(n) or better for common operations
 - O(n log n) acceptable for sorting
 - Avoid O(n²) in hot paths
 - Never O(2^n) without explicit approval
-```
 
-### Common Optimizations
-
-```typescript
-// SLOW: O(n²) - Nested loops
-items.forEach(item => {
-  const match = others.find(o => o.id === item.id)
-})
-
-// FAST: O(n) - Map lookup
-const othersMap = new Map(others.map(o => [o.id, o]))
-items.forEach(item => {
-  const match = othersMap.get(item.id)
-})
-```
-
-### React Performance
-
-```typescript
-// Memoize expensive computations
-const expensiveValue = useMemo(() =>
-  computeExpensive(data), [data]
-)
-
-// Memoize callbacks
-const handleClick = useCallback(() =>
-  doSomething(id), [id]
-)
-
-// Avoid unnecessary re-renders
-const MemoizedComponent = memo(Component)
-```
+**Common Fix**: Replace nested loops with Map/Set lookups (O(n²) → O(n)).
 
 ### Database Performance
 
-```markdown
 1. Index frequently queried columns
 2. Avoid N+1 queries (use includes/joins)
 3. Paginate large result sets
 4. Use connection pooling
 5. Cache frequently accessed data
-```
-
-## Ultrathink + Plan Mode
-
-For complex tasks requiring deep reasoning:
-
-```markdown
-1. Activate ultrathink for enhanced analysis
-2. Enable Plan Mode for structured approach
-3. Multiple critique rounds before implementation
-4. Use sub-agents for diverse perspectives
-5. Document decisions for future reference
-```
-
-### When to Use
-
-- Architecture decisions affecting 3+ files
-- Technology selection between options
-- Performance vs maintainability trade-offs
-- Breaking changes consideration
-- Critical bug investigation
 
 ## Build Troubleshooting
 
 ### Incremental Fix Approach
 
-```markdown
-1. Run build, capture errors
-2. Fix ONE error at a time
-3. Re-run build after each fix
-4. Repeat until success
-5. Run tests to verify
-```
+1. Run build, capture errors → Fix ONE error at a time → Re-run → Repeat
 
 ### Common Build Issues
 
@@ -207,5 +84,5 @@ Before committing:
 
 ---
 
-Version: 1.0.0
-Source: JikiME-ADK performance guidelines
+Version: 2.0.0
+Source: JikiME-ADK performance guidelines (condensed - removed code examples and UltraThink duplicate)

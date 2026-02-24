@@ -427,58 +427,15 @@ Use manager-ddd for:
 
 ## 6. Quality Gates
 
-See `.claude/rules/jikime/quality.md` (auto-loaded) for complete quality gate specifications.
+See `.claude/rules/jikime/quality.md` (auto-loaded) for complete specifications including HARD Rules checklist, violation detection, and TRUST 5 framework.
 
-Quick Reference:
-
-### HARD Rules Checklist
-
-- [ ] All implementation tasks delegated to agents when specialized expertise is needed
-- [ ] User responses in conversation_language
-- [ ] Independent operations executed in parallel
-- [ ] XML tags never shown to users
-- [ ] URLs verified before inclusion (WebSearch)
-- [ ] Source attribution when WebSearch used
-
-### LSP Quality Gates
-
-LSP-based quality validation is enforced at each workflow phase:
-
-| Phase | Requirement | Description |
-|-------|-------------|-------------|
-| **plan** | Baseline capture | Capture LSP state at phase start |
-| **run** | Zero errors | No LSP errors, type errors, or lint errors allowed |
-| **sync** | Clean LSP | Must be error-free before PR/sync |
-
-Configuration: `.jikime/config/quality.yaml` → `constitution.lsp_quality_gates`
-
-LSP regression detection automatically triggers strategy pivots in J.A.R.V.I.S. workflows.
-
-### Violation Detection
-
-The following actions constitute violations:
-
-- J.A.R.V.I.S./F.R.I.D.A.Y. responds to complex implementation requests without considering agent delegation
-- J.A.R.V.I.S./F.R.I.D.A.Y. skips quality validation for critical changes
-- J.A.R.V.I.S./F.R.I.D.A.Y. ignores user's conversation_language preference
+LSP Quality Gates enforce zero-error policy at each workflow phase (plan/run/sync). Configuration: `.jikime/config/quality.yaml`
 
 ---
 
 ## 7. User Interaction Architecture
 
-See `.claude/rules/jikime/interaction.md` (auto-loaded) for complete interaction rules.
-
-Quick Reference:
-
-### Critical Constraint
-
-Subagents invoked via Task() operate in isolated, stateless contexts and cannot interact with users directly.
-
-### AskUserQuestion Constraints
-
-- Maximum 4 options per question
-- No emoji characters in question text, headers, or option labels
-- Questions must be in user's conversation_language
+See `.claude/rules/jikime/interaction.md` (auto-loaded) for complete rules including AskUserQuestion constraints and correct workflow patterns.
 
 ---
 
@@ -506,15 +463,7 @@ User and language configuration is automatically loaded from:
 
 ## 9. Web Search Protocol
 
-See `.claude/rules/jikime/web-search.md` (auto-loaded) for complete web search rules.
-
-Quick Reference:
-
-### Anti-Hallucination Policy
-
-- [HARD] URL Verification: All URLs must be verified via WebFetch before inclusion
-- [HARD] Uncertainty Disclosure: Unverified information must be marked as uncertain
-- [HARD] Source Attribution: All web search results must include actual search sources
+Web Search HARD rules (URL verification, uncertainty disclosure, source attribution) are defined in `.claude/rules/jikime/core.md` (auto-loaded). Full protocol in Skill("jikime-foundation-core") `modules/web-search-protocol.md`.
 
 ---
 
@@ -543,296 +492,25 @@ Each sub-agent execution gets a unique agentId stored in agent-{agentId}.jsonl f
 
 ---
 
-## 11. Sequential Thinking
+## 11. Sequential Thinking & UltraThink
 
 ### Activation Triggers
 
-Use the Sequential Thinking MCP tool in the following situations:
+Use Sequential Thinking MCP for: complex multi-step problems, architecture decisions (3+ files), technology selection, trade-off analysis, breaking changes, repetitive errors.
 
-- Breaking down complex problems into steps
-- Planning and design with room for revision
-- Analysis that might need course correction
-- Problems where the full scope might not be clear initially
-- Tasks that need to maintain context over multiple steps
-- Situations where irrelevant information needs to be filtered out
-- Architecture decisions affect 3+ files
-- Technology selection between multiple options
-- Performance vs maintainability trade-offs
-- Breaking changes under consideration
-- Library or framework selection required
-- Multiple approaches exist to solve the same problem
-- Repetitive errors occur
+### UltraThink Mode
 
-### Tool Parameters
+Append `--ultrathink` to any request for enhanced analysis: Sequential Thinking → Subtask decomposition → Agent mapping → Parallel execution.
 
-The sequential_thinking tool accepts the following parameters:
-
-Required Parameters:
-
-- thought (string): The current thinking step content
-- nextThoughtNeeded (boolean): Whether another thought step is needed after this one
-- thoughtNumber (integer): Current thought number (starts from 1)
-- totalThoughts (integer): Estimated total thoughts needed for the analysis
-
-Optional Parameters:
-
-- isRevision (boolean): Whether this thought revises previous thinking (default: false)
-- revisesThought (integer): Which thought number is being reconsidered (used with isRevision: true)
-- branchFromThought (integer): Branching point thought number for alternative reasoning paths
-- branchId (string): Identifier for the reasoning branch
-- needsMoreThoughts (boolean): If more thoughts are needed beyond current estimate
-
-### Sequential Thinking Process
-
-The Sequential Thinking MCP tool provides structured reasoning with:
-
-- Step-by-step breakdown of complex problems
-- Context maintenance across multiple reasoning steps
-- Ability to revise and adjust thinking based on new information
-- Filtering of irrelevant information for focus on key issues
-- Course correction during analysis when needed
-
-### Usage Pattern
-
-When encountering complex decisions that require deep analysis, use the Sequential Thinking MCP tool:
-
-Step 1: Initial Call
-
-```
-thought: "Analyzing the problem: [describe problem]"
-nextThoughtNeeded: true
-thoughtNumber: 1
-totalThoughts: 5
-```
-
-Step 2: Continue Analysis
-
-```
-thought: "Breaking down: [sub-problem 1]"
-nextThoughtNeeded: true
-thoughtNumber: 2
-totalThoughts: 5
-```
-
-Step 3: Revision (if needed)
-
-```
-thought: "Revising thought 2: [corrected analysis]"
-isRevision: true
-revisesThought: 2
-thoughtNumber: 3
-totalThoughts: 5
-nextThoughtNeeded: true
-```
-
-Step 4: Final Conclusion
-
-```
-thought: "Conclusion: [final answer based on analysis]"
-thoughtNumber: 5
-totalThoughts: 5
-nextThoughtNeeded: false
-```
-
-### Usage Guidelines
-
-1. Start with reasonable totalThoughts estimate, adjust with needsMoreThoughts if needed
-2. Use isRevision when correcting or refining previous thoughts
-3. Maintain thoughtNumber sequence for context tracking
-4. Set nextThoughtNeeded to false only when analysis is complete
-5. Use branching (branchFromThought, branchId) for exploring alternative approaches
-
----
-
-## 11.1. UltraThink Mode
-
-### Overview
-
-UltraThink mode is an enhanced analysis mode that automatically applies Sequential Thinking MCP to deeply analyze user requests and generate optimal execution plans. When users append `--ultrathink` to their requests, J.A.R.V.I.S./F.R.I.D.A.Y. activates structured reasoning to break down complex problems.
-
-### Activation
-
-Users can activate UltraThink mode by adding `--ultrathink` flag to any request:
-
-```
-"Implement authentication system --ultrathink"
-"Refactor the API layer --ultrathink"
-"Debug the database connection issue --ultrathink"
-```
-
-### UltraThink Process
-
-When `--ultrathink` is detected in user request:
-
-**Step 1: Request Analysis**
-- Identify the core task and requirements
-- Detect technical keywords for agent matching
-- Recognize complexity level and scope
-
-**Step 2: Sequential Thinking Activation**
-- Load the Sequential Thinking MCP tool
-- Begin structured reasoning with estimated thought count
-- Break down the problem into manageable steps
-
-**Step 3: Execution Planning**
-- Map each subtask to appropriate agents
-- Identify parallel vs sequential execution opportunities
-- Generate optimal agent delegation strategy
-
-**Step 4: Execution**
-- Launch agents according to the plan
-- Monitor and integrate results
-- Report consolidated findings in user's conversation_language
-
-### Sequential Thinking Parameters
-
-When using UltraThink mode, apply these parameter patterns:
-
-**Initial Analysis Call:**
-```
-thought: "Analyzing user request: [request content]"
-nextThoughtNeeded: true
-thoughtNumber: 1
-totalThoughts: [estimated number based on complexity]
-```
-
-**Subtask Decomposition:**
-```
-thought: "Breaking down into subtasks: 1) [subtask1] 2) [subtask2] 3) [subtask3]"
-nextThoughtNeeded: true
-thoughtNumber: 2
-totalThoughts: [current estimate]
-```
-
-**Agent Mapping:**
-```
-thought: "Mapping subtasks to agents: [subtask1] → backend, [subtask2] → frontend"
-nextThoughtNeeded: true
-thoughtNumber: 3
-totalThoughts: [current estimate]
-```
-
-**Execution Strategy:**
-```
-thought: "Execution strategy: [subtasks1,2] can run in parallel, [subtask3] depends on [subtask1]"
-nextThoughtNeeded: true
-thoughtNumber: 4
-totalThoughts: [current estimate]
-```
-
-**Final Plan:**
-```
-thought: "Final execution plan: Launch [agent1, agent2] in parallel, then [agent3]"
-thoughtNumber: [final number]
-totalThoughts: [final number]
-nextThoughtNeeded: false
-```
-
-### Best Practices
-
-**When to Use UltraThink:**
-- Complex multi-domain tasks (backend + frontend + testing)
-- Architecture decisions affecting multiple files
-- Performance optimization requiring analysis
-- Security review needs
-- Refactoring with behavior preservation
-
-**UltraThink Advantages:**
-- Structured decomposition of complex problems
-- Explicit agent-task mapping with justification
-- Identification of parallel execution opportunities
-- Context maintenance throughout reasoning
-- Revision capability when approaches need adjustment
-
-### Thinking Process (Legacy Support)
-
-For backward compatibility, deep analysis can also follow this pattern:
-
-- Phase 1 - Prerequisite Check: Use AskUserQuestion to confirm implicit prerequisites
-- Phase 2 - First Principles: Apply Five Whys, distinguish hard constraints from preferences
-- Phase 3 - Alternative Generation: Generate 2-3 different approaches (conservative, balanced, aggressive)
-- Phase 4 - Trade-off Analysis: Evaluate across Performance, Maintainability, Cost, Risk, Scalability
-- Phase 5 - Bias Check: Verify not fixated on first solution, review contrary evidence
+For detailed tool parameters, usage patterns, and UltraThink process, see Skill("jikime-foundation-claude") `reference/sequential-thinking-guide.md`.
 
 ---
 
 ## 12. Progressive Disclosure System
 
-### Overview
+3-level skill loading system: Level 1 (metadata, ~100 tokens) → Level 2 (skill body, ~5K tokens, trigger-based) → Level 3+ (references, on-demand). Reduces initial token consumption by 67%+.
 
-JikiME-ADK implements a 3-level Progressive Disclosure system for efficient skill loading, following Anthropic's official pattern. This reduces initial token consumption by 67%+ while maintaining full functionality.
-
-### Three Levels
-
-**Level 1: Metadata Only (~100 tokens per skill)**
-
-- Loaded during agent initialization
-- Contains YAML frontmatter with triggers
-- Always loaded for skills listed in agent frontmatter
-
-**Level 2: Skill Body (~5K tokens per skill)**
-
-- Loaded when trigger conditions match
-- Contains full markdown documentation
-- Triggered by keywords, phases, agents, or languages
-
-**Level 3+: Bundled Files (unlimited)**
-
-- Loaded on-demand by Claude
-- Includes reference.md, modules/, examples/
-- Claude decides when to access
-
-### Agent Frontmatter Format
-
-Agents use the official Anthropic `skills:` format:
-
-```yaml
----
-name: manager-spec
-description: SPEC creation specialist
-tools: Read, Write, Edit, ...
-model: inherit
-permissionMode: default
-
-# Progressive Disclosure: 3-Level Skill Loading
-# Skills are loaded at Level 1 (metadata only) by default (~100 tokens per skill)
-# Full skill body (Level 2, ~5K tokens) is loaded when triggers match
-# Reference skills (Level 3+) are loaded on-demand by Claude
-skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-spec
----
-```
-
-### SKILL.md Frontmatter Format
-
-Skills define their Progressive Disclosure behavior:
-
-```yaml
----
-name: jikime-workflow-spec
-description: SPEC workflow specialist
-version: 1.0.0
-
-# Progressive Disclosure Configuration
-progressive_disclosure:
-  enabled: true
-  level1_tokens: ~100
-  level2_tokens: ~5000
-
-# Trigger Conditions for Level 2 Loading
-triggers:
-  keywords: ["SPEC", "requirement", "EARS", "planning"]
-  phases: ["plan"]
-  agents: ["manager-spec", "manager-strategy"]
-  languages: ["python", "typescript"]
----
-```
-
-### Benefits
-
-- **67% reduction** in initial token load (from ~90K to ~600 tokens for manager-spec)
-- **On-demand loading**: Full skill content only when needed
-- **Backward compatible**: Works with existing agent/skill definitions
-- **JIT integration**: Seamlessly integrates with phase-based loading
+For agent/skill frontmatter formats and implementation details, see Skill("jikime-foundation-core") `modules/progressive-disclosure.md`.
 
 ---
 
@@ -900,179 +578,51 @@ Platform differences exist between GNU tools (Linux) and BSD tools (macOS). For 
 
 ## 14. Project Memory (jikime-memory MCP)
 
-### Core Principle: Memory-First Reasoning
-
-You have persistent memory across sessions. Before responding to ANY user message, apply this decision:
-
-```
-For every user message:
-  1. Can I fully answer this from ONLY the current session context?
-     → YES and confident: Respond directly (no memory lookup needed)
-     → NO or uncertain:  Call memory_search BEFORE responding
-  2. Is this the first message in a new session?
-     → YES: Call memory_load(source: "full") first
-```
-
-This is NOT keyword-based. You must REASON about whether past context would help, just as a human assistant with a notebook would naturally check their notes.
-
 ### HARD Rules
 
-- [HARD] **Memory-First**: If there is ANY chance the answer exists in past sessions, call `memory_search` BEFORE responding. When uncertain, always search. False positives (unnecessary search) are acceptable; false negatives (missing relevant memory) are not.
-- [HARD] **Session Start**: Call `memory_load` with `source: "full"` at the beginning of every new session.
-- [HARD] **Save Decisions**: After making architectural or design decisions, call `memory_save` with `type: "decision"`.
-- [HARD] **Save Learnings**: After discovering important patterns or insights, call `memory_save` with `type: "learning"`.
-- [HARD] **Save Error Fixes**: After resolving non-trivial bugs, call `memory_save` with `type: "error_fix"`.
+- [HARD] **Memory-First**: If ANY chance the answer exists in past sessions, call `memory_search` BEFORE responding. When uncertain, always search.
+- [HARD] **Session Start**: Call `memory_load(source: "full")` at the beginning of every new session.
+- [HARD] **Save Decisions**: After architectural/design decisions, call `memory_save(type: "decision")`.
+- [HARD] **Save Learnings**: After discovering patterns/insights, call `memory_save(type: "learning")`.
+- [HARD] **Save Error Fixes**: After resolving non-trivial bugs, call `memory_save(type: "error_fix")`.
 
-### When to Search Memory
+### Core Principle
 
-**ALWAYS search** when the user's message:
-- Refers to anything outside the current session (past work, previous decisions, earlier conversations)
-- Asks about the user themselves (name, preferences, habits, style)
-- Asks about project conventions, patterns, architecture, or history
-- References something "we" did, decided, discussed, or built
-- Asks to continue, resume, or pick up previous work
-- Asks a question you cannot answer from current session context alone
-- Uses words implying recall: remember, what was, how did we, show me again
+Reason about whether past context would help before every response. This is NOT keyword-based — think like a human assistant checking their notebook.
 
-**SKIP search** only when:
-- The request is purely about the current session (e.g., "fix the typo I just showed you")
-- The request is a generic coding question with no project context needed (e.g., "what is a goroutine?")
-- You already searched memory for the same topic in this session
-
-### Search Query Strategy
-
-Extract the **semantic intent** from the user's message, not literal keywords:
-
-```
-User: "내 이름이 뭐야?"
-→ memory_search(query: "user name personal information")
-
-User: "DB 스키마 어떻게 설계했었지?"
-→ memory_search(query: "database schema design architecture")
-
-User: "그 버그 어떻게 고쳤더라?"
-→ memory_search(query: "bug fix error resolution", type: "error_fix")
-
-User: "이 프로젝트 구조 설명해줘"
-→ memory_search(query: "project structure architecture codebase analysis")
-
-User: "auth 어떻게 하기로 했지?"
-→ memory_search(query: "authentication design decision", type: "decision")
-
-User: "어제 뭐 했지?"
-→ memory_search(query: "yesterday work progress session summary")
-
-User: "컴포넌트 네이밍 규칙이 뭐였지?"
-→ memory_search(query: "component naming convention pattern")
-```
-
-### Tool Parameters
-
-**`memory_search`** - Hybrid vector + text search across all memories
-```
-query: "descriptive search"   # Required: semantic search query (not literal user words)
-maxResults: 10                # Optional: default 6
-minScore: 0.35                # Optional: minimum relevance score
-type: "decision"              # Optional: filter (decision|learning|error_fix|user_prompt|assistant_response)
-```
-Returns `snippet` (max 200 chars preview), `path`, `start_line`, `end_line`, `score`, `source`.
-**Important**: snippet is a preview only. Use `memory_get` with `path`/`from`/`lines` to read full content when a result looks relevant.
-
-**`memory_load`** - Load project knowledge context
-```
-source: "full"                # "startup" = MEMORY.md only, "full" = MEMORY.md + today's daily log
-```
-
-**`memory_save`** - Save structured memory
-```
-type: "decision"              # Required: decision | learning | error_fix | tool_usage
-content: "Use JWT for auth"   # Required: memory content
-metadata: "{}"                # Optional: JSON metadata
-```
-
-**`memory_get`** - Read specific memory file by path
-```
-path: ".jikime/memory/2026-01-28.md"  # Relative file path
-from: 10                              # Optional: start line (1-based)
-lines: 20                             # Optional: number of lines
-```
-
-**`memory_stats`** - Database statistics (no parameters)
-
-**`memory_reindex`** - Re-index all MD files after manual edits (no parameters)
+For search strategies, query examples, and tool parameter reference, see Skill("jikime-foundation-claude") `reference/jikime-memory-guide.md`.
 
 ---
 
 ## 15. Agent Teams (Experimental)
 
-JikiME-ADK supports optional Agent Teams mode for parallel phase execution.
-
-### Activation
-
-- Claude Code v2.1.32 or later
-- Set `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in settings.json env
-- Set `workflow.team.enabled: true` in `.jikime/config/workflow.yaml`
+Parallel phase execution with coordinated teammates. Requires Claude Code v2.1.32+, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, and `workflow.team.enabled: true`.
 
 ### Mode Selection
 
-- `--team`: Force Agent Teams mode
-- `--solo`: Force sub-agent mode
-- No flag (default): System auto-selects based on complexity thresholds
-
-**Auto-Selection Thresholds** (configured in workflow.yaml):
-- Domains >= 3 (frontend, backend, database, etc.)
-- Files >= 10 affected
-- Complexity score >= 7
+- `--team`: Force teams | `--solo`: Force sub-agent | Default: auto-select (domains >= 3, files >= 10, complexity >= 7)
 
 ### Team APIs
 
-| API | Purpose |
-|-----|---------|
-| TeamCreate | Initialize team structure |
-| SendMessage | Inter-teammate communication |
-| TaskCreate/Update/List/Get | Shared task coordination |
-| TeamDelete | Release team resources (call after all teammates shut down) |
+TeamCreate, SendMessage, TaskCreate/Update/List/Get, TeamDelete
 
-### Team Composition Patterns
+### Team Patterns
 
 | Pattern | Roles | Use Case |
 |---------|-------|----------|
 | plan_research | researcher, analyst, architect | SPEC creation |
 | implementation | backend-dev, frontend-dev, tester | Feature implementation |
 | design_implementation | designer, backend-dev, frontend-dev, tester | UI-heavy features |
-| investigation | hypothesis-1, hypothesis-2, hypothesis-3 | Competing hypothesis debugging |
+| investigation | hypothesis-1, hypothesis-2, hypothesis-3 | Debugging |
 
-### File Ownership Strategy
+File ownership prevents write conflicts. Fallback: graceful degradation to sub-agent mode.
 
-To prevent write conflicts during parallel execution, teammates own specific file patterns:
-
-```yaml
-team-backend-dev: src/api/**, src/services/**, src/models/**
-team-frontend-dev: src/components/**, src/pages/**, src/hooks/**
-team-designer: design/**, src/styles/tokens/**
-team-tester: tests/**, **/*.test.*, **/*.spec.*
-```
-
-Shared files (src/types/**, src/utils/**) require coordination via SendMessage.
-
-### Team Hook Events
-
-- **TeammateIdle**: Validate work before accepting idle (exit 2 = keep working)
-- **TaskCompleted**: Validate deliverables before completion (exit 2 = reject)
-
-### Fallback
-
-If team mode fails or prerequisites are not met:
-- Graceful fallback to sub-agent mode
-- Continue from last completed task
-- No data loss or state corruption
-
-For complete Agent Teams workflow documentation, see Skill("jikime-workflow-team").
+For complete documentation, see Skill("jikime-workflow-team").
 
 ---
 
-Version: 12.0.0 (Agent Teams Integration)
-Last Updated: 2026-01-28
+Version: 13.0.0 (Token Optimization Phase 2)
+Last Updated: 2026-02-24
 Language: English
 Core Rule: J.A.R.V.I.S. and F.R.I.D.A.Y. orchestrate; direct implementation is prohibited
 
