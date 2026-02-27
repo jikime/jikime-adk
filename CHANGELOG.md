@@ -5,6 +5,29 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-02-27
+
+### Added
+
+- **POC-First Workflow** (`jikime-workflow-poc`): Phase-based greenfield development workflow
+  - Intent Classification: Greenfield → POC-First, Existing code → DDD, Test-first → TDD
+  - 5-Phase structure: Make It Work (50-60%) → Refactor (15-20%) → Testing (15-20%) → Quality Gates (10-15%) → PR Lifecycle
+  - Phase transition rules with [VERIFY] checkpoints between phases
+  - New `/jikime:poc` slash command for workflow execution
+- **Structured Task Format** (`jikime-workflow-task-format`): Systematic task decomposition
+  - Do/Files/Done when/Verify/Commit 5-field task structure
+  - [VERIFY] quality checkpoints inserted every 2-3 tasks
+  - DDD task format variant (ANALYZE/PRESERVE/IMPROVE prefixes)
+  - TodoWrite integration for real-time progress tracking
+- **PR Lifecycle Automation** (`jikime-workflow-pr-lifecycle`): End-to-end PR management
+  - Automated PR creation with structured description (`gh pr create`)
+  - CI monitoring loop with failure diagnosis and auto-fix (max 5 retry cycles, 10 min timeout)
+  - Review comment resolution loop with batch processing (max 3 cycles)
+  - New `/jikime:pr-lifecycle` slash command for workflow execution
+- **Skills catalog**: 70 → 73 total skills, 19 → 22 workflow skills
+
+---
+
 ## [0.9.2] - 2026-02-27
 
 ### Removed
@@ -151,6 +174,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Architecture pattern expansion features
 
+[0.9.3]: https://github.com/user/jikime-adk/compare/v0.9.2...v0.9.3
+[0.9.2]: https://github.com/user/jikime-adk/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/user/jikime-adk/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/user/jikime-adk/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/user/jikime-adk/compare/v0.8.2...v0.8.3

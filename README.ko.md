@@ -58,12 +58,15 @@ MoAI-ADK의 구조와 흐름을 깊이 분석했고, 그 단단한 철학적 기
 
 | 기능 | 설명 | 문서 |
 |------|------|------|
+| **POC-First 워크플로우** | 단계별 Greenfield 개발: 동작하게 만들기 → 리팩토링 → 테스팅 → 품질 검증 → PR | [POC-First 가이드](./docs/ko/poc-first.md) |
 | **SPEC-First DDD** | ANALYZE-PRESERVE-IMPROVE 사이클로 동작 보존 개발 | [DDD 문서](./docs/ko/tdd-ddd.md) |
 | **57개 전문 에이전트** | Manager 12, Specialist 37, Designer 1, Orchestration 3, Builder 4 에이전트 자동 위임 | [에이전트 카탈로그](./docs/ko/agents.md) |
 | **Agent Teams** | 병렬 팀 기반 멀티 에이전트 오케스트레이션 (실험적 기능) | [Agent Teams](./docs/ko/agents-team.md) |
 | **레거시 마이그레이션** | Vue.js, React CRA, Angular 등 → Next.js 16 자동 전환 | [마이그레이션 가이드](./docs/ko/migration.md) |
 | **Smart Rebuild** | 스크린샷 + 소스 분석 기반 레거시 사이트 새로 구축 | [Smart Rebuild 가이드](./docs/ko/smart-rebuild.md) |
-| **67개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 카탈로그](./docs/ko/skills-catalog.md) |
+| **구조화된 태스크 포맷** | Do/Files/Done when/Verify/Commit 5필드 구조 + 품질 체크포인트 | [태스크 포맷 가이드](./docs/ko/task-format.md) |
+| **PR 라이프사이클 자동화** | PR 생성, CI 모니터링, 리뷰 해결, 머지 자동화 | [PR 라이프사이클 가이드](./docs/ko/pr-lifecycle.md) |
+| **73개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 카탈로그](./docs/ko/skills-catalog.md) |
 | **품질 보증** | TRUST 5 프레임워크 + LSP 품질 게이트 | [품질 가이드](./docs/ko/rules.md) |
 | **LLM 프로바이더 라우터** | OpenAI, Gemini, GLM, Ollama 전환 | [라우터 문서](./docs/ko/provider-router.md) |
 
@@ -122,7 +125,7 @@ jikime-adk init
 | 유형 | 명령어 | 설명 |
 |------|--------|------|
 | **Workflow** | `/jikime:0-project` ~ `/jikime:3-sync` | 핵심 개발 워크플로우 |
-| **J.A.R.V.I.S.** | `/jikime:jarvis`, `/jikime:test`, `/jikime:loop` | 자율 개발 오케스트레이션 |
+| **J.A.R.V.I.S.** | `/jikime:jarvis`, `/jikime:test`, `/jikime:loop`, `/jikime:poc`, `/jikime:pr-lifecycle` | 자율 개발 오케스트레이션 |
 | **F.R.I.D.A.Y.** | `/jikime:friday`, `/jikime:migrate-*` | 자율 마이그레이션 |
 | **Utility** | `/jikime:build-fix`, `/jikime:verify --browser-only` | 빌드/런타임 에러 수정 |
 
@@ -184,6 +187,9 @@ IMPROVE   →  자신감 있게 변경 → (반복)
 | [마이그레이션 가이드](./docs/ko/migration.md) | F.R.I.D.A.Y. 마이그레이션 워크플로우 |
 | [Smart Rebuild 가이드](./docs/ko/smart-rebuild.md) | 스크린샷 기반 레거시 사이트 새로 구축 |
 | [Smart Rebuild 플로우](./docs/ko/smart-rebuild-flow.md) | Smart Rebuild 전체 워크플로우 다이어그램 |
+| [POC-First 워크플로우](./docs/ko/poc-first.md) | 단계별 Greenfield 개발 가이드 |
+| [구조화된 태스크 포맷](./docs/ko/task-format.md) | 5필드 태스크 구조 및 품질 체크포인트 |
+| [PR 라이프사이클](./docs/ko/pr-lifecycle.md) | PR 생성부터 머지까지 자동화 워크플로우 |
 | [DDD 방법론](./docs/ko/tdd-ddd.md) | ANALYZE-PRESERVE-IMPROVE 사이클 |
 | [품질 규칙](./docs/ko/rules.md) | TRUST 5, 코딩 스타일, 보안 가이드 |
 | [Worktree 관리](./docs/ko/worktree.md) | Git Worktree 병렬 개발 |

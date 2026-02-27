@@ -58,12 +58,15 @@ I've further enhanced JiKiME's capabilities by referencing the agent, command, a
 
 | Feature | Description | Documentation |
 |---------|-------------|---------------|
+| **POC-First Workflow** | Phase-based greenfield development: Make It Work → Refactor → Test → Quality → PR | [POC-First Guide](./docs/en/poc-first.md) |
 | **SPEC-First DDD** | Behavior-preserving development with ANALYZE-PRESERVE-IMPROVE cycle | [DDD Docs](./docs/en/tdd-ddd.md) |
 | **57 Specialized Agents** | Auto-delegation across Manager 12, Specialist 37, Designer 1, Orchestration 3, Builder 4 agents | [Agent Catalog](./docs/en/agents.md) |
 | **Agent Teams** | Parallel team-based multi-agent orchestration (experimental) | [Agent Teams](./docs/en/agents-team.md) |
 | **Legacy Migration** | Auto-conversion from Vue.js, React CRA, Angular, etc. → Next.js 16 | [Migration Guide](./docs/en/migration.md) |
 | **Smart Rebuild** | Screenshot + source analysis based legacy site reconstruction | [Smart Rebuild Guide](./docs/en/smart-rebuild.md) |
-| **67 Skill System** | Progressive Disclosure based knowledge loading | [Skills Catalog](./docs/en/skills-catalog.md) |
+| **Structured Task Format** | Do/Files/Done-when/Verify/Commit 5-field task structure with quality checkpoints | [Task Format Guide](./docs/en/task-format.md) |
+| **PR Lifecycle Automation** | Automated PR creation, CI monitoring, review resolution, and merge | [PR Lifecycle Guide](./docs/en/pr-lifecycle.md) |
+| **73 Skill System** | Progressive Disclosure based knowledge loading | [Skills Catalog](./docs/en/skills-catalog.md) |
 | **Quality Assurance** | TRUST 5 Framework + LSP Quality Gates | [Quality Guide](./docs/en/rules.md) |
 | **LLM Provider Router** | Switch between OpenAI, Gemini, GLM, Ollama | [Router Docs](./docs/en/provider-router.md) |
 
@@ -122,7 +125,7 @@ jikime-adk init
 | Type | Command | Description |
 |------|---------|-------------|
 | **Workflow** | `/jikime:0-project` ~ `/jikime:3-sync` | Core development workflow |
-| **J.A.R.V.I.S.** | `/jikime:jarvis`, `/jikime:test`, `/jikime:loop` | Autonomous development orchestration |
+| **J.A.R.V.I.S.** | `/jikime:jarvis`, `/jikime:test`, `/jikime:loop`, `/jikime:poc`, `/jikime:pr-lifecycle` | Autonomous development orchestration |
 | **F.R.I.D.A.Y.** | `/jikime:friday`, `/jikime:migrate-*` | Autonomous migration |
 | **Utility** | `/jikime:build-fix`, `/jikime:verify --browser-only` | Build/runtime error fixing |
 
@@ -184,6 +187,9 @@ IMPROVE   →  Change with confidence → (repeat)
 | [Migration Guide](./docs/en/migration.md) | F.R.I.D.A.Y. migration workflow |
 | [Smart Rebuild Guide](./docs/en/smart-rebuild.md) | Screenshot-based legacy site reconstruction |
 | [Smart Rebuild Flow](./docs/en/smart-rebuild-flow.md) | Smart Rebuild full workflow diagram |
+| [POC-First Workflow](./docs/en/poc-first.md) | Phase-based greenfield development guide |
+| [Structured Task Format](./docs/en/task-format.md) | 5-field task structure with quality checkpoints |
+| [PR Lifecycle](./docs/en/pr-lifecycle.md) | Automated PR creation to merge workflow |
 | [DDD Methodology](./docs/en/tdd-ddd.md) | ANALYZE-PRESERVE-IMPROVE cycle |
 | [Quality Rules](./docs/en/rules.md) | TRUST 5, coding style, security guide |
 | [Worktree Management](./docs/en/worktree.md) | Git Worktree parallel development |

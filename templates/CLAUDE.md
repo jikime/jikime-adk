@@ -241,6 +241,8 @@ Definition: Commands for rapid fixes and automation where speed is prioritized.
 - /jikime:docs - Documentation update and sync
 - /jikime:e2e - E2E test generation and execution
 - /jikime:learn - Codebase exploration and learning
+- /jikime:poc - POC-First development workflow (Make It Work → Refactor → Test → Quality → PR)
+- /jikime:pr-lifecycle - PR lifecycle automation (create → CI monitor → review resolve → merge)
 - /jikime:refactor - Code refactoring with DDD
 - /jikime:security - Security audit and scanning
 

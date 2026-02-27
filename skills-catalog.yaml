@@ -3,7 +3,7 @@
 
 version: '1.0.0'
 generated_at: '2026-02-06T23:55:49.967027'
-total_skills: 70
+total_skills: 73
 
 # Skills by domain
 domains:
@@ -99,7 +99,7 @@ domains:
       - jikime-tool-mcp-builder
 
   workflow:
-    count: 19
+    count: 22
     skills:
       - jikime-workflow-changelog
       - jikime-workflow-codemap
@@ -111,9 +111,12 @@ domains:
       - jikime-workflow-loop
       - jikime-workflow-parallel
       - jikime-workflow-performance
+      - jikime-workflow-poc
+      - jikime-workflow-pr-lifecycle
       - jikime-workflow-project
       - jikime-workflow-spec
       - jikime-workflow-sync
+      - jikime-workflow-task-format
       - jikime-workflow-tdd
       - jikime-workflow-templates
       - jikime-workflow-team
@@ -525,6 +528,20 @@ skills:
     user_invocable: true
     tags: ["workflow", "loop", "iteration", "feedback", "quality"]
 
+  - name: jikime-workflow-poc
+    domain: workflow
+    description: "POC-First development workflow for greenfield features. Make-It-Work first, then refactor, test, and polish in structured phases."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["workflow", "poc", "greenfield", "rapid-prototype", "phase-based"]
+
+  - name: jikime-workflow-pr-lifecycle
+    domain: workflow
+    description: "PR lifecycle automation from creation to merge with CI monitoring and review resolution loops"
+    version: 1.0.0
+    user_invocable: true
+    tags: ["workflow", "pr", "ci", "review", "automation", "github"]
+
   - name: jikime-workflow-parallel
     domain: workflow
     description: "Parallel subagent execution patterns for multi-perspective analysis, adversarial review, and coordinated task delegation"
@@ -559,6 +576,13 @@ skills:
     version: 1.0.0
     user_invocable: false
     tags: ["workflow", "sync", "documentation", "quality", "git"]
+
+  - name: jikime-workflow-task-format
+    domain: workflow
+    description: "Structured task format with Do/Files/Done-when/Verify/Commit fields and quality checkpoints for systematic task tracking"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "task", "format", "checkpoint", "quality"]
 
   - name: jikime-workflow-tdd
     domain: workflow
