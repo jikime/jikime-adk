@@ -8,7 +8,6 @@ Rules for using MCP (Model Context Protocol) servers in JikiME-ADK workflows.
 |--------|---------|---------|
 | **context7** | Library documentation, code examples, best practices | All agents |
 | **sequential-thinking** | Multi-step reasoning, complex analysis | All agents |
-| **jikime-memory** | Persistent project memory across sessions | Orchestrator |
 | **pencil** | Visual design creation and editing of `.pen` files | designer-ui, team-designer |
 
 ## MCP Tool Usage Rules
@@ -78,7 +77,6 @@ Rules for using MCP (Model Context Protocol) servers in JikiME-ADK workflows.
 | External library imports | context7 | Yes |
 | Design file operations (`.pen`) | pencil | Yes (for designer agents) |
 | Complex debugging, `--think` flags | sequential-thinking | Yes |
-| Session start, memory operations | jikime-memory | Yes |
 
 ## Error Handling
 

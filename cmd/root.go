@@ -10,7 +10,6 @@ import (
 	"jikime-adk/cmd/routercmd"
 	"jikime-adk/cmd/hookscmd"
 	"jikime-adk/cmd/mcpcmd"
-	"jikime-adk/cmd/memorycmd"
 	"jikime-adk/cmd/initcmd"
 	"jikime-adk/cmd/languagecmd"
 	"jikime-adk/cmd/lspsetupcmd"
@@ -69,9 +68,6 @@ func NewRoot() *cobra.Command {
 
 	// MCP server
 	root.AddCommand(mcpcmd.NewMCP())
-
-	// Memory system
-	root.AddCommand(memorycmd.NewMemory())
 
 	// Banner preview (dev tool)
 	root.AddCommand(banner.NewBannerPreview())

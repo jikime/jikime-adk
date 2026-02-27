@@ -5,6 +5,36 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-02-27
+
+### Removed
+
+- **jikime-memory MCP system**: Removed the SQLite + vector embedding based cross-session memory system in its entirety
+
+  **Go source** (37 files deleted, 4 files edited):
+  - Deleted `internal/memory/` package (21 files) — store, search, hybrid, indexer, extractor, chunker, embedding, schema, types
+  - Deleted `cmd/memorycmd/` package (9 files) — `memory search/list/show/delete/stats/gc/index/migrate` CLI commands
+  - Deleted 7 memory hook files from `cmd/hookscmd/` — `memory_load`, `memory_flush`, `memory_save`, `memory_search`, `memory_track`, `memory_complete`, `embed_backfill`
+  - `cmd/mcpcmd/serve.go`: Removed all memory types, handlers, and 6 MCP tool registrations (`memory_search`, `memory_get`, `memory_load`, `memory_save`, `memory_stats`, `memory_reindex`)
+  - `cmd/hookscmd/hooks.go`: Removed 7 memory hook registrations
+  - `cmd/hookscmd/user_prompt_submit.go`: Removed prompt-to-memory-store save logic
+  - `cmd/root.go`: Removed `memorycmd` import and `memory` subcommand registration
+
+  **Templates** (config):
+  - `templates/.mcp.json`: Removed `jikime-memory` MCP server entry
+  - `templates/.claude/settings.json`: Removed 5 hooks (`memory-save`, `memory-flush`, `memory-track`, `memory-complete`, `memory-prompt-save`) and `mcp__jikime-memory__*` permission; fixed resulting trailing comma (JSON parse error)
+
+  **Templates** (instructions & skills):
+  - `templates/CLAUDE.md`: Removed Section 14 "Project Memory (jikime-memory MCP)" — 5 HARD Rules and core principle
+  - `templates/.claude/skills/jikime-foundation-claude/reference/mcp-integration-rules.md`: Removed `jikime-memory` rows from Available MCP Servers and Server Activation Patterns tables
+  - Deleted `templates/.claude/skills/jikime-foundation-claude/reference/jikime-memory-guide.md`
+
+  **Documentation**:
+  - Deleted `docs/en/memory.md`, `docs/en/session-memory-flow.md`, `docs/ko/memory.md`, `docs/ko/session-memory-flow.md`
+  - `README.md` / `README.ko.md`: Removed Session Memory feature row, "Session Memory System" section, CLI command table rows (`jikime memory search`, `jikime memory stats`), docs table rows, and Project Structure entries for `memorycmd/` and `memory/`
+
+---
+
 ## [0.9.1] - 2026-02-24
 
 ### Changed
@@ -17,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Token Performance Optimization Phase 2**: Additional ~5,900 tokens saved
   - Trimmed 6 verbose rules files by 64% (1,501 → 546 lines): `patterns.md`, `tone.md`, `git-workflow.md`, `testing.md`, `performance.md`, `security.md`
   - Condensed CLAUDE.md by 42% (1,080 → 630 lines): removed duplicate content in sections 6/7/9, moved detailed reference content from sections 11/11.1/12/14/15 to skills
-  - New reference files: `sequential-thinking-guide.md` and `jikime-memory-guide.md` in `jikime-foundation-claude/reference/`
+  - New reference files: `sequential-thinking-guide.md` in `jikime-foundation-claude/reference/`
 - **`core.md`** (v1.0.0 → v1.1.0): Consolidated HARD rules from moved files (Web Search anti-hallucination policy, MCP `.pen` file encryption rules)
 - **`CLAUDE.md`** (v12.0.0 → v13.0.0): Replaced explicit `@`-references with auto-load; condensed reference sections to skill pointers
 - **`jikime-migration-smart-rebuild` SKILL.md**: Updated Files section to reflect 5 new rule files relocated from global rules
@@ -43,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Pencil renderer reference (`pencil-renderer.md`): batch_design operations (Insert/Copy/Replace/Update/Delete/Move/Generate), Nova style tokens, workflow patterns
   - Design-to-code export reference (`pencil-code.md`): React/Tailwind export config, component generation patterns, UI kit support (Shadcn, Halo, Lunaris, Nitro)
   - Figma vs Pencil comparison guide (`comparison.md`): feature matrix, decision guide, hybrid workflow patterns
-- **MCP Integration Rules** (`mcp-integration.md`): Centralized rules for all MCP servers (Context7, Sequential Thinking, jikime-memory, Pencil) with tool reference tables, activation patterns, and error handling
+- **MCP Integration Rules** (`mcp-integration.md`): Centralized rules for all MCP servers (Context7, Sequential Thinking, Pencil) with tool reference tables, activation patterns, and error handling
 
 ### Changed
 

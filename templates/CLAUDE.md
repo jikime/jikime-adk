@@ -576,25 +576,7 @@ Platform differences exist between GNU tools (Linux) and BSD tools (macOS). For 
 
 ---
 
-## 14. Project Memory (jikime-memory MCP)
-
-### HARD Rules
-
-- [HARD] **Memory-First**: If ANY chance the answer exists in past sessions, call `memory_search` BEFORE responding. When uncertain, always search.
-- [HARD] **Session Start**: Call `memory_load(source: "full")` at the beginning of every new session.
-- [HARD] **Save Decisions**: After architectural/design decisions, call `memory_save(type: "decision")`.
-- [HARD] **Save Learnings**: After discovering patterns/insights, call `memory_save(type: "learning")`.
-- [HARD] **Save Error Fixes**: After resolving non-trivial bugs, call `memory_save(type: "error_fix")`.
-
-### Core Principle
-
-Reason about whether past context would help before every response. This is NOT keyword-based — think like a human assistant checking their notebook.
-
-For search strategies, query examples, and tool parameter reference, see Skill("jikime-foundation-claude") `reference/jikime-memory-guide.md`.
-
----
-
-## 15. Agent Teams (Experimental)
+## 14. Agent Teams (Experimental)
 
 Parallel phase execution with coordinated teammates. Requires Claude Code v2.1.32+, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, and `workflow.team.enabled: true`.
 

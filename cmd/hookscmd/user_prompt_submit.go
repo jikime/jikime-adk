@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"jikime-adk/internal/memory"
 )
 
 // UserPromptSubmitCmd represents the user-prompt-submit hook command
@@ -153,42 +152,6 @@ func runUserPromptSubmit(cmd *cobra.Command, args []string) error {
 	if err := decoder.Decode(&input); err != nil {
 		// Invalid JSON - continue without hints
 		return outputPromptResult("", true)
-	}
-
-	// Save user prompt to daily log and memories table for chronological tracking
-	if input.Prompt != "" {
-		projectDir, _ := os.Getwd()
-		if projectDir != "" {
-			// Find actual project root by searching for .jikime directory upward
-			projectDir = memory.FindProjectRoot(projectDir)
-
-			// Truncate very long prompts for storage
-			content := input.Prompt
-			if len(content) > 2000 {
-				content = content[:2000] + "..."
-			}
-
-			// 1. Save to memories table (for session-scoped batch embedding later)
-			if store, err := memory.NewStore(projectDir); err == nil {
-				sessionID := os.Getenv("CLAUDE_SESSION_ID")
-				if sessionID == "" {
-					sessionID = "unknown"
-				}
-				store.SaveIfNew(memory.Memory{
-					SessionID:  sessionID,
-					ProjectDir: projectDir,
-					Type:       memory.TypeUserPrompt,
-					Content:    content,
-				})
-				store.Close()
-			}
-
-			// 2. Append to daily log MD (human-readable chronological log)
-			_, _ = memory.AppendDailyLog(projectDir, memory.DailyLogEntry{
-				Type:    memory.TypeUserPrompt,
-				Content: content,
-			})
-		}
 	}
 
 	prompt := strings.ToLower(input.Prompt)

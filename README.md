@@ -64,38 +64,8 @@ I've further enhanced JiKiME's capabilities by referencing the agent, command, a
 | **Legacy Migration** | Auto-conversion from Vue.js, React CRA, Angular, etc. → Next.js 16 | [Migration Guide](./docs/en/migration.md) |
 | **Smart Rebuild** | Screenshot + source analysis based legacy site reconstruction | [Smart Rebuild Guide](./docs/en/smart-rebuild.md) |
 | **67 Skill System** | Progressive Disclosure based knowledge loading | [Skills Catalog](./docs/en/skills-catalog.md) |
-| **Session Memory** | Cross-session context continuity, hybrid vector+text search | [Memory System](./docs/en/memory.md) |
 | **Quality Assurance** | TRUST 5 Framework + LSP Quality Gates | [Quality Guide](./docs/en/rules.md) |
 | **LLM Provider Router** | Switch between OpenAI, Gemini, GLM, Ollama | [Router Docs](./docs/en/provider-router.md) |
-
----
-
-## Session Memory System
-
-2-Layer Memory Architecture providing **context continuity** across Claude Code sessions:
-
-```
-Session Start → memory_load(MEMORY.md + Daily Log)
-    │
-User Question → memory_search(hybrid search) → snippet preview
-    │                                         → memory_get(detailed read)
-    │
-Claude Response → auto-record (user_prompt, assistant_response, tool_usage)
-    │
-Decision/Learning Discovery → memory_save(decision, learning, error_fix)
-    │
-Session End → embed-backfill(background batch embedding)
-```
-
-| Component | Description |
-|-----------|-------------|
-| **MCP Server** | `jikime-adk mcp serve` — 6 tools (search, get, load, save, stats, reindex) |
-| **Hybrid Search** | 0.7 × vector(Cosine Similarity) + 0.3 × text(BM25) weighted scoring |
-| **Embedding** | OpenAI `text-embedding-3-small` or Gemini `text-embedding-004` |
-| **Auto Collection** | Claude Code Hooks for automatic prompt/response/file modification recording |
-| **Memory-First** | Always search when past context might be needed (inference-based, not keyword matching) |
-
-> Detailed docs: [Memory System](./docs/en/memory.md) | [Session Memory Flow](./docs/en/session-memory-flow.md)
 
 ---
 
@@ -167,8 +137,6 @@ jikime-adk init
 | `jikime doctor` | System diagnostics |
 | `jikime router switch <provider>` | Switch LLM provider |
 | `jikime worktree new <branch>` | Create Git Worktree |
-| `jikime memory search <query>` | Memory hybrid search |
-| `jikime memory stats` | Memory DB statistics |
 | `jikime skill list` | List skills |
 
 > CLI details: [CLI Documentation](./docs/en/commands.md#cli-commands)
@@ -220,8 +188,6 @@ IMPROVE   →  Change with confidence → (repeat)
 | [Quality Rules](./docs/en/rules.md) | TRUST 5, coding style, security guide |
 | [Worktree Management](./docs/en/worktree.md) | Git Worktree parallel development |
 | [LLM Router](./docs/en/provider-router.md) | External LLM provider integration |
-| [Session Memory System](./docs/en/memory.md) | 2-Layer Memory, MCP tools, embedding, search |
-| [Session Memory Flow](./docs/en/session-memory-flow.md) | Session start-to-end full data flow |
 | [Hooks System](./docs/en/hooks.md) | Claude Code hook configuration |
 | [Ralph Loop](./docs/en/ralph-loop.md) | LSP/AST-grep feedback loop |
 | [Statusline](./docs/en/statusline.md) | Claude Code statusline customization |
@@ -235,11 +201,9 @@ IMPROVE   →  Change with confidence → (repeat)
 ```
 jikime-adk/
 ├── cmd/                    # CLI command implementations
-│   ├── hookscmd/           # Claude Code hooks (memory collection/preservation)
-│   ├── mcpcmd/             # MCP server (memory search/management)
-│   └── memorycmd/          # Memory CLI commands
+│   ├── hookscmd/           # Claude Code hooks
+│   └── mcpcmd/             # MCP server
 ├── internal/               # Internal packages
-│   ├── memory/             # Memory system (search, indexing, embedding)
 │   └── router/             # LLM provider router
 ├── templates/              # Embedded project templates
 │   ├── .claude/            # Agents, commands, skills
