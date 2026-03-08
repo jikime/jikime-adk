@@ -140,8 +140,42 @@ Before merging PR:
 | Merge commits in feature branches | Clutters history |
 | Committing build artifacts | Bloats repository |
 
+## Context Memory in Commits [HARD]
+
+All implementation commits MUST include a `## Context` section to preserve AI-developer interaction context across sessions.
+
+### Context Memory Categories
+
+| Category | Purpose | Example |
+|----------|---------|---------|
+| `Decision` | Technical decision + rationale | "JWT over session (stateless API requirement)" |
+| `Constraint` | Active constraints | "Must maintain /api/v1 backward compatibility" |
+| `Gotcha` | Pitfalls discovered | "Redis TTL unreliable for RefreshToken storage" |
+| `Pattern` | Patterns/references used | "middleware chain pattern from auth.go:45" |
+| `Risk` | Known risks/deferred items | "Token rotation deferred to Phase 2" |
+| `UserPref` | User preferences captured | "User prefers functional style over OOP" |
+
+### Commit Format with Context
+
+```
+feat(auth): add JWT login endpoint
+
+Implement POST /api/v1/auth/login with bcrypt password validation.
+
+## Context (AI-Developer Memory)
+- Decision: EdDSA over RSA256 (user requested, performance priority)
+- Constraint: Must maintain /api/v1 backward compatibility
+- Gotcha: bcrypt cost factor 12 causes >200ms on low-end hardware
+- Pattern: middleware chain pattern from existing auth.go:45
+- Risk: Token rotation deferred to Phase 2
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>
+```
+
+Only include relevant categories — omit empty ones. Record learnings as they emerge during implementation.
+
 ---
 
-Version: 3.0.0
-Last Updated: 2026-02-24
-Source: JikiME-ADK git-workflow rules (condensed - removed standard git commands)
+Version: 4.0.0
+Last Updated: 2026-03-09
+Source: JikiME-ADK git-workflow rules + Context Memory system

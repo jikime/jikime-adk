@@ -5,6 +5,25 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-03-09
+
+### Added
+
+- **acceptEdits Default Permission Mode**: Changed `defaultMode` from `"default"` to `"acceptEdits"` in settings.json template — reduces repetitive permission prompts during agent workflows
+- **Context Search Protocol** (CLAUDE.md Section 15): J.A.R.V.I.S./F.R.I.D.A.Y. search previous Claude Code sessions when context is needed — user confirmation, 5K token budget, 30-day lookback
+- **Research-Plan-Annotate Cycle** (CLAUDE.md Section 16): Phase 0.5 deep research producing `research.md` artifact + Phase 1.5 annotation cycle (1-6 iterations) before implementation — catches architectural misunderstandings early
+- **New Lifecycle Hooks** (5 hooks):
+  - `PostToolUseFailure` — logs tool execution failures for diagnostics
+  - `Notification` — desktop notifications via osascript (macOS) / notify-send (Linux)
+  - `PermissionRequest` — policy-based permission decisions (default: ask)
+  - `SubagentStart` — logs sub-agent startup with timestamp
+  - `SubagentStop` — logs sub-agent completion with timestamp
+- **GitHub Workflow** (`/jikime:github`): Parallel issue fixing + PR review via worktree isolation
+  - Issues mode: parallel worktree-isolated agents (max 3), complexity scoring, branch naming conventions
+  - PR mode: parallel review (verifier + security + quality reviewers)
+  - `--solo` flag for sequential fallback
+- **Context Memory in Commits**: Structured `## Context (AI-Developer Memory)` section in git commits — captures Decision, Constraint, Gotcha, Pattern, Risk, UserPref across sessions
+
 ## [1.0.0] - 2026-02-28
 
 ### Added

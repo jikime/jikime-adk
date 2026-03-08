@@ -243,6 +243,7 @@ Definition: Commands for rapid fixes and automation where speed is prioritized.
 - /jikime:learn - Codebase exploration and learning
 - /jikime:poc - POC-First development workflow (Make It Work → Refactor → Test → Quality → PR)
 - /jikime:pr-lifecycle - PR lifecycle automation (create → CI monitor → review resolve → merge)
+- /jikime:github - GitHub workflow (parallel issue fixing + PR review via worktree isolation)
 - /jikime:refactor - Code refactoring with DDD
 - /jikime:security - Security audit and scanning
 
@@ -605,8 +606,106 @@ For complete documentation, see Skill("jikime-workflow-team").
 
 ---
 
-Version: 13.0.0 (Token Optimization Phase 2)
-Last Updated: 2026-02-24
+## 15. Context Search Protocol
+
+J.A.R.V.I.S. and F.R.I.D.A.Y. search previous Claude Code sessions when context is needed to continue work on existing tasks or discussions.
+
+### When to Search
+
+Search previous sessions when:
+- User references past work without sufficient context in current session
+- User mentions a SPEC-ID that is not loaded in current context
+- User asks to continue previous work or resume interrupted tasks
+- User explicitly requests to find previous discussions
+
+### Search Process
+
+1. Ask user confirmation before searching (via AskUserQuestion)
+2. Use Grep to search session transcripts in `~/.claude/projects/`
+3. Limit search to recent sessions (default: 30 days)
+4. Summarize findings and present for user approval
+5. Inject approved context into current conversation
+
+### Token Budget
+
+- Maximum 5,000 tokens per injection
+- Skip search if current token usage exceeds 150,000
+- Summarize lengthy conversations to stay within budget
+
+### Manual Trigger
+
+User can explicitly request context search at any time:
+
+```
+"이전 세션에서 논의한 내용 찾아줘"
+"Find what we discussed about the auth design last week"
+"Recall the SPEC-AUTH-001 discussion"
+```
+
+### Integration Notes
+
+- Complements Auto-Memory (`~/.claude/projects/{hash}/memory/`) for persistent context
+- Automatically triggered when SPEC reference lacks context
+- Available in both J.A.R.V.I.S. and F.R.I.D.A.Y. modes
+
+---
+
+## 16. Research-Plan-Annotate Cycle
+
+Enhanced SPEC creation workflow integrating deep research and iterative plan refinement before implementation begins.
+
+### Phase 0.5: Deep Research
+
+Before SPEC creation, perform deep codebase analysis:
+
+1. Use Explore subagent to read target code areas IN DEPTH
+2. Study cross-module interactions — trace data flow through the system
+3. Search for REFERENCE IMPLEMENTATIONS — find similar patterns in the codebase
+4. Document all findings with specific file paths and line references
+5. Save research artifact to `.jikime/specs/SPEC-{ID}/research.md`
+
+**Guard**: DO NOT write implementation code during research phase.
+
+### Phase 1.5: Annotation Cycle (1-6 iterations)
+
+After SPEC generation and before implementation:
+
+1. Present SPEC document and `research.md` to user for review
+2. User adds inline annotations/corrections to plan
+3. Delegate to manager-spec: `"Address all inline notes. DO NOT implement any code."`
+4. Repeat until user approves — maximum 6 iterations
+5. Track iteration count: `"Annotation cycle {N}/6"`
+
+This iterative refinement catches architectural misunderstandings before implementation begins.
+
+### Integration with /jikime:1-plan
+
+The Research-Plan-Annotate cycle activates automatically in `/jikime:1-plan`:
+
+```
+/jikime:1-plan "feature description"
+    ↓
+Phase 0.5: Deep Research → research.md
+    ↓
+SPEC Document creation (EARS format)
+    ↓
+Phase 1.5: Annotation Cycle (user reviews → corrections → repeat)
+    ↓
+User approves → /jikime:2-run proceeds
+```
+
+### Artifact Location
+
+```
+.jikime/specs/SPEC-{ID}/
+├── spec.md          # EARS format SPEC document
+└── research.md      # Deep research findings (Phase 0.5 output)
+```
+
+---
+
+Version: 14.0.0 (Context Search + Research-Plan-Annotate)
+Last Updated: 2026-03-09
 Language: English
 Core Rule: J.A.R.V.I.S. and F.R.I.D.A.Y. orchestrate; direct implementation is prohibited
 

@@ -46,5 +46,12 @@ func NewHooks() *cobra.Command {
 	hooks.AddCommand(TaskCompletedCmd)  // TaskCompleted: validate SPEC acceptance criteria
 	hooks.AddCommand(TeammateIdleCmd)   // TeammateIdle: validate quality gates
 
+	// Lifecycle hooks (v1.0.0+)
+	hooks.AddCommand(PostToolFailureCmd)  // PostToolUseFailure: log tool failures
+	hooks.AddCommand(NotificationCmd)     // Notification: desktop notifications
+	hooks.AddCommand(PermissionRequestCmd) // PermissionRequest: policy-based decisions
+	hooks.AddCommand(SubagentStartCmd)    // SubagentStart: log subagent startup
+	hooks.AddCommand(SubagentStopCmd)     // SubagentStop: log subagent completion
+
 	return hooks
 }
