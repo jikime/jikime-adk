@@ -3,7 +3,7 @@
 
 version: '1.0.0'
 generated_at: '2026-02-06T23:55:49.967027'
-total_skills: 73
+total_skills: 74
 
 # Skills by domain
 domains:
@@ -18,13 +18,14 @@ domains:
       - jikime-design-tools
 
   foundation:
-    count: 5
+    count: 6
     skills:
       - jikime-foundation-claude
       - jikime-foundation-context
       - jikime-foundation-core
       - jikime-foundation-philosopher
       - jikime-foundation-quality
+      - jikime-foundation-thinking
 
   framework:
     count: 3
@@ -202,6 +203,13 @@ skills:
     version: 2.2.0
     user_invocable: false
     tags: ["foundation", "quality", "testing", "validation", "trust-5"]
+
+  - name: jikime-foundation-thinking
+    domain: foundation
+    description: "Structured thinking toolkit combining Critical Evaluation, Diverge-Converge Brainstorming, and Deep Questioning frameworks for creative problem-solving and rigorous analysis"
+    version: 1.0.0
+    user_invocable: false
+    tags: ["foundation", "critical-thinking", "brainstorming", "ideation", "evaluation", "creative-thinking", "diverge-converge"]
 
   - name: jikime-framework-nextjs@14
     domain: framework

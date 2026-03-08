@@ -10,6 +10,7 @@ description: |
   ZH: 调试, 错误, Bug, 修复, 崩溃, 异常, 堆栈跟踪, 排查, 调查, 故障, 失败, 问题
 tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, LSP, mcp__sequential-thinking__sequentialthinking
 model: opus
+memory: user
 skills: jikime-foundation-claude, jikime-lang-typescript, jikime-lang-python
 ---
 

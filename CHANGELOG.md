@@ -5,6 +5,21 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-09
+
+### Added
+
+- **Context Search Protocol — Duplicate Prevention**: Added "When NOT to Search" section to CLAUDE.md Section 15 — skip search when SPEC/documents already loaded in session; updated Search Process with duplicate check as first step
+- **Team Agent Worktree Isolation**: Added `isolation: worktree` and `background: true` to all run-phase team agents (team-backend-dev, team-frontend-dev, team-tester, team-designer) — enables parallel execution without file conflicts via Claude Code v2.1.49+ worktree feature; read-only agents unchanged
+- **Boris Cherny Best Practices** (Claude Code creator's internal best practices):
+  - **Lessons Protocol** (`core.md`): Capture learnings from user corrections/agent failures in `lessons.md` — categorized entries (architecture/testing/naming/workflow/security/performance), max 50 active lessons, archive to `lessons-archive.md`, SUPERSEDED tagging
+  - **Re-planning Gate** (CLAUDE.md Section 17): Detect stuck implementation — triggers after 3+ iterations with zero SPEC acceptance criteria progress; 4 recovery options via AskUserQuestion; progress tracked in `progress.md`
+  - **Pre-submission Self-Review** (CLAUDE.md Section 18): Self-review before completion marker — "Is there a simpler approach?"; skipped for <50 line changes, bug fixes with repro test, annotation-approved changes
+- **DDD Project-Scale-Aware Test Strategy** (`manager-ddd.md` STEP 1.5): LARGE_SCALE classification (test files > 500 OR source lines > 50,000) — targeted test execution per changed package in PRESERVE/IMPROVE phases; STEP 5 Final Verification always runs full suite
+- **Agent Memory Fields**: Added persistent cross-session learning to 6 agents — `memory: user` for debugger, agent-builder, skill-builder (cross-project patterns); `memory: project` for backend, frontend, manager-quality (project-specific patterns)
+- **`jikime-foundation-thinking` Skill** (new): Structured thinking toolkit with 3 modules — Critical Evaluation (7-step proposal assessment), Diverge-Converge (5-phase brainstorming 20-50 ideas → 3-5 solutions), Deep Questioning (6-layer progressive inquiry); use sequentially for complex decisions
+- **Skills catalog**: 73 → 74 total skills, foundation 5 → 6 skills
+
 ## [1.1.0] - 2026-03-09
 
 ### Added

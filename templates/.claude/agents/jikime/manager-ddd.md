@@ -139,6 +139,27 @@ Confirm refactoring plan from SPEC document:
 # Assess current test coverage
 ```
 
+### STEP 1.5: Detect Project Scale
+
+Classify project size to select an appropriate test execution strategy.
+
+**Scale Detection**:
+- Count test files: search for `*_test.*`, `test_*.*`, `*.test.*`, `*.spec.*`, `*_spec.*` patterns (exclude fixtures, helpers, data files)
+- Count source code lines (exclude vendor, node_modules, generated files, build outputs, and test files)
+- Classify as **LARGE_SCALE** if: test file count > 500 OR total source lines > 50,000
+
+**Test Strategy Selection**:
+- **IF LARGE_SCALE**: Use targeted test execution throughout the cycle
+  - Run only tests related to changed packages or modules
+  - Track which files are modified in each transformation
+  - Derive affected test targets from changed file paths
+  - Examples: Go `go test ./path/to/changed/...` | TS `vitest run --related <file>` | Python `pytest tests/unit/test_<module>.py`
+- **IF NOT LARGE_SCALE**: Run the full test suite for all test executions
+
+Store result as `LARGE_SCALE` flag for use in subsequent steps.
+
+**Note**: STEP 5 Final Verification ALWAYS runs the full test suite regardless of scale classification.
+
 ### STEP 2: ANALYZE Phase
 
 Understand current structure and identify opportunities:
@@ -167,7 +188,8 @@ Build safety net before changes:
 
 **Existing Test Verification**:
 ```bash
-# Run all existing tests
+# IF LARGE_SCALE: Run tests for the refactoring scope only (packages or modules in scope)
+# IF NOT LARGE_SCALE: Run the full test suite
 # Confirm 100% pass rate
 # Document flaky tests
 # Record test coverage baseline
@@ -201,7 +223,8 @@ Incremental structural improvement:
    - Keep changes as small as possible
 
 2. **Verify Behavior**:
-   - Run full test suite immediately
+   - IF LARGE_SCALE: Run tests for packages containing changed files + new characterization tests
+   - IF NOT LARGE_SCALE: Run the full test suite
    - If tests fail: rollback immediately, analyze cause, plan alternative
    - If all tests pass: commit the change
 
@@ -219,7 +242,7 @@ Incremental structural improvement:
 Complete refactoring and generate report:
 
 **Final Verification**:
-- Run full test suite one final time
+- Run the complete test suite one final time (ALWAYS full suite regardless of LARGE_SCALE)
 - Confirm all behavior snapshots match
 - Confirm no regressions
 
@@ -387,6 +410,8 @@ Complete refactoring and generate report:
 
 ---
 
-Version: 1.0.0
+Version: 2.3.0
 Status: Active
-Last Updated: 2026-01-22
+Last Updated: 2026-03-09
+Changes:
+- v2.3.0: Added STEP 1.5 project-scale-aware test strategy (LARGE_SCALE classification)

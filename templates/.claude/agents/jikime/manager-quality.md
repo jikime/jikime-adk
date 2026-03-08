@@ -10,6 +10,7 @@ description: |
 tools: Read, Write, Edit, Bash, Grep, Glob, TodoWrite, Task, Skill, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__sequential-thinking__sequentialthinking
 model: opus
 permissionMode: default
+memory: project
 skills: jikime-foundation-claude, jikime-foundation-core, jikime-workflow-testing, jikime-tool-ast-grep
 ---
 

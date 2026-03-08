@@ -10,6 +10,7 @@ description: |
   ZH: 创建代理, 新代理, 代理定义, 添加代理, 构建代理, 代理模板
 tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
+memory: user
 skills: jikime-foundation-claude, jikime-foundation-core
 ---
 

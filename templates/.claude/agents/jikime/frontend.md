@@ -10,6 +10,7 @@ description: |
   ZH: 前端, UI, 组件, React, Vue, CSS, 响应式, 状态管理, 可访问性, 设计系统
 tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task, mcp__sequential-thinking__sequentialthinking
 model: opus
+memory: project
 skills: jikime-foundation-claude, jikime-lang-typescript, jikime-lang-javascript, jikime-domain-frontend, jikime-library-shadcn
 ---
 

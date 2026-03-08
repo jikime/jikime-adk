@@ -53,7 +53,22 @@ Before responding to user:
 This is correct - using Markdown format
 ```
 
+## Lessons Protocol
+
+Capture and reuse learnings from user corrections and agent failures across sessions.
+
+Rules:
+- When user corrects agent behavior, capture the pattern in auto-memory
+- Store lessons at `~/.claude/projects/{project-hash}/memory/lessons.md`
+- Each lesson entry format: `[CATEGORY] Incorrect: <pattern> | Correct: <approach> | Added: <date>`
+- Review relevant lessons before starting tasks in the same domain
+- Lesson categories: `architecture`, `testing`, `naming`, `workflow`, `security`, `performance`
+- Maximum 50 active lessons per project; archive older entries to `lessons-archive.md` in the same directory
+- Lessons are additive: never overwrite a lesson, append corrections as updates
+- To supersede a lesson, add `[SUPERSEDED by #{new_lesson_number}]` prefix to the old entry
+- Session start: scan lessons for patterns matching current task domain
+
 ---
 
-Version: 1.1.0
-Source: Extracted from CLAUDE.md Section 1, 8 + consolidated HARD rules from web-search.md, mcp-integration.md
+Version: 1.2.0
+Source: Extracted from CLAUDE.md Section 1, 8 + consolidated HARD rules from web-search.md, mcp-integration.md + Boris Cherny Lessons Protocol

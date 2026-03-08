@@ -10,6 +10,7 @@ description: |
   ZH: 创建技能, 新技能, 技能定义, 添加技能, 构建技能, 技能模板
 tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, mcp__sequential-thinking__sequentialthinking
 model: opus
+memory: user
 skills: jikime-foundation-claude, jikime-foundation-core
 ---
 

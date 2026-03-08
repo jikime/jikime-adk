@@ -10,6 +10,7 @@ description: |
   ZH: 后端, API, 服务器, 认证, 数据库, 微服务, 架构, 查询
 tools: Read, Write, Edit, Grep, Glob, Bash, TodoWrite, Task, mcp__sequential-thinking__sequentialthinking
 model: opus
+memory: project
 skills: jikime-foundation-claude, jikime-lang-typescript, jikime-lang-python, jikime-domain-backend, jikime-domain-database
 ---
 

@@ -618,13 +618,22 @@ Search previous sessions when:
 - User asks to continue previous work or resume interrupted tasks
 - User explicitly requests to find previous discussions
 
+### When NOT to Search
+
+Skip search when any of these conditions are met:
+- SPEC document for the referenced task is already loaded in current session
+- Related documents or files are already present in the conversation
+- Referenced content exists in current session (avoid injecting duplicates)
+- Current token usage exceeds 150,000 (token budget constraint)
+
 ### Search Process
 
-1. Ask user confirmation before searching (via AskUserQuestion)
-2. Use Grep to search session transcripts in `~/.claude/projects/`
-3. Limit search to recent sessions (default: 30 days)
-4. Summarize findings and present for user approval
-5. Inject approved context into current conversation
+1. **Check existing context first** — verify content is not already in current session
+2. Ask user confirmation before searching (via AskUserQuestion)
+3. Use Grep to search session transcripts in `~/.claude/projects/`
+4. Limit search to recent sessions (default: 30 days)
+5. Summarize findings and present for user approval
+6. Inject approved context into current conversation (skip if duplicate detected)
 
 ### Token Budget
 
@@ -704,7 +713,65 @@ User approves → /jikime:2-run proceeds
 
 ---
 
-Version: 14.0.0 (Context Search + Research-Plan-Annotate)
+## 17. Re-planning Gate
+
+Detect when implementation is stuck or diverging from SPEC and trigger re-assessment.
+
+### Triggers
+
+- 3+ iterations with no new SPEC acceptance criteria met
+- Test coverage dropping instead of increasing across iterations
+- New errors introduced exceed errors fixed in a cycle
+- Agent explicitly reports inability to meet a SPEC requirement
+
+### Communication Path
+
+Implementation agent (manager-ddd/tdd) detects trigger condition → returns structured stagnation report to J.A.R.V.I.S. (agents cannot call AskUserQuestion) → J.A.R.V.I.S. presents gap analysis to user via AskUserQuestion with options:
+
+1. Continue with current approach (minor adjustments needed)
+2. Revise SPEC (requirements need refinement)
+3. Try alternative approach (re-delegate to manager-strategy)
+4. Pause for manual intervention (user takes over)
+
+### Detection Method
+
+- Append acceptance criteria completion count and error count delta to `.jikime/specs/SPEC-{ID}/progress.md` at end of each iteration
+- Compare against previous entry to detect stagnation
+- Flag stagnation when acceptance criteria completion rate is zero for 3+ consecutive entries
+
+---
+
+## 18. Pre-submission Self-Review
+
+Before marking implementation complete, review the full changeset for simplicity and correctness.
+
+This gate runs after `Skill("simplify")` and before completion markers (`<jikime>DONE</jikime>`). Applies to both DDD and TDD modes.
+
+### Steps
+
+1. Review full diff against SPEC acceptance criteria
+2. Ask: "Is there a simpler approach that achieves the same result?"
+3. Ask: "Would removing any of these changes still satisfy the SPEC?"
+4. Check for unnecessary abstractions, premature generalization, or over-engineering
+5. If a simpler approach exists, implement it before presenting to user
+6. If no simplification found, proceed to completion marker
+
+### Scope
+
+- Applies to the aggregate of all changes in the current Run phase
+- Does not re-run tests (`Skill("simplify")` already validated)
+- If a simpler approach is implemented, re-run tests to verify no regressions
+- Focus is architectural elegance and minimal footprint, not code style
+
+### Skip Conditions
+
+- Single-file changes under 50 lines
+- Bug fixes with reproduction test (already minimal by design)
+- Changes explicitly approved in annotation cycle (user reviewed during Phase 1.5)
+
+---
+
+Version: 15.0.0 (Boris Cherny Best Practices)
 Last Updated: 2026-03-09
 Language: English
 Core Rule: J.A.R.V.I.S. and F.R.I.D.A.Y. orchestrate; direct implementation is prohibited

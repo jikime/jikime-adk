@@ -11,6 +11,8 @@ description: >
 tools: Read, Write, Edit, Bash, Grep, Glob
 model: inherit
 permissionMode: acceptEdits
+isolation: worktree
+background: true
 memory: project
 skills: jikime-domain-backend, jikime-domain-database, jikime-workflow-ddd, jikime-workflow-tdd
 ---
