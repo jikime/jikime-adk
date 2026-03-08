@@ -35,6 +35,7 @@ jikime hooks session-start
 - Github-Flow 모드 및 Auto Branch 설정
 - 최근 커밋 정보
 - 대화 언어 설정
+- **Auto-Memory 주입** (v1.0.0+) — `~/.claude/projects/{hash}/memory/*.md`를 세션 컨텍스트에 자동 로드
 - 환경 검증 경고 (v1.1.0+)
 
 **출력 예시**:
@@ -48,9 +49,21 @@ jikime hooks session-start
    🌐 Language: 한국어 (ko)
    👋 Welcome back, Anthony!
 
+---
+📚 **Auto-Memory Loaded**
+   📁 Path: /Users/foo/.claude/projects/-Users-foo-myproject/memory
+   📄 Files: 1 (2717 bytes)
+
+### MEMORY.md
+# 프로젝트 메모리
+...
+---
+
    ⚠️  Environment Warnings:
       - node_modules not found - run 'npm install' or equivalent
 ```
+
+> Auto-Memory 전체 문서: [Auto-Memory 가이드](./auto-memory.md)
 
 **환경 검증 (v1.1.0+)**:
 

@@ -66,10 +66,17 @@ type GitStrategyModeConfig struct {
 }
 
 func runSessionStart(cmd *cobra.Command, args []string) error {
-	// Read input from stdin (Claude Code passes session info)
+	// Read input from stdin (Claude Code passes session info including cwd)
 	var input map[string]interface{}
 	decoder := json.NewDecoder(os.Stdin)
 	_ = decoder.Decode(&input)
+
+	// Extract cwd from Claude Code's stdin payload (used for auto-memory path)
+	// Falls back to os.Getwd() if not provided
+	claudeCWD, _ := input["cwd"].(string)
+	if claudeCWD == "" {
+		claudeCWD, _ = os.Getwd()
+	}
 
 	// Find project root once (avoid duplicate findProjectRoot calls)
 	projectRoot, err := findProjectRoot()
@@ -93,8 +100,18 @@ func runSessionStart(cmd *cobra.Command, args []string) error {
 		writeOrchestratorState(projectRoot, orchestrator)
 	}
 
+	// Auto-memory uses the actual Claude Code CWD (not .jikime root)
+	// because Claude Code's project hash is computed from the user's project path.
+	ensureMemoryDir(claudeCWD) //nolint:errcheck
+	mem := discoverAutoMemory(claudeCWD)
+
 	// Generate session output
 	output := formatSessionOutputWithContext(projectRoot, config)
+
+	// Append auto-memory section if available
+	if memSection := formatMemorySection(mem); memSection != "" {
+		output += memSection
+	}
 
 	// Return success response
 	response := HookResponse{

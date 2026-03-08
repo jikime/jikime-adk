@@ -66,6 +66,7 @@ I've further enhanced JiKiME's capabilities by referencing the agent, command, a
 | **Smart Rebuild** | Screenshot + source analysis based legacy site reconstruction | [Smart Rebuild Guide](./docs/en/smart-rebuild.md) |
 | **Structured Task Format** | Do/Files/Done-when/Verify/Commit 5-field task structure with quality checkpoints | [Task Format Guide](./docs/en/task-format.md) |
 | **PR Lifecycle Automation** | Automated PR creation, CI monitoring, review resolution, and merge | [PR Lifecycle Guide](./docs/en/pr-lifecycle.md) |
+| **Auto-Memory** | Cross-session project context injection via Claude Code's native memory system | [Auto-Memory Guide](./docs/en/auto-memory.md) |
 | **73 Skill System** | Progressive Disclosure based knowledge loading | [Skills Catalog](./docs/en/skills-catalog.md) |
 | **Quality Assurance** | TRUST 5 Framework + LSP Quality Gates | [Quality Guide](./docs/en/rules.md) |
 | **LLM Provider Router** | Switch between OpenAI, Gemini, GLM, Ollama | [Router Docs](./docs/en/provider-router.md) |
@@ -194,6 +195,7 @@ IMPROVE   →  Change with confidence → (repeat)
 | [Quality Rules](./docs/en/rules.md) | TRUST 5, coding style, security guide |
 | [Worktree Management](./docs/en/worktree.md) | Git Worktree parallel development |
 | [LLM Router](./docs/en/provider-router.md) | External LLM provider integration |
+| [Auto-Memory](./docs/en/auto-memory.md) | Cross-session project context injection |
 | [Hooks System](./docs/en/hooks.md) | Claude Code hook configuration |
 | [Ralph Loop](./docs/en/ralph-loop.md) | LSP/AST-grep feedback loop |
 | [Statusline](./docs/en/statusline.md) | Claude Code statusline customization |

@@ -66,6 +66,7 @@ MoAI-ADK의 구조와 흐름을 깊이 분석했고, 그 단단한 철학적 기
 | **Smart Rebuild** | 스크린샷 + 소스 분석 기반 레거시 사이트 새로 구축 | [Smart Rebuild 가이드](./docs/ko/smart-rebuild.md) |
 | **구조화된 태스크 포맷** | Do/Files/Done when/Verify/Commit 5필드 구조 + 품질 체크포인트 | [태스크 포맷 가이드](./docs/ko/task-format.md) |
 | **PR 라이프사이클 자동화** | PR 생성, CI 모니터링, 리뷰 해결, 머지 자동화 | [PR 라이프사이클 가이드](./docs/ko/pr-lifecycle.md) |
+| **Auto-Memory** | Claude Code 네이티브 메모리 시스템을 통한 크로스 세션 프로젝트 컨텍스트 자동 주입 | [Auto-Memory 가이드](./docs/ko/auto-memory.md) |
 | **73개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 카탈로그](./docs/ko/skills-catalog.md) |
 | **품질 보증** | TRUST 5 프레임워크 + LSP 품질 게이트 | [품질 가이드](./docs/ko/rules.md) |
 | **LLM 프로바이더 라우터** | OpenAI, Gemini, GLM, Ollama 전환 | [라우터 문서](./docs/ko/provider-router.md) |
@@ -194,6 +195,7 @@ IMPROVE   →  자신감 있게 변경 → (반복)
 | [품질 규칙](./docs/ko/rules.md) | TRUST 5, 코딩 스타일, 보안 가이드 |
 | [Worktree 관리](./docs/ko/worktree.md) | Git Worktree 병렬 개발 |
 | [LLM 라우터](./docs/ko/provider-router.md) | 외부 LLM 프로바이더 연동 |
+| [Auto-Memory](./docs/ko/auto-memory.md) | 크로스 세션 프로젝트 컨텍스트 자동 주입 |
 | [Hooks 시스템](./docs/ko/hooks.md) | Claude Code 훅 설정 |
 | [Ralph Loop](./docs/ko/ralph-loop.md) | LSP/AST-grep 피드백 루프 |
 | [Statusline](./docs/ko/statusline.md) | Claude Code 상태줄 커스터마이징 |

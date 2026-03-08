@@ -5,6 +5,18 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-02-28
+
+### Added
+
+- **Auto-Memory Integration**: Automatic cross-session project context injection via Claude Code's native memory system
+  - Discovers `~/.claude/projects/{path-hash}/memory/` directory at session start
+  - Reads all `.md` files and injects content into systemMessage
+  - Priority ordering: `MEMORY.md` → `lessons.md` → `context.md` → other files
+  - Auto-creates memory directory on first session (enables Claude Code's auto-memory persistence)
+  - Uses Claude Code's actual CWD from stdin payload for correct path hash computation
+  - Truncation: 800 chars for priority files, 400 chars for others
+
 ## [0.9.3] - 2026-02-27
 
 ### Added

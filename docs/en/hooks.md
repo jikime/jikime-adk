@@ -35,6 +35,7 @@ jikime hooks session-start
 - Github-Flow mode and Auto Branch settings
 - Recent commit information
 - Conversation language settings
+- **Auto-Memory injection** (v1.0.0+) — loads `~/.claude/projects/{hash}/memory/*.md` into session context
 - Environment validation warnings (v1.1.0+)
 
 **Output Example**:
@@ -48,9 +49,21 @@ jikime hooks session-start
    🌐 Language: 한국어 (ko)
    👋 Welcome back, Anthony!
 
+---
+📚 **Auto-Memory Loaded**
+   📁 Path: /Users/foo/.claude/projects/-Users-foo-myproject/memory
+   📄 Files: 1 (2717 bytes)
+
+### MEMORY.md
+# My Project Memory
+...
+---
+
    ⚠️  Environment Warnings:
       - node_modules not found - run 'npm install' or equivalent
 ```
+
+> For full Auto-Memory documentation, see [Auto-Memory Guide](./auto-memory.md).
 
 **Environment Validation (v1.1.0+)**:
 
