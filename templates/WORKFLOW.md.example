@@ -1,0 +1,90 @@
+---
+# ─────────────────────────────────────────────
+# jikime serve — WORKFLOW.md Configuration
+# Copy this file to your project root as WORKFLOW.md
+# ─────────────────────────────────────────────
+
+tracker:
+  kind: github                          # "github" (default) | "linear" (coming soon)
+  api_key: $GITHUB_TOKEN                # $VAR resolves to environment variable
+  project_slug: owner/repo              # GitHub: "owner/repo" format
+  active_states:                        # Issues with these labels are dispatched
+    - todo
+    - in-progress
+  terminal_states:                      # Closed issues stop active sessions
+    - Done
+    - Cancelled
+
+polling:
+  interval_ms: 30000                    # Poll every 30 seconds
+
+workspace:
+  root: ~/jikime_workspaces             # Where per-issue directories are created
+
+hooks:
+  # Runs once when a workspace directory is first created
+  after_create: |
+    git clone https://github.com/{{ issue.identifier.split('#')[0] }} .
+    npm install 2>/dev/null || true
+
+  # Runs before each agent attempt
+  before_run: |
+    git fetch origin
+    git status
+
+  # Runs after each agent attempt (failure is logged but ignored)
+  after_run: |
+    echo "Agent finished for {{ issue.identifier }}"
+
+  timeout_ms: 60000                     # Hook timeout: 60 seconds
+
+agent:
+  max_concurrent_agents: 3             # Max parallel Claude sessions
+  max_turns: 10                        # Max turns per session
+  max_retry_backoff_ms: 300000         # Max retry backoff: 5 minutes
+
+claude:
+  command: claude                       # Claude CLI command
+  turn_timeout_ms: 3600000             # Turn timeout: 1 hour
+  stall_timeout_ms: 300000             # Stall detection: 5 minutes
+
+server:
+  port: 8080                           # HTTP status API (0 = disabled)
+                                       # Override with: jikime serve --port 8080
+---
+
+# ─────────────────────────────────────────────
+# Agent Prompt Template
+# Variables: {{ issue.identifier }}, {{ issue.title }},
+#            {{ issue.description }}, {{ issue.state }},
+#            {{ issue.url }}, {{ attempt }}
+# ─────────────────────────────────────────────
+
+You are an autonomous software engineer working on a GitHub issue.
+
+## Issue
+
+- **ID**: {{ issue.identifier }}
+- **Title**: {{ issue.title }}
+- **State**: {{ issue.state }}
+- **URL**: {{ issue.url }}
+
+## Description
+
+{{ issue.description }}
+
+## Instructions
+
+1. Analyze the issue carefully before making any changes.
+2. Make minimal, focused changes to resolve the issue.
+3. Follow existing code patterns and conventions.
+4. Write tests for any new functionality.
+5. Create a pull request when done.
+
+## When finished
+
+- Create a PR with `gh pr create`
+- Move the issue to "In Review" state
+- Add a comment summarizing what you did
+
+{{ attempt }}

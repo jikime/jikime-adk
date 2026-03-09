@@ -58,6 +58,7 @@ I've further enhanced JiKiME's capabilities by referencing the agent, command, a
 
 | Feature | Description | Documentation |
 |---------|-------------|---------------|
+| **Harness Engineering** | Autonomous agent orchestration: GitHub Issue → Claude agent → PR → auto-merge, fully automated | [Harness Engineering](./docs/en/harness-engineering.md) |
 | **POC-First Workflow** | Phase-based greenfield development: Make It Work → Refactor → Test → Quality → PR | [POC-First Guide](./docs/en/poc-first.md) |
 | **SPEC-First DDD** | Behavior-preserving development with ANALYZE-PRESERVE-IMPROVE cycle | [DDD Docs](./docs/en/tdd-ddd.md) |
 | **57 Specialized Agents** | Auto-delegation across Manager 12, Specialist 37, Designer 1, Orchestration 3, Builder 4 agents | [Agent Catalog](./docs/en/agents.md) |

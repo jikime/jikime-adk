@@ -3,7 +3,7 @@
 
 version: '1.0.0'
 generated_at: '2026-02-06T23:55:49.967027'
-total_skills: 74
+total_skills: 75
 
 # Skills by domain
 domains:
@@ -100,7 +100,7 @@ domains:
       - jikime-tool-mcp-builder
 
   workflow:
-    count: 22
+    count: 23
     skills:
       - jikime-workflow-changelog
       - jikime-workflow-codemap
@@ -116,6 +116,7 @@ domains:
       - jikime-workflow-pr-lifecycle
       - jikime-workflow-project
       - jikime-workflow-spec
+      - jikime-workflow-symphony
       - jikime-workflow-sync
       - jikime-workflow-task-format
       - jikime-workflow-tdd

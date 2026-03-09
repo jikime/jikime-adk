@@ -13,6 +13,7 @@ import (
 	"jikime-adk/cmd/initcmd"
 	"jikime-adk/cmd/languagecmd"
 	"jikime-adk/cmd/lspsetupcmd"
+	"jikime-adk/cmd/servecmd"
 	"jikime-adk/cmd/skillcmd"
 	"jikime-adk/cmd/statuscmd"
 	"jikime-adk/cmd/statuslinecmd"
@@ -62,6 +63,9 @@ func NewRoot() *cobra.Command {
 
 	// Skill System (tag-based skill discovery)
 	root.AddCommand(skillcmd.NewSkill())
+
+	// Agent orchestration service (Symphony-inspired)
+	root.AddCommand(servecmd.NewServe())
 
 	// LLM Router proxy
 	root.AddCommand(routercmd.NewRouter())

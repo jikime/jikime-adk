@@ -58,6 +58,7 @@ MoAI-ADK의 구조와 흐름을 깊이 분석했고, 그 단단한 철학적 기
 
 | 기능 | 설명 | 문서 |
 |------|------|------|
+| **하네스 엔지니어링** | 자율 에이전트 오케스트레이션: GitHub Issue → Claude 에이전트 → PR → 자동 머지, 완전 자동화 | [하네스 엔지니어링](./docs/ko/harness-engineering.md) |
 | **POC-First 워크플로우** | 단계별 Greenfield 개발: 동작하게 만들기 → 리팩토링 → 테스팅 → 품질 검증 → PR | [POC-First 가이드](./docs/ko/poc-first.md) |
 | **SPEC-First DDD** | ANALYZE-PRESERVE-IMPROVE 사이클로 동작 보존 개발 | [DDD 문서](./docs/ko/tdd-ddd.md) |
 | **57개 전문 에이전트** | Manager 12, Specialist 37, Designer 1, Orchestration 3, Builder 4 에이전트 자동 위임 | [에이전트 카탈로그](./docs/ko/agents.md) |

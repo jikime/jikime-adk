@@ -5,6 +5,31 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-09
+
+### Added
+
+- **`jikime serve` — Autonomous Agent Orchestration (Harness Engineering)**: Long-running daemon that polls GitHub Issues and dispatches Claude Code agents automatically — GitHub Issue → agent → PR → auto-merge, fully automated
+  - **GitHub Issues tracker**: Polls open issues with configured labels (`active_states`); closed/labelled issues trigger terminal state reconciliation
+  - **Per-issue workspace isolation**: Dedicated directories per issue under `workspace.root`; path containment safety invariants enforced
+  - **Claude headless agent runner**: Executes `claude --print --output-format stream-json --verbose --dangerously-skip-permissions` in workspace; stall detection (configurable, default 5 min), turn timeout (default 1 hour)
+  - **Token tracking**: Parses NDJSON stream-json events (`type: "result"`) to extract `total_input_tokens` / `total_output_tokens`; accumulated per session and in `jikime_totals` API field
+  - **Orchestrator state machine**: Dispatch eligibility checks (claimed/running/slots), exponential backoff retry (`min(10s × 2^n, max_retry_backoff_ms)`), reconciliation on each tick
+  - **TerminalState lifecycle**: `reconcile()` sets `TerminalState` signal on running entry; `runWorker()` detects it to run `after_run` hook and workspace cleanup in correct order — prevents `after_run hook failed: no such file` race condition
+  - **PR-based workflow**: Each issue gets its own `fix/issue-N` branch; `before_run` syncs to `origin/main`; agent creates PR with `Closes #N` and auto-merges via `gh pr merge --squash --delete-branch --admin`
+  - **WORKFLOW.md hot-reload**: `fsnotify` watches for changes; config re-applied without restart
+  - **4 workspace lifecycle hooks**: `after_create`, `before_run`, `after_run`, `before_remove`; `hooks.timeout_ms` enforced
+  - **HTTP status API** (optional): `--port` flag enables `GET /`, `GET /api/v1/state`, `POST /api/v1/refresh` on `127.0.0.1`
+  - **Structured logging**: `log/slog` with `issue_id`, `issue_identifier`, `session_id`; stderr logged at Warn level for visibility
+- **Harness Engineering documentation**: Concept, architecture, complete flow diagram, features, usage guide, developer guidelines, configuration reference
+  - `docs/en/harness-engineering.md` (English)
+  - `docs/ko/harness-engineering.md` (Korean)
+- **`WORKFLOW.md.example`**: Full annotated example template (GitHub tracker, hooks, prompt with `{{ issue.identifier }}` variables, PR-based workflow)
+- **`jikime-workflow-symphony` skill**: Setup guide, config reference, GitHub label mapping, orchestration flow diagram, troubleshooting table
+- **Skills catalog**: 74 → 75 total skills, workflow 22 → 23
+
+---
+
 ## [1.3.0] - 2026-03-09
 
 ### Added
