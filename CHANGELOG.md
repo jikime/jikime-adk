@@ -5,6 +5,50 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2026-03-09
+
+### Added
+
+- **Harness Engineering test flow guide** (`docs/ko/harness-test-flow.md`, `docs/en/harness-test-flow.md`):
+  - Step-by-step guide (Step 0–7) for applying Harness Engineering to a new project from scratch
+  - Covers: jikime install → GitHub repo creation → `jikime serve init` → label creation → issue creation → `jikime serve` → monitoring → PR verification
+  - Includes interactive wizard input reference table, expected log output, common issues & fixes
+  - Test issue example: Next.js 16 + Tailwind CSS 4 + shadcn/ui simple app
+
+### Fixed
+
+- **`after_run` hook missing local `git pull`** (`cmd/servecmd/init.go`):
+  - Added `WorkDir` field to `workflowParams` struct — captures the directory where `jikime serve init` is run
+  - Both Basic and JiKiME-ADK templates now include `git pull --ff-only` targeting the local project directory in `after_run`
+  - Uses `--ff-only` to safely skip if local uncommitted changes exist
+  - Logs sync result: `[after_run] local repo synced at <sha>` or `[after_run] git pull skipped`
+- **HTTP API endpoint correction in docs** (`docs/ko/harness-test-flow.md`, `docs/en/harness-test-flow.md`):
+  - Removed non-existent `/status` and `/health` endpoints
+  - Corrected to actual implemented endpoints: `GET /`, `GET /api/v1/state`, `POST /api/v1/refresh`
+- **`after_run` examples updated in docs** (`docs/ko/harness-engineering.md`, `docs/en/harness-engineering.md`, `templates/.claude/commands/jikime/harness.md`):
+  - All `after_run` hook examples now include the local `git pull` pattern
+
+---
+
+## [1.4.2] - 2026-03-09
+
+### Fixed
+
+- **WORKFLOW.md template — SPEC alignment** (`cmd/servecmd/init.go`, `templates/.claude/commands/jikime/harness.md`):
+  - Added `claude.command: claude` — explicit Claude CLI command field (maps to Symphony SPEC `codex.command`)
+  - Added `claude.turn_timeout_ms: 3600000` — session max duration 1 hour (maps to `codex.turn_timeout_ms`)
+  - Fixed `agent.max_retry_backoff_ms`: `60000` → `300000` (aligns with SPEC §6.4 default of 5 minutes)
+- **Harness Engineering docs** (`docs/en/harness-engineering.md`, `docs/ko/harness-engineering.md`):
+  - Added "Why Harness Engineering?" section with use-case suitability matrix
+  - Added `jikime serve init` and `/jikime:harness` to WORKFLOW.md creation guide
+  - Expanded Git flow section: branch strategy diagram, workspace isolation, conflict prevention table
+  - Added complete execution flow diagram (8-step sequence)
+  - Added detailed monitoring guide: terminal logs, HTTP API examples, live monitoring commands
+  - Updated all WORKFLOW.md examples with `claude.command`, `claude.turn_timeout_ms`, corrected `max_retry_backoff_ms`
+  - Updated configuration reference table with all keys including `claude.command` and `claude.turn_timeout_ms`
+
+---
+
 ## [1.4.1] - 2026-03-09
 
 ### Added

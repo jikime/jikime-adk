@@ -47,15 +47,22 @@ hooks:
 
   after_run: |
     echo "[after_run] done"
+    if [ -d "{{.WorkDir}}/.git" ]; then
+      cd "{{.WorkDir}}" && git pull --ff-only 2>&1 \
+        && echo "[after_run] local repo synced at $(git rev-parse --short HEAD)" \
+        || echo "[after_run] git pull skipped (local changes or diverged branch)"
+    fi
 
   timeout_ms: 60000
 
 agent:
   max_concurrent_agents: {{.MaxAgents}}
   max_turns: 5
-  max_retry_backoff_ms: 60000
+  max_retry_backoff_ms: 300000
 
 claude:
+  command: claude
+  turn_timeout_ms: 3600000
   stall_timeout_ms: 180000
 
 server:
@@ -119,15 +126,22 @@ hooks:
 
   after_run: |
     echo "[after_run] done"
+    if [ -d "{{.WorkDir}}/.git" ]; then
+      cd "{{.WorkDir}}" && git pull --ff-only 2>&1 \
+        && echo "[after_run] local repo synced at $(git rev-parse --short HEAD)" \
+        || echo "[after_run] git pull skipped (local changes or diverged branch)"
+    fi
 
   timeout_ms: 60000
 
 agent:
   max_concurrent_agents: {{.MaxAgents}}
   max_turns: 10
-  max_retry_backoff_ms: 60000
+  max_retry_backoff_ms: 300000
 
 claude:
+  command: claude
+  turn_timeout_ms: 3600000
   stall_timeout_ms: 300000
 
 server:
@@ -167,6 +181,7 @@ type workflowParams struct {
 	Slug          string
 	Label         string
 	WorkspaceRoot string
+	WorkDir       string
 	Port          int
 	MaxAgents     int
 }
@@ -267,6 +282,7 @@ func runServeInit(outputPath string) error {
 		Slug:          slug,
 		Label:         label,
 		WorkspaceRoot: workspaceRoot,
+		WorkDir:       cwd,
 		Port:          portInt,
 		MaxAgents:     maxAgentsInt,
 	}

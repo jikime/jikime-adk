@@ -1,6 +1,47 @@
 # Harness Engineering
 
-> Autonomous agent orchestration — from GitHub Issue to merged PR, fully automated.
+> Autonomous agent orchestration — from GitHub Issue to merged PR, fully automated without human intervention.
+
+---
+
+## Why Harness Engineering?
+
+Development teams spend significant time on repetitive tasks: bug fixes, small feature additions, dependency updates, documentation. These tasks are well-defined and testable, but too mundane for developers to handle manually.
+
+**Harness Engineering** solves this.
+
+| Traditional Approach | Harness Engineering |
+|---------------------|---------------------|
+| Developer reads issue, creates branch, writes code | Claude handles it automatically |
+| Manual PR creation, review requests, merge | Fully automated pipeline |
+| Work stops nights and weekends | 24/7 continuous operation |
+| Costly context switching for developers | Developers focus on high-complexity work |
+| Simple PRs piling up in CI queue | Autonomous agents process in background |
+
+### What tasks are suitable?
+
+```
+✅ Good fit
+  - Bug fixes (with clear reproduction steps)
+  - Small feature additions (single-component scope)
+  - Dependency updates
+  - Documentation and comment writing
+  - Adding tests
+  - Linting and formatting fixes
+  - Type error fixes
+
+⚠️ Proceed carefully (requires precise specification)
+  - Medium-scale refactoring
+  - New API endpoints
+  - Multi-file changes
+
+❌ Not suitable
+  - System architecture decisions
+  - Complex business logic design
+  - Large database schema migrations
+```
+
+---
 
 ## Concept
 
@@ -9,15 +50,19 @@
 In JiKiME-ADK, Harness Engineering is implemented as **`jikime serve`**: a long-running daemon that polls GitHub Issues, spins up isolated workspaces, runs Claude headlessly, and manages the full lifecycle from issue assignment to PR merge — without human intervention.
 
 ```
-Human writes a GitHub Issue
+Human writes a GitHub Issue (label: jikime-todo)
         ↓
 jikime serve detects it (every 15s)
         ↓
-Claude reads the issue, writes code, creates PR
+git clone into isolated workspace
         ↓
-PR is automatically merged
+Claude reads the issue, creates branch, writes code
         ↓
-Issue is automatically closed
+Claude creates PR → auto-merged
+        ↓
+GitHub: Issue automatically closed (state: Done)
+        ↓
+Workspace cleanup (before_remove hook)
 ```
 
 ---
@@ -25,77 +70,86 @@ Issue is automatically closed
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   jikime serve                      │
-│                                                     │
-│  ┌──────────┐    ┌─────────────┐    ┌───────────┐  │
-│  │ Tracker  │───▶│ Orchestrator│───▶│  Runner   │  │
-│  │ (GitHub) │    │             │    │ (Claude)  │  │
-│  └──────────┘    └──────┬──────┘    └───────────┘  │
-│                         │                           │
-│  ┌──────────┐    ┌──────▼──────┐    ┌───────────┐  │
-│  │ HTTP API │    │  Workspace  │    │  Hooks    │  │
-│  │  :8888   │    │  Manager    │    │ lifecycle │  │
-│  └──────────┘    └─────────────┘    └───────────┘  │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                      jikime serve                        │
+│                                                          │
+│  ┌──────────┐    ┌──────────────┐    ┌────────────────┐  │
+│  │ Tracker  │───▶│ Orchestrator │───▶│  Agent Runner  │  │
+│  │ (GitHub) │    │              │    │    (Claude)    │  │
+│  └──────────┘    └──────┬───────┘    └────────────────┘  │
+│                         │                                 │
+│  ┌──────────┐    ┌──────▼───────┐    ┌────────────────┐  │
+│  │ HTTP API │    │  Workspace   │    │     Hooks      │  │
+│  │  :8888   │    │  Manager     │    │   lifecycle    │  │
+│  └──────────┘    └──────────────┘    └────────────────┘  │
+└──────────────────────────────────────────────────────────┘
 ```
 
 | Component | Role |
 |-----------|------|
-| **Tracker** | Polls GitHub Issues for active-state labels (e.g. `jikime-todo`) |
-| **Orchestrator** | State machine: dispatch, retry with backoff, reconcile terminal states |
-| **Runner** | Executes `claude --print --output-format stream-json` headlessly |
-| **Workspace Manager** | Creates per-issue directories, runs lifecycle hooks |
-| **HTTP API** | Real-time status dashboard at `http://127.0.0.1:<port>` |
+| **Tracker** | Polls GitHub API for issues with `active_states` labels |
+| **Orchestrator** | State machine: dispatch → retry (exponential backoff) → reconcile terminal states |
+| **Agent Runner** | Executes `claude --print --output-format stream-json` headlessly, accumulates token usage |
+| **Workspace Manager** | Creates/reuses/deletes per-issue directories, runs lifecycle hooks |
+| **HTTP API** | Real-time state snapshots at `http://127.0.0.1:<port>` |
 
 ---
 
-## WORKFLOW.md
+## WORKFLOW.md — The Configuration Contract
 
-Every project using `jikime serve` is configured via a single `WORKFLOW.md` file — a YAML front matter block followed by the prompt template.
+Every project using `jikime serve` is configured via a single `WORKFLOW.md` file — YAML front matter (runtime config) followed by a Markdown prompt template.
 
 ```yaml
 ---
 tracker:
   kind: github
-  project_slug: owner/repo
   # api_key: $GITHUB_TOKEN   # omit → uses gh auth token automatically
+  project_slug: owner/repo   # GitHub "owner/repo" format
   active_states:
-    - jikime-todo             # Issues Claude should work on
+    - jikime-todo             # Issues with this label are dispatched to Claude
   terminal_states:
-    - jikime-done             # Human-closed
-    - Done                    # GitHub closed
+    - jikime-done             # Human-marked complete
+    - Done                    # GitHub auto-closes on PR merge
 
 polling:
-  interval_ms: 15000          # Poll every 15 seconds
+  interval_ms: 15000          # Poll GitHub every 15 seconds
 
 workspace:
-  root: /tmp/my-workspaces    # Per-issue clone directory
+  root: /tmp/jikime-myrepo   # Per-issue isolated directory
 
 hooks:
-  after_create: |             # Runs once when workspace is first created
+  after_create: |             # Runs once on first workspace creation
     git clone https://github.com/owner/repo.git .
+    echo "[after_create] cloned to $(pwd)"
 
-  before_run: |               # Runs before each Claude session
+  before_run: |               # Runs before every Claude session
     git fetch origin
     git checkout main
     git reset --hard origin/main
+    echo "[before_run] synced to $(git rev-parse --short HEAD)"
 
-  after_run: |                # Runs after each Claude session
-    echo "done"
+  after_run: |                # Runs after every Claude session (failures ignored)
+    echo "[after_run] done"
+    if [ -d "/path/to/local-project/.git" ]; then
+      cd "/path/to/local-project" && git pull --ff-only 2>&1 \
+        && echo "[after_run] local repo synced at $(git rev-parse --short HEAD)" \
+        || echo "[after_run] git pull skipped (local changes or diverged branch)"
+    fi
 
   timeout_ms: 60000           # Hook timeout (60s)
 
 agent:
   max_concurrent_agents: 1    # Parallel Claude sessions
   max_turns: 5                # Max multi-turn loops per session
-  max_retry_backoff_ms: 60000 # Max retry delay cap
+  max_retry_backoff_ms: 300000 # Max retry delay cap (5 minutes)
 
 claude:
-  stall_timeout_ms: 180000    # Kill Claude if no output for 3 min
+  command: claude              # Claude CLI command
+  turn_timeout_ms: 3600000    # Max session duration (1 hour)
+  stall_timeout_ms: 180000    # Kill Claude if no output for 3 minutes
 
 server:
-  port: 8888                  # HTTP status API (0 = disabled)
+  port: 8888                  # HTTP status API port (0 = disabled)
 ---
 
 You are an autonomous software engineer working on a GitHub issue.
@@ -119,262 +173,464 @@ You are an autonomous software engineer working on a GitHub issue.
 
 ### Template Variables
 
-| Variable | Example |
-|----------|---------|
-| `{{ issue.id }}` | `9` |
-| `{{ issue.identifier }}` | `owner/repo#9` |
-| `{{ issue.title }}` | `Add footer component` |
-| `{{ issue.description }}` | Full issue body |
-| `{{ issue.state }}` | `jikime-todo` |
-| `{{ issue.url }}` | `https://github.com/...` |
-| `{{ attempt }}` | `2` (retry count) |
+| Variable | Example | Description |
+|----------|---------|-------------|
+| `{{ issue.id }}` | `9` | GitHub Issue number |
+| `{{ issue.identifier }}` | `owner/repo#9` | Human-readable key |
+| `{{ issue.title }}` | `Add footer component` | Issue title |
+| `{{ issue.description }}` | *(full issue body)* | Issue body |
+| `{{ issue.state }}` | `jikime-todo` | Current state |
+| `{{ issue.url }}` | `https://github.com/...` | Issue URL |
+| `{{ issue.branch_name }}` | `fix/footer` | Tracker-provided branch hint |
+| `{{ attempt }}` | `2` | Retry count (empty string on first run) |
+
+> **Strict mode**: Any unresolved `{{ variable }}` in the rendered prompt causes a `template_render_error` — the run attempt fails and is retried.
 
 ---
 
-## Complete Flow
+## How to Create WORKFLOW.md
+
+### Option 1: CLI Wizard — `jikime serve init` (Recommended)
+
+```bash
+cd my-project
+jikime serve init
+```
+
+An interactive prompt asks 5 questions:
 
 ```
-1. POLL ─────────────────────────────────────────────────────
-   jikime serve polls GitHub every 15s
-   Fetches issues with label: jikime-todo
-   Sorts by priority → created_at → identifier
+? GitHub repo slug (owner/repo)  › owner/my-repo   ← auto-detected from git remote
+? Active label                   › jikime-todo
+? Workspace root                 › /tmp/jikime-my-repo
+? HTTP status API port           › 8888 (recommended)
+? Max concurrent agents          › 1 (safe, recommended)
+```
 
-2. DISPATCH ─────────────────────────────────────────────────
-   Orchestrator checks: not already running, not claimed
-   Marks issue as claimed
-   Spawns worker goroutine
+If a `.claude/` directory is present, **JiKiME-ADK mode** (J.A.R.V.I.S. agent stack) is selected automatically. Otherwise, **basic mode** (standard git/PR workflow) is used.
 
-3. WORKSPACE SETUP ──────────────────────────────────────────
-   Creates /tmp/workspaces/owner_repo_9/
-   Runs after_create hook: git clone ...
-   (On retry: before_run syncs to latest main)
+After generation, the next steps are displayed:
 
-4. CLAUDE RUNS ──────────────────────────────────────────────
-   Renders prompt template with issue data
-   Executes: claude --print --output-format stream-json \
-             --verbose --dangerously-skip-permissions \
-             "RENDERED PROMPT"
-   Streams output (stall detection: 3 min timeout)
+```
+✓ WORKFLOW.md created
 
-5. BRANCH + PR + MERGE ──────────────────────────────────────
-   Claude: git checkout -b fix/issue-9
-   Claude: (writes code)
-   Claude: git push origin fix/issue-9
-   Claude: gh pr create --body "Closes #9"
-   Claude: gh pr merge --squash --delete-branch --admin
+Configuration:
+  Repo:    owner/my-repo
+  Label:   jikime-todo
+  Mode:    JiKiME-ADK (J.A.R.V.I.S. agent stack)
+  Port:    8888
 
-6. AUTO-CLOSE ───────────────────────────────────────────────
-   GitHub: PR merged → Issue #9 closed (state: Done)
+Next steps:
+  1. Create GitHub labels:
+     gh label create "jikime-todo" --repo owner/my-repo ...
+     gh label create "jikime-done" --repo owner/my-repo ...
 
-7. RECONCILE ────────────────────────────────────────────────
-   jikime serve detects issue is in terminal state (Done)
-   Runs after_run hook
-   Cleans up workspace
-   Releases claim
+  2. Start the service:
+     jikime serve WORKFLOW.md
+```
+
+### Option 2: Claude Code Slash Command — `/jikime:harness`
+
+Run inside a Claude Code session in a JiKiME-ADK project:
+
+```
+/jikime:harness
+/jikime:harness --port 9999 --label ai-todo
+/jikime:harness --basic --output my-workflow.md
+```
+
+Claude analyzes the project and generates an optimized WORKFLOW.md:
+- Detects `owner/repo` slug from git remote automatically
+- Determines mode from `.claude/` directory presence
+- Detects tech stack (package.json / go.mod / requirements.txt) → selects specialist agent
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--basic` | off | Ignore `.claude/`, force basic mode |
+| `--port N` | `8888` | HTTP API port |
+| `--label LABEL` | `jikime-todo` | Active label name |
+| `--output PATH` | `WORKFLOW.md` | Output file path |
+
+### Option 3: Copy Example File
+
+```bash
+cp WORKFLOW.md.example ./WORKFLOW.md
+vim WORKFLOW.md
 ```
 
 ---
 
-## Features
+## Quick Start
 
-### Workspace Isolation
-
-Each issue gets its own directory under `workspace.root`:
-
-```
-/tmp/my-workspaces/
-  owner_repo_7/    ← Issue #7
-  owner_repo_9/    ← Issue #9
-  owner_repo_11/   ← Issue #11
-```
-
-- Fresh `git clone` on first creation
-- `before_run` always syncs to latest `origin/main` before Claude starts
-- Isolated: multiple issues can run concurrently without interfering
-
-### Branch Strategy & Conflict Prevention
-
-| Risk | Protection |
-|------|-----------|
-| Concurrent agents pushing to same branch | Each issue gets its own `fix/issue-N` branch |
-| Stale workspace on retry | `before_run`: `git reset --hard origin/main` |
-| Human push conflicts | Branch isolation — humans and agents never touch the same branch |
-| Two agents racing on main | `max_concurrent_agents: 1` (default) |
-
-### Lifecycle Hooks
-
-| Hook | Timing | Common Use |
-|------|--------|-----------|
-| `after_create` | First workspace creation | `git clone` |
-| `before_run` | Before every Claude session | `git fetch && git reset --hard origin/main` |
-| `after_run` | After every Claude session | `git pull` local sync |
-| `before_remove` | Before workspace deletion | Archive artifacts |
-
-### Retry with Exponential Backoff
-
-Failed sessions are automatically retried:
-
-```
-attempt 1 → 10s delay
-attempt 2 → 20s delay
-attempt 3 → 40s delay
-attempt 4 → 60s (capped by max_retry_backoff_ms)
-```
-
-Formula: `min(10000 × 2^(attempt-1), max_retry_backoff_ms)`
-
-Retry is cancelled if the issue moves to a terminal state.
-
-### Token Tracking
-
-With `--output-format stream-json`, token usage is captured from every session and accumulated:
-
-```json
-{
-  "jikime_totals": {
-    "InputTokens": 12840,
-    "OutputTokens": 3210,
-    "TotalTokens": 16050,
-    "SecondsRunning": 342.5
-  }
-}
-```
-
-### HTTP Status API
-
-When `server.port` is set, a status API is available:
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Human-readable text dashboard |
-| `/api/v1/state` | GET | JSON state snapshot |
-| `/api/v1/refresh` | POST | Trigger immediate poll |
+### Full Setup Flow
 
 ```bash
-# Live dashboard (refresh every 3s)
-watch -n 3 'curl -s http://127.0.0.1:8888/'
+# 1. Create WORKFLOW.md
+cd my-project
+jikime serve init
 
-# JSON state
-curl -s http://127.0.0.1:8888/api/v1/state | jq .
-
-# Trigger immediate poll
-curl -s -X POST http://127.0.0.1:8888/api/v1/refresh
-```
-
-### WORKFLOW.md Hot-Reload
-
-Edit `WORKFLOW.md` while `jikime serve` is running — changes are applied on the next tick without restarting. Uses `fsnotify` to watch for file changes.
-
----
-
-## Usage Guide
-
-### 1. Install
-
-```bash
-go install github.com/jikime/jikime-adk@latest
-```
-
-### 2. Create WORKFLOW.md
-
-```bash
-# Copy the example
-cp WORKFLOW.md.example my-project/WORKFLOW.md
-
-# Edit for your project
-vim my-project/WORKFLOW.md
-```
-
-### 3. Create GitHub Labels
-
-```bash
+# 2. Create GitHub labels
 gh label create "jikime-todo" --repo owner/repo \
   --description "Ready for AI agent" --color "0e8a16"
 
 gh label create "jikime-done" --repo owner/repo \
   --description "Completed by AI agent" --color "6f42c1"
+
+# 3. Verify GitHub authentication
+gh auth login
+gh auth status
+
+# 4. Start the service
+jikime serve WORKFLOW.md
+
+# Override port (takes precedence over WORKFLOW.md server.port)
+jikime serve --port 8888 WORKFLOW.md
 ```
 
-### 4. Authenticate
+### Assigning Issues
 
 ```bash
-gh auth login    # jikime serve uses gh auth token automatically
-```
+# Add label to an existing issue
+gh issue edit 42 --repo owner/repo --add-label "jikime-todo"
 
-### 5. Start the Service
-
-```bash
-jikime serve my-project/WORKFLOW.md
-
-# With explicit port
-jikime serve --port 8888 my-project/WORKFLOW.md
-```
-
-### 6. Create Issues
-
-```bash
+# Create a new issue directly
 gh issue create --repo owner/repo \
   --title "Add dark mode toggle" \
   --label "jikime-todo" \
-  --body "Add a dark/light mode toggle button..."
+  --body "Add a dark/light mode toggle button to the header.
+
+## Requirements
+- Persist preference in localStorage
+- Default: follow system preference
+- Implement with CSS variables"
 ```
 
-### 7. Monitor
+> **Tip**: The more specific your Issue description, the better Claude's implementation quality. Include reproduction steps, expected behavior, and relevant file paths.
 
-```bash
-# Terminal dashboard
-curl -s http://127.0.0.1:8888/
+---
 
-# Or JSON
-curl -s http://127.0.0.1:8888/api/v1/state | jq '.running'
+## Complete Execution Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  1. POLL (every 15s)                                            │
+│     GitHub API → fetch issues with active_states labels         │
+│     Sort: priority ascending → created_at oldest first          │
+│           → identifier lexicographic (tiebreaker)               │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ New issue found
+┌──────────────────────────────▼──────────────────────────────────┐
+│  2. DISPATCH                                                     │
+│     ✓ not in running map                                         │
+│     ✓ not in claimed set                                         │
+│     ✓ concurrent slots available (max_concurrent_agents)         │
+│     → mark as claimed, spawn worker goroutine                    │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────┐
+│  3. WORKSPACE SETUP                                              │
+│     Path: <workspace.root>/<sanitized_identifier>/              │
+│     e.g.: /tmp/jikime-myrepo/owner_repo_42/                     │
+│                                                                  │
+│     [First creation]  after_create hook                          │
+│       → git clone https://github.com/owner/repo.git .           │
+│                                                                  │
+│     [Every session]   before_run hook                            │
+│       → git fetch origin                                         │
+│       → git checkout main                                        │
+│       → git reset --hard origin/main   ← always latest main     │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────┐
+│  4. PROMPT RENDERING                                             │
+│     Substitute issue fields into WORKFLOW.md body               │
+│     {{ issue.id }} → "42"                                        │
+│     {{ issue.title }} → "Add dark mode toggle"                   │
+│     Unknown variable → template_render_error → retry             │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────┐
+│  5. CLAUDE EXECUTION                                             │
+│     Working directory: <workspace_path>/ (isolated from source)  │
+│                                                                  │
+│     claude --print \                                             │
+│            --output-format stream-json \                         │
+│            --verbose \                                           │
+│            --dangerously-skip-permissions \                      │
+│            --max-turns <max_turns> \                             │
+│            "RENDERED PROMPT"                                     │
+│                                                                  │
+│     [Stall detection] no output for stall_timeout_ms → kill     │
+│     [Turn timeout]    exceeds turn_timeout_ms → terminate        │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────┐
+│  6. GIT FLOW (Claude executes)                                   │
+│     git checkout -b fix/issue-42                                 │
+│     (write code / modify files)                                  │
+│     git add -A                                                   │
+│     git commit -m "fix: owner/repo#42 - Add dark mode toggle"   │
+│     git push origin fix/issue-42                                 │
+│                                                                  │
+│     gh pr create \                                               │
+│       --title "fix: Add dark mode toggle" \                      │
+│       --body "Closes #42" \                                      │
+│       --base main \                                              │
+│       --head fix/issue-42                                        │
+│                                                                  │
+│     gh pr merge --squash --delete-branch --admin                 │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ PR merged
+┌──────────────────────────────▼──────────────────────────────────┐
+│  7. AUTO-CLOSE                                                   │
+│     GitHub detects "Closes #42" → Issue #42 auto-closed         │
+│     Issue state: Done (in terminal_states)                       │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+┌──────────────────────────────▼──────────────────────────────────┐
+│  8. RECONCILE & CLEANUP                                          │
+│     Next poll tick detects Issue #42 is in terminal state        │
+│     Runs after_run hook (failures logged and ignored)            │
+│     Runs before_remove hook (failures logged and ignored)        │
+│     Deletes workspace directory                                  │
+│     Removes from claimed set                                     │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Developer Guidelines
+## How Git Works with Harness Engineering
 
-### Can developers work on main branch?
+### Branch Strategy
 
-The `git reset --hard origin/main` in `before_run` **only affects the agent's isolated workspace** under `workspace.root` (e.g., `/tmp/...`). Your local development directory is completely separate and unaffected.
-
-However, it is recommended that developers also use feature branches:
+Harness Engineering uses **branch isolation** as the core safety mechanism.
 
 ```
-✅ Developer: feature/my-work branch → PR → merge to main
-✅ Agent:     fix/issue-N branch     → PR → merge to main
+main ──●────────────────●────────────────●──▶
+        │                │                │
+        └─ fix/issue-42  └─ fix/issue-43  └─ fix/issue-44
+           (Claude #1)      (Claude #2)      (Claude #3)
+```
+
+- Agents never commit directly to `main`.
+- Each issue gets its own dedicated `fix/issue-N` branch.
+- PRs are squash-merged and the branch is auto-deleted.
+
+### Workspace Isolation
+
+```
+/tmp/jikime-myrepo/
+  owner_repo_42/    ← Issue #42 only (independent git repo)
+  owner_repo_43/    ← Issue #43 only (independent git repo)
+  owner_repo_44/    ← Issue #44 only (independent git repo)
+```
+
+Each workspace is a **fully independent git repository**. Multiple agents can run concurrently without affecting each other's files.
+
+### Conflict Prevention
+
+| Risk | Protection |
+|------|-----------|
+| Two agents pushing to the same branch | Issue ID-based dedicated branch (`fix/issue-N`) |
+| Stale codebase on retry | `before_run`: `git reset --hard origin/main` |
+| Agent and developer branch collision | Naming convention enforces separation (`fix/issue-*`) |
+| Multiple agents competing on main | `max_concurrent_agents: 1` (default) |
+| Source repository contamination | Agents only run inside `workspace.root` |
+
+### Developers and Agents Coexisting
+
+```
+✅ Developer: feature/my-feature-branch → PR → merge to main
+✅ Agent:     fix/issue-42              → PR → merge to main
 → main is always clean, no conflicts
 ```
 
-### Handling Long-Running Tasks
+The `git reset --hard origin/main` in `before_run` **only runs inside the agent's isolated workspace** under `workspace.root` (e.g., `/tmp/...`). Your local development directory is completely separate and unaffected.
 
-For tasks that require many steps (e.g., setting up a new framework), increase limits:
+---
 
-```yaml
-agent:
-  max_turns: 10
+## Monitoring and Status
 
-claude:
-  stall_timeout_ms: 300000   # 5 minutes
+### Terminal Logs
 
-hooks:
-  timeout_ms: 120000         # 2 minutes for npm install etc.
+`jikime serve` emits structured logs to stderr:
+
+```
+  ╔══════════════════════════════════════╗
+  ║   jikime serve — Agent Orchestrator  ║
+  ║   Powered by Claude Code + Symphony  ║
+  ╚══════════════════════════════════════╝
+
+  Workflow:    /my-project/WORKFLOW.md
+  Tracker:     github / owner/repo
+  Workspace:   /tmp/jikime-myrepo
+  Concurrency: 1 agents
+  Poll:        every 15000ms
+  HTTP API:    http://127.0.0.1:8888
+
+time=2026-03-09T10:00:00 level=INFO msg="polling..."
+time=2026-03-09T10:00:00 level=INFO msg="dispatching issue" issue_id=42
+time=2026-03-09T10:00:01 level=INFO msg="agent event" type=session_started issue_id=42
+time=2026-03-09T10:00:45 level=INFO msg="agent event" type=turn_completed issue_id=42
+```
+
+### HTTP Status API
+
+When `server.port` is configured, a status API is available:
+
+**Text Dashboard** — human-readable:
+
+```bash
+curl http://127.0.0.1:8888/
+
+# jikime serve — 2026-03-09T10:05:00Z
+#
+# Running (1):
+#   owner/repo#42        turns=3   Implementing dark mode toggle...
+#
+# Retrying (0):
+#
+# Tokens: input=8420 output=2140 total=10560 runtime=42.3s
+```
+
+**JSON Snapshot** — programmatic:
+
+```bash
+curl -s http://127.0.0.1:8888/api/v1/state | jq .
+
+# {
+#   "generated_at": "2026-03-09T10:05:00Z",
+#   "counts": { "running": 1, "retrying": 0 },
+#   "running": [
+#     {
+#       "IssueIdentifier": "owner/repo#42",
+#       "TurnCount": 3,
+#       "LastMessage": "Implementing dark mode toggle..."
+#     }
+#   ],
+#   "jikime_totals": {
+#     "InputTokens": 8420,
+#     "OutputTokens": 2140,
+#     "TotalTokens": 10560,
+#     "SecondsRunning": 42.3
+#   }
+# }
+```
+
+**Trigger Immediate Poll**:
+
+```bash
+curl -s -X POST http://127.0.0.1:8888/api/v1/refresh
+```
+
+**Live Monitoring**:
+
+```bash
+# Refresh dashboard every 3 seconds
+watch -n 3 'curl -s http://127.0.0.1:8888/'
+
+# Track running issues only
+watch -n 5 'curl -s http://127.0.0.1:8888/api/v1/state | jq ".running[].IssueIdentifier"'
+
+# Monitor token usage
+watch -n 10 'curl -s http://127.0.0.1:8888/api/v1/state | jq ".jikime_totals"'
+```
+
+### WORKFLOW.md Hot-Reload
+
+Edit `WORKFLOW.md` while `jikime serve` is running — changes apply on the next tick **without restarting**:
+
+```bash
+vim WORKFLOW.md   # e.g., increase max_concurrent_agents to 3
+# → jikime serve detects change via fsnotify
+# → logs "WORKFLOW.md reloaded"
+# → applies from next dispatch onward
+```
+
+Applied changes: poll interval, concurrency limits, active/terminal states, hooks, prompt template.
+In-flight agent sessions are not interrupted.
+
+---
+
+## Features
+
+### Workspace Safety Invariants (Symphony SPEC §9.5)
+
+1. **Agent runs only in the per-issue workspace**: `cwd == workspace_path` is validated before launch
+2. **Workspace path must stay inside workspace root**: prevents path traversal attacks
+3. **Workspace key sanitization**: only `[A-Za-z0-9._-]` allowed; other characters replaced with `_`
+
+### Lifecycle Hooks
+
+| Hook | Timing | On Failure | Common Use |
+|------|--------|-----------|-----------|
+| `after_create` | First workspace creation only | **Fatal** — aborts issue run | `git clone` |
+| `before_run` | Before every Claude session | **Fatal** — aborts that attempt | `git reset --hard origin/main` |
+| `after_run` | After every Claude session | **Ignored** (logged only) | Artifact collection, notifications |
+| `before_remove` | Before workspace deletion | **Ignored** (logged only) | Backup, archiving |
+
+All hooks must complete within `hooks.timeout_ms` (default: 60 seconds).
+
+### Exponential Backoff Retry
+
+Failed sessions are automatically retried:
+
+```
+Formula: min(10000 × 2^(attempt-1), max_retry_backoff_ms)
+
+attempt 1 → 10,000ms (10s)
+attempt 2 → 20,000ms (20s)
+attempt 3 → 40,000ms (40s)
+attempt 4 → 80,000ms (80s)
+...
+cap       → max_retry_backoff_ms (default: 300,000ms = 5min)
+```
+
+Retry is automatically cancelled when the issue moves to `terminal_states`.
+
+After a clean session exit, if the issue is still active, a 1-second continuation retry is scheduled to recheck the state.
+
+### Token Tracking
+
+With `--output-format stream-json`, token usage is captured and accumulated per session in real time:
+
+```bash
+curl -s http://127.0.0.1:8888/api/v1/state | jq '.jikime_totals'
+# {
+#   "InputTokens": 45820,
+#   "OutputTokens": 12340,
+#   "TotalTokens": 58160,
+#   "SecondsRunning": 1842.5
+# }
 ```
 
 ---
 
-## Reference
+## Configuration Reference
 
-### Configuration Defaults
+### All Configuration Keys
 
-| Key | Default | Description |
-|-----|---------|-------------|
-| `polling.interval_ms` | `30000` | Poll interval |
-| `agent.max_concurrent_agents` | `10` | Parallel sessions |
-| `agent.max_turns` | `20` | Turns per session |
-| `agent.max_retry_backoff_ms` | `300000` | Max retry delay |
-| `claude.stall_timeout_ms` | `300000` | Stall kill timeout |
-| `hooks.timeout_ms` | `60000` | Hook execution timeout |
-| `server.port` | `0` | HTTP API (disabled) |
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `tracker.kind` | string | — | `"github"` or `"linear"` (required) |
+| `tracker.api_key` | string | `$GITHUB_TOKEN` or `gh auth token` | GitHub token |
+| `tracker.project_slug` | string | — | `"owner/repo"` (required) |
+| `tracker.active_states` | list | `["Todo", "In Progress"]` | Issues to process |
+| `tracker.terminal_states` | list | `["Closed", "Cancelled", "Done"]` | Completed issue states |
+| `polling.interval_ms` | int | `30000` | Poll interval (ms) |
+| `workspace.root` | path | `/tmp/jikime_workspaces` | Workspace root directory |
+| `hooks.after_create` | script | — | First-creation hook |
+| `hooks.before_run` | script | — | Pre-session hook |
+| `hooks.after_run` | script | — | Post-session hook |
+| `hooks.before_remove` | script | — | Pre-deletion hook |
+| `hooks.timeout_ms` | int | `60000` | Hook execution timeout |
+| `agent.max_concurrent_agents` | int | `10` | Parallel sessions |
+| `agent.max_turns` | int | `20` | Max turns per session |
+| `agent.max_retry_backoff_ms` | int | `300000` | Max retry delay cap |
+| `claude.command` | string | `"claude"` | Claude CLI command |
+| `claude.turn_timeout_ms` | int | `3600000` | Max session duration (1 hour) |
+| `claude.stall_timeout_ms` | int | `300000` | Stall kill timeout |
+| `server.port` | int | `0` (disabled) | HTTP API port |
 
 ### CLI Flags
 
@@ -382,11 +638,32 @@ hooks:
 jikime serve [WORKFLOW.md] [flags]
 
 Flags:
-  -p, --port int   HTTP API server port (0 = disabled)
+  -p, --port int   HTTP API server port (0 = disabled, overrides WORKFLOW.md server.port)
+
+Subcommands:
+  init             Interactive wizard to create WORKFLOW.md
 ```
 
-### Related
+### Handling Long-Running Tasks
+
+For tasks that require many steps (new framework setup, large-scale refactoring):
+
+```yaml
+agent:
+  max_turns: 15              # Allow more multi-turn loops
+
+claude:
+  turn_timeout_ms: 7200000   # 2 hours (default: 1 hour)
+  stall_timeout_ms: 600000   # 10 min stall detection (default: 5 min)
+
+hooks:
+  timeout_ms: 180000         # 3 min for npm install / pip install
+```
+
+---
+
+## Related
 
 - [PR Lifecycle Automation](./pr-lifecycle.md)
 - [Structured Task Format](./task-format.md)
-- [Hooks Configuration](./hooks.md)
+- [POC-First Workflow](./poc.md)
