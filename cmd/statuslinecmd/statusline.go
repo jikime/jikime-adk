@@ -1,5 +1,6 @@
 // Package statuslinecmd provides the statusline command for jikime-adk.
-// This renders status information for Claude Code's statusline feature.
+// UI format ported from claude-statusline by Kamran Ahmed.
+// Adds: Rate limit (5h window, weekly, extra credits) via Claude OAuth API.
 package statuslinecmd
 
 import (
@@ -12,272 +13,92 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 
 	router "jikime-adk/internal/router"
-	"jikime-adk/version"
 )
 
-// SessionContext represents the JSON context from Claude Code
+// ── ANSI Colors (RGB, matching claude-statusline) ──────────────────────────
+const (
+	colorBlue         = "\033[38;2;0;153;255m"
+	colorOrange       = "\033[38;2;255;176;85m"
+	colorGreen        = "\033[38;2;0;175;80m"
+	colorCyan         = "\033[38;2;86;182;194m"
+	colorRed          = "\033[38;2;255;85;85m"
+	colorYellow       = "\033[38;2;230;200;0m"
+	colorWhite        = "\033[38;2;220;220;220m"
+	colorMagenta      = "\033[38;2;180;140;255m"
+	colorDim          = "\033[2m"
+	colorReset        = "\033[0m"
+	// Bright variants for rate limit labels
+	colorBrightOrange = "\033[38;2;255;165;0m"   // vivid amber-orange (current)
+	colorBrightCyan   = "\033[38;2;0;220;255m"   // vivid aqua-cyan   (weekly)
+)
+
+// ── SessionContext: JSON from Claude Code stdin ────────────────────────────
 type SessionContext struct {
 	Model struct {
 		DisplayName string `json:"display_name"`
 		Name        string `json:"name"`
 	} `json:"model"`
-	Version     string `json:"version"`
-	CWD         string `json:"cwd"`
-	OutputStyle struct {
-		Name string `json:"name"`
-	} `json:"output_style"` // kept for backward compat, statusline uses state file
-	Cost struct {
-		TotalCostUSD      float64 `json:"total_cost_usd"`
-		TotalDurationMS   int     `json:"total_duration_ms"`
-		TotalLinesAdded   int     `json:"total_lines_added"`
-		TotalLinesRemoved int     `json:"total_lines_removed"`
-	} `json:"cost"`
+	Version string `json:"version"`
+	CWD     string `json:"cwd"`
+	Session struct {
+		StartTime string `json:"start_time"`
+	} `json:"session"`
 	ContextWindow struct {
+		ContextWindowSize int `json:"context_window_size"`
+		// current_usage: current turn (preferred, matches claude-statusline)
+		CurrentUsage struct {
+			InputTokens              int `json:"input_tokens"`
+			CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
+			CacheReadInputTokens     int `json:"cache_read_input_tokens"`
+		} `json:"current_usage"`
+		// Fallback: session totals
 		TotalInputTokens  int `json:"total_input_tokens"`
 		TotalOutputTokens int `json:"total_output_tokens"`
-		ContextWindowSize int `json:"context_window_size"`
 	} `json:"context_window"`
-	Statusline struct {
-		Mode string `json:"mode"`
-	} `json:"statusline"`
 }
 
-// StatuslineData contains all the information for the statusline
-type StatuslineData struct {
-	Model           string
-	ClaudeVersion   string
-	Version         string
-	Branch          string
-	GitStatus       string
-	Duration        string
-	Directory       string
-	ActiveTask      string
-	Orchestrator    string
-	UpdateAvailable bool
-	LatestVersion   string
-	ContextWindow   string
-	MemoryUsage     string
-	TokenCost       string // e.g., "$0.12"
-	TokensUsed      int    // raw token count for cost calculation
-	ContextPercent  int    // context usage percentage for progress bar
+// ── RateLimitData: Claude OAuth usage API response ─────────────────────────
+type RateLimitData struct {
+	FiveHour struct {
+		Utilization float64 `json:"utilization"`
+		ResetsAt    string  `json:"resets_at"`
+	} `json:"five_hour"`
+	SevenDay struct {
+		Utilization float64 `json:"utilization"`
+		ResetsAt    string  `json:"resets_at"`
+	} `json:"seven_day"`
+	ExtraUsage struct {
+		IsEnabled    bool    `json:"is_enabled"`
+		Utilization  float64 `json:"utilization"`
+		UsedCredits  int     `json:"used_credits"`
+		MonthlyLimit int     `json:"monthly_limit"`
+	} `json:"extra_usage"`
 }
 
-// StatuslineConfig represents the configuration from statusline-config.yaml
-type StatuslineConfig struct {
-	Statusline struct {
-		Enabled           bool   `yaml:"enabled"`
-		Mode              string `yaml:"mode"`
-		RefreshIntervalMS int    `yaml:"refresh_interval_ms"`
-		Display struct {
-			Model           bool `yaml:"model"`
-			Version         bool `yaml:"version"`
-			ContextWindow   bool `yaml:"context_window"`
-			Orchestrator    bool `yaml:"orchestrator"`
-			MemoryUsage     bool `yaml:"memory_usage"`
-			TodoCount       bool `yaml:"todo_count"`
-			Branch          bool `yaml:"branch"`
-			GitStatus       bool `yaml:"git_status"`
-			Duration        bool `yaml:"duration"`
-			Directory       bool `yaml:"directory"`
-			ActiveTask      bool `yaml:"active_task"`
-			UpdateIndicator bool `yaml:"update_indicator"`
-			TokenCost       bool `yaml:"token_cost"`
-			ProgressBar     bool `yaml:"progress_bar"`
-		} `yaml:"display"`
-		TokenCost struct {
-			InputPricePerMTok  float64 `yaml:"input_price_per_mtok"`
-			OutputPricePerMTok float64 `yaml:"output_price_per_mtok"`
-		} `yaml:"token_cost"`
-		Format struct {
-			MaxBranchLength int    `yaml:"max_branch_length"`
-			TruncateWith    string `yaml:"truncate_with"`
-			Separator       string `yaml:"separator"`
-			Icons           struct {
-				Git           string `yaml:"git"`
-				GitStatus     string `yaml:"git_status"`
-				Model         string `yaml:"model"`
-				ClaudeVersion string `yaml:"claude_version"`
-				ContextWindow string `yaml:"context_window"`
-				Orchestrator  string `yaml:"orchestrator"`
-				Duration      string `yaml:"duration"`
-				Update        string `yaml:"update"`
-				Project       string `yaml:"project"`
-			} `yaml:"icons"`
-		} `yaml:"format"`
-		Cache struct {
-			GitTTLSeconds    int `yaml:"git_ttl_seconds"`
-			UpdateTTLSeconds int `yaml:"update_ttl_seconds"`
-		} `yaml:"cache"`
-	} `yaml:"statusline"`
+// in-memory cache for rate limit data
+var rateLimitCache struct {
+	sync.RWMutex
+	data    *RateLimitData
+	fetched time.Time
 }
 
-// Global configuration and cache
-var (
-	// Update check cache
-	updateCache struct {
-		sync.RWMutex
-		checked   time.Time
-		available bool
-		version   string
-	}
+const (
+	rateLimitCacheDuration = 60 * time.Second
+	rateLimitCacheFile     = "/tmp/claude/statusline-usage-cache.json"
 )
 
-// loadConfig loads the statusline configuration from YAML file
-// projectPath is the project directory (ctx.CWD from Claude Code)
-func loadConfig(projectPath string) *StatuslineConfig {
-	config := &StatuslineConfig{}
-	// Set defaults
-	config.Statusline.Enabled = true
-	config.Statusline.Mode = "extended"
-	config.Statusline.Display.Model = true
-	config.Statusline.Display.Branch = true
-	config.Statusline.Display.GitStatus = true
-	config.Statusline.Display.ContextWindow = true
-	config.Statusline.Display.Orchestrator = true
-	config.Statusline.Display.ActiveTask = true
-	config.Statusline.Display.UpdateIndicator = true
-	config.Statusline.Display.TokenCost = true
-	config.Statusline.Display.ProgressBar = true
-	// Token cost defaults (Claude Opus pricing)
-	config.Statusline.TokenCost.InputPricePerMTok = 15.0  // $15 per 1M input tokens
-	config.Statusline.TokenCost.OutputPricePerMTok = 75.0 // $75 per 1M output tokens
-	config.Statusline.Format.Separator = " ┃ " // Geek style separator
-	config.Statusline.Format.MaxBranchLength = 30
-	config.Statusline.Format.TruncateWith = "..."
-	config.Statusline.Cache.GitTTLSeconds = 10
-	config.Statusline.Cache.UpdateTTLSeconds = 600
-
-	// Build config paths - prioritize project directory, then home directory
-	var configPaths []string
-
-	// 1. Project directory (from Claude Code's cwd)
-	if projectPath != "" {
-		configPaths = append(configPaths, filepath.Join(projectPath, ".jikime", "config", "statusline-config.yaml"))
-	}
-
-	// 2. Current working directory (fallback)
-	configPaths = append(configPaths, filepath.Join(".jikime", "config", "statusline-config.yaml"))
-
-	// 3. Home directory
-	if home, err := os.UserHomeDir(); err == nil {
-		configPaths = append(configPaths, filepath.Join(home, ".jikime", "config", "statusline-config.yaml"))
-	}
-
-	for _, path := range configPaths {
-		if data, err := os.ReadFile(path); err == nil {
-			yaml.Unmarshal(data, config)
-			break
-		}
-	}
-
-	return config
-}
-
-// checkForUpdate checks if a new version of jikime-adk is available
-func checkForUpdate(projectPath string) (bool, string) {
-	config := loadConfig(projectPath)
-	ttl := time.Duration(config.Statusline.Cache.UpdateTTLSeconds) * time.Second
-	if ttl == 0 {
-		ttl = 10 * time.Minute
-	}
-
-	updateCache.RLock()
-	if time.Since(updateCache.checked) < ttl {
-		available, ver := updateCache.available, updateCache.version
-		updateCache.RUnlock()
-		return available, ver
-	}
-	updateCache.RUnlock()
-
-	// Check GitHub releases API
-	client := &http.Client{Timeout: 5 * time.Second}
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/jikime/jikime-adk/releases/latest", nil)
-	if err != nil {
-		return false, ""
-	}
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	req.Header.Set("User-Agent", "jikime-adk/"+version.String())
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return false, ""
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return false, ""
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return false, ""
-	}
-
-	var release struct {
-		TagName string `json:"tag_name"`
-	}
-	if err := json.Unmarshal(body, &release); err != nil {
-		return false, ""
-	}
-
-	latestVersion := strings.TrimPrefix(release.TagName, "v")
-	currentVersion := version.String()
-	available := compareVersions(currentVersion, latestVersion) < 0
-
-	// Update cache
-	updateCache.Lock()
-	updateCache.checked = time.Now()
-	updateCache.available = available
-	updateCache.version = latestVersion
-	updateCache.Unlock()
-
-	return available, latestVersion
-}
-
-// compareVersions compares two version strings
-func compareVersions(v1, v2 string) int {
-	v1Parts := strings.Split(v1, ".")
-	v2Parts := strings.Split(v2, ".")
-
-	maxLen := len(v1Parts)
-	if len(v2Parts) > maxLen {
-		maxLen = len(v2Parts)
-	}
-
-	for i := 0; i < maxLen; i++ {
-		var n1, n2 int
-		if i < len(v1Parts) {
-			fmt.Sscanf(v1Parts[i], "%d", &n1)
-		}
-		if i < len(v2Parts) {
-			fmt.Sscanf(v2Parts[i], "%d", &n2)
-		}
-
-		if n1 < n2 {
-			return -1
-		}
-		if n1 > n2 {
-			return 1
-		}
-	}
-
-	return 0
-}
+// ── Command ────────────────────────────────────────────────────────────────
 
 // NewStatusline creates the statusline command.
 func NewStatusline() *cobra.Command {
-	var mode string
 	var demo bool
-	var pretty bool
 	var debug bool
 
 	cmd := &cobra.Command{
@@ -285,689 +106,705 @@ func NewStatusline() *cobra.Command {
 		Short: "Render statusline for Claude Code",
 		Long: `Generate status information for Claude Code's statusline feature.
 
-The statusline displays:
-  🤖 Model     - AI model name (e.g., Opus 4.5)
-  💰 Context   - Context window usage with progress bar
-  💵 Cost      - Estimated token cost (e.g., $0.12)
-  📁 Directory - Current project directory
-  🔀 Branch    - Git branch and status
-  💾 Memory    - Memory usage
-  ⏱️  Duration  - Session duration
-  📦 Version   - JikiME-ADK version
+UI Format (claude-statusline compatible):
+  Line 1: Model │ ✍️ Context% │ Directory (branch*) │ ⏱ Session │ ◐/◑ thinking
 
-Modes:
-  extended (default) - Balanced view with progress bar
-  compact            - Condensed view with essential info
-  minimal            - Model and context only
-  geek               - Full developer mode with all features`,
-		Example: `  # Show statusline (extended mode with progress bar)
+  current ●●●●●○○○○○  45% ⟳ 2:30pm
+  weekly  ○○○○○○○○○○   5% ⟳ mar 15
+  extra   ●●○○○○○○○○  $12.50/$50.00
+  resets  mar 15`,
+		Example: `  # Render statusline (Claude Code pipes JSON via stdin automatically)
   jikime statusline
-
-  # Show compact statusline
-  jikime statusline --mode compact
-
-  # Show full geek mode with all features
-  jikime statusline --mode geek
 
   # Show demo with sample data
   jikime statusline --demo
 
-  # Show in pretty box format
-  jikime statusline --pretty`,
+  # Debug: show raw JSON from Claude Code
+  jikime statusline --debug`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if demo {
 				runDemo()
 				return nil
 			}
-			if pretty {
-				runPretty()
-				return nil
-			}
 			if debug {
 				return runDebug()
 			}
-			return runStatusline(mode)
+			return runStatusline()
 		},
 	}
 
-	cmd.Flags().StringVarP(&mode, "mode", "m", "", "Display mode (compact, extended, minimal)")
 	cmd.Flags().BoolVar(&demo, "demo", false, "Show demo statusline with sample data")
-	cmd.Flags().BoolVar(&pretty, "pretty", false, "Show pretty box formatted output")
 	cmd.Flags().BoolVar(&debug, "debug", false, "Show raw JSON input from Claude Code")
 
 	return cmd
 }
 
-func runStatusline(modeOverride string) error {
-	// Read session context from stdin
-	sessionContext := readSessionContext()
+// ── Main render pipeline ───────────────────────────────────────────────────
 
-	// Determine display mode
-	mode := modeOverride
-	if mode == "" {
-		mode = sessionContext.Statusline.Mode
+func runStatusline() error {
+	ctx := readSessionContext()
+	output := renderStatusline(ctx)
+	if output != "" {
+		fmt.Print(output)
 	}
-	if mode == "" {
-		mode = os.Getenv("JIKIME_STATUSLINE_MODE")
-	}
-	if mode == "" {
-		mode = "extended"
-	}
-
-	// Build statusline data
-	data := buildStatuslineData(sessionContext)
-
-	// Render and output
-	statusline := renderStatusline(data, mode)
-	if statusline != "" {
-		fmt.Print(statusline)
-	}
-
 	return nil
 }
 
 func readSessionContext() *SessionContext {
 	ctx := &SessionContext{}
 
-	// Check if stdin has data
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		return ctx
 	}
-
-	// Only read if stdin is a pipe or has data
 	if (stat.Mode() & os.ModeCharDevice) != 0 {
 		return ctx
 	}
 
-	// Read from stdin
 	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024) // 1MB buffer for large contexts
 	var input strings.Builder
 	for scanner.Scan() {
 		input.WriteString(scanner.Text())
 	}
 
 	if input.Len() > 0 {
-		json.Unmarshal([]byte(input.String()), ctx)
+		json.Unmarshal([]byte(input.String()), ctx) //nolint:errcheck
 	}
 
 	return ctx
 }
 
-func buildStatuslineData(ctx *SessionContext) *StatuslineData {
-	config := loadConfig(ctx.CWD)
+// renderStatusline produces the full statusline output.
+//
+// Output structure:
+//
+//	Line 1: Claude Sonnet 4.6 │ ✍️ 45% │ jikime-adk (main*) │ ⏱ 2h30m │ ◐ thinking
+//	(blank)
+//	current ●●●●●○○○○○  45% ⟳ 2:30pm
+//	weekly  ○○○○○○○○○○   5% ⟳ mar 15
+//	extra   ●●○○○○○○○○  $12.50/$50.00
+//	resets  mar 15
+func renderStatusline(ctx *SessionContext) string {
+	sep := fmt.Sprintf(" %s│%s ", colorDim, colorReset)
 
-	data := &StatuslineData{
-		Version: version.String(),
+	// ── Model ──
+	modelName := resolveModelName(ctx)
+
+	// ── Context % ──
+	windowSize := ctx.ContextWindow.ContextWindowSize
+	if windowSize == 0 {
+		windowSize = 200000
 	}
-
-	// Extract model name — check router state first
-	if state := router.LoadState(); state != nil && state.Active {
-		data.Model = fmt.Sprintf("%s/%s", state.Provider, state.Model)
-	} else if ctx.Model.DisplayName != "" {
-		data.Model = ctx.Model.DisplayName
-	} else if ctx.Model.Name != "" {
-		data.Model = ctx.Model.Name
-	} else {
-		data.Model = "Unknown"
+	// Prefer current_usage (per-turn), fallback to session totals
+	currentTokens := ctx.ContextWindow.CurrentUsage.InputTokens +
+		ctx.ContextWindow.CurrentUsage.CacheCreationInputTokens +
+		ctx.ContextWindow.CurrentUsage.CacheReadInputTokens
+	if currentTokens == 0 {
+		currentTokens = ctx.ContextWindow.TotalInputTokens + ctx.ContextWindow.TotalOutputTokens
 	}
-
-	// Claude version
-	data.ClaudeVersion = ctx.Version
-
-	// Directory
-	if ctx.CWD != "" {
-		data.Directory = filepath.Base(ctx.CWD)
-		if data.Directory == "" {
-			data.Directory = filepath.Base(filepath.Dir(ctx.CWD))
+	pct := 0
+	if windowSize > 0 && currentTokens > 0 {
+		pct = currentTokens * 100 / windowSize
+		if pct > 100 {
+			pct = 100
 		}
 	}
-	if data.Directory == "" {
-		data.Directory = "project"
+
+	// ── Directory + Git ──
+	cwd := ctx.CWD
+	if cwd == "" {
+		cwd, _ = os.Getwd()
+	}
+	dirName := filepath.Base(cwd)
+	gitBranch := ""
+	gitDirty := false
+	if isGitRepo(cwd) {
+		gitBranch = getGitBranch(cwd)
+		gitDirty = isGitDirty(cwd)
 	}
 
-	// Orchestrator (read from state file, dynamic switching)
-	data.Orchestrator = readOrchestratorFromState(ctx.CWD)
-
-	// Context window (tokens)
-	data.ContextWindow = extractContextWindow(ctx)
-
-	// Token cost - use actual cost from Claude Code directly
-	if config.Statusline.Display.TokenCost && ctx.Cost.TotalCostUSD > 0 {
-		data.TokenCost = formatCost(ctx.Cost.TotalCostUSD)
+	// ── Session duration ──
+	sessionDuration := ""
+	if ctx.Session.StartTime != "" && ctx.Session.StartTime != "null" {
+		sessionDuration = calcSessionDuration(ctx.Session.StartTime)
 	}
 
-	// Token usage from Claude Code (total_input_tokens + total_output_tokens)
-	totalTokens := ctx.ContextWindow.TotalInputTokens + ctx.ContextWindow.TotalOutputTokens
-	data.TokensUsed = totalTokens
+	// ── Thinking status ──
+	thinkingOn := isThinkingEnabled()
 
-	// Context percentage for progress bar
-	if ctx.ContextWindow.ContextWindowSize > 0 && totalTokens > 0 {
-		data.ContextPercent = (totalTokens * 100) / ctx.ContextWindow.ContextWindowSize
+	// ── Orchestrator ──
+	orchestrator := readOrchestrator(cwd)
+
+	// ── Build Line 1 ──
+	pctColor := colorForPct(pct)
+
+	var line1 strings.Builder
+	line1.WriteString(colorBlue)
+	line1.WriteString(modelName)
+	line1.WriteString(colorReset)
+
+	line1.WriteString(sep)
+	fmt.Fprintf(&line1, "%s💬 %s%s", colorMagenta, orchestrator, colorReset)
+
+	line1.WriteString(sep)
+	line1.WriteString("🧠 ")
+	line1.WriteString(pctColor)
+	fmt.Fprintf(&line1, "%d%%", pct)
+	line1.WriteString(colorReset)
+
+	line1.WriteString(sep)
+	line1.WriteString(colorCyan)
+	line1.WriteString(dirName)
+	line1.WriteString(colorReset)
+	if gitBranch != "" {
+		dirtyMark := ""
+		if gitDirty {
+			dirtyMark = colorRed + "*"
+		}
+		fmt.Fprintf(&line1, " %s(%s%s%s)%s",
+			colorGreen, gitBranch, dirtyMark, colorGreen, colorReset)
 	}
 
-	// Duration - use actual duration from Claude Code
-	if ctx.Cost.TotalDurationMS > 0 {
-		data.Duration = formatDuration(ctx.Cost.TotalDurationMS)
+	if sessionDuration != "" {
+		line1.WriteString(sep)
+		fmt.Fprintf(&line1, "%s⏱%s %s%s%s",
+			colorDim, colorReset, colorWhite, sessionDuration, colorReset)
 	}
 
-	// Git info (only if in a git repo)
-	data.Branch, data.GitStatus = collectGitInfo(ctx.CWD)
-
-	// Memory usage (if enabled)
-	if config.Statusline.Display.MemoryUsage {
-		data.MemoryUsage = collectMemoryUsage()
+	line1.WriteString(sep)
+	if thinkingOn {
+		fmt.Fprintf(&line1, "%s◐ thinking%s", colorMagenta, colorReset)
+	} else {
+		fmt.Fprintf(&line1, "%s◑ thinking%s", colorDim, colorReset)
 	}
 
-	// Check for updates (if enabled)
-	if config.Statusline.Display.UpdateIndicator {
-		data.UpdateAvailable, data.LatestVersion = checkForUpdate(ctx.CWD)
+	// ── Rate limits (async-friendly: uses cached data) ──
+	rateData := fetchRateLimits()
+	rateLines := renderRateLimitLines(rateData)
+
+	// ── Assemble output ──
+	var out strings.Builder
+	out.WriteString(line1.String())
+	if rateLines != "" {
+		out.WriteString("\n\n")
+		out.WriteString(rateLines)
 	}
 
-	return data
+	return out.String()
 }
 
-// readOrchestratorFromState reads the active orchestrator from .jikime/state/active-orchestrator
-func readOrchestratorFromState(cwd string) string {
+// ── Orchestrator resolution ────────────────────────────────────────────────
+
+// readOrchestrator reads the active orchestrator from .jikime/state/active-orchestrator,
+// walking up from cwd. Defaults to "J.A.R.V.I.S." if not found.
+func readOrchestrator(cwd string) string {
 	if cwd == "" {
 		return "J.A.R.V.I.S."
 	}
-
-	// Walk up directories to find .jikime
 	dir := cwd
 	for {
-		statePath := filepath.Join(dir, ".jikime", "state", "active-orchestrator")
-		data, err := os.ReadFile(statePath)
+		data, err := os.ReadFile(filepath.Join(dir, ".jikime", "state", "active-orchestrator"))
 		if err == nil {
-			name := strings.TrimSpace(string(data))
-			if name != "" {
+			if name := strings.TrimSpace(string(data)); name != "" {
 				return name
 			}
 		}
-
 		parent := filepath.Dir(dir)
 		if parent == dir {
 			break
 		}
 		dir = parent
 	}
-
-	return "J.A.R.V.I.S." // Default
+	return "J.A.R.V.I.S."
 }
 
-func extractContextWindow(ctx *SessionContext) string {
-	if ctx.ContextWindow.ContextWindowSize == 0 {
+// ── Model resolution ───────────────────────────────────────────────────────
+
+func resolveModelName(ctx *SessionContext) string {
+	// Check jikime router state first (dynamic model switching)
+	if state := router.LoadState(); state != nil && state.Active {
+		return fmt.Sprintf("%s/%s", state.Provider, state.Model)
+	}
+	if ctx.Model.DisplayName != "" {
+		return ctx.Model.DisplayName
+	}
+	if ctx.Model.Name != "" {
+		return ctx.Model.Name
+	}
+	return "Claude"
+}
+
+// ── Color helpers ──────────────────────────────────────────────────────────
+
+// colorForPct returns ANSI color based on usage percentage.
+// green <50%, orange 50-69%, yellow 70-89%, red 90%+
+func colorForPct(pct int) string {
+	switch {
+	case pct >= 90:
+		return colorRed
+	case pct >= 70:
+		return colorYellow
+	case pct >= 50:
+		return colorOrange
+	default:
+		return colorGreen
+	}
+}
+
+// ── Bar chart ──────────────────────────────────────────────────────────────
+
+// buildBar renders a ●●●●●○○○○○ bar using usage-based color (green→red).
+func buildBar(pct, width int) string {
+	return buildBarColor(pct, width, colorForPct(pct))
+}
+
+// buildBarColor renders a ██████░░░░ bar with an explicit fill color.
+// Uses block elements (█/░) instead of circles to avoid terminal overlap issues.
+func buildBarColor(pct, width int, fillColor string) string {
+	if pct < 0 {
+		pct = 0
+	}
+	if pct > 100 {
+		pct = 100
+	}
+	filled := pct * width / 100
+	empty := width - filled
+
+	var bar strings.Builder
+	bar.WriteString(fillColor)
+	for i := 0; i < filled; i++ {
+		bar.WriteString("█")
+	}
+	bar.WriteString(colorDim)
+	for i := 0; i < empty; i++ {
+		bar.WriteString("░")
+	}
+	bar.WriteString(colorReset)
+	return bar.String()
+}
+
+// utilToPct safely converts API utilization value to integer percentage.
+// Handles both 0.0-1.0 (fraction) and 0-100 (percentage) formats.
+func utilToPct(u float64) int {
+	if u > 1.0 {
+		return int(u)
+	}
+	return int(u * 100)
+}
+
+// ── Git helpers ────────────────────────────────────────────────────────────
+
+func isGitRepo(dir string) bool {
+	cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+	cmd.Dir = dir
+	return cmd.Run() == nil
+}
+
+func getGitBranch(dir string) string {
+	cmd := exec.Command("git", "symbolic-ref", "--short", "HEAD")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(out))
+}
+
+func isGitDirty(dir string) bool {
+	cmd := exec.Command("git", "status", "--porcelain")
+	cmd.Dir = dir
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return len(strings.TrimSpace(string(out))) > 0
+}
+
+// ── Session duration ───────────────────────────────────────────────────────
+
+// calcSessionDuration converts an ISO 8601 start time to human-readable elapsed time.
+func calcSessionDuration(startTimeISO string) string {
+	var t time.Time
+	var err error
+
+	for _, format := range []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05",
+	} {
+		t, err = time.Parse(format, startTimeISO)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
 		return ""
 	}
 
-	// Use total_input_tokens + total_output_tokens from Claude Code
-	currentTokens := ctx.ContextWindow.TotalInputTokens + ctx.ContextWindow.TotalOutputTokens
-	if currentTokens > 0 {
-		return fmt.Sprintf("%s/%s",
-			formatTokenCount(currentTokens),
-			formatTokenCount(ctx.ContextWindow.ContextWindowSize))
+	elapsed := time.Since(t)
+	seconds := int(elapsed.Seconds())
+	if seconds < 0 {
+		seconds = 0
+	}
+
+	switch {
+	case seconds >= 3600:
+		h := seconds / 3600
+		m := (seconds % 3600) / 60
+		if m > 0 {
+			return fmt.Sprintf("%dh%dm", h, m)
+		}
+		return fmt.Sprintf("%dh", h)
+	case seconds >= 60:
+		return fmt.Sprintf("%dm", seconds/60)
+	default:
+		return fmt.Sprintf("%ds", seconds)
+	}
+}
+
+// ── Thinking status ────────────────────────────────────────────────────────
+
+func isThinkingEnabled() bool {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return false
+	}
+	data, err := os.ReadFile(filepath.Join(home, ".claude", "settings.json"))
+	if err != nil {
+		return false
+	}
+	var settings map[string]interface{}
+	if err := json.Unmarshal(data, &settings); err != nil {
+		return false
+	}
+	if val, ok := settings["alwaysThinkingEnabled"]; ok {
+		if b, ok := val.(bool); ok {
+			return b
+		}
+	}
+	return false
+}
+
+// ── OAuth token resolution ─────────────────────────────────────────────────
+
+// getOAuthToken resolves the Claude OAuth token from multiple sources:
+// 1. CLAUDE_CODE_OAUTH_TOKEN env var
+// 2. macOS Keychain (security find-generic-password)
+// 3. ~/.claude/.credentials.json
+// 4. Linux secret-tool
+func getOAuthToken() string {
+	// 1. Environment variable
+	if tok := os.Getenv("CLAUDE_CODE_OAUTH_TOKEN"); tok != "" {
+		return tok
+	}
+
+	// 2. macOS Keychain
+	if _, err := exec.LookPath("security"); err == nil {
+		cmd := exec.Command("security", "find-generic-password", "-s", "Claude Code-credentials", "-w")
+		if blob, err := cmd.Output(); err == nil && len(blob) > 0 {
+			if tok := extractAccessToken(bytes.TrimSpace(blob)); tok != "" {
+				return tok
+			}
+		}
+	}
+
+	// 3. Credentials file (~/.claude/.credentials.json)
+	if home, err := os.UserHomeDir(); err == nil {
+		credsPath := filepath.Join(home, ".claude", ".credentials.json")
+		if data, err := os.ReadFile(credsPath); err == nil {
+			if tok := extractAccessToken(data); tok != "" {
+				return tok
+			}
+		}
+	}
+
+	// 4. Linux secret-tool
+	if _, err := exec.LookPath("secret-tool"); err == nil {
+		cmd := exec.Command("secret-tool", "lookup", "service", "Claude Code-credentials")
+		if blob, err := cmd.Output(); err == nil && len(blob) > 0 {
+			if tok := extractAccessToken(bytes.TrimSpace(blob)); tok != "" {
+				return tok
+			}
+		}
 	}
 
 	return ""
 }
 
-// formatTokenCount formats token count with K/M units for display
-func formatTokenCount(tokens int) string {
-	if tokens >= 1000000 {
-		return fmt.Sprintf("%.1fM", float64(tokens)/1000000)
+// extractAccessToken extracts .claudeAiOauth.accessToken from JSON blob.
+func extractAccessToken(jsonBlob []byte) string {
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(jsonBlob, &parsed); err != nil {
+		return ""
 	}
-	if tokens >= 1000 {
-		return fmt.Sprintf("%.1fK", float64(tokens)/1000)
+	oauthData, ok := parsed["claudeAiOauth"].(map[string]interface{})
+	if !ok {
+		return ""
 	}
-	return fmt.Sprintf("%d", tokens)
+	tok, _ := oauthData["accessToken"].(string)
+	return tok
 }
 
-// formatCost formats the cost in USD
-func formatCost(cost float64) string {
-	if cost < 0.001 {
-		return fmt.Sprintf("$%.4f", cost)
-	} else if cost < 0.01 {
-		return fmt.Sprintf("$%.3f", cost)
-	} else if cost < 1.0 {
-		return fmt.Sprintf("$%.2f", cost)
+// ── Rate limit fetching ────────────────────────────────────────────────────
+
+// fetchRateLimits returns rate limit data with 60s caching (memory + file).
+func fetchRateLimits() *RateLimitData {
+	// 1. In-memory cache
+	rateLimitCache.RLock()
+	if rateLimitCache.data != nil && time.Since(rateLimitCache.fetched) < rateLimitCacheDuration {
+		data := rateLimitCache.data
+		rateLimitCache.RUnlock()
+		return data
 	}
-	return fmt.Sprintf("$%.1f", cost)
-}
+	rateLimitCache.RUnlock()
 
-// formatDuration formats duration in milliseconds to human readable
-func formatDuration(ms int) string {
-	if ms < 1000 {
-		return fmt.Sprintf("%dms", ms)
-	}
-	seconds := ms / 1000
-	if seconds < 60 {
-		return fmt.Sprintf("%ds", seconds)
-	}
-	minutes := seconds / 60
-	if minutes < 60 {
-		return fmt.Sprintf("%dm", minutes)
-	}
-	hours := minutes / 60
-	remainingMin := minutes % 60
-	if remainingMin > 0 {
-		return fmt.Sprintf("%dh%dm", hours, remainingMin)
-	}
-	return fmt.Sprintf("%dh", hours)
-}
-
-
-func collectGitInfo(projectPath string) (branch, status string) {
-	// Check if git is available
-	if _, err := exec.LookPath("git"); err != nil {
-		return "", ""
-	}
-
-	// Use project path if provided, otherwise use current directory
-	workDir := projectPath
-	if workDir == "" {
-		var err error
-		workDir, err = os.Getwd()
-		if err != nil {
-			return "", ""
-		}
-	}
-
-	// Check if we're in a git repo
-	cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
-	cmd.Dir = workDir
-	if err := cmd.Run(); err != nil {
-		return "", ""
-	}
-
-	// Get branch
-	branchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
-	branchCmd.Dir = workDir
-	branchOutput, err := branchCmd.Output()
-	if err != nil {
-		branch = ""
-	} else {
-		branch = strings.TrimSpace(string(branchOutput))
-	}
-
-	// Get status counts
-	statusCmd := exec.Command("git", "status", "--porcelain")
-	statusCmd.Dir = workDir
-	statusOutput, err := statusCmd.Output()
-	if err != nil {
-		return branch, ""
-	}
-
-	var staged, modified, untracked int
-	lines := strings.Split(strings.TrimSpace(string(statusOutput)), "\n")
-	for _, line := range lines {
-		if len(line) < 2 {
-			continue
-		}
-		indexStatus := line[0]
-		workTreeStatus := line[1]
-
-		if indexStatus == '?' {
-			untracked++
-		} else {
-			if indexStatus != ' ' && indexStatus != '?' {
-				staged++
-			}
-			if workTreeStatus != ' ' && workTreeStatus != '?' {
-				modified++
-			}
-		}
-	}
-
-	if staged > 0 || modified > 0 || untracked > 0 {
-		status = fmt.Sprintf("+%d M%d ?%d", staged, modified, untracked)
-	}
-
-	return branch, status
-}
-
-// collectMemoryUsage collects system memory usage information
-func collectMemoryUsage() string {
-	var memStats runtime.MemStats
-	runtime.ReadMemStats(&memStats)
-
-	// Use Sys (total memory obtained from OS) for more accurate representation
-	// This includes heap, stack, and other memory
-	memMB := float64(memStats.Sys) / (1024 * 1024)
-
-	return formatMemorySize(memMB)
-}
-
-// formatMemorySize formats memory size in MB to human-readable string
-func formatMemorySize(sizeMB float64) string {
-	if sizeMB >= 1024 {
-		return fmt.Sprintf("%.1fGB", sizeMB/1024)
-	} else if sizeMB >= 100 {
-		return fmt.Sprintf("%.0fMB", sizeMB)
-	} else if sizeMB >= 10 {
-		return fmt.Sprintf("%.1fMB", sizeMB)
-	}
-	return fmt.Sprintf("%.2fMB", sizeMB)
-}
-
-
-// renderProgressBar renders a progress bar for context usage
-func renderProgressBar(percent int, width int) string {
-	if width <= 0 {
-		width = 10
-	}
-	if percent < 0 {
-		percent = 0
-	}
-	if percent > 100 {
-		percent = 100
-	}
-
-	filled := (percent * width) / 100
-	// Show at least 1 filled block if percent > 0
-	if percent > 0 && filled == 0 {
-		filled = 1
-	}
-	empty := width - filled
-
-	var bar strings.Builder
-	for i := 0; i < filled; i++ {
-		bar.WriteString(ProgressFilled)
-	}
-	for i := 0; i < empty; i++ {
-		bar.WriteString(ProgressEmpty)
-	}
-
-	return bar.String()
-}
-
-// Pretty icons for statusline
-const (
-	IconModel     = "🤖"
-	IconContext   = "💰"
-	IconOrchestrator = "💬"
-	IconDirectory = "📁"
-	IconGitStatus = "📊"
-	IconMemory    = "💾"
-	IconBranch    = "🔀"
-	IconTask      = "🎯"
-	IconUpdate    = "🔄"
-	IconVersion   = "📦"
-	IconClaude    = "🤖"
-	IconTime      = "⏱️"
-	// New icons
-	IconCost = "💵"
-)
-
-// Progress bar characters
-const (
-	ProgressFilled = "▰"
-	ProgressEmpty  = "▱"
-)
-
-func renderStatusline(data *StatuslineData, mode string) string {
-	var parts []string
-	separator := " ┃ " // Geek style separator
-
-	switch mode {
-	case "minimal":
-		// Minimal: 🤖 Model | Progress Bar
-		if data.Model != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconModel, data.Model))
-		}
-		if data.ContextPercent > 0 {
-			parts = append(parts, fmt.Sprintf("%s %d%%", renderProgressBar(data.ContextPercent, 10), data.ContextPercent))
-		} else if data.ContextWindow != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconContext, data.ContextWindow))
-		}
-
-	case "compact":
-		// Compact with progress bar style
-		if data.Model != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconModel, data.Model))
-		}
-		// Context with progress bar
-		if data.ContextPercent > 0 {
-			parts = append(parts, fmt.Sprintf("%s %s %d%%", renderProgressBar(data.ContextPercent, 10), data.ContextWindow, data.ContextPercent))
-		} else if data.ContextWindow != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconContext, data.ContextWindow))
-		}
-		// Token cost
-		if data.TokenCost != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconCost, data.TokenCost))
-		}
-		// Orchestrator
-		if data.Orchestrator != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconOrchestrator, data.Orchestrator))
-		}
-		// Git info
-		if data.Branch != "" && data.Branch != "N/A" {
-			branchInfo := fmt.Sprintf("%s %s", IconBranch, truncateBranch(data.Branch, 15))
-			if data.GitStatus != "" {
-				branchInfo = fmt.Sprintf("%s %s", branchInfo, data.GitStatus)
-			}
-			parts = append(parts, branchInfo)
-		}
-		// Memory usage
-		if data.MemoryUsage != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconMemory, data.MemoryUsage))
-		}
-		// Update indicator
-		if data.UpdateAvailable && data.LatestVersion != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconUpdate, data.LatestVersion))
-		}
-
-	case "geek":
-		// Full geek mode with all bells and whistles
-		if data.Model != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconModel, data.Model))
-		}
-		// Context with fancy progress bar
-		if data.ContextPercent > 0 {
-			bar := renderProgressBar(data.ContextPercent, 10)
-			contextColor := getContextColor(data.ContextPercent)
-			parts = append(parts, fmt.Sprintf("%s%s %s (%d%%)%s", contextColor, bar, data.ContextWindow, data.ContextPercent, "\033[0m"))
-		} else if data.ContextWindow != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconContext, data.ContextWindow))
-		}
-		// Token cost
-		if data.TokenCost != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconCost, data.TokenCost))
-		}
-		// Orchestrator
-		if data.Orchestrator != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconOrchestrator, data.Orchestrator))
-		}
-		// Directory
-		if data.Directory != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconDirectory, data.Directory))
-		}
-		// Git info combined
-		if data.Branch != "" && data.Branch != "N/A" {
-			branchInfo := fmt.Sprintf("%s %s", IconBranch, truncateBranch(data.Branch, 20))
-			if data.GitStatus != "" {
-				branchInfo = fmt.Sprintf("%s %s", branchInfo, data.GitStatus)
-			}
-			parts = append(parts, branchInfo)
-		}
-		// Memory usage
-		if data.MemoryUsage != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconMemory, data.MemoryUsage))
-		}
-		// Duration
-		if data.Duration != "" && data.Duration != "0m" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconTime, data.Duration))
-		}
-		// Version with update indicator
-		if data.Version != "" {
-			versionStr := fmt.Sprintf("%s v%s", IconVersion, data.Version)
-			if data.UpdateAvailable && data.LatestVersion != "" {
-				versionStr = fmt.Sprintf("%s %s→%s", versionStr, IconUpdate, data.LatestVersion)
-			}
-			parts = append(parts, versionStr)
-		}
-
-	default: // extended (default) - balanced geek style
-		if data.Model != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconModel, data.Model))
-		}
-		// Context with progress bar
-		if data.ContextPercent > 0 {
-			parts = append(parts, fmt.Sprintf("%s %s", renderProgressBar(data.ContextPercent, 10), data.ContextWindow))
-		} else if data.ContextWindow != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconContext, data.ContextWindow))
-		}
-		// Token cost
-		if data.TokenCost != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconCost, data.TokenCost))
-		}
-		// Orchestrator
-		if data.Orchestrator != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconOrchestrator, data.Orchestrator))
-		}
-		// Directory
-		if data.Directory != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconDirectory, data.Directory))
-		}
-		// Git info
-		if data.Branch != "" && data.Branch != "N/A" {
-			branchInfo := fmt.Sprintf("%s %s", IconBranch, truncateBranch(data.Branch, 25))
-			if data.GitStatus != "" {
-				branchInfo = fmt.Sprintf("%s %s", branchInfo, data.GitStatus)
-			}
-			parts = append(parts, branchInfo)
-		}
-		// Memory usage
-		if data.MemoryUsage != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconMemory, data.MemoryUsage))
-		}
-		// Duration
-		if data.Duration != "" && data.Duration != "0m" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconTime, data.Duration))
-		}
-		// Active task
-		if data.ActiveTask != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconTask, data.ActiveTask))
-		}
-		// Version
-		if data.Version != "" {
-			parts = append(parts, fmt.Sprintf("%s v%s", IconVersion, data.Version))
-		}
-		// Update indicator
-		if data.UpdateAvailable && data.LatestVersion != "" {
-			parts = append(parts, fmt.Sprintf("%s %s", IconUpdate, data.LatestVersion))
-		}
-	}
-
-	return strings.Join(parts, separator)
-}
-
-// getContextColor returns ANSI color code based on context usage percentage
-func getContextColor(percent int) string {
-	if percent >= 80 {
-		return "\033[31m" // Red
-	} else if percent >= 50 {
-		return "\033[33m" // Yellow
-	}
-	return "\033[32m" // Green
-}
-
-// truncateBranch truncates branch name intelligently
-func truncateBranch(branch string, maxLen int) string {
-	if len(branch) <= maxLen {
-		return branch
-	}
-
-	// Try to preserve SPEC ID in feature branches
-	if strings.Contains(branch, "SPEC") {
-		parts := strings.Split(branch, "-")
-		for i, part := range parts {
-			if strings.Contains(part, "SPEC") && i+1 < len(parts) {
-				specTruncated := strings.Join(parts[:i+2], "-")
-				if len(specTruncated) <= maxLen {
-					return specTruncated
+	// 2. File cache (60s TTL)
+	if info, err := os.Stat(rateLimitCacheFile); err == nil {
+		if time.Since(info.ModTime()) < rateLimitCacheDuration {
+			if raw, err := os.ReadFile(rateLimitCacheFile); err == nil {
+				var data RateLimitData
+				if json.Unmarshal(raw, &data) == nil {
+					updateMemoryCache(&data)
+					return &data
 				}
 			}
 		}
 	}
 
-	// Simple truncation with ellipsis
-	if maxLen > 3 {
-		return branch[:maxLen-1] + "…"
+	// 3. Fetch from API
+	token := getOAuthToken()
+	if token == "" {
+		return loadStaleCache()
 	}
-	return branch[:maxLen]
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	req, err := http.NewRequest("GET", "https://api.anthropic.com/api/oauth/usage", nil)
+	if err != nil {
+		return loadStaleCache()
+	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("anthropic-beta", "oauth-2025-04-20")
+	req.Header.Set("User-Agent", "claude-code/2.1.34")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return loadStaleCache()
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return loadStaleCache()
+	}
+
+	// Validate response has expected fields
+	var raw map[string]interface{}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return loadStaleCache()
+	}
+	if _, ok := raw["five_hour"]; !ok {
+		return loadStaleCache()
+	}
+
+	var data RateLimitData
+	if err := json.Unmarshal(body, &data); err != nil {
+		return loadStaleCache()
+	}
+
+	// Save to file cache
+	os.MkdirAll("/tmp/claude", 0o755)                 //nolint:errcheck
+	os.WriteFile(rateLimitCacheFile, body, 0o644)     //nolint:errcheck
+	updateMemoryCache(&data)
+
+	return &data
 }
 
-// runDemo shows demo statusline with sample data
+func updateMemoryCache(data *RateLimitData) {
+	rateLimitCache.Lock()
+	rateLimitCache.data = data
+	rateLimitCache.fetched = time.Now()
+	rateLimitCache.Unlock()
+}
+
+func loadStaleCache() *RateLimitData {
+	raw, err := os.ReadFile(rateLimitCacheFile)
+	if err != nil {
+		return nil
+	}
+	var data RateLimitData
+	if err := json.Unmarshal(raw, &data); err != nil {
+		return nil
+	}
+	return &data
+}
+
+// ── Rate limit rendering ───────────────────────────────────────────────────
+
+// renderRateLimitLines produces the rate limit display lines.
+//
+//	current ●●●●●○○○○○  45% ⟳ 2:30pm   (orange — 5-hour window)
+//	weekly  ○○○○○○○○○○   5% ⟳ mar 15   (cyan   — 7-day window)
+//	extra   ●●○○○○○○○○  $12.50/$50.00
+//	resets  mar 15
+func renderRateLimitLines(data *RateLimitData) string {
+	if data == nil {
+		return ""
+	}
+
+	const barWidth = 10
+	var lines []string
+
+	// ── current (5-hour window) — bright orange theme ──
+	fivePct := utilToPct(data.FiveHour.Utilization)
+	fiveBar := buildBarColor(fivePct, barWidth, colorBrightOrange)
+	fiveReset := formatResetTime(data.FiveHour.ResetsAt, "time")
+	fiveResetStr := ""
+	if fiveReset != "" {
+		fiveResetStr = fmt.Sprintf(" %s⟳%s %s%s%s", colorDim, colorReset, colorBrightOrange, fiveReset, colorReset)
+	}
+	lines = append(lines, fmt.Sprintf("%scurrent%s %s %s%3d%%%s%s",
+		colorBrightOrange, colorReset,
+		fiveBar,
+		colorBrightOrange, fivePct, colorReset,
+		fiveResetStr))
+
+	// ── weekly (7-day window) — bright cyan theme ──
+	sevenPct := utilToPct(data.SevenDay.Utilization)
+	sevenBar := buildBarColor(sevenPct, barWidth, colorBrightCyan)
+	sevenReset := formatResetTime(data.SevenDay.ResetsAt, "datetime")
+	sevenResetStr := ""
+	if sevenReset != "" {
+		sevenResetStr = fmt.Sprintf(" %s⟳%s %s%s%s", colorDim, colorReset, colorBrightCyan, sevenReset, colorReset)
+	}
+	lines = append(lines, fmt.Sprintf("%sweekly%s  %s %s%3d%%%s%s",
+		colorBrightCyan, colorReset,
+		sevenBar,
+		colorBrightCyan, sevenPct, colorReset,
+		sevenResetStr))
+
+	// ── extra credits (if enabled) ──
+	if data.ExtraUsage.IsEnabled {
+		extraPct := utilToPct(data.ExtraUsage.Utilization)
+		extraBar := buildBar(extraPct, barWidth)
+		usedDollars := float64(data.ExtraUsage.UsedCredits) / 100.0
+		limitDollars := float64(data.ExtraUsage.MonthlyLimit) / 100.0
+
+		lines = append(lines, fmt.Sprintf("%sextra%s   %s %s$%.2f%s%s/%s%s$%.2f%s",
+			colorWhite, colorReset,
+			extraBar,
+			colorForPct(extraPct), usedDollars, colorReset,
+			colorDim, colorReset,
+			colorWhite, limitDollars, colorReset))
+
+		// resets: first of next month
+		now := time.Now()
+		firstOfNextMonth := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, now.Location())
+		extraReset := strings.ToLower(firstOfNextMonth.Format("Jan 2"))
+		lines = append(lines, fmt.Sprintf("%sresets%s  %s%s%s",
+			colorDim, colorReset, colorWhite, extraReset, colorReset))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// formatResetTime formats an ISO 8601 timestamp for display.
+//
+//	style "time"     → "2:30pm"
+//	style "datetime" → "mar 15, 2:30pm"
+//	style ""         → "mar 15"
+func formatResetTime(isoStr, style string) string {
+	if isoStr == "" || isoStr == "null" {
+		return ""
+	}
+
+	var t time.Time
+	var err error
+	for _, format := range []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05",
+	} {
+		t, err = time.Parse(format, isoStr)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		return ""
+	}
+
+	t = t.Local()
+	switch style {
+	case "time":
+		return strings.ToLower(t.Format("3:04pm"))
+	case "datetime":
+		return strings.ToLower(t.Format("Jan 2, 3:04pm"))
+	default:
+		return strings.ToLower(t.Format("Jan 2"))
+	}
+}
+
+// ── Demo ───────────────────────────────────────────────────────────────────
+
 func runDemo() {
-	demoData := &StatuslineData{
-		Model:          "Opus 4.5",
-		ClaudeVersion:  "2.0.46",
-		Version:        version.String(),
-		Orchestrator:   "J.A.R.V.I.S.",
-		Directory:      "jikime-adk",
-		Branch:         "main",
-		GitStatus:      "+0 M5 ?5",
-		ContextWindow:  "15K/200K",
-		ContextPercent: 7,
-		Duration:       "45m",
-		ActiveTask:     "IMPLEMENT",
-		MemoryUsage:    "128MB",
-		TokenCost:      "$0.23",
-	}
+	sep := fmt.Sprintf(" %s│%s ", colorDim, colorReset)
+
+	// Demo line 1
+	line1 := fmt.Sprintf(
+		"%sClaude Sonnet 4.6%s%s%s💬 J.A.R.V.I.S.%s%s🧠 %s45%%%s%s%sjikime-adk%s %s(main%s%s)%s%s%s⏱%s %s2h30m%s%s%s◐ thinking%s",
+		colorBlue, colorReset, sep,
+		colorMagenta, colorReset, sep,
+		colorGreen, colorReset, sep,
+		colorCyan, colorReset,
+		colorGreen, colorRed+"*", colorGreen, colorReset, sep,
+		colorDim, colorReset, colorWhite, colorReset, sep,
+		colorMagenta, colorReset,
+	)
+
+	// Demo rate limit data
+	now := time.Now().UTC()
+	demoData := &RateLimitData{}
+	demoData.FiveHour.Utilization = 0.45
+	demoData.FiveHour.ResetsAt = now.Add(2 * time.Hour).Format(time.RFC3339)
+	demoData.SevenDay.Utilization = 0.07
+	demoData.SevenDay.ResetsAt = now.AddDate(0, 0, 5).Format(time.RFC3339)
+	demoData.ExtraUsage.IsEnabled = true
+	demoData.ExtraUsage.Utilization = 0.25
+	demoData.ExtraUsage.UsedCredits = 1250
+	demoData.ExtraUsage.MonthlyLimit = 5000
+
+	rateLines := renderRateLimitLines(demoData)
 
 	fmt.Println()
-	fmt.Println("╔═══════════════════════════════════════════════════════════════════════════════════════════════════════════╗")
-	fmt.Println("║  🎨 JikiME-ADK Statusline Demo - Developer Geek Edition                                                   ║")
-	fmt.Println("╠═══════════════════════════════════════════════════════════════════════════════════════════════════════════╣")
-	fmt.Println("║                                                                                                           ║")
-	fmt.Println("║  📍 Minimal Mode:                                                                                         ║")
-	fmt.Printf("║  %s\n", renderStatusline(demoData, "minimal"))
-	fmt.Println("║                                                                                                           ║")
-	fmt.Println("║  📐 Compact Mode:                                                                                         ║")
-	fmt.Printf("║  %s\n", renderStatusline(demoData, "compact"))
-	fmt.Println("║                                                                                                           ║")
-	fmt.Println("║  📏 Extended Mode (Default):                                                                              ║")
-	fmt.Printf("║  %s\n", renderStatusline(demoData, "extended"))
-	fmt.Println("║                                                                                                           ║")
-	fmt.Println("║  🔥 Geek Mode (Full Features):                                                                            ║")
-	fmt.Printf("║  %s\n", renderStatusline(demoData, "geek"))
-	fmt.Println("║                                                                                                           ║")
-	fmt.Println("╚═══════════════════════════════════════════════════════════════════════════════════════════════════════════╝")
+	fmt.Println(line1)
 	fmt.Println()
-
-	// Progress bar legend
-	fmt.Println("📊 Progress Bar Legend:")
-	fmt.Printf("   Context Usage: %s = 0%% | %s = 50%% | %s = 100%%\n",
-		renderProgressBar(0, 10), renderProgressBar(50, 10), renderProgressBar(100, 10))
-	fmt.Println()
-
-	// Pretty box
-	fmt.Println("🎁 Pretty Box Format:")
-	printPrettyBox(renderStatusline(demoData, "extended"))
+	fmt.Println(rateLines)
 	fmt.Println()
 }
 
-// runDebug shows raw JSON input from Claude Code for debugging
+// ── Debug ──────────────────────────────────────────────────────────────────
+
 func runDebug() error {
-	// Check if stdin has data
 	stat, err := os.Stdin.Stat()
 	if err != nil {
 		fmt.Println("Error checking stdin:", err)
 		return err
 	}
-
-	// Only read if stdin is a pipe or has data
 	if (stat.Mode() & os.ModeCharDevice) != 0 {
 		fmt.Println("No stdin data (not piped)")
 		fmt.Println()
 		fmt.Println("Usage: echo '{...}' | jikime statusline --debug")
-		fmt.Println()
-		fmt.Println("In Claude Code, the JSON is automatically piped to statusline command.")
+		fmt.Println("In Claude Code, JSON is automatically piped to the statusline command.")
 		return nil
 	}
 
-	// Read from stdin
 	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 1024*1024), 1024*1024)
 	var input strings.Builder
 	for scanner.Scan() {
 		input.WriteString(scanner.Text())
@@ -981,13 +818,9 @@ func runDebug() error {
 
 	fmt.Println("╔════════════════════════════════════════════════════════════════╗")
 	fmt.Println("║  🔍 Claude Code Statusline Debug                               ║")
-	fmt.Println("╠════════════════════════════════════════════════════════════════╣")
-	fmt.Println("║                                                                ║")
-	fmt.Println("║  Raw JSON from Claude Code:                                    ║")
 	fmt.Println("╚════════════════════════════════════════════════════════════════╝")
 	fmt.Println()
 
-	// Pretty print JSON
 	var prettyJSON bytes.Buffer
 	if err := json.Indent(&prettyJSON, []byte(rawJSON), "", "  "); err != nil {
 		fmt.Println("Raw (not valid JSON):")
@@ -996,96 +829,25 @@ func runDebug() error {
 		fmt.Println(prettyJSON.String())
 	}
 
-	fmt.Println()
-
-	// Parse and show what we extracted
+	// Show parsed values
 	ctx := &SessionContext{}
-	if err := json.Unmarshal([]byte(rawJSON), ctx); err != nil {
-		fmt.Println("Parse error:", err)
-		return nil
+	if err := json.Unmarshal([]byte(rawJSON), ctx); err == nil {
+		fmt.Println("╔════════════════════════════════════════════════════════════════╗")
+		fmt.Println("║  📊 Extracted Values                                           ║")
+		fmt.Println("╚════════════════════════════════════════════════════════════════╝")
+		fmt.Println()
+		fmt.Printf("  Model.DisplayName:     %q\n", ctx.Model.DisplayName)
+		fmt.Printf("  Model.Name:            %q\n", ctx.Model.Name)
+		fmt.Printf("  CWD:                   %q\n", ctx.CWD)
+		fmt.Printf("  Session.StartTime:     %q\n", ctx.Session.StartTime)
+		fmt.Printf("  ContextWindow.Size:    %d\n", ctx.ContextWindow.ContextWindowSize)
+		fmt.Printf("  CurrentUsage.Input:    %d\n", ctx.ContextWindow.CurrentUsage.InputTokens)
+		fmt.Printf("  CurrentUsage.Cache+:   %d\n", ctx.ContextWindow.CurrentUsage.CacheCreationInputTokens)
+		fmt.Printf("  CurrentUsage.Cache~:   %d\n", ctx.ContextWindow.CurrentUsage.CacheReadInputTokens)
+		fmt.Printf("  Total.InputTokens:     %d\n", ctx.ContextWindow.TotalInputTokens)
+		fmt.Printf("  Total.OutputTokens:    %d\n", ctx.ContextWindow.TotalOutputTokens)
+		fmt.Println()
 	}
-
-	fmt.Println("╔════════════════════════════════════════════════════════════════╗")
-	fmt.Println("║  📊 Extracted Values                                           ║")
-	fmt.Println("╚════════════════════════════════════════════════════════════════╝")
-	fmt.Println()
-	fmt.Printf("  Model.DisplayName:     %q\n", ctx.Model.DisplayName)
-	fmt.Printf("  Model.Name:            %q\n", ctx.Model.Name)
-	fmt.Printf("  Version:               %q\n", ctx.Version)
-	fmt.Printf("  CWD:                   %q\n", ctx.CWD)
-	fmt.Printf("  OutputStyle.Name:      %q\n", ctx.OutputStyle.Name)
-	fmt.Printf("  Cost.TotalCostUSD:     $%.6f\n", ctx.Cost.TotalCostUSD)
-	fmt.Printf("  Cost.TotalDurationMS:  %dms\n", ctx.Cost.TotalDurationMS)
-	fmt.Printf("  ContextWindow.Size:    %d\n", ctx.ContextWindow.ContextWindowSize)
-	fmt.Printf("  ContextWindow.Input:   %d\n", ctx.ContextWindow.TotalInputTokens)
-	fmt.Printf("  ContextWindow.Output:  %d\n", ctx.ContextWindow.TotalOutputTokens)
-	fmt.Printf("  Statusline.Mode:       %q\n", ctx.Statusline.Mode)
-	fmt.Println()
 
 	return nil
-}
-
-// runPretty shows statusline in pretty box format
-func runPretty() {
-	sessionContext := readSessionContext()
-	data := buildStatuslineData(sessionContext)
-	content := renderStatusline(data, "extended")
-	printPrettyBox(content)
-}
-
-// printPrettyBox prints content in a decorative box
-func printPrettyBox(content string) {
-	// Strip ANSI codes for length calculation
-	visibleLen := len(stripAnsi(content))
-
-	// Calculate box width
-	boxWidth := visibleLen + 4
-	if boxWidth < 60 {
-		boxWidth = 60
-	}
-
-	// Build decorative box
-	fmt.Println()
-	fmt.Print("╭")
-	for i := 0; i < boxWidth; i++ {
-		fmt.Print("─")
-	}
-	fmt.Println("╮")
-
-	fmt.Print("│ ")
-	fmt.Print(content)
-	padding := boxWidth - visibleLen - 2
-	for i := 0; i < padding; i++ {
-		fmt.Print(" ")
-	}
-	fmt.Println(" │")
-
-	fmt.Print("╰")
-	for i := 0; i < boxWidth; i++ {
-		fmt.Print("─")
-	}
-	fmt.Println("╯")
-	fmt.Println()
-}
-
-// stripAnsi removes ANSI escape codes from string for length calculation
-func stripAnsi(s string) string {
-	var result strings.Builder
-	inEscape := false
-
-	for _, r := range s {
-		if r == '\033' {
-			inEscape = true
-			continue
-		}
-		if inEscape {
-			if r == 'm' {
-				inEscape = false
-			}
-			continue
-		}
-		result.WriteRune(r)
-	}
-
-	return result.String()
 }

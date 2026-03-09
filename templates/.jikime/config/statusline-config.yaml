@@ -1,99 +1,46 @@
-# JikiME-ADK Statusline Configuration for Claude Code
-# Optimized for Windows, macOS, and Linux environments
-# Updated: 2025-11-16 (Performance optimization for Issue #229)
+# JikiME-ADK Statusline Configuration
+# UI format: claude-statusline compatible (by Kamran Ahmed)
+# Updated: 2026-03-09
 
-statusline:
-  enabled: true
+# ── UI Layout ──────────────────────────────────────────────────────────────
+# Line 1: Model │ ✍️ Context% │ Directory (branch*) │ ⏱ Session │ ◐/◑ thinking
+#
+# current ●●●●●○○○○○  45% ⟳ 2:30pm    (5-hour window)
+# weekly  ○○○○○○○○○○   7% ⟳ mar 15    (7-day window)
+# extra   ●●○○○○○○○○  $12.50/$50.00    (if enabled)
+# resets  apr 1
 
-  # Display mode: compact (80 chars) | extended (120 chars) | minimal (40 chars)
-  mode: "extended"
+# ── Rate Limit Settings ────────────────────────────────────────────────────
+rate_limit:
+  # OAuth token resolution order:
+  #   1. CLAUDE_CODE_OAUTH_TOKEN env var
+  #   2. macOS Keychain (security find-generic-password -s "Claude Code-credentials")
+  #   3. ~/.claude/.credentials.json
+  #   4. Linux secret-tool
+  cache_seconds: 60                # File cache at /tmp/claude/statusline-usage-cache.json
 
-  # Refresh interval in milliseconds (Claude Code API limitation: 300ms)
-  refresh_interval_ms: 300
+# ── Thinking Status ────────────────────────────────────────────────────────
+# ◐ thinking (magenta) = alwaysThinkingEnabled: true  in ~/.claude/settings.json
+# ◑ thinking (dim)     = disabled or unset
 
-  # Color configuration
-  colors:
-    enabled: true
-    theme: "auto"  # auto | light | dark | high-contrast
-    palette:
-      model: "38;5;33"        # Blue
-      orchestrator: "38;5;219"   # Pink/Magenta
-      feature_branch: "38;5;226"   # Yellow
-      develop_branch: "38;5;51"    # Cyan
-      main_branch: "38;5;46"       # Green
-      staged: "38;5;46"            # Green
-      modified: "38;5;208"         # Orange
-      untracked: "38;5;196"        # Red
-      update_available: "38;5;208" # Orange
-      memory_usage: "38;5;172"     # Brown/Orange
-      duration: "38;5;240"         # Gray
-      todo_count: "38;5;123"       # Purple
-      separator: "38;5;250"        # Light Gray
+# ── Context Window ─────────────────────────────────────────────────────────
+# Reads from Claude Code stdin JSON:
+#   primary:  context_window.current_usage.{input_tokens, cache_creation_input_tokens, cache_read_input_tokens}
+#   fallback: context_window.{total_input_tokens, total_output_tokens}
+#   default:  200,000 tokens if context_window_size is 0 or missing
 
-  # Caching configuration (Windows optimization)
-  # Performance improvements: git 5→10s, jarvis 1→5s, update 300→600s
-  cache:
-    git_ttl_seconds: 10          # Git command results (5→10: process creation reduced)
-    metrics_ttl_seconds: 10      # Session metrics (unchanged)
-    jarvis_ttl_seconds: 5        # JARVIS task state (1→5: file I/O reduced 80%)
-    todo_ttl_seconds: 5          # TODO items count (3→5)
-    memory_ttl_seconds: 10       # Memory usage information (5→10)
-    orchestrator_ttl_seconds: 5   # Active orchestrator state (dynamic switching)
-    version_ttl_seconds: 120     # Version information (60→120)
-    update_ttl_seconds: 600      # Update check (300→600: network I/O reduced 83%)
-
-  # Information display settings - Custom ordered status bar
-  # Format: 🤖 Model | 🔅 Version | 💰 Context | 💬 Orchestrator | 📊 Changes | 🔀 Branch
-  display:
-    model: true                  # 🤖 Model name (Opus 4.5, Sonnet, etc.)
-    version: false               # 🗿 JikiME-ADK version (disabled - context window replaces it)
-    context_window: true         # 💰 Context window usage (15K/200K)
-    orchestrator: true           # 💬 Active orchestrator (J.A.R.V.I.S. / F.R.I.D.A.Y.)
-    memory_usage: true           # 💾 Session memory usage
-    todo_count: false            # 📋 Active TODO items count (disabled)
-    branch: true                 # 🔀 Git branch
-    git_status: true             # 📊 +0 M25 ?3 Git changes status
-    duration: true               # ⏱️ Session elapsed time
-    directory: true              # 📁 Project name/directory
-    active_task: true            # 🎯 JARVIS active task
-    update_indicator: true       # 🔄 Update notification
-    token_cost: true             # 💵 Token cost estimation
-    progress_bar: true           # ▰▱ Context usage progress bar
-
-  # Token cost configuration
-  token_cost:ㄴㅅ
-    input_price_per_mtok: 15.0   # $15 per 1M input tokens (Opus)
-    output_price_per_mtok: 75.0  # $75 per 1M output tokens (Opus)
-
-  # Error handling (Windows: reduced logging I/O)
-  error_handling:
-    graceful_degradation: true   # Return default values on error
-    log_level: "error"           # warning | error (Windows: error for minimal I/O)
-    fallback_text: ""            # Text to display on error (blank recommended)
-
-  # Format configuration
-  format:
-    max_branch_length: 30        # Truncate long branch names
-    truncate_with: "..."         # Truncation indicator
-    separator: " | "             # Section separator
-
-    # Icon configuration for better visual recognition
-    # Format: 🤖 Model | 🔅 Version | 💰 Context | 💬 Orchestrator | 📊 Changes | 🔀 Branch
-    icons:
-      git: "🔀"                 # Git branch icon
-      git_status: "📊"          # Git changes status (+0 M25 ?3)
-      staged: "+"               # Staged files count prefix
-      modified: "M"             # Modified files count prefix
-      untracked: "?"            # Untracked files count prefix
-      added: "➕"               # Added files
-      deleted: "➖"             # Deleted files
-      renamed: "🔄"             # Renamed files
-      conflict: "⚠️"           # Conflict files
-      model: "🤖"               # AI model
-      claude_version: "🔅"      # Claude Code version
-      context_window: "💰"      # Context window usage
-      orchestrator: "💬"        # Active orchestrator (J.A.R.V.I.S. / F.R.I.D.A.Y.)
-      duration: "⏱️"            # Time duration
-      todo: "📋"                # TODO items
-      update: "🔄"              # Update available
-      project: "📁"             # Project directory
+# ── Color Palette (ANSI RGB) ───────────────────────────────────────────────
+# Model name:     RGB(0, 153, 255)   blue
+# Context %:      green/orange/yellow/red by usage level
+#   0-49%:        RGB(0, 175, 80)    green
+#   50-69%:       RGB(255, 176, 85)  orange
+#   70-89%:       RGB(230, 200, 0)   yellow
+#   90-100%:      RGB(255, 85, 85)   red
+# Directory:      RGB(86, 182, 194)  cyan
+# Git branch:     RGB(0, 175, 80)    green
+# Git dirty (*):  RGB(255, 85, 85)   red
+# Thinking on:    RGB(180, 140, 255) magenta
+# Thinking off:   dim
+# Separator (│):  dim
+# Bar filled (●): color by usage %
+# Bar empty (○):  dim
