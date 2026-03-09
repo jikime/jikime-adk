@@ -54,7 +54,7 @@ Examples:
 			}
 
 			if _, err := os.Stat(absPath); os.IsNotExist(err) {
-				return fmt.Errorf("WORKFLOW.md not found: %s\n\nCreate a WORKFLOW.md file first. See: jikime serve --help", absPath)
+				return fmt.Errorf("WORKFLOW.md not found: %s\n\nRun 'jikime serve init' to create one interactively.", absPath)
 			}
 
 			// Override port from WORKFLOW.md server.port if not set via flag
@@ -67,6 +67,7 @@ Examples:
 	}
 
 	cmd.Flags().IntVarP(&port, "port", "p", 0, "HTTP API server port (0 = disabled)")
+	cmd.AddCommand(NewServeInit())
 	return cmd
 }
 

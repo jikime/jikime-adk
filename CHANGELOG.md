@@ -5,6 +5,26 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-03-09
+
+### Added
+
+- **`jikime serve init`**: Interactive CLI wizard to generate `WORKFLOW.md`
+  - Auto-detects GitHub remote URL (SSH and HTTPS formats) → suggests `owner/repo` slug
+  - Auto-detects `.claude/` directory → generates JiKiME-ADK mode or Basic mode prompt
+  - 5 interactive prompts: repo slug, active label, workspace root, HTTP port, max concurrent agents
+  - JiKiME-ADK mode: uses `jarvis` sub-agent with full agent stack
+  - Basic mode: standard git/PR workflow
+  - Prints GitHub label creation commands and `jikime serve` startup command on completion
+- **`/jikime:harness`** slash command: Claude Code-powered `WORKFLOW.md` generation
+  - Analyzes project context (git remote, .claude/, tech stack)
+  - Tech stack → specialist agent mapping (Next.js, Go, Python, Java, etc.)
+  - Argument flags: `--basic`, `--port N`, `--label LABEL`, `--output PATH`
+  - Guides GitHub label creation and service startup
+- **Improved error message**: `jikime serve` without WORKFLOW.md now suggests `jikime serve init`
+
+---
+
 ## [1.4.0] - 2026-03-09
 
 ### Added

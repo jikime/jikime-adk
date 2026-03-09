@@ -243,6 +243,7 @@ Definition: Commands for rapid fixes and automation where speed is prioritized.
 - /jikime:learn - Codebase exploration and learning
 - /jikime:poc - POC-First development workflow (Make It Work → Refactor → Test → Quality → PR)
 - /jikime:pr-lifecycle - PR lifecycle automation (create → CI monitor → review resolve → merge)
+- /jikime:harness - Generate WORKFLOW.md for jikime serve Harness Engineering automation
 - /jikime:github - GitHub workflow (parallel issue fixing + PR review via worktree isolation)
 - /jikime:refactor - Code refactoring with DDD
 - /jikime:security - Security audit and scanning
