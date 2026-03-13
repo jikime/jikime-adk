@@ -18,11 +18,75 @@ import (
 
 // streamEvent is a parsed line from --output-format stream-json.
 type streamEvent struct {
-	Type              string `json:"type"`
-	Result            string `json:"result"`
-	IsError           bool   `json:"is_error"`
-	TotalInputTokens  int    `json:"total_input_tokens"`
-	TotalOutputTokens int    `json:"total_output_tokens"`
+	Type              string          `json:"type"`
+	Result            string          `json:"result"`
+	IsError           bool            `json:"is_error"`
+	TotalInputTokens  int             `json:"total_input_tokens"`
+	TotalOutputTokens int             `json:"total_output_tokens"`
+	Message           *streamMessage  `json:"message"`
+}
+
+type streamMessage struct {
+	Content []streamContent `json:"content"`
+}
+
+type streamContent struct {
+	Type  string                     `json:"type"`
+	Text  string                     `json:"text"`
+	Name  string                     `json:"name"`
+	Input map[string]json.RawMessage `json:"input"`
+}
+
+// summarizeEvent converts a parsed stream-json event into a human-readable summary.
+// This ensures LastMessage is always meaningful text (not truncated JSON).
+func summarizeEvent(ev streamEvent) string {
+	switch ev.Type {
+	case "result":
+		if ev.Result != "" {
+			return truncate(ev.Result, 500)
+		}
+	case "assistant":
+		if ev.Message == nil {
+			break
+		}
+		for _, block := range ev.Message.Content {
+			switch block.Type {
+			case "tool_use":
+				summary := summarizeToolInput(block.Name, block.Input)
+				return "🔧 " + block.Name + ": " + summary
+			case "text":
+				if block.Text != "" {
+					return truncate(block.Text, 500)
+				}
+			}
+		}
+	case "user":
+		if ev.Message == nil {
+			break
+		}
+		for _, block := range ev.Message.Content {
+			if block.Type == "tool_result" {
+				return "✓ tool result received"
+			}
+		}
+	}
+	return ""
+}
+
+func summarizeToolInput(_ string, input map[string]json.RawMessage) string {
+	if input == nil {
+		return ""
+	}
+	// Common tool patterns
+	for _, key := range []string{"command", "file_path", "path", "pattern", "query"} {
+		if v, ok := input[key]; ok {
+			var s string
+			if json.Unmarshal(v, &s) == nil {
+				return truncate(s, 200)
+			}
+		}
+	}
+	return ""
 }
 
 // RunResult is the outcome of a single agent run attempt.
@@ -76,10 +140,11 @@ func (r *Runner) Run(ctx context.Context, issue *serve.Issue, prompt, workspaceP
 	sessionID := fmt.Sprintf("%s-%d", issue.Identifier, start.UnixMilli())
 
 	r.emit(serve.AgentEvent{
-		Type:      serve.AgentEventStarted,
-		IssueID:   issue.ID,
-		Message:   fmt.Sprintf("session_id=%s workspace=%s", sessionID, workspacePath),
-		Timestamp: start,
+		Type:            serve.AgentEventStarted,
+		IssueID:         issue.ID,
+		IssueIdentifier: issue.Identifier,
+		Message:         fmt.Sprintf("session_id=%s workspace=%s", sessionID, workspacePath),
+		Timestamp:       start,
 	})
 
 	// Validate workspace cwd (safety invariant)
@@ -180,36 +245,40 @@ func (r *Runner) runTurn(ctx context.Context, issue *serve.Issue, sessionID, pro
 				lastActivity = time.Now()
 
 				// Parse stream-json event; extract tokens from final result event.
-				msg := line
 				var ev streamEvent
+				msg := ""
 				if json.Unmarshal([]byte(line), &ev) == nil {
-					switch ev.Type {
-					case "result":
+					if ev.Type == "result" {
 						tokens = &serve.TokenUsage{
 							InputTokens:  ev.TotalInputTokens,
 							OutputTokens: ev.TotalOutputTokens,
 							TotalTokens:  ev.TotalInputTokens + ev.TotalOutputTokens,
 						}
-						if ev.Result != "" {
-							msg = ev.Result
-						}
 					}
+					msg = summarizeEvent(ev)
+				}
+				if msg == "" {
+					// Fallback: emit nothing meaningful, skip updating lastMessage
+					// to avoid showing raw JSON noise in the UI.
+					break
 				}
 
-				lastMessage = truncate(msg, 200)
+				lastMessage = msg
 				r.emit(serve.AgentEvent{
-					Type:      serve.AgentEventMessage,
-					IssueID:   issue.ID,
-					Message:   lastMessage,
-					Timestamp: lastActivity,
+					Type:            serve.AgentEventMessage,
+					IssueID:         issue.ID,
+					IssueIdentifier: issue.Identifier,
+					Message:         lastMessage,
+					Timestamp:       lastActivity,
 				})
 			case <-stallTicker.C:
 				if stallTimeout > 0 && time.Since(lastActivity) > stallTimeout {
 					r.emit(serve.AgentEvent{
-						Type:      serve.AgentEventStalled,
-						IssueID:   issue.ID,
-						Message:   fmt.Sprintf("no activity for %v", stallTimeout),
-						Timestamp: time.Now(),
+						Type:            serve.AgentEventStalled,
+						IssueID:         issue.ID,
+					IssueIdentifier: issue.Identifier,
+					Message:         fmt.Sprintf("no activity for %v", stallTimeout),
+					Timestamp:       time.Now(),
 					})
 					cancel() // trigger context cancellation
 					return
@@ -249,10 +318,11 @@ func (r *Runner) runTurn(ctx context.Context, issue *serve.Issue, sessionID, pro
 			}
 		}
 		r.emit(serve.AgentEvent{
-			Type:      serve.AgentEventFailed,
-			IssueID:   issue.ID,
-			Message:   fmt.Sprintf("exit_code=%d", exitCode),
-			Timestamp: time.Now(),
+			Type:            serve.AgentEventFailed,
+			IssueID:         issue.ID,
+			IssueIdentifier: issue.Identifier,
+			Message:         fmt.Sprintf("exit_code=%d", exitCode),
+			Timestamp:       time.Now(),
 		})
 		return RunResult{
 			Success:     false,
@@ -264,10 +334,11 @@ func (r *Runner) runTurn(ctx context.Context, issue *serve.Issue, sessionID, pro
 	}
 
 	r.emit(serve.AgentEvent{
-		Type:      serve.AgentEventCompleted,
-		IssueID:   issue.ID,
-		Message:   sessionID,
-		Timestamp: time.Now(),
+		Type:            serve.AgentEventCompleted,
+		IssueID:         issue.ID,
+		IssueIdentifier: issue.Identifier,
+		Message:         sessionID,
+		Timestamp:       time.Now(),
 	})
 
 	return RunResult{

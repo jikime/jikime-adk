@@ -140,8 +140,13 @@ func run(workflowPath string, cliPort int) error {
 			logger.Info("agent event",
 				"type", string(e.Type),
 				"issue_id", e.IssueID,
+				"issue_identifier", e.IssueIdentifier,
 				"message", e.Message,
 			)
+			// Real-time session update so /api/v1/state reflects live LastMessage
+			if orch != nil {
+				orch.HandleAgentEvent(e)
+			}
 		}),
 	)
 

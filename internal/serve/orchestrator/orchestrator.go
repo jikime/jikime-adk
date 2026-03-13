@@ -21,14 +21,24 @@ import (
 
 // Orchestrator owns the poll loop and in-memory runtime state.
 // Single authority for all state mutations.
+const maxRecentEvents = 50 // per issue
+
+// LiveEvent is a single captured agent event for streaming to the UI.
+type LiveEvent struct {
+	IssueIdentifier string
+	Message         string
+	Timestamp       time.Time
+}
+
 type Orchestrator struct {
 	mu sync.Mutex
 
 	// Runtime state
-	running  map[string]*serve.RunningEntry // issueID → entry
-	claimed  map[string]bool                // issueID → reserved
-	retries  map[string]*serve.RetryEntry   // issueID → retry
-	totals   serve.TokenTotals
+	running      map[string]*serve.RunningEntry // issueID → entry
+	claimed      map[string]bool                // issueID → reserved
+	retries      map[string]*serve.RetryEntry   // issueID → retry
+	recentEvents map[string][]LiveEvent         // issueID → recent events (capped)
+	totals       serve.TokenTotals
 
 	// Dependencies
 	cfg       *workflow.Config
@@ -54,13 +64,14 @@ func New(
 	logger *slog.Logger,
 ) *Orchestrator {
 	o := &Orchestrator{
-		running:  make(map[string]*serve.RunningEntry),
-		claimed:  make(map[string]bool),
-		retries:  make(map[string]*serve.RetryEntry),
-		tracker:  t,
-		workspace: ws,
-		runner:   r,
-		logger:   logger,
+		running:      make(map[string]*serve.RunningEntry),
+		claimed:      make(map[string]bool),
+		retries:      make(map[string]*serve.RetryEntry),
+		recentEvents: make(map[string][]LiveEvent),
+		tracker:      t,
+		workspace:    ws,
+		runner:       r,
+		logger:       logger,
 	}
 	o.applyConfig(cfg)
 	return o
@@ -131,6 +142,37 @@ func (o *Orchestrator) Run(ctx context.Context) {
 	}
 }
 
+// HandleAgentEvent updates the live session in real-time as claude CLI emits events.
+// Called from the agent runner's event callback (serve.AgentEventMessage).
+func (o *Orchestrator) HandleAgentEvent(e serve.AgentEvent) {
+	if e.Type != serve.AgentEventMessage {
+		return
+	}
+	o.mu.Lock()
+	defer o.mu.Unlock()
+	entry, ok := o.running[e.IssueID]
+	if !ok {
+		return
+	}
+	now := e.Timestamp
+	entry.Session.LastMessage = e.Message
+	entry.Session.LastEvent = string(e.Type)
+	entry.Session.LastEventAt = &now
+
+	// Append to recent events ring (capped at maxRecentEvents)
+	ev := LiveEvent{
+		IssueIdentifier: entry.Issue.Identifier,
+		Message:         e.Message,
+		Timestamp:       e.Timestamp,
+	}
+	events := o.recentEvents[e.IssueID]
+	events = append(events, ev)
+	if len(events) > maxRecentEvents {
+		events = events[len(events)-maxRecentEvents:]
+	}
+	o.recentEvents[e.IssueID] = events
+}
+
 // Snapshot returns a read-only view of current state for the HTTP API.
 func (o *Orchestrator) Snapshot() Snapshot {
 	o.mu.Lock()
@@ -138,6 +180,11 @@ func (o *Orchestrator) Snapshot() Snapshot {
 
 	running := make([]RunningRow, 0, len(o.running))
 	for _, e := range o.running {
+		// Copy recent events for this issue
+		evts := o.recentEvents[e.Issue.ID]
+		evtsCopy := make([]LiveEvent, len(evts))
+		copy(evtsCopy, evts)
+
 		running = append(running, RunningRow{
 			IssueID:         e.Issue.ID,
 			IssueIdentifier: e.Issue.Identifier,
@@ -153,6 +200,7 @@ func (o *Orchestrator) Snapshot() Snapshot {
 				OutputTokens: e.Session.OutputTokens,
 				TotalTokens:  e.Session.TotalTokens,
 			},
+			RecentEvents: evtsCopy,
 		})
 	}
 
@@ -360,6 +408,7 @@ func (o *Orchestrator) onWorkerExit(issue serve.Issue, attempt *int, success boo
 		entry.CancelFunc()
 	}
 	delete(o.running, issue.ID)
+	delete(o.recentEvents, issue.ID)
 
 	if success || errMsg == "" {
 		o.logger.Info("worker exited normally",
@@ -654,6 +703,7 @@ type RunningRow struct {
 	StartedAt       time.Time
 	LastEventAt     *time.Time
 	Tokens          serve.TokenUsage
+	RecentEvents    []LiveEvent // accumulated events since dispatch
 }
 
 // RetryRow is a summary of one queued retry.
