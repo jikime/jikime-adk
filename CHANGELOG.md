@@ -5,6 +5,39 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-03-17
+
+### Added
+
+- **Webchat — Claude Code Web Interface** (`webchat/`):
+  - Full-featured browser-based UI for Claude Code, built with React + TypeScript + Tailwind CSS
+  - Real-time streaming via WebSocket with token budget display and permission request handling
+  - Multi-project sidebar: lists all Claude Code projects with open/closed folder icons and per-project session lists
+  - Sessions sorted by most recent modification time (newest first)
+  - **"New Chat" bug fix**: StrictMode-safe `serverAssignedIdRef` pattern prevents history reload on server-assigned sessions; eliminates page-refresh effect after sending the first message in a new conversation
+  - **ThinkingIndicator**: Animated orbital ring component shown while Claude processes a response — triple-ring SVG animation with glowing core sphere and bounce-dot label
+  - Docker support: `Dockerfile` + `docker-compose.yml` for containerized deployment
+  - Remote server connection support via SSH tunnel documentation
+
+- **VitePress Documentation Site** (`docs/`):
+  - GitHub Pages site at `https://jikime.github.io/jikime-adk/`
+  - Bilingual (Korean `/ko/`, English `/en/`) with full sidebar navigation
+  - Sections: Getting Started, Skills System, AI Agents, Workflows, Migration, System Reference, Webchat
+  - Local search provider, GitHub social link, MIT footer
+  - Automatic deployment via GitHub Actions on `docs/**` push to `main`
+  - Webchat docs migrated from `webchat/docs/` → `docs/ko/webchat/` (git history preserved)
+
+- **README docs badge and links**:
+  - Added `Docs` shield badge linking to the GitHub Pages site in both `README.md` and `README.ko.md`
+  - Added documentation site URL to the Links section of both READMEs
+
+### Fixed
+
+- **VitePress locale routing** (`docs/.vitepress/config.ts`):
+  - Changed `locales.root` → `locales.ko` so that files under `docs/ko/` are correctly served at `/ko/` URLs
+
+---
+
 ## [1.4.3] - 2026-03-09
 
 ### Added
