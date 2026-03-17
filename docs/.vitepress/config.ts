@@ -157,6 +157,10 @@ export default defineConfig({
   ],
 
   locales: {
+    root: {
+      label: 'Select Language',
+      lang: 'en',
+    },
     ko: {
       label: '한국어',
       lang: 'ko',

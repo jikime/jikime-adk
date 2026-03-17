@@ -173,6 +173,8 @@ You are an autonomous software engineer working on a GitHub issue.
 
 ### Template Variables
 
+<div v-pre>
+
 | Variable | Example | Description |
 |----------|---------|-------------|
 | `{{ issue.id }}` | `9` | GitHub Issue number |
@@ -185,6 +187,8 @@ You are an autonomous software engineer working on a GitHub issue.
 | `{{ attempt }}` | `2` | Retry count (empty string on first run) |
 
 > **Strict mode**: Any unresolved `{{ variable }}` in the rendered prompt causes a `template_render_error` — the run attempt fails and is retried.
+
+</div>
 
 ---
 
