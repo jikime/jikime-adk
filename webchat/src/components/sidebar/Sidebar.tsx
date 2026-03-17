@@ -60,6 +60,12 @@ function ServerForm({
 
   const valid = name.trim() && host.trim()
 
+  // ws:// wss:// http:// https:// 프로토콜 prefix 자동 제거
+  const handleHostChange = (raw: string) => {
+    const stripped = raw.replace(/^(wss?|https?):\/\//i, '').replace(/\/$/, '')
+    setHost(stripped)
+  }
+
   return (
     <div className="space-y-2 p-3 bg-zinc-800/60 rounded-lg border border-zinc-700">
       <input
@@ -68,8 +74,8 @@ function ServerForm({
         className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-blue-500/50"
       />
       <input
-        value={host} onChange={e => setHost(e.target.value)}
-        placeholder="host:port (예: 192.168.1.100:3000)"
+        value={host} onChange={e => handleHostChange(e.target.value)}
+        placeholder="host:port (예: 221.143.48.77:4000)"
         className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 placeholder:text-zinc-600 outline-none focus:border-blue-500/50 font-mono"
       />
       <label className="flex items-center gap-2 text-xs text-zinc-400 cursor-pointer select-none">

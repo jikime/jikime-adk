@@ -1,5 +1,4 @@
 import { createServer } from 'http'
-import { parse } from 'url'
 import next from 'next'
 import { WebSocketServer, WebSocket } from 'ws'
 import * as fs from 'fs'
@@ -413,14 +412,15 @@ function runGit(cwd: string, args: string[]): string {
 // ── CORS 헤더 (원격 브라우저에서 접근 허용) ───────────────────────
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
 // ── HTTP Request Handler for custom routes ─────────────────────
 function handleCustomRoutes(req: import('http').IncomingMessage, res: import('http').ServerResponse): boolean {
-  const url = parse(req.url || '', true)
-  const pathname = url.pathname || ''
+  const base = `http://${req.headers.host || 'localhost'}`
+  const url = new URL(req.url || '/', base)
+  const pathname = url.pathname
 
   // OPTIONS preflight (CORS)
   if (req.method === 'OPTIONS') {
@@ -439,8 +439,8 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   // DELETE /api/ws/session?projectId={projectId}&sessionId={sessionId}
   if (pathname === '/api/ws/session' && req.method === 'DELETE') {
-    const projectId = url.query.projectId as string
-    const sessionId = url.query.sessionId as string
+    const projectId = url.searchParams.get('projectId') ?? ''
+    const sessionId = url.searchParams.get('sessionId') ?? ''
     if (!projectId || !sessionId) {
       res.writeHead(400, CORS_HEADERS); res.end('Missing params'); return true
     }
@@ -463,7 +463,7 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   // DELETE /api/ws/project?id={projectId}
   // ~/.claude/projects/{id} 디렉터리(세션 파일)만 삭제. 실제 소스코드는 삭제하지 않음.
   if (pathname === '/api/ws/project' && req.method === 'DELETE') {
-    const projectId = url.query.id as string
+    const projectId = url.searchParams.get('id') ?? ''
     if (!projectId) {
       res.writeHead(400, CORS_HEADERS); res.end('Missing id'); return true
     }
@@ -487,8 +487,8 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   // GET /api/ws/session?projectPath=...&sessionId=...
   if (pathname === '/api/ws/session' && req.method === 'GET') {
-    const projectPath = url.query.projectPath as string
-    const sessionId   = url.query.sessionId   as string
+    const projectPath = url.searchParams.get('projectPath') ?? ''
+    const sessionId   = url.searchParams.get('sessionId')   ?? ''
     if (!projectPath || !sessionId) {
       res.writeHead(400); res.end('Missing params'); return true
     }
@@ -510,7 +510,7 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   // GET /api/ws/files?path=...
   if (pathname === '/api/ws/files' && req.method === 'GET') {
-    const filePath = url.query.path as string
+    const filePath = url.searchParams.get('path') ?? ''
     if (!filePath) {
       res.writeHead(400, CORS_HEADERS); res.end('Missing path'); return true
     }
@@ -522,7 +522,7 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   // GET /api/ws/file?path=... (read single file)
   if (pathname === '/api/ws/file' && req.method === 'GET') {
-    const filePath = url.query.path as string
+    const filePath = url.searchParams.get('path') ?? ''
     if (!filePath || !fs.existsSync(filePath)) {
       res.writeHead(404, CORS_HEADERS); res.end('Not found'); return true
     }
@@ -616,9 +616,8 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 // ── Main ───────────────────────────────────────────────────────
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
-    const parsedUrl = parse(req.url!, true)
     if (!handleCustomRoutes(req, res)) {
-      handle(req, res, parsedUrl)
+      handle(req, res)
     }
   })
 
