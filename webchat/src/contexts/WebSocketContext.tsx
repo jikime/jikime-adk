@@ -20,6 +20,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
   const handlersRef    = useRef<Set<(msg: WsMessage) => void>>(new Set())
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const disposedRef    = useRef(false)
+  // 항상 최신 connect를 가리키는 ref — stale closure 방지
+  const connectRef     = useRef<() => void>(() => {})
 
   const connect = useCallback(() => {
     if (disposedRef.current) return
@@ -30,8 +32,9 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     ws.onopen  = () => setIsConnected(true)
     ws.onclose = () => {
       setIsConnected(false)
+      // connectRef.current 사용 → 항상 최신 서버 URL로 재연결
       if (!disposedRef.current)
-        reconnectTimer.current = setTimeout(connect, 3000)
+        reconnectTimer.current = setTimeout(() => connectRef.current(), 3000)
     }
     ws.onerror = () => ws.close()
     ws.onmessage = (e) => {
@@ -41,6 +44,11 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
       } catch { /* */ }
     }
   }, [getWsUrl])
+
+  // connect가 바뀔 때마다 ref 동기화
+  useEffect(() => {
+    connectRef.current = connect
+  }, [connect])
 
   // 서버(getWsUrl)가 바뀌면 기존 연결 끊고 새 서버로 재연결
   useEffect(() => {
