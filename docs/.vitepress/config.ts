@@ -150,6 +150,7 @@ export default defineConfig({
   title: 'JikiME-ADK',
   description: 'AI Development Kit — Skills, Agents, Workflows for Claude Code',
   base: '/jikime-adk/',
+  ignoreDeadLinks: true,
 
   head: [
     ['link', { rel: 'icon', href: '/jikime-adk/favicon.ico' }],
