@@ -210,17 +210,22 @@ async function handleClaudeMessage(
 
   let capturedSessionId = claudeSessionId
 
+  // root 환경에서는 --dangerously-skip-permissions 사용 불가 → acceptEdits 로 대체
+  const isRoot = process.getuid?.() === 0
+  const effectivePermissionMode =
+    isRoot && permissionMode === 'bypassPermissions' ? 'acceptEdits' : permissionMode
+
   const options: Record<string, unknown> = {
     cwd: projectPath,
-    permissionMode,
+    permissionMode: effectivePermissionMode,
     model,
-    ...(permissionMode === 'bypassPermissions' && { allowDangerouslySkipPermissions: true }),
+    ...(!isRoot && permissionMode === 'bypassPermissions' && { allowDangerouslySkipPermissions: true }),
     ...(CLAUDE_PATH && { pathToClaudeCodeExecutable: CLAUDE_PATH }),
   }
   if (claudeSessionId) options.resume = claudeSessionId
 
   // canUseTool — 권한 확인 모드일 때 브라우저에 승인 요청
-  if (permissionMode !== 'bypassPermissions') {
+  if (effectivePermissionMode !== 'bypassPermissions') {
     options.canUseTool = async (toolName: string, input: unknown) => {
       const requestId = `perm-${Date.now()}-${Math.random().toString(36).slice(2)}`
       ws.send(JSON.stringify({ type: 'permission_request', requestId, toolName, input }))
@@ -338,24 +343,36 @@ async function handleClaudeMessage(
 
 // ── Project Discovery ──────────────────────────────────────────
 
-// JSONL 세션 파일에서 실제 cwd 추출 (경로에 '-'가 포함된 경우 디렉터리명 디코딩이 부정확하므로)
-function extractCwdFromJsonl(jsonlPath: string): string | null {
-  try {
-    const lines = fs.readFileSync(jsonlPath, 'utf8').split('\n')
-    for (const line of lines.slice(0, 30)) {
-      if (!line.trim()) continue
-      try {
-        const event = JSON.parse(line)
-        // Claude Code가 저장하는 다양한 cwd 필드 형식 탐색
-        if (typeof event.cwd === 'string' && event.cwd.startsWith('/')) return event.cwd
-        if (typeof event.workdir === 'string' && event.workdir.startsWith('/')) return event.workdir
-        if (event.type === 'system' && typeof event.path === 'string') return event.path
-        // summary 이벤트에 포함된 경우
-        if (event.summary?.cwd) return event.summary.cwd
-      } catch { /* */ }
+// 파일시스템을 탐색해 인코딩된 경로를 실제 경로로 복원
+// Claude는 경로의 '/'를 '-'로 인코딩 → 경로 내에 '-'가 있으면 단순 치환 불가
+// 예) -home-anthony-jikime-adk-webchat → /home/anthony/jikime-adk/webchat
+function decodeProjectPath(encoded: string): string {
+  if (!encoded.startsWith('-')) return encoded.replace(/-/g, '/')
+
+  // 파일시스템 탐색으로 올바른 경로 복원
+  function find(remaining: string, dir: string): string | null {
+    if (!remaining) return dir
+    if (!remaining.startsWith('-')) return null
+
+    const sub = remaining.slice(1) // leading '-'(= '/') 제거
+    let entries: string[]
+    try {
+      entries = fs.readdirSync(dir)
+    } catch { return null }
+
+    // 긴 이름 우선 정렬: 'jikime-adk'(10)가 'jikime'(6)보다 먼저 시도됨
+    entries.sort((a, b) => b.length - a.length)
+
+    for (const entry of entries) {
+      if (sub === entry || sub.startsWith(entry + '-')) {
+        const result = find(sub.slice(entry.length), path.join(dir, entry))
+        if (result !== null) return result
+      }
     }
-  } catch { /* */ }
-  return null
+    return null
+  }
+
+  return find(encoded, '/') ?? encoded.replace(/^-/, '/').replace(/-/g, '/')
 }
 
 function discoverProjects(): Array<{ id: string; name: string; path: string; sessions: string[] }> {
@@ -369,23 +386,13 @@ function discoverProjects(): Array<{ id: string; name: string; path: string; ses
       const fullPath = path.join(claudeDir, entry)
       if (!fs.statSync(fullPath).isDirectory()) continue
 
-      // 세션 파일 목록 수집
       const sessions: string[] = []
       try {
         const files = fs.readdirSync(fullPath).filter(f => f.endsWith('.jsonl'))
         for (const file of files) sessions.push(file.replace('.jsonl', ''))
       } catch { /* */ }
 
-      // 실제 경로: JSONL에서 cwd 읽기 → 없으면 디렉터리명 디코딩 폴백
-      let actualPath: string | null = null
-      for (const sessionId of sessions.slice(0, 3)) {
-        actualPath = extractCwdFromJsonl(path.join(fullPath, `${sessionId}.jsonl`))
-        if (actualPath) break
-      }
-      // 폴백: 디렉터리명에서 추정 (entry 앞의 '-'는 leading '/')
-      if (!actualPath) {
-        actualPath = entry.startsWith('-') ? entry.replace(/^-/, '/').replace(/-/g, '/') : entry.replace(/-/g, '/')
-      }
+      const actualPath = decodeProjectPath(entry)
 
       projects.push({
         id: entry,
