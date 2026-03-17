@@ -3,7 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { GitBranch, RefreshCw, GitCommit, Check, Plus, Minus, ArrowUp, ArrowDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction,
+} from '@/components/ui/alert-dialog'
 import { cn } from '@/lib/utils'
 import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
@@ -95,6 +101,7 @@ export default function GitPanel() {
   const [isGitRepo, setIsGitRepo]   = useState(true)
   const [pushing, setPushing]       = useState(false)
   const [pulling, setPulling]       = useState(false)
+  const [errorMsg, setErrorMsg]     = useState<string | null>(null)
 
   // 변경사항 탭
   const [files, setFiles]           = useState<GitFile[]>([])
@@ -183,7 +190,7 @@ export default function GitPanel() {
       setDiff('')
       await refresh()
     } catch (e: unknown) {
-      alert((e as Error).message)
+      setErrorMsg((e as Error).message)
     } finally {
       setCommitting(false)
     }
@@ -197,7 +204,7 @@ export default function GitPanel() {
       await gitCmd(gitUrl, cwd, { action: 'push' }, pat || undefined)
       await refresh()
     } catch (e: unknown) {
-      alert((e as Error).message)
+      setErrorMsg((e as Error).message)
     } finally {
       setPushing(false)
     }
@@ -211,7 +218,7 @@ export default function GitPanel() {
       await gitCmd(gitUrl, cwd, { action: 'pull' }, pat || undefined)
       await refresh()
     } catch (e: unknown) {
-      alert((e as Error).message)
+      setErrorMsg((e as Error).message)
     } finally {
       setPulling(false)
     }
@@ -225,7 +232,7 @@ export default function GitPanel() {
       await gitCmd(gitUrl, cwd, { action: 'checkout', branch: name })
       await refresh()
     } catch (e: unknown) {
-      alert((e as Error).message)
+      setErrorMsg((e as Error).message)
     }
   }
 
@@ -282,10 +289,10 @@ export default function GitPanel() {
           {/* 파일 목록 */}
           <div className="shrink-0 border-b border-border" style={{ maxHeight: '40%' }}>
             <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/50">
-              <input type="checkbox"
+              <Checkbox
                 checked={files.length > 0 && checked.size === files.length}
-                onChange={toggleAll}
-                className="w-3 h-3 accent-blue-500"
+                onCheckedChange={() => toggleAll()}
+                className="w-3 h-3"
               />
               <span className="text-xs text-muted-foreground">{t.git.selectAll}</span>
             </div>
@@ -301,10 +308,11 @@ export default function GitPanel() {
                           'flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-muted/50 transition-colors',
                           selectedFile === f.path && 'bg-muted'
                         )}>
-                        <input type="checkbox"
+                        <Checkbox
                           checked={checked.has(f.path)}
-                          onChange={(e) => { e.stopPropagation(); toggleCheck(f.path) }}
-                          className="w-3 h-3 accent-blue-500 shrink-0"
+                          onCheckedChange={() => toggleCheck(f.path)}
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                          className="w-3 h-3 shrink-0"
                         />
                         <span className={cn('text-xs font-bold rounded px-1 shrink-0', badge.color)}>
                           {badge.label}
@@ -332,13 +340,13 @@ export default function GitPanel() {
           {/* 커밋 영역 */}
           <div className="shrink-0 border-t border-border p-2 space-y-1.5">
             <div className="flex gap-1.5">
-              <input
+              <Input
                 value={commitMsg}
                 onChange={e => setCommitMsg(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleCommit() }}
                 placeholder={checked.size > 0 ? t.git.commitPlaceholder : t.git.selectFilePlaceholder}
                 disabled={checked.size === 0 || committing}
-                className="flex-1 text-xs bg-muted border border-border rounded px-2 py-1.5 text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-blue-500 disabled:opacity-40"
+                className="flex-1 h-7 text-xs disabled:opacity-40"
               />
               <Button
                 size="sm"
@@ -398,6 +406,23 @@ export default function GitPanel() {
           {branches.length === 0 && <p className="text-xs text-muted-foreground/50 text-center py-8">{t.git.noBranches}</p>}
         </ScrollArea>
       )}
+
+      {/* ── 에러 알림 ── */}
+      <AlertDialog open={!!errorMsg} onOpenChange={(open) => { if (!open) setErrorMsg(null) }}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-sm text-destructive">Git 오류</AlertDialogTitle>
+            <AlertDialogDescription className="text-xs font-mono whitespace-pre-wrap break-all">
+              {errorMsg}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setErrorMsg(null)} size="sm" className="text-xs">
+              확인
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

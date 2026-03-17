@@ -5,6 +5,16 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-03-17
+
+### Changed
+
+- **Webchat — Shadcn UI 컴포넌트 전면 적용**:
+  - 새 컴포넌트 설치: `Textarea`, `Checkbox`, `Label`, `Switch`, `AlertDialog`, `Dialog`
+  - `Sidebar.tsx`: `<input>` → `<Input>`, `<input type="checkbox">` + `<label>` → `<Checkbox>` + `<Label>`, 저장/취소 버튼 → `<Button>`, 설정 오버레이 → `<Dialog>`, 삭제 확인 커스텀 div → `<AlertDialog>`, 서버 편집/삭제/추가 버튼 → `<Button variant="ghost/outline">`, Git PAT `<input>` → `<Input>`, 설정 버튼 → `<Button variant="ghost">`
+  - `GitPanel.tsx`: 파일 선택 `<input type="checkbox">` → `<Checkbox>`, 커밋 `<input>` → `<Input>`, `alert()` 에러 처리 → `<AlertDialog>`
+  - `ChatInterface.tsx`: `<textarea>` → `<Textarea>`, 확장 사고 토글 → `<Switch>`, 첨부/마이크/전송/중단/권한 버튼 → `<Button>`
+
 ## [1.6.2] - 2026-03-17
 
 ### Added

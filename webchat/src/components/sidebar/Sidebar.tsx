@@ -7,6 +7,14 @@ import {
   Server, Trash2, Edit2, Globe, AlertTriangle, Eye, EyeOff, KeyRound,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Label } from '@/components/ui/label'
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel,
+} from '@/components/ui/alert-dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { useProject, type Project } from '@/contexts/ProjectContext'
 import { useServer, type RemoteServer } from '@/contexts/ServerContext'
@@ -75,47 +83,49 @@ function ServerForm({
 
   return (
     <div className="space-y-2 p-3 bg-muted/60 rounded-lg border border-border">
-      <input
+      <Input
         value={name} onChange={e => setName(e.target.value)}
         placeholder={t.sidebar.serverName}
-        className="w-full bg-background border border-border rounded px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-blue-500/50"
+        className="h-7 text-xs"
       />
-      <input
+      <Input
         value={host} onChange={e => handleHostChange(e.target.value)}
         placeholder={t.sidebar.serverHost}
-        className="w-full bg-background border border-border rounded px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-blue-500/50 font-mono"
+        className="h-7 text-xs font-mono"
       />
-      <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer select-none">
-        <input
-          type="checkbox" checked={secure} onChange={e => setSecure(e.target.checked)}
-          className="accent-blue-500"
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id="secure-connection"
+          checked={secure}
+          onCheckedChange={(v) => setSecure(v as boolean)}
         />
-        {t.sidebar.secureConnection}
-      </label>
+        <Label htmlFor="secure-connection" className="text-xs text-muted-foreground cursor-pointer">
+          {t.sidebar.secureConnection}
+        </Label>
+      </div>
       <div className="flex gap-2 pt-1">
-        <button
+        <Button
+          size="sm"
           onClick={() => valid && onSave({ name: name.trim(), host: host.trim(), secure })}
           disabled={!valid}
-          className={cn(
-            'flex-1 py-1 rounded text-xs font-medium transition-colors',
-            valid ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-muted text-muted-foreground cursor-default'
-          )}
+          className="flex-1 h-7 text-xs"
         >
           {t.sidebar.save}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="sm" variant="outline"
           onClick={onCancel}
-          className="flex-1 py-1 rounded text-xs font-medium bg-muted text-foreground/70 hover:bg-accent transition-colors"
+          className="flex-1 h-7 text-xs"
         >
           {t.sidebar.cancel}
-        </button>
+        </Button>
       </div>
     </div>
   )
 }
 
 // ── 설정 모달 ─────────────────────────────────────────────────────
-function SettingsModal({ onClose }: { onClose: () => void }) {
+function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useLocale()
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
   const [showPat, setShowPat] = useState(false)
@@ -127,175 +137,112 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div
-      className="absolute inset-0 z-50 flex items-end bg-black/60 backdrop-blur-[1px]"
-      onClick={onClose}
-    >
-      <div
-        className="w-full bg-card border-t border-border rounded-t-xl p-4 space-y-5 max-h-[85vh] overflow-y-auto"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-semibold text-foreground">{t.sidebar.settingsTitle}</span>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-xs sm:max-w-sm p-0 gap-0 overflow-hidden" showCloseButton={false}>
+        <DialogHeader className="flex flex-row items-center justify-between px-4 py-3 border-b border-border">
+          <DialogTitle className="text-sm font-semibold">{t.sidebar.settingsTitle}</DialogTitle>
+          <Button variant="ghost" size="icon-sm" onClick={onClose} className="h-6 w-6">
             <X className="w-4 h-4" />
-          </button>
-        </div>
+          </Button>
+        </DialogHeader>
 
-        {/* ── 기본 모델 ── */}
-        <div className="space-y-2">
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t.sidebar.defaultModel}</p>
-          <div className="flex flex-col gap-1">
-            {MODELS.map(m => (
+        <div className="space-y-5 p-4 max-h-[70vh] overflow-y-auto">
+          {/* ── 기본 모델 ── */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t.sidebar.defaultModel}</p>
+            <div className="flex flex-col gap-1">
+              {MODELS.map(m => (
+                <button
+                  key={m.id}
+                  onClick={() => update({ model: m.id })}
+                  className={cn(
+                    'flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-colors',
+                    settings.model === m.id
+                      ? 'bg-blue-600/20 border border-blue-500/40 dark:text-blue-300 text-blue-700 font-medium'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent'
+                  )}
+                >
+                  {settings.model === m.id
+                    ? <Check className="w-3 h-3 dark:text-blue-400 text-blue-600 shrink-0" />
+                    : <span className="w-3 h-3 shrink-0" />
+                  }
+                  {m.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── 권한 모드 ── */}
+          <div className="space-y-2">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t.sidebar.permissionMode}</p>
+            <div className="flex gap-2">
               <button
-                key={m.id}
-                onClick={() => update({ model: m.id })}
+                onClick={() => update({ permissionMode: 'bypassPermissions' })}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-colors',
-                  settings.model === m.id
-                    ? 'bg-blue-600/20 border border-blue-500/40 dark:text-blue-300 text-blue-700 font-medium'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground border border-transparent'
+                  'flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
+                  settings.permissionMode === 'bypassPermissions'
+                    ? 'bg-blue-600/20 border border-blue-500/40 dark:text-blue-300 text-blue-700'
+                    : 'bg-muted border border-border text-muted-foreground hover:text-foreground'
                 )}
               >
-                {settings.model === m.id
-                  ? <Check className="w-3 h-3 dark:text-blue-400 text-blue-600 shrink-0" />
-                  : <span className="w-3 h-3 shrink-0" />
-                }
-                {m.label}
+                {t.sidebar.autoAllow}
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── 권한 모드 ── */}
-        <div className="space-y-2">
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{t.sidebar.permissionMode}</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => update({ permissionMode: 'bypassPermissions' })}
-              className={cn(
-                'flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
-                settings.permissionMode === 'bypassPermissions'
-                  ? 'bg-blue-600/20 border border-blue-500/40 dark:text-blue-300 text-blue-700'
-                  : 'bg-muted border border-border text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t.sidebar.autoAllow}
-            </button>
-            <button
-              onClick={() => update({ permissionMode: 'default' })}
-              className={cn(
-                'flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
-                settings.permissionMode === 'default'
-                  ? 'bg-blue-600/20 border border-blue-500/40 dark:text-blue-300 text-blue-700'
-                  : 'bg-muted border border-border text-muted-foreground hover:text-foreground'
-              )}
-            >
-              {t.sidebar.confirmEach}
-            </button>
-          </div>
-          <p className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 leading-relaxed">
-            {settings.permissionMode === 'bypassPermissions'
-              ? t.sidebar.autoAllowDesc
-              : t.sidebar.confirmEachDesc}
-          </p>
-        </div>
-
-        {/* ── Git PAT ── */}
-        <div className="space-y-2">
-          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <KeyRound className="w-3 h-3" />
-            {t.sidebar.gitPatTitle}
-          </p>
-          <div className="relative">
-            <input
-              type={showPat ? 'text' : 'password'}
-              value={settings.gitPat ?? ''}
-              onChange={e => update({ gitPat: e.target.value })}
-              placeholder={t.sidebar.gitPatPlaceholder}
-              className="w-full bg-background border border-border rounded px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-blue-500/50 font-mono pr-8"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPat(v => !v)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {showPat ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-            </button>
-          </div>
-          <p className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 leading-relaxed">
-            {t.sidebar.gitPatDesc}
-          </p>
-        </div>
-
-        {/* 현재 설정 요약 */}
-        <div className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 border-t border-border pt-3">
-          {t.sidebar.activeModel}: <span className="text-foreground/70">{MODELS.find(m => m.id === settings.model)?.label}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── 프로젝트 삭제 확인 다이얼로그 ─────────────────────────────────
-function DeleteConfirmDialog({
-  project, onConfirm, onCancel,
-}: {
-  project: Project
-  onConfirm: () => void
-  onCancel: () => void
-}) {
-  const { t } = useLocale()
-  const sessionCount = project.sessions.length
-  return (
-    <div
-      className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4"
-      onClick={onCancel}
-    >
-      <div
-        className="w-full max-w-xs bg-card border border-border rounded-xl p-4 space-y-3 shadow-2xl"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
-            <AlertTriangle className="w-4 h-4 text-red-400" />
-          </div>
-          <span className="text-sm font-semibold text-foreground">{t.sidebar.deleteProjectTitle}</span>
-        </div>
-
-        <div className="space-y-1.5">
-          <p className="text-xs text-foreground/80">
-            <span className="font-medium text-foreground">{project.name}</span> {t.sidebar.deleteProjectDesc}
-          </p>
-          {sessionCount > 0 && (
-            <p className="text-xs text-amber-400">
-              {t.sidebar.deleteSessionCount(sessionCount)}
+              <button
+                onClick={() => update({ permissionMode: 'default' })}
+                className={cn(
+                  'flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors',
+                  settings.permissionMode === 'default'
+                    ? 'bg-blue-600/20 border border-blue-500/40 dark:text-blue-300 text-blue-700'
+                    : 'bg-muted border border-border text-muted-foreground hover:text-foreground'
+                )}
+              >
+                {t.sidebar.confirmEach}
+              </button>
+            </div>
+            <p className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 leading-relaxed">
+              {settings.permissionMode === 'bypassPermissions'
+                ? t.sidebar.autoAllowDesc
+                : t.sidebar.confirmEachDesc}
             </p>
-          )}
-          <p className="text-[11px] text-muted-foreground/50">
-            {t.sidebar.deleteProjectWarning}
-          </p>
-        </div>
+          </div>
 
-        <div className="flex gap-2 pt-1">
-          <button
-            onClick={onCancel}
-            className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-muted text-foreground/70 hover:bg-accent transition-colors"
-          >
-            {t.sidebar.cancel}
-          </button>
-          <button
-            onClick={onConfirm}
-            className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-500 transition-colors"
-          >
-            {t.sidebar.delete}
-          </button>
+          {/* ── Git PAT ── */}
+          <div className="space-y-2">
+            <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <KeyRound className="w-3 h-3" />
+              {t.sidebar.gitPatTitle}
+            </Label>
+            <div className="relative">
+              <Input
+                type={showPat ? 'text' : 'password'}
+                value={settings.gitPat ?? ''}
+                onChange={e => update({ gitPat: e.target.value })}
+                placeholder={t.sidebar.gitPatPlaceholder}
+                className="h-8 text-xs font-mono pr-8"
+              />
+              <Button
+                type="button" variant="ghost" size="icon-sm"
+                onClick={() => setShowPat(v => !v)}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6"
+              >
+                {showPat ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </Button>
+            </div>
+            <p className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 leading-relaxed">
+              {t.sidebar.gitPatDesc}
+            </p>
+          </div>
+
+          {/* 현재 설정 요약 */}
+          <div className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 border-t border-border pt-3">
+            {t.sidebar.activeModel}: <span className="text-foreground/70">{MODELS.find(m => m.id === settings.model)?.label}</span>
+          </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
+
 
 // ── 메인 사이드바 ─────────────────────────────────────────────────
 export default function Sidebar() {
@@ -446,18 +393,20 @@ export default function Sidebar() {
                       {/* 편집/삭제 — 로컬 서버는 편집만 숨김 */}
                       {s.id !== '__local__' && (
                         <div className="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button
+                          <Button
+                            variant="ghost" size="icon-sm"
                             onClick={() => setEditingServerId(s.id)}
-                            className="p-1 text-muted-foreground/50 hover:text-foreground transition-colors rounded"
+                            className="h-6 w-6 text-muted-foreground/50 hover:text-foreground"
                           >
                             <Edit2 className="w-3 h-3" />
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="ghost" size="icon-sm"
                             onClick={() => removeServer(s.id)}
-                            className="p-1 text-muted-foreground/50 hover:text-red-400 transition-colors rounded"
+                            className="h-6 w-6 text-muted-foreground/50 hover:text-red-400"
                           >
                             <Trash2 className="w-3 h-3" />
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -474,13 +423,14 @@ export default function Sidebar() {
                   onCancel={() => setAddingServer(false)}
                 />
               ) : (
-                <button
+                <Button
+                  variant="outline" size="sm"
                   onClick={() => setAddingServer(true)}
-                  className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md border border-dashed border-border text-xs text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
+                  className="flex items-center gap-2 w-full h-7 text-xs border-dashed text-muted-foreground hover:text-foreground"
                 >
                   <Plus className="w-3 h-3" />
                   {t.sidebar.addServer}
-                </button>
+                </Button>
               )}
             </div>
           </div>
@@ -603,63 +553,80 @@ export default function Sidebar() {
 
       {/* ── 하단 설정 버튼 ── */}
       <div className="shrink-0 border-t border-border px-2 py-2">
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setShowSettings(true)}
-          className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="flex items-center gap-2 w-full justify-start px-2 h-7 text-xs text-muted-foreground hover:text-foreground"
         >
           <Settings className="w-3.5 h-3.5" />
           {t.sidebar.settings}
-        </button>
+        </Button>
       </div>
 
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
 
-      {deletingProject && (
-        <DeleteConfirmDialog
-          project={deletingProject}
-          onConfirm={handleDeleteConfirm}
-          onCancel={() => setDeletingProject(null)}
-        />
-      )}
-
-      {deletingSession && (
-        <div
-          className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-[2px] p-4"
-          onClick={() => setDeletingSession(null)}
-        >
-          <div
-            className="w-full max-w-xs bg-card border border-border rounded-xl p-4 space-y-3 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-2">
+      {/* ── 프로젝트 삭제 확인 ── */}
+      <AlertDialog open={!!deletingProject} onOpenChange={(open) => { if (!open) setDeletingProject(null) }}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-1">
               <div className="w-7 h-7 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-4 h-4 text-red-400" />
               </div>
-              <span className="text-sm font-semibold text-foreground">{t.sidebar.deleteSessionTitle}</span>
+              <AlertDialogTitle className="text-sm">{t.sidebar.deleteProjectTitle}</AlertDialogTitle>
             </div>
-            <div className="space-y-1.5">
-              <p className="text-xs text-foreground/80">
-                <span className="font-mono text-foreground">{deletingSession.sessionId.slice(0, 12)}...</span> {t.sidebar.deleteSessionDesc}
-              </p>
-              <p className="text-[11px] text-muted-foreground/50">{t.sidebar.deleteSessionWarning}</p>
+            <AlertDialogDescription className="text-xs space-y-1">
+              <span className="font-medium text-foreground">{deletingProject?.name}</span>{' '}
+              {t.sidebar.deleteProjectDesc}
+              {(deletingProject?.sessions.length ?? 0) > 0 && (
+                <span className="block text-amber-500 mt-1">
+                  {t.sidebar.deleteSessionCount(deletingProject!.sessions.length)}
+                </span>
+              )}
+              <span className="block text-muted-foreground/50 mt-1">{t.sidebar.deleteProjectWarning}</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel size="sm" className="text-xs">{t.sidebar.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="text-xs bg-destructive text-white hover:bg-destructive/90"
+              size="sm"
+            >
+              {t.sidebar.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── 세션 삭제 확인 ── */}
+      <AlertDialog open={!!deletingSession} onOpenChange={(open) => { if (!open) setDeletingSession(null) }}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-7 h-7 rounded-full bg-red-500/15 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-4 h-4 text-red-400" />
+              </div>
+              <AlertDialogTitle className="text-sm">{t.sidebar.deleteSessionTitle}</AlertDialogTitle>
             </div>
-            <div className="flex gap-2 pt-1">
-              <button
-                onClick={() => setDeletingSession(null)}
-                className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-muted text-foreground/70 hover:bg-accent transition-colors"
-              >
-                {t.sidebar.cancel}
-              </button>
-              <button
-                onClick={handleSessionDeleteConfirm}
-                className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-red-600 text-white hover:bg-red-500 transition-colors"
-              >
-                {t.sidebar.delete}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            <AlertDialogDescription className="text-xs space-y-1">
+              <span className="font-mono text-foreground">{deletingSession?.sessionId.slice(0, 12)}...</span>{' '}
+              {t.sidebar.deleteSessionDesc}
+              <span className="block text-muted-foreground/50 mt-1">{t.sidebar.deleteSessionWarning}</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel size="sm" className="text-xs">{t.sidebar.cancel}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleSessionDeleteConfirm}
+              className="text-xs bg-destructive text-white hover:bg-destructive/90"
+              size="sm"
+            >
+              {t.sidebar.delete}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

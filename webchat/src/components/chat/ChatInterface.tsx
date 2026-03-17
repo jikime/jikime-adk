@@ -7,6 +7,9 @@ import {
   Plus, Mic, MicOff, FileText, Image as ImageIcon, Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useProject } from '@/contexts/ProjectContext'
@@ -314,24 +317,27 @@ function PermissionBanner({
         </div>
       </div>
       <div className="flex gap-1.5 mt-2">
-        <button
+        <Button
+          size="sm"
           onClick={() => onAllow(false)}
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-emerald-700 hover:bg-emerald-600 text-white transition-colors"
+          className="h-6 px-2 text-xs bg-emerald-700 hover:bg-emerald-600 text-white"
         >
           <Check className="w-3 h-3" /> {t.chat.allow}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="sm" variant="outline"
           onClick={() => onAllow(true)}
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-muted hover:bg-accent text-foreground/80 transition-colors"
+          className="h-6 px-2 text-xs"
         >
           <Check className="w-3 h-3" /> {t.chat.alwaysAllow}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="sm"
           onClick={onDeny}
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-red-900 hover:bg-red-800 text-red-200 transition-colors"
+          className="h-6 px-2 text-xs bg-red-900 hover:bg-red-800 text-red-200 border-0"
         >
           <X className="w-3 h-3" /> {t.chat.deny}
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -700,7 +706,7 @@ export default function ChatInterface() {
           )}
 
           {/* 텍스트 입력 */}
-          <textarea
+          <Textarea
             ref={inputRef}
             value={input}
             onChange={handleInput}
@@ -708,8 +714,8 @@ export default function ChatInterface() {
             placeholder={isStreaming ? t.chat.placeholderStreaming : t.chat.placeholder}
             rows={1}
             disabled={isStreaming}
-            className="w-full bg-transparent px-5 pt-4 pb-2 text-base text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[64px] max-h-[240px] disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ height: '64px' }}
+            className="w-full bg-transparent border-0 ring-0 shadow-none px-5 pt-4 pb-2 text-base text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[64px] max-h-[240px] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-0 focus-visible:border-0"
+            style={{ height: '64px', fieldSizing: 'fixed' } as React.CSSProperties}
           />
 
           {/* 하단 툴바 */}
@@ -724,14 +730,14 @@ export default function ChatInterface() {
               onChange={e => { if (e.target.files) handleFiles(e.target.files); e.target.value = '' }}
             />
             {/* + 첨부 버튼 */}
-            <button
-              type="button"
+            <Button
+              type="button" variant="outline" size="icon"
               onClick={() => fileInputRef.current?.click()}
               title={t.chat.attachFile}
-              className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
+              className="w-9 h-9 rounded-full"
             >
               <Plus className="w-5 h-5" />
-            </button>
+            </Button>
 
             <div className="flex-1" />
 
@@ -804,19 +810,11 @@ export default function ChatInterface() {
                         <p className="text-sm font-medium text-foreground">{t.chat.extendedThinkingTitle}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{t.chat.extendedThinkingDesc}</p>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setExtendedThinking(v => !v)}
-                        className={cn(
-                          'relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0',
-                          extendedThinking ? 'bg-blue-500' : 'bg-muted-foreground/40'
-                        )}
-                      >
-                        <span className={cn(
-                          'absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform duration-200',
-                          extendedThinking ? 'translate-x-5' : 'translate-x-0'
-                        )} />
-                      </button>
+                      <Switch
+                        checked={extendedThinking}
+                        onCheckedChange={setExtendedThinking}
+                        className="shrink-0"
+                      />
                     </div>
                   </div>
 
@@ -826,39 +824,37 @@ export default function ChatInterface() {
 
             {/* 마이크 버튼 */}
             {micSupported && (
-              <button
-                type="button"
+              <Button
+                type="button" variant="outline" size="icon"
                 onClick={toggleMic}
                 title={listening ? t.chat.voiceStop : t.chat.voiceStart}
                 className={cn(
-                  'w-9 h-9 rounded-full border flex items-center justify-center transition-all',
-                  listening
-                    ? 'border-red-500 bg-red-500/20 text-red-400 animate-pulse'
-                    : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/50'
+                  'w-9 h-9 rounded-full',
+                  listening && 'border-red-500 bg-red-500/20 text-red-400 animate-pulse'
                 )}
               >
                 {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </button>
+              </Button>
             )}
 
             {/* 전송 / 중단 버튼 */}
             {isStreaming ? (
-              <button
-                type="button"
+              <Button
+                type="button" size="icon"
                 onClick={abort}
-                className="w-10 h-10 rounded-xl bg-red-600 hover:bg-red-500 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-xl bg-red-600 hover:bg-red-500"
               >
                 <Square className="w-4 h-4 text-white" />
-              </button>
+              </Button>
             ) : (
-              <button
-                type="button"
+              <Button
+                type="button" size="icon"
                 onClick={submit}
                 disabled={!input.trim() && attachments.length === 0}
-                className="w-10 h-10 rounded-xl dark:bg-blue-600 dark:hover:bg-blue-500 bg-blue-700 hover:bg-blue-600 disabled:bg-muted disabled:cursor-not-allowed flex items-center justify-center transition-colors text-white disabled:text-muted-foreground"
+                className="w-10 h-10 rounded-xl dark:bg-blue-600 dark:hover:bg-blue-500 bg-blue-700 hover:bg-blue-600 disabled:bg-muted disabled:cursor-not-allowed text-white disabled:text-muted-foreground"
               >
                 <Send className="w-5 h-5" />
-              </button>
+              </Button>
             )}
           </div>
         </div>
