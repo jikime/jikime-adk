@@ -15,6 +15,7 @@
   <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go" alt="Go"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Copyleft--3.0-blue.svg" alt="License: Copyleft"></a>
   <a href="https://github.com/jikime/jikime-adk/releases"><img src="https://img.shields.io/github/v/release/jikime/jikime-adk" alt="Release"></a>
+  <a href="https://jikime.github.io/jikime-adk/ko/"><img src="https://img.shields.io/badge/문서-GitHub%20Pages-0a0a0a?logo=github" alt="문서"></a>
 </p>
 
 > **"레거시 코드에 담긴 본질과 가치를 끝까지 보존하면서, 이를 현대화된 코드로 안전하게 탈바꿈시킨다."**
@@ -244,6 +245,7 @@ JiKiME-ADK의 발전 과정을 앞으로도 꾸준히 공유하겠습니다. 수
 
 ## Links
 
+- [문서 사이트](https://jikime.github.io/jikime-adk/ko/)
 - [GitHub Repository](https://github.com/jikime/jikime-adk)
 - [Releases](https://github.com/jikime/jikime-adk/releases)
 - [Install Script](https://jikime.github.io/jikime-adk/install.sh)

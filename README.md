@@ -15,6 +15,7 @@
   <a href="https://go.dev/"><img src="https://img.shields.io/badge/Go-1.24+-00ADD8?logo=go" alt="Go"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/License-Copyleft--3.0-blue.svg" alt="License: Copyleft"></a>
   <a href="https://github.com/jikime/jikime-adk/releases"><img src="https://img.shields.io/github/v/release/jikime/jikime-adk" alt="Release"></a>
+  <a href="https://jikime.github.io/jikime-adk/en/"><img src="https://img.shields.io/badge/docs-GitHub%20Pages-0a0a0a?logo=github" alt="Docs"></a>
 </p>
 
 > **"Preserve the essence and value embedded in legacy code while safely transforming it into modernized code."**
@@ -244,6 +245,7 @@ I will continue to share JiKiME-ADK's development journey. Through countless tri
 
 ## Links
 
+- [Documentation](https://jikime.github.io/jikime-adk/en/)
 - [GitHub Repository](https://github.com/jikime/jikime-adk)
 - [Releases](https://github.com/jikime/jikime-adk/releases)
 - [Install Script](https://jikime.github.io/jikime-adk/install.sh)
