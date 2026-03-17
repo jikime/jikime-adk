@@ -26,6 +26,7 @@ export type Messages = {
     serverName: string; serverHost: string; secureConnection: string
     settingsTitle: string; defaultModel: string; permissionMode: string
     autoAllow: string; confirmEach: string; autoAllowDesc: string; confirmEachDesc: string
+    gitPatTitle: string; gitPatPlaceholder: string; gitPatDesc: string
     activeModel: string
     deleteProjectTitle: string; deleteProjectDesc: string
     deleteSessionCount: (n: number) => string

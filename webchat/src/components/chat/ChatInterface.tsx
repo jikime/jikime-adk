@@ -146,7 +146,7 @@ function ToolCallView({ tool }: { tool: ToolCall }) {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 py-0.5 w-full text-left">
+      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs dark:text-amber-400 dark:hover:text-amber-300 text-amber-600 hover:text-amber-700 py-0.5 w-full text-left">
         <Wrench className="w-3 h-3 shrink-0" />
         <span className="font-mono truncate">{tool.name}</span>
         {open ? <ChevronDown className="w-3 h-3 ml-auto shrink-0" /> : <ChevronRight className="w-3 h-3 ml-auto shrink-0" />}
@@ -162,9 +162,9 @@ function ToolCallView({ tool }: { tool: ToolCall }) {
             </pre>
           )}
           {tool.result !== undefined && (
-            <pre className="text-xs bg-emerald-950/30 rounded p-2 overflow-auto text-emerald-300 border border-emerald-900/50 max-h-40
+            <pre className="text-xs dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2 overflow-auto max-h-40
               [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:h-1
-              [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-emerald-900
+              [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-emerald-900 [&::-webkit-scrollbar-thumb]:bg-emerald-200
               [&::-webkit-scrollbar-track]:bg-transparent">
               {typeof tool.result === 'string' ? tool.result : JSON.stringify(tool.result, null, 2)}
             </pre>
@@ -179,15 +179,15 @@ function ThinkingView({ text }: { text: string }) {
   const [open, setOpen] = useState(false)
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 py-0.5 w-full text-left">
+      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs dark:text-purple-400 dark:hover:text-purple-300 text-purple-600 hover:text-purple-700 py-0.5 w-full text-left">
         <Brain className="w-3 h-3 shrink-0" />
         <span>Thinking...</span>
         {open ? <ChevronDown className="w-3 h-3 ml-auto shrink-0" /> : <ChevronRight className="w-3 h-3 ml-auto shrink-0" />}
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <pre className="mt-1 text-xs bg-purple-950/20 rounded p-2 overflow-auto text-purple-200 border border-purple-900/40 whitespace-pre-wrap max-h-48
+        <pre className="mt-1 text-xs dark:bg-purple-950/20 dark:text-purple-200 dark:border-purple-900/40 bg-purple-50 text-purple-800 border border-purple-200 rounded p-2 overflow-auto whitespace-pre-wrap max-h-48
           [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:h-1
-          [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-purple-800/60
+          [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-purple-800/60 [&::-webkit-scrollbar-thumb]:bg-purple-200
           [&::-webkit-scrollbar-track]:bg-transparent">
           {text}
         </pre>
@@ -228,17 +228,17 @@ function MessageBubble({ msg }: { msg: Message }) {
             <ThinkingIndicator />
           ) : (
             <div className={cn('text-base leading-relaxed py-1',
-              msg.status === 'error' && 'bg-red-950/50 text-red-200 border border-red-800/50 rounded-lg px-3.5 py-2.5'
+              msg.status === 'error' && 'dark:bg-red-950/50 dark:text-red-200 dark:border-red-800/50 bg-red-50 text-red-800 border border-red-200 rounded-lg px-3.5 py-2.5'
             )}>
               <div className="prose prose-base dark:prose-invert max-w-none
                 prose-p:my-1.5 prose-p:leading-relaxed
                 prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-1.5
                 prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
                 prose-strong:text-foreground
-                prose-code:text-amber-300 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                dark:prose-code:text-amber-300 prose-code:text-amber-700 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
                 prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:text-sm
                 prose-pre:[&::-webkit-scrollbar]:h-1 prose-pre:[&::-webkit-scrollbar-thumb]:bg-border prose-pre:[&::-webkit-scrollbar-thumb]:rounded-full prose-pre:[&::-webkit-scrollbar-track]:bg-transparent
-                prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
+                dark:prose-a:text-blue-400 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
                 prose-blockquote:border-border prose-blockquote:text-muted-foreground prose-blockquote:not-italic
                 prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1
                 prose-hr:border-border
@@ -251,7 +251,7 @@ function MessageBubble({ msg }: { msg: Message }) {
                 )}
               </div>
               {msg.status === 'error' && (
-                <div className="flex items-center gap-1 mt-1 text-red-400 text-xs">
+                <div className="flex items-center gap-1 mt-1 dark:text-red-400 text-red-600 text-xs">
                   <AlertCircle className="w-3 h-3" />
                   오류가 발생했어요
                 </div>

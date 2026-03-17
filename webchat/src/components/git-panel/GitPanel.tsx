@@ -1,20 +1,21 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { GitBranch, RefreshCw, GitCommit, Check, Plus, Minus } from 'lucide-react'
+import { GitBranch, RefreshCw, GitCommit, Check, Plus, Minus, ArrowUp, ArrowDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
 import { useLocale } from '@/contexts/LocaleContext'
+import { loadSettings } from '@/components/sidebar/Sidebar'
 
 // ── API 헬퍼 ──────────────────────────────────────────────────────
-async function gitCmd(apiUrl: string, cwd: string, body: Record<string, unknown>): Promise<string> {
+async function gitCmd(apiUrl: string, cwd: string, body: Record<string, unknown>, pat?: string): Promise<string> {
   const res = await fetch(apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cwd, ...body }),
+    body: JSON.stringify({ cwd, ...(pat ? { pat } : {}), ...body }),
   })
   const data = await res.json()
   if (!res.ok) throw new Error(data.error || 'Git error')
@@ -87,9 +88,13 @@ export default function GitPanel() {
   const cwd = activeProject?.path ?? ''
   const gitUrl = getApiUrl('/api/ws/git')
 
+  const pat = loadSettings().gitPat ?? ''
+
   const [tab, setTab]               = useState<Tab>('changes')
   const [loading, setLoading]       = useState(false)
   const [isGitRepo, setIsGitRepo]   = useState(true)
+  const [pushing, setPushing]       = useState(false)
+  const [pulling, setPulling]       = useState(false)
 
   // 변경사항 탭
   const [files, setFiles]           = useState<GitFile[]>([])
@@ -184,6 +189,34 @@ export default function GitPanel() {
     }
   }
 
+  // ── Push ────────────────────────────────────────────────────
+  const handlePush = async () => {
+    if (!cwd) return
+    setPushing(true)
+    try {
+      await gitCmd(gitUrl, cwd, { action: 'push' }, pat || undefined)
+      await refresh()
+    } catch (e: unknown) {
+      alert((e as Error).message)
+    } finally {
+      setPushing(false)
+    }
+  }
+
+  // ── Pull ────────────────────────────────────────────────────
+  const handlePull = async () => {
+    if (!cwd) return
+    setPulling(true)
+    try {
+      await gitCmd(gitUrl, cwd, { action: 'pull' }, pat || undefined)
+      await refresh()
+    } catch (e: unknown) {
+      alert((e as Error).message)
+    } finally {
+      setPulling(false)
+    }
+  }
+
   // ── 브랜치 체크아웃 ──────────────────────────────────────────
   const handleCheckout = async (branch: string) => {
     const name = branch.replace('* ', '').replace('remotes/origin/', '').trim()
@@ -208,7 +241,7 @@ export default function GitPanel() {
   if (!isGitRepo) {
     return (
       <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden border border-border">
-        <GitHeader currentBranch="" loading={loading} onRefresh={refresh} />
+        <GitHeader currentBranch="" loading={loading} onRefresh={refresh} pushing={pushing} pulling={pulling} onPush={handlePush} onPull={handlePull} />
         <div className="flex flex-col items-center justify-center flex-1 gap-2 text-center px-4">
           <GitBranch className="w-8 h-8 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">{t.git.notGitRepo}</p>
@@ -220,7 +253,15 @@ export default function GitPanel() {
 
   return (
     <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden border border-border">
-      <GitHeader currentBranch={currentBranch} loading={loading} onRefresh={refresh} />
+      <GitHeader
+        currentBranch={currentBranch}
+        loading={loading}
+        onRefresh={refresh}
+        pushing={pushing}
+        pulling={pulling}
+        onPush={handlePush}
+        onPull={handlePull}
+      />
 
       {/* 탭 */}
       <div className="flex gap-0 px-2 pt-2 shrink-0 border-b border-border">
@@ -362,10 +403,14 @@ export default function GitPanel() {
 }
 
 // ── 헤더 서브컴포넌트 ─────────────────────────────────────────────
-function GitHeader({ currentBranch, loading, onRefresh }: {
+function GitHeader({ currentBranch, loading, onRefresh, pushing, pulling, onPush, onPull }: {
   currentBranch: string
   loading: boolean
   onRefresh: () => void
+  pushing: boolean
+  pulling: boolean
+  onPush: () => void
+  onPull: () => void
 }) {
   return (
     <div className="flex items-center justify-between px-3 py-2.5 bg-card border-b border-border shrink-0">
@@ -378,10 +423,33 @@ function GitHeader({ currentBranch, loading, onRefresh }: {
           </span>
         )}
       </div>
-      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground"
-        onClick={onRefresh} disabled={loading}>
-        <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} />
-      </Button>
+      <div className="flex items-center gap-1.5">
+        {/* Pull 버튼 */}
+        <Button
+          variant="outline" size="sm"
+          className="h-6 px-2.5 text-xs font-medium gap-1 border-sky-500/60 dark:bg-sky-500/10 bg-sky-50 dark:text-sky-300 text-sky-700 hover:dark:bg-sky-500/20 hover:bg-sky-100 disabled:opacity-40"
+          onClick={onPull} disabled={pulling || loading}
+          title="git pull"
+        >
+          <ArrowDown className={cn('w-3 h-3', pulling && 'animate-bounce')} />
+          Pull
+        </Button>
+        {/* Push 버튼 */}
+        <Button
+          variant="outline" size="sm"
+          className="h-6 px-2.5 text-xs font-medium gap-1 border-emerald-500/60 dark:bg-emerald-500/10 bg-emerald-50 dark:text-emerald-300 text-emerald-700 hover:dark:bg-emerald-500/20 hover:bg-emerald-100 disabled:opacity-40"
+          onClick={onPush} disabled={pushing || loading}
+          title="git push"
+        >
+          <ArrowUp className={cn('w-3 h-3', pushing && 'animate-bounce')} />
+          Push
+        </Button>
+        {/* 새로고침 */}
+        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground"
+          onClick={onRefresh} disabled={loading}>
+          <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} />
+        </Button>
+      </div>
     </div>
   )
 }

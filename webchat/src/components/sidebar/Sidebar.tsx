@@ -4,7 +4,7 @@ import { useState } from 'react'
 import {
   Folder, FolderOpen, MessageSquare, Plus, RefreshCw,
   ChevronDown, ChevronRight, Settings, X, Check,
-  Server, Trash2, Edit2, Globe, AlertTriangle,
+  Server, Trash2, Edit2, Globe, AlertTriangle, Eye, EyeOff, KeyRound,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -29,6 +29,7 @@ export type PermissionMode = 'bypassPermissions' | 'default'
 export interface AppSettings {
   model: ModelId
   permissionMode: PermissionMode
+  gitPat?: string
 }
 
 const SETTINGS_KEY = 'webchat_settings'
@@ -36,6 +37,7 @@ const SETTINGS_KEY = 'webchat_settings'
 const DEFAULT_SETTINGS: AppSettings = {
   model: 'claude-sonnet-4-6',
   permissionMode: 'bypassPermissions',
+  gitPat: '',
 }
 
 export function loadSettings(): AppSettings {
@@ -116,6 +118,7 @@ function ServerForm({
 function SettingsModal({ onClose }: { onClose: () => void }) {
   const { t } = useLocale()
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
+  const [showPat, setShowPat] = useState(false)
 
   const update = (patch: Partial<AppSettings>) => {
     const next = { ...settings, ...patch }
@@ -196,6 +199,33 @@ function SettingsModal({ onClose }: { onClose: () => void }) {
             {settings.permissionMode === 'bypassPermissions'
               ? t.sidebar.autoAllowDesc
               : t.sidebar.confirmEachDesc}
+          </p>
+        </div>
+
+        {/* ── Git PAT ── */}
+        <div className="space-y-2">
+          <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <KeyRound className="w-3 h-3" />
+            {t.sidebar.gitPatTitle}
+          </p>
+          <div className="relative">
+            <input
+              type={showPat ? 'text' : 'password'}
+              value={settings.gitPat ?? ''}
+              onChange={e => update({ gitPat: e.target.value })}
+              placeholder={t.sidebar.gitPatPlaceholder}
+              className="w-full bg-background border border-border rounded px-2 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-blue-500/50 font-mono pr-8"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPat(v => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showPat ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+          <p className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 leading-relaxed">
+            {t.sidebar.gitPatDesc}
           </p>
         </div>
 

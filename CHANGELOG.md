@@ -5,6 +5,29 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-03-17
+
+### Added
+
+- **Webchat — Git PAT push/pull authentication**:
+  - `server.ts`: Added `push` and `pull` git actions with PAT-based HTTPS auth using URL injection (`https://oauth2:TOKEN@host/...`) — reliably bypasses git credential helpers
+  - PAT masked in error messages to prevent token leakage
+  - SSH remotes fall through without PAT (no credential helper needed)
+  - `Sidebar.tsx`: Added `gitPat` field to `AppSettings`; Settings modal gains a **Git PAT Auth** section with password input and eye-toggle (show/hide), saved to localStorage
+  - `GitPanel.tsx`: Added **Pull** (sky) and **Push** (emerald) outline buttons to git header with theme-responsive colors and loading animations
+  - i18n: Added `gitPatTitle`, `gitPatPlaceholder`, `gitPatDesc` keys to all 4 locales (ko/en/zh/ja)
+
+### Fixed
+
+- **Webchat — Chat light-mode color clashes**:
+  - Tool call trigger: `text-amber-400` → `dark:text-amber-400 text-amber-600`
+  - Tool result box: `bg-emerald-950/30 text-emerald-300` → `dark:` variants + `bg-emerald-50 text-emerald-800` in light
+  - Thinking trigger: `text-purple-400` → `dark:text-purple-400 text-purple-600`
+  - Thinking content box: `bg-purple-950/20 text-purple-200` → `dark:` variants + `bg-purple-50 text-purple-800` in light
+  - Error message box: `bg-red-950/50 text-red-200` → `dark:` variants + `bg-red-50 text-red-800` in light
+  - Inline code: `prose-code:text-amber-300` → `dark:prose-code:text-amber-300 prose-code:text-amber-700`
+  - Links: `prose-a:text-blue-400` → `dark:prose-a:text-blue-400 prose-a:text-blue-600`
+
 ## [1.6.1] - 2026-03-17
 
 ### Fixed

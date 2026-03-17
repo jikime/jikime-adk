@@ -567,9 +567,44 @@ function parseSessionHistory(jsonlPath: string): HistoryMessage[] {
 // ── Git Operations ─────────────────────────────────────────────
 function runGit(cwd: string, args: string[]): string {
   try {
-    return execSync(`git ${args.join(' ')}`, { cwd, encoding: 'utf8', timeout: 10000 })
+    return execSync(`git ${args.join(' ')}`, { cwd, encoding: 'utf8', timeout: 30000 })
   } catch (e: unknown) {
     throw new Error((e as { stderr?: string; message?: string }).stderr || (e as Error).message)
+  }
+}
+
+function runGitWithPat(cwd: string, action: 'push' | 'pull', pat: string): string {
+  // 리모트 URL 확인
+  let remoteUrl: string
+  try {
+    remoteUrl = execSync('git remote get-url origin', { cwd, encoding: 'utf8', timeout: 3000 }).trim()
+  } catch {
+    throw new Error('원격 저장소(origin)가 설정되지 않았습니다.')
+  }
+
+  // SSH 리모트는 PAT 불필요 — 그냥 실행
+  if (!remoteUrl.startsWith('https://')) {
+    return runGit(cwd, [action])
+  }
+
+  // 이미 인증 정보가 URL에 포함된 경우 제거 후 재삽입
+  // https://oauth2:TOKEN@github.com/user/repo.git
+  const authUrl = remoteUrl.replace(/^https:\/\/([^@]*@)?/, `https://oauth2:${pat}@`)
+
+  try {
+    let cmd: string
+    if (action === 'push') {
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd, encoding: 'utf8', timeout: 3000 }).trim()
+      cmd = `git push "${authUrl}" HEAD:refs/heads/${branch}`
+    } else {
+      cmd = `git pull "${authUrl}"`
+    }
+    return execSync(cmd, { cwd, encoding: 'utf8', timeout: 60000 })
+  } catch (e: unknown) {
+    const raw = (e as { stderr?: string; message?: string }).stderr || (e as Error).message || ''
+    // PAT가 에러 메시지에 노출되지 않도록 마스킹
+    const escaped = pat.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    throw new Error(raw.replace(new RegExp(escaped, 'g'), '***'))
   }
 }
 
@@ -733,7 +768,7 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     req.on('data', (chunk) => { body += chunk })
     req.on('end', () => {
       try {
-        const { action, cwd, args, file, files, message, branch } = JSON.parse(body)
+        const { action, cwd, args, file, files, message, branch, pat } = JSON.parse(body)
 
         // git 저장소 여부 먼저 확인
         try {
@@ -766,6 +801,12 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
         } else if (action === 'checkout') {
           if (!branch) { res.writeHead(400, CORS_HEADERS); res.end('Missing branch'); return }
           result = { output: runGit(cwd, ['checkout', branch as string]) }
+        } else if (action === 'push' || action === 'pull') {
+          if (pat) {
+            result = { output: runGitWithPat(cwd, action, pat as string) }
+          } else {
+            result = { output: runGit(cwd, [action]) }
+          }
         } else if (action === 'custom' && Array.isArray(args)) {
           result = { output: runGit(cwd, args) }
         } else {
