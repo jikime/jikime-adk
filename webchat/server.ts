@@ -317,6 +317,27 @@ async function handleClaudeMessage(
 }
 
 // ── Project Discovery ──────────────────────────────────────────
+
+// JSONL 세션 파일에서 실제 cwd 추출 (경로에 '-'가 포함된 경우 디렉터리명 디코딩이 부정확하므로)
+function extractCwdFromJsonl(jsonlPath: string): string | null {
+  try {
+    const lines = fs.readFileSync(jsonlPath, 'utf8').split('\n')
+    for (const line of lines.slice(0, 30)) {
+      if (!line.trim()) continue
+      try {
+        const event = JSON.parse(line)
+        // Claude Code가 저장하는 다양한 cwd 필드 형식 탐색
+        if (typeof event.cwd === 'string' && event.cwd.startsWith('/')) return event.cwd
+        if (typeof event.workdir === 'string' && event.workdir.startsWith('/')) return event.workdir
+        if (event.type === 'system' && typeof event.path === 'string') return event.path
+        // summary 이벤트에 포함된 경우
+        if (event.summary?.cwd) return event.summary.cwd
+      } catch { /* */ }
+    }
+  } catch { /* */ }
+  return null
+}
+
 function discoverProjects(): Array<{ id: string; name: string; path: string; sessions: string[] }> {
   const claudeDir = path.join(os.homedir(), '.claude', 'projects')
   const projects: Array<{ id: string; name: string; path: string; sessions: string[] }> = []
@@ -327,21 +348,29 @@ function discoverProjects(): Array<{ id: string; name: string; path: string; ses
     for (const entry of entries) {
       const fullPath = path.join(claudeDir, entry)
       if (!fs.statSync(fullPath).isDirectory()) continue
-      // Decode the path (Claude uses URL-encoded paths as directory names)
-      const decodedPath = entry.replace(/-/g, '/')
-      // Try to find actual sessions
+
+      // 세션 파일 목록 수집
       const sessions: string[] = []
       try {
         const files = fs.readdirSync(fullPath).filter(f => f.endsWith('.jsonl'))
-        for (const file of files) {
-          sessions.push(file.replace('.jsonl', ''))
-        }
+        for (const file of files) sessions.push(file.replace('.jsonl', ''))
       } catch { /* */ }
+
+      // 실제 경로: JSONL에서 cwd 읽기 → 없으면 디렉터리명 디코딩 폴백
+      let actualPath: string | null = null
+      for (const sessionId of sessions.slice(0, 3)) {
+        actualPath = extractCwdFromJsonl(path.join(fullPath, `${sessionId}.jsonl`))
+        if (actualPath) break
+      }
+      // 폴백: 디렉터리명에서 추정 (entry 앞의 '-'는 leading '/')
+      if (!actualPath) {
+        actualPath = entry.startsWith('-') ? entry.replace(/^-/, '/').replace(/-/g, '/') : entry.replace(/-/g, '/')
+      }
 
       projects.push({
         id: entry,
-        name: path.basename(decodedPath) || entry,
-        path: decodedPath,
+        name: path.basename(actualPath) || entry,
+        path: actualPath,
         sessions,
       })
     }
