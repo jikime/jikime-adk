@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { Bot, PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Bot, PanelLeftClose, PanelLeftOpen, Sun, Moon } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import Sidebar from '@/components/sidebar/Sidebar'
@@ -21,6 +22,30 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'git',      label: 'Git' },
 ]
 
+function ThemeToggle() {
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => { setMounted(true) }, [])
+
+  if (!mounted) return <div className="h-7 w-7" />
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-7 w-7 text-zinc-400 hover:text-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100"
+      onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+      title={resolvedTheme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환'}
+    >
+      {resolvedTheme === 'dark'
+        ? <Sun className="w-4 h-4 text-amber-400" />
+        : <Moon className="w-4 h-4 text-indigo-500" />
+      }
+    </Button>
+  )
+}
+
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('chat')
@@ -33,12 +58,12 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100 overflow-hidden">
-      {/* Top bar — mirrors body layout: [logo area | collapse + tabs] */}
-      <header className="flex items-center bg-zinc-900 border-b border-zinc-800 shrink-0 z-10 overflow-hidden">
+    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
+      {/* Top bar — mirrors body layout: [logo area | collapse + tabs | theme toggle] */}
+      <header className="flex items-center bg-card border-b border-border shrink-0 z-10 overflow-hidden">
         {/* Logo — same width as sidebar */}
         <div className={cn(
-          'flex items-center gap-1.5 shrink-0 transition-all duration-200 overflow-hidden border-r border-zinc-800',
+          'flex items-center gap-1.5 shrink-0 transition-all duration-200 overflow-hidden border-r border-border',
           sidebarOpen ? 'w-64 px-3 py-2' : 'w-0 px-0 py-2'
         )}>
           <Bot className="w-4 h-4 text-blue-400 shrink-0" />
@@ -46,7 +71,7 @@ export default function AppLayout() {
         </div>
 
         {/* Collapse icon + Tab buttons — aligned with main content */}
-        <div className="flex items-center gap-0.5 px-2 py-2">
+        <div className="flex items-center gap-0.5 px-2 py-2 flex-1">
           <Button
             variant="ghost"
             size="icon"
@@ -70,6 +95,11 @@ export default function AppLayout() {
             </button>
           ))}
         </div>
+
+        {/* Theme toggle — right side */}
+        <div className="px-2 py-2 shrink-0">
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* Body */}
@@ -77,7 +107,7 @@ export default function AppLayout() {
         {/* Sidebar — CSS 숨김으로 unmount 방지 */}
         <aside
           className={cn(
-            'shrink-0 transition-all duration-200 overflow-hidden border-r border-zinc-800',
+            'shrink-0 transition-all duration-200 overflow-hidden border-r border-border',
             sidebarOpen ? 'w-64' : 'w-0'
           )}
         >
