@@ -41,16 +41,16 @@ claude auth login
 
 ## 문서
 
-자세한 내용은 `docs/` 디렉터리를 참고하세요.
+자세한 내용은 `docs/ko/webchat/` 디렉터리를 참고하세요.
 
 | 문서 | 내용 |
 |---|---|
-| [설치 가이드](./docs/installation.md) | 로컬 / Docker 설치 방법 |
-| [사용법](./docs/usage.md) | 화면 구성, 채팅, 터미널, Git 사용법 |
-| [원격 서버 연결](./docs/remote-server.md) | 원격 서버 등록 및 접속 방법 |
-| [아키텍처](./docs/architecture.md) | 프로젝트 구조 및 기술 스택 |
-| [트러블슈팅](./docs/troubleshooting.md) | 자주 발생하는 오류 해결법 |
-| [업데이트 가이드](./docs/update.md) | 배포된 컨테이너 업데이트 방법 |
+| [설치 가이드](../docs/ko/webchat/installation.md) | 로컬 / Docker 설치 방법 |
+| [사용법](../docs/ko/webchat/usage.md) | 화면 구성, 채팅, 터미널, Git 사용법 |
+| [원격 서버 연결](../docs/ko/webchat/remote-server.md) | 원격 서버 등록 및 접속 방법 |
+| [아키텍처](../docs/ko/webchat/architecture.md) | 프로젝트 구조 및 기술 스택 |
+| [트러블슈팅](../docs/ko/webchat/troubleshooting.md) | 자주 발생하는 오류 해결법 |
+| [업데이트 가이드](../docs/ko/webchat/update.md) | 배포된 컨테이너 업데이트 방법 |
 
 ---
 
