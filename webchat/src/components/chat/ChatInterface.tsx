@@ -54,6 +54,88 @@ interface PermissionRequest {
 
 // ── 서브 컴포넌트 ─────────────────────────────────────────────────
 
+function ThinkingIndicator() {
+  return (
+    <>
+      <style>{`
+        @keyframes wc-spin   { from { transform: rotate(0deg);   } to { transform: rotate(360deg);  } }
+        @keyframes wc-spin-r { from { transform: rotate(0deg);   } to { transform: rotate(-360deg); } }
+        @keyframes wc-spin-d { from { transform: rotate(-30deg); } to { transform: rotate(330deg);  } }
+        @keyframes wc-glow   { 0%,100% { opacity:.75; transform:scale(.93); } 50% { opacity:1; transform:scale(1.07); } }
+        @keyframes wc-dot    { 0%,80%,100% { transform:translateY(0);   opacity:.35; }
+                               40%          { transform:translateY(-4px); opacity:1;   } }
+      `}</style>
+
+      <div className="flex items-center gap-3 px-1 py-2">
+        {/* 궤도 애니메이션 */}
+        <div className="relative shrink-0" style={{ width: 40, height: 40 }}>
+
+          {/* 궤도 링 1 — 황금색, 정방향 */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            style={{ animation: 'wc-spin 3s linear infinite' }}
+            viewBox="0 0 40 40"
+          >
+            <ellipse cx="20" cy="20" rx="18" ry="6.5"
+              fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.55" />
+            {/* 다이아몬드 스파클 */}
+            <polygon points="20,0 21.4,2 20,4 18.6,2"
+              fill="#fbbf24" opacity="0.95" />
+            <polygon points="20,36 21.4,38 20,40 18.6,38"
+              fill="#fbbf24" opacity="0.6" />
+          </svg>
+
+          {/* 궤도 링 2 — 은색, 역방향, 기울어짐 */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            style={{ animation: 'wc-spin-r 2.3s linear infinite', transform: 'rotate(55deg)' }}
+            viewBox="0 0 40 40"
+          >
+            <ellipse cx="20" cy="20" rx="18" ry="6.5"
+              fill="none" stroke="#94a3b8" strokeWidth="0.9" opacity="0.4" />
+            <polygon points="20,0 21.3,2 20,4 18.7,2"
+              fill="#94a3b8" opacity="0.85" />
+          </svg>
+
+          {/* 궤도 링 3 — 살짝 기울어진 세 번째 */}
+          <svg
+            className="absolute inset-0 w-full h-full"
+            style={{ animation: 'wc-spin-d 4s linear infinite', transform: 'rotate(-40deg)' }}
+            viewBox="0 0 40 40"
+          >
+            <ellipse cx="20" cy="20" rx="18" ry="6.5"
+              fill="none" stroke="#d4a057" strokeWidth="0.7" opacity="0.28" />
+          </svg>
+
+          {/* 중심 — 황금빛 구체 */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div
+              className="w-5 h-5 rounded-full"
+              style={{
+                background: 'radial-gradient(circle at 38% 35%, #fde68a, #f59e0b 55%, #b45309)',
+                animation: 'wc-glow 1.8s ease-in-out infinite',
+                boxShadow: '0 0 12px 4px rgba(251,191,36,0.45)',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* 텍스트 + 바운스 점 */}
+        <span className="text-xs text-zinc-400 flex items-center gap-1.5">
+          생각 중
+          {[0, 0.18, 0.36].map((delay, i) => (
+            <span
+              key={i}
+              className="inline-block w-1 h-1 rounded-full bg-amber-400/70"
+              style={{ animation: `wc-dot 1.1s ease-in-out ${delay}s infinite` }}
+            />
+          ))}
+        </span>
+      </div>
+    </>
+  )
+}
+
 function ToolCallView({ tool }: { tool: ToolCall }) {
   const [open, setOpen] = useState(false)
   const inputStr = typeof tool.input === 'string'
@@ -139,6 +221,9 @@ function MessageBubble({ msg }: { msg: Message }) {
             <div className="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed bg-blue-600 text-white rounded-tr-sm">
               <span className="whitespace-pre-wrap break-words">{msg.text}</span>
             </div>
+          ) : msg.status === 'streaming' && !msg.text ? (
+            /* 텍스트가 아직 없는 스트리밍 초기 — 궤도 애니메이션 */
+            <ThinkingIndicator />
           ) : (
             <div className={cn('text-sm leading-relaxed py-1',
               msg.status === 'error' && 'bg-red-950/50 text-red-200 border border-red-800/50 rounded-lg px-3.5 py-2.5'
@@ -261,6 +346,7 @@ export default function ChatInterface() {
   const [tokenBudget, setTokenBudget]         = useState<TokenBudget | null>(null)
   const [permissionReq, setPermissionReq]     = useState<PermissionRequest | null>(null)
   const [showModelMenu, setShowModelMenu]     = useState(false)
+  const [showMoreModels, setShowMoreModels]   = useState(false)
   const [extendedThinking, setExtendedThinking] = useState(false)
   const [attachments, setAttachments]         = useState<AttachedFile[]>([])
   const [uploading, setUploading]             = useState(false)
@@ -274,6 +360,9 @@ export default function ChatInterface() {
   const fileInputRef    = useRef<HTMLInputElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef  = useRef<any>(null)
+  // 서버가 새로 할당한 session ID를 저장 — 히스토리 로드를 건너뛸 때 사용
+  // boolean이 아닌 ID 값 자체를 보관해야 StrictMode 이중 실행에서도 안전
+  const serverAssignedIdRef = useRef<string | null>(null)
 
   // 마이크 지원 여부 확인
   useEffect(() => {
@@ -344,7 +433,14 @@ export default function ChatInterface() {
   }, [listening])
 
   // 세션 변경 시 히스토리 로드
+  // 서버가 할당한 세션 ID(serverAssignedIdRef)와 일치하면 건너뜀 — 스트리밍 중이므로
+  // ref를 소비(초기화)하지 않아야 React StrictMode 이중 실행에서도 안전
   useEffect(() => {
+    if (activeSessionId !== null && serverAssignedIdRef.current === activeSessionId) {
+      return  // 서버 할당 세션 — 현재 스트리밍 중, 히스토리 로드 불필요
+    }
+    // 사용자가 직접 세션을 변경했을 때만 도달
+    serverAssignedIdRef.current = null  // ref 초기화
     setMessages([])
     setTokenBudget(null)
     setPermissionReq(null)
@@ -397,6 +493,8 @@ export default function ChatInterface() {
       if (!id) return
 
       if (msg.type === 'session_id') {
+        // 서버가 새로 할당한 session ID를 보관 — 히스토리 로드 건너뜀에 사용
+        serverAssignedIdRef.current = msg.sessionId as string
         setActiveSessionId(msg.sessionId as string)
       } else if (msg.type === 'text') {
         setMessages(prev => prev.map(m =>
@@ -510,7 +608,9 @@ export default function ChatInterface() {
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`
   }
 
-  const currentModel = MODELS.find(m => m.id === model) ?? MODELS[0]
+  const currentModel   = MODELS.find(m => m.id === model) ?? MODELS[0]
+  const featuredModels = MODELS.slice(0, 3)   // 상위 3개 기본 노출
+  const moreModels     = MODELS.slice(3)       // 나머지는 접어서 보관
 
   return (
     <div className="flex flex-col h-full bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800">
@@ -571,7 +671,7 @@ export default function ChatInterface() {
       {/* 입력창 */}
       <div className="shrink-0 border-t border-zinc-800 bg-zinc-950 px-3 py-3">
         <div
-          className="bg-zinc-800 border border-zinc-700 rounded-2xl overflow-hidden focus-within:border-zinc-500 transition-colors"
+          className="bg-zinc-800 border border-zinc-700 rounded-2xl focus-within:border-zinc-500 transition-colors"
           onDragOver={e => e.preventDefault()}
           onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
         >
@@ -642,20 +742,22 @@ export default function ChatInterface() {
               <button
                 type="button"
                 onClick={() => setShowModelMenu(v => !v)}
-                className="flex items-center gap-1.5 h-8 px-2.5 rounded-full border border-zinc-600 text-xs text-zinc-300 hover:text-zinc-100 hover:border-zinc-400 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-zinc-700 hover:bg-zinc-600 text-xs text-zinc-200 transition-colors whitespace-nowrap"
               >
-                {currentModel.label}{extendedThinking ? ' 확장' : ''}
-                <ChevronDown className="w-3 h-3 text-zinc-500" />
+                <span className="font-medium">{currentModel.label}</span>
+                {extendedThinking && <span className="text-zinc-400">확장</span>}
+                <ChevronDown className="w-3 h-3 text-zinc-400" />
               </button>
 
               {showModelMenu && (
-                <div className="absolute right-0 bottom-full mb-2 z-20 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl min-w-[260px] py-2">
-                  {/* 모델 목록 — 구분선 없이 나열 */}
-                  {MODELS.map(m => (
+                <div className="absolute right-0 bottom-full mb-2 z-20 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl w-72 py-2 overflow-hidden">
+
+                  {/* 기본 모델 3개 */}
+                  {featuredModels.map(m => (
                     <button
                       key={m.id}
                       onClick={() => { setModel(m.id); setShowModelMenu(false) }}
-                      className="flex items-center w-full px-4 py-2.5 text-left hover:bg-zinc-800/60 transition-colors"
+                      className="flex items-center w-full px-4 py-3 text-left hover:bg-zinc-800/60 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-zinc-100 leading-snug">{m.label}</p>
@@ -667,7 +769,37 @@ export default function ChatInterface() {
                     </button>
                   ))}
 
-                  {/* 확장 사고 — 둥근 카드 블록 (여백+배경) */}
+                  {/* 더 많은 모델 토글 */}
+                  {moreModels.length > 0 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setShowMoreModels(v => !v)}
+                        className="flex items-center w-full px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 transition-colors"
+                      >
+                        <span className="flex-1 text-left">더 많은 모델</span>
+                        <ChevronRight className={cn('w-4 h-4 transition-transform', showMoreModels && 'rotate-90')} />
+                      </button>
+
+                      {showMoreModels && moreModels.map(m => (
+                        <button
+                          key={m.id}
+                          onClick={() => { setModel(m.id); setShowModelMenu(false) }}
+                          className="flex items-center w-full px-4 py-3 text-left hover:bg-zinc-800/60 transition-colors bg-zinc-800/30"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-zinc-100 leading-snug">{m.label}</p>
+                            <p className="text-xs text-zinc-500 mt-0.5 leading-snug">{m.description}</p>
+                          </div>
+                          <span className="w-6 flex justify-end shrink-0">
+                            {model === m.id && <Check className="w-4 h-4 text-blue-400" />}
+                          </span>
+                        </button>
+                      ))}
+                    </>
+                  )}
+
+                  {/* 확장 사고 — 둥근 카드 블록 */}
                   <div className="mx-2 mt-1 mb-1 rounded-xl bg-zinc-800 px-3 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
@@ -690,11 +822,6 @@ export default function ChatInterface() {
                     </div>
                   </div>
 
-                  {/* 더 많은 모델 — 구분선 없이 */}
-                  <button className="flex items-center w-full px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 transition-colors">
-                    <span className="flex-1 text-left">더 많은 모델</span>
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
                 </div>
               )}
             </div>
@@ -721,7 +848,7 @@ export default function ChatInterface() {
               <button
                 type="button"
                 onClick={abort}
-                className="w-8 h-8 rounded-full bg-red-600 hover:bg-red-500 flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-xl bg-red-600 hover:bg-red-500 flex items-center justify-center transition-colors"
               >
                 <Square className="w-3.5 h-3.5 text-white" />
               </button>
@@ -730,9 +857,9 @@ export default function ChatInterface() {
                 type="button"
                 onClick={submit}
                 disabled={!input.trim() && attachments.length === 0}
-                className="w-8 h-8 rounded-full bg-zinc-200 hover:bg-white disabled:bg-zinc-700 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-xl bg-orange-500 hover:bg-orange-400 disabled:bg-zinc-700 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
               >
-                <Send className="w-3.5 h-3.5 text-zinc-900" />
+                <Send className="w-4 h-4 text-white" />
               </button>
             )}
           </div>

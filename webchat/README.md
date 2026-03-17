@@ -50,6 +50,7 @@ claude auth login
 | [원격 서버 연결](./docs/remote-server.md) | 원격 서버 등록 및 접속 방법 |
 | [아키텍처](./docs/architecture.md) | 프로젝트 구조 및 기술 스택 |
 | [트러블슈팅](./docs/troubleshooting.md) | 자주 발생하는 오류 해결법 |
+| [업데이트 가이드](./docs/update.md) | 배포된 컨테이너 업데이트 방법 |
 
 ---
 

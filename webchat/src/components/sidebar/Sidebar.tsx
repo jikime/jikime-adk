@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import {
-  FolderOpen, MessageSquare, Plus, RefreshCw,
+  Folder, FolderOpen, MessageSquare, Plus, RefreshCw,
   ChevronDown, ChevronRight, Settings, X, Check,
   Server, Trash2, Edit2, Globe, AlertTriangle,
 } from 'lucide-react'
@@ -11,13 +11,15 @@ import { cn } from '@/lib/utils'
 import { useProject, type Project } from '@/contexts/ProjectContext'
 import { useServer, type RemoteServer } from '@/contexts/ServerContext'
 import { useWebSocket } from '@/contexts/WebSocketContext'
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+
 
 // ── 설정 타입 & 유틸 ──────────────────────────────────────────────
 export const MODELS = [
-  { id: 'claude-opus-4-5',            label: 'Opus 4.5',   description: '고난도 작업에 가장 강력함'  },
-  { id: 'claude-sonnet-4-5',          label: 'Sonnet 4.5', description: '스마트하고 효율적인 모델'   },
-  { id: 'claude-haiku-4-5-20251001',  label: 'Haiku 4.5',  description: '빠른 답변에 가장 빠름'     },
+  { id: 'claude-opus-4-6',            label: 'Opus 4.6',   description: '최고 성능, 복잡한 작업에 최적'  },
+  { id: 'claude-sonnet-4-6',          label: 'Sonnet 4.6', description: '빠르고 스마트한 최신 모델'      },
+  { id: 'claude-opus-4-5',            label: 'Opus 4.5',   description: '고난도 작업에 가장 강력함'      },
+  { id: 'claude-sonnet-4-5',          label: 'Sonnet 4.5', description: '스마트하고 효율적인 모델'       },
+  { id: 'claude-haiku-4-5-20251001',  label: 'Haiku 4.5',  description: '빠른 답변에 가장 빠름'         },
 ] as const
 
 export type ModelId = typeof MODELS[number]['id']
@@ -31,7 +33,7 @@ export interface AppSettings {
 const SETTINGS_KEY = 'webchat_settings'
 
 const DEFAULT_SETTINGS: AppSettings = {
-  model: 'claude-sonnet-4-5',
+  model: 'claude-sonnet-4-6',
   permissionMode: 'bypassPermissions',
 }
 
@@ -467,8 +469,9 @@ export default function Sidebar() {
       </div>
 
       {/* ── 프로젝트 목록 ── */}
-      <div className="flex-1 overflow-y-auto
-        [&::-webkit-scrollbar]:w-[3px]
+      <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden
+        [&::-webkit-scrollbar]:w-[2px]
+        [&::-webkit-scrollbar]:h-[2px]
         [&::-webkit-scrollbar-track]:bg-transparent
         [&::-webkit-scrollbar-thumb]:bg-zinc-700
         [&::-webkit-scrollbar-thumb]:rounded-full
@@ -481,82 +484,88 @@ export default function Sidebar() {
             </div>
           )}
 
-          {projects.map((project) => (
-            <Collapsible key={project.id} open={openProjects.has(project.id)}>
-              <div className="flex items-center group">
-                <CollapsibleTrigger
-                  onClick={() => toggleProject(project.id)}
-                  className="p-0.5 ml-1 text-zinc-500 hover:text-zinc-300"
-                >
-                  {openProjects.has(project.id)
-                    ? <ChevronDown className="w-3 h-3" />
-                    : <ChevronRight className="w-3 h-3" />}
-                </CollapsibleTrigger>
-                <button
-                  className={cn(
-                    'flex flex-1 items-center gap-2 px-2 py-1.5 text-left rounded-md ml-1 text-sm transition-colors min-w-0',
-                    activeProject?.id === project.id && activeSessionId === null
-                      ? 'bg-zinc-700 text-zinc-100'
-                      : 'text-zinc-300 hover:bg-zinc-800'
-                  )}
-                  onClick={() => selectProject(project)}
-                >
-                  {deletingId === project.id
-                    ? <RefreshCw className="w-3.5 h-3.5 text-zinc-500 shrink-0 animate-spin" />
-                    : <FolderOpen className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                  }
-                  <span className="truncate text-xs">{project.name}</span>
-                </button>
-                {/* 삭제 버튼 — hover 시 출현 */}
-                <button
-                  onClick={e => { e.stopPropagation(); setDeletingProject(project) }}
-                  disabled={deletingId === project.id}
-                  className="mr-1.5 p-1 rounded opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
-                  title="프로젝트 삭제"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </div>
+          {projects.map((project) => {
+            const isOpen = openProjects.has(project.id)
+            return (
+              <div key={project.id}>
+                <div className="flex items-center group">
+                  <button
+                    onClick={() => toggleProject(project.id)}
+                    className="p-0.5 ml-1 text-zinc-500 hover:text-zinc-300"
+                  >
+                    {isOpen
+                      ? <ChevronDown className="w-3 h-3" />
+                      : <ChevronRight className="w-3 h-3" />}
+                  </button>
+                  <button
+                    className={cn(
+                      'flex flex-1 items-center gap-2 px-2 py-1.5 text-left rounded-md ml-1 text-sm transition-colors min-w-0',
+                      activeProject?.id === project.id && activeSessionId === null
+                        ? 'bg-zinc-700 text-zinc-100'
+                        : 'text-zinc-300 hover:bg-zinc-800'
+                    )}
+                    onClick={() => selectProject(project)}
+                  >
+                    {deletingId === project.id
+                      ? <RefreshCw className="w-3.5 h-3.5 text-zinc-500 shrink-0 animate-spin" />
+                      : isOpen
+                        ? <FolderOpen className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        : <Folder className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
+                    }
+                    <span className="truncate text-xs">{project.name}</span>
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); setDeletingProject(project) }}
+                    disabled={deletingId === project.id}
+                    className="mr-1.5 p-1 rounded opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
+                    title="프로젝트 삭제"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
 
-              <CollapsibleContent>
-                <button
-                  className="flex items-center gap-2 px-4 py-1 text-xs text-zinc-500 hover:text-zinc-300 w-full hover:bg-zinc-800 rounded-md mx-1"
-                  onClick={() => { setActiveProject(project); setActiveSessionId(null) }}
-                >
-                  <Plus className="w-3 h-3" />
-                  새 대화
-                </button>
+                {isOpen && (
+                  <div className="ml-5">
+                    <button
+                      className="flex items-center gap-2 px-3 py-1 text-xs text-zinc-500 hover:text-zinc-300 w-full hover:bg-zinc-800 rounded-md"
+                      onClick={() => { setActiveProject(project); setActiveSessionId(null) }}
+                    >
+                      <Plus className="w-3 h-3" />
+                      새 대화
+                    </button>
 
-                {project.sessions.slice(0, 10).map((sessionId) => (
-                  <div key={sessionId} className="flex items-center group/session mx-1">
-                    <button
-                      className={cn(
-                        'flex flex-1 items-center gap-2 px-3 py-1 text-xs rounded-md transition-colors min-w-0',
-                        activeSessionId === sessionId
-                          ? 'bg-zinc-700 text-zinc-100'
-                          : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
-                      )}
-                      onClick={() => { setActiveProject(project); setActiveSessionId(sessionId) }}
-                    >
-                      {deletingSessionId === sessionId
-                        ? <RefreshCw className="w-3 h-3 shrink-0 animate-spin" />
-                        : <MessageSquare className="w-3 h-3 shrink-0" />
-                      }
-                      <span className="truncate font-mono">{sessionId.slice(0, 12)}...</span>
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); setDeletingSession({ project, sessionId }) }}
-                      disabled={deletingSessionId === sessionId}
-                      className="p-1 mr-0.5 rounded opacity-0 group-hover/session:opacity-100 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
-                      title="세션 삭제"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                    {project.sessions.slice(0, 10).map((sessionId) => (
+                      <div key={sessionId} className="flex items-center group/session">
+                        <button
+                          className={cn(
+                            'flex flex-1 items-center gap-2 pl-2 pr-1 py-1 text-xs rounded-md transition-colors min-w-0',
+                            activeSessionId === sessionId
+                              ? 'bg-zinc-700 text-zinc-100'
+                              : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
+                          )}
+                          onClick={() => { setActiveProject(project); setActiveSessionId(sessionId) }}
+                        >
+                          {deletingSessionId === sessionId
+                            ? <RefreshCw className="w-3 h-3 shrink-0 animate-spin" />
+                            : <MessageSquare className="w-3 h-3 shrink-0" />
+                          }
+                          <span className="truncate font-mono">{sessionId.slice(0, 20)}...</span>
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); setDeletingSession({ project, sessionId }) }}
+                          disabled={deletingSessionId === sessionId}
+                          className="p-1 mr-0.5 rounded opacity-0 group-hover/session:opacity-100 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
+                          title="세션 삭제"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 

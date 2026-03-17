@@ -197,10 +197,11 @@ async function handleClaudeMessage(
   claudeSessionId: string | null,
   projectPath: string,
   prompt: string,
-  model = 'claude-sonnet-4-5',
+  model = 'claude-sonnet-4-6',
   permissionMode = 'bypassPermissions',
+  extendedThinking = false,
 ) {
-  console.log(`[chat] start — model=${model} mode=${permissionMode} cwd=${projectPath}`)
+  console.log(`[chat] start — model=${model} mode=${permissionMode} thinking=${extendedThinking} cwd=${projectPath}`)
   const { query } = await import('@anthropic-ai/claude-agent-sdk')
 
   let capturedSessionId = claudeSessionId
@@ -216,6 +217,7 @@ async function handleClaudeMessage(
     model,
     ...(!isRoot && permissionMode === 'bypassPermissions' && { allowDangerouslySkipPermissions: true }),
     ...(CLAUDE_PATH && { pathToClaudeCodeExecutable: CLAUDE_PATH }),
+    ...(extendedThinking && { thinking: { type: 'enabled', budget_tokens: 10000 } }),
   }
   if (claudeSessionId) options.resume = claudeSessionId
 
@@ -388,6 +390,14 @@ function discoverProjects(): Array<{ id: string; name: string; path: string; ses
       const sessions: string[] = []
       try {
         const files = fs.readdirSync(fullPath).filter(f => f.endsWith('.jsonl'))
+        // 수정 시간 기준 최신순 정렬
+        files.sort((a, b) => {
+          try {
+            const mtimeA = fs.statSync(path.join(fullPath, a)).mtimeMs
+            const mtimeB = fs.statSync(path.join(fullPath, b)).mtimeMs
+            return mtimeB - mtimeA
+          } catch { return 0 }
+        })
         for (const file of files) sessions.push(file.replace('.jsonl', ''))
       } catch { /* */ }
 
@@ -488,34 +498,54 @@ function parseSessionHistory(jsonlPath: string): HistoryMessage[] {
   for (const line of lines) {
     let event: Record<string, unknown>
     try { event = JSON.parse(line) } catch { continue }
-    if (event.type !== 'user' && event.type !== 'assistant') continue
 
-    const msg = event.message as { role?: string; content?: Record<string, unknown>[] } | undefined
+    // file-history-snapshot / last-prompt 등 건너뜀
+    if (event.type !== 'user' && event.type !== 'assistant') continue
+    // isMeta: true — 내부 명령 메시지 건너뜀
+    if (event.isMeta === true) continue
+
+    const msg = event.message as {
+      role?: string
+      content?: string | Array<Record<string, unknown>>
+    } | undefined
     if (!msg?.content) continue
-    const content = msg.content
 
     if (msg.role === 'user') {
-      const toolResults = content.filter(b => b.type === 'tool_result')
-      const textBlocks  = content.filter(b => b.type === 'text')
+      // content 가 문자열인 경우 (신규 포맷)
+      if (typeof msg.content === 'string') {
+        const text = msg.content.trim()
+        // XML 명령(<command-name>, <local-command-stdout> 등) 건너뜀
+        if (!text || text.startsWith('<')) continue
+        messages.push({ id: `h-u-${messages.length}`, role: 'user', text, status: 'done' })
 
-      // tool_result → 앞 assistant 메시지의 마지막 tool call에 결과 연결
-      if (toolResults.length > 0) {
-        const lastAsst = [...messages].reverse().find(m => m.role === 'assistant')
-        if (lastAsst?.toolCalls) {
-          toolResults.forEach((tr, i) => {
-            const tc = lastAsst.toolCalls![lastAsst.toolCalls!.length - toolResults.length + i]
-            if (tc) tc.result = tr.content
-          })
+      // content 가 배열인 경우 (tool_result / text 블록 혼합)
+      } else if (Array.isArray(msg.content)) {
+        const content = msg.content
+        const toolResults = content.filter(b => b.type === 'tool_result')
+        const textBlocks  = content.filter(b => b.type === 'text')
+
+        // tool_result → 앞 assistant 메시지의 마지막 tool call에 결과 연결
+        if (toolResults.length > 0) {
+          const lastAsst = [...messages].reverse().find(m => m.role === 'assistant')
+          if (lastAsst?.toolCalls) {
+            toolResults.forEach((tr, i) => {
+              const tc = lastAsst.toolCalls![lastAsst.toolCalls!.length - toolResults.length + i]
+              if (tc) tc.result = tr.content
+            })
+          }
+        }
+
+        if (textBlocks.length > 0) {
+          const text = textBlocks.map(b => b.text as string).join('\n').trim()
+          if (text && !text.startsWith('<')) {
+            messages.push({ id: `h-u-${messages.length}`, role: 'user', text, status: 'done' })
+          }
         }
       }
 
-      if (textBlocks.length > 0) {
-        const text = textBlocks.map(b => b.text as string).join('\n').trim()
-        if (text) {
-          messages.push({ id: `h-u-${messages.length}`, role: 'user', text, status: 'done' })
-        }
-      }
     } else if (msg.role === 'assistant') {
+      if (!Array.isArray(msg.content)) continue
+      const content = msg.content
       const textBlocks    = content.filter(b => b.type === 'text')
       const toolUseBlocks = content.filter(b => b.type === 'tool_use')
       const thinkBlocks   = content.filter(b => b.type === 'thinking')
@@ -844,7 +874,7 @@ app.prepare().then(() => {
         const msg = JSON.parse(raw.toString())
 
         if (msg.type === 'chat') {
-          const { sessionId, projectPath, prompt, model, permissionMode } = msg
+          const { sessionId, projectPath, prompt, model, permissionMode, extendedThinking } = msg
           await handleClaudeMessage(
             ws, wsKey,
             sessionId || null,
@@ -852,6 +882,7 @@ app.prepare().then(() => {
             prompt,
             model,
             permissionMode,
+            !!extendedThinking,
           )
 
         } else if (msg.type === 'abort') {
