@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start --port 4000",
     "lint": "eslint",
-    "postinstall": "chmod +x node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper 2>/dev/null || true"
+    "postinstall": "node scripts/postinstall.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.58",
