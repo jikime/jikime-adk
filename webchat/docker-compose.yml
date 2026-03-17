@@ -1,0 +1,34 @@
+services:
+  webchat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: webchat:latest
+    container_name: webchat
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      # Claude CLI 경로 (컨테이너 내부 경로)
+      - CLAUDE_PATH=/usr/local/bin/claude
+      # 포트 / 호스트
+      - PORT=4000
+      - HOSTNAME=0.0.0.0
+      - NODE_ENV=production
+    volumes:
+      # Claude 세션 히스토리 / 프로젝트 목록 유지
+      - claude_data:/root/.claude
+      # 작업 프로젝트 디렉터리 마운트 (호스트 경로를 컨테이너 내부에 동일하게 노출)
+      # 필요에 따라 주석 해제하여 사용
+      # - /home:/home:ro
+      # - /root:/root/host:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/api/ws/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  claude_data:
+    driver: local

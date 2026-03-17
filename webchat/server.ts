@@ -155,12 +155,6 @@ function getOrCreatePtySession(sessionId: string, cwd: string, cols: number, row
     ptySessions.delete(sessionId)
   })
   ptySessions.set(sessionId, session)
-  // Auto-start claude
-  setTimeout(() => {
-    if (ptySessions.has(sessionId)) {
-      ptyProcess.write('claude --dangerously-skip-permissions\r')
-    }
-  }, 800)
   return session
 }
 
@@ -313,10 +307,14 @@ async function handleClaudeMessage(
 
     // exit code 1 — claude CLI 실행 실패
     if (msg.includes('exit') && msg.includes('code 1')) {
-      // 실제 오류 확인을 위해 직접 실행
+      // 실제 오류 확인을 위해 직접 실행 (root 여부에 따라 옵션 분기)
+      const isRootCheck = process.getuid?.() === 0
       let detail = ''
       try {
-        execSync(`"${CLAUDE_PATH ?? 'claude'}" --dangerously-skip-permissions --output-format stream-json -p "ping" 2>&1`, {
+        const debugArgs = isRootCheck
+          ? `--output-format stream-json -p "ping"`
+          : `--dangerously-skip-permissions --output-format stream-json -p "ping"`
+        execSync(`"${CLAUDE_PATH ?? 'claude'}" ${debugArgs} 2>&1`, {
           encoding: 'utf8', timeout: 10000,
         })
       } catch (e: unknown) {
@@ -325,7 +323,7 @@ async function handleClaudeMessage(
       }
       const hint = [
         `claude 종료 코드 1 (경로: ${CLAUDE_PATH ?? 'claude'})`,
-        detail ? `오류: ${detail}` : '원격 서버에서 직접 확인: claude --dangerously-skip-permissions --output-format stream-json -p "hello"',
+        detail ? `오류: ${detail}` : '원격 서버에서 직접 확인: claude --output-format stream-json -p "hello"',
       ].join('\n')
       console.error('[chat]', hint)
       ws.send(JSON.stringify({ type: 'error', message: hint }))
@@ -561,6 +559,13 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   if (req.method === 'OPTIONS') {
     res.writeHead(204, CORS_HEADERS)
     res.end()
+    return true
+  }
+
+  // GET /api/ws/health — Docker healthcheck
+  if (pathname === '/api/ws/health' && req.method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+    res.end(JSON.stringify({ ok: true }))
     return true
   }
 
