@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useProject, type Project } from '@/contexts/ProjectContext'
 import { useServer, type RemoteServer } from '@/contexts/ServerContext'
+import { useWebSocket } from '@/contexts/WebSocketContext'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 
 // ── 설정 타입 & 유틸 ──────────────────────────────────────────────
@@ -266,8 +267,8 @@ function DeleteConfirmDialog({
 // ── 메인 사이드바 ─────────────────────────────────────────────────
 export default function Sidebar() {
   const { projects, activeProject, activeSessionId, setActiveProject, setActiveSessionId, refreshProjects } = useProject()
-  const { servers, activeServer, setActiveServerId, addServer, updateServer, removeServer } = useServer()
-  const { getApiUrl } = useServer()
+  const { servers, activeServer, setActiveServerId, addServer, updateServer, removeServer, getApiUrl } = useServer()
+  const { isConnected } = useWebSocket()
 
   const [loading,          setLoading]         = useState(false)
   const [openProjects,     setOpenProjects]     = useState<Set<string>>(new Set())
@@ -351,11 +352,22 @@ export default function Sidebar() {
           onClick={() => setShowServerPicker(v => !v)}
           className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-zinc-800 transition-colors"
         >
-          <Server className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+          <div className="relative shrink-0">
+            <Server className="w-3.5 h-3.5 text-blue-400" />
+            <span className={cn(
+              'absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-zinc-900',
+              isConnected ? 'bg-green-400' : 'bg-zinc-600'
+            )} />
+          </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-zinc-200 truncate">{activeServer?.name ?? '서버 없음'}</p>
-            <p className="text-[10px] text-zinc-600 font-mono truncate">
-              {activeServer ? `${activeServer.secure ? 'wss://' : 'ws://'}${activeServer.host}` : ''}
+            <p className="text-[10px] font-mono truncate">
+              <span className={isConnected ? 'text-green-500' : 'text-zinc-600'}>
+                {isConnected ? '● 연결됨' : '○ 연결 중...'}
+              </span>
+              <span className="text-zinc-700 ml-1">
+                {activeServer ? `${activeServer.secure ? 'wss://' : 'ws://'}${activeServer.host}` : ''}
+              </span>
             </p>
           </div>
           <ChevronDown className={cn('w-3 h-3 text-zinc-500 shrink-0 transition-transform', showServerPicker && 'rotate-180')} />
