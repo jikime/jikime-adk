@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
+import { useLocale } from '@/contexts/LocaleContext'
 import MonacoReactEditor, { type OnMount } from '@monaco-editor/react'
 
 // ── 타입 ──────────────────────────────────────────────────────────
@@ -37,7 +38,7 @@ const EXT_COLOR: Record<string, string> = {
 
 function extColor(name: string): string {
   const ext = name.split('.').pop()?.toLowerCase() ?? ''
-  return EXT_COLOR[ext] ?? 'text-zinc-400'
+  return EXT_COLOR[ext] ?? 'text-muted-foreground'
 }
 
 const EXT_LANG: Record<string, string> = {
@@ -90,10 +91,10 @@ function FileNodeItem({
       <button
         className={cn(
           'flex items-center gap-1.5 w-full text-left py-0.5 rounded text-xs transition-colors',
-          isDir ? 'text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800' : 'hover:bg-zinc-800',
+          isDir ? 'text-foreground/80 hover:text-foreground hover:bg-muted' : 'hover:bg-muted',
           !isDir && selectedPath === node.path
-            ? 'bg-zinc-800 text-zinc-100'
-            : !isDir && 'text-zinc-400 hover:text-zinc-200'
+            ? 'bg-muted text-foreground'
+            : !isDir && 'text-muted-foreground hover:text-foreground'
         )}
         style={{ paddingLeft: `${indent + 8}px`, paddingRight: '8px' }}
         onClick={() => isDir ? setOpen(v => !v) : onSelect(node)}
@@ -101,8 +102,8 @@ function FileNodeItem({
         {isDir ? (
           <>
             {open
-              ? <ChevronDown className="w-3 h-3 shrink-0 text-zinc-500" />
-              : <ChevronRight className="w-3 h-3 shrink-0 text-zinc-500" />}
+              ? <ChevronDown className="w-3 h-3 shrink-0 text-muted-foreground" />
+              : <ChevronRight className="w-3 h-3 shrink-0 text-muted-foreground" />}
             {open
               ? <FolderOpen className="w-3.5 h-3.5 shrink-0 text-blue-400" />
               : <Folder     className="w-3.5 h-3.5 shrink-0 text-blue-400" />}
@@ -115,7 +116,7 @@ function FileNodeItem({
         )}
         <span className="truncate flex-1">{node.name}</span>
         {!isDir && node.size !== undefined && (
-          <span className="text-zinc-600 text-[10px] shrink-0">{formatSize(node.size)}</span>
+          <span className="text-muted-foreground/50 text-[10px] shrink-0">{formatSize(node.size)}</span>
         )}
       </button>
 
@@ -146,21 +147,22 @@ function SearchResultItem({
     <button
       onClick={() => onSelect(node)}
       className={cn(
-        'flex flex-col w-full text-left px-2 py-1.5 rounded text-xs transition-colors hover:bg-zinc-800',
-        selectedPath === node.path ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-400'
+        'flex flex-col w-full text-left px-2 py-1.5 rounded text-xs transition-colors hover:bg-muted',
+        selectedPath === node.path ? 'bg-muted text-foreground' : 'text-muted-foreground'
       )}
     >
       <div className="flex items-center gap-1.5">
         <File className={cn('w-3 h-3 shrink-0', extColor(node.name))} />
-        <span className="font-medium text-zinc-200">{node.name}</span>
+        <span className="font-medium text-foreground">{node.name}</span>
       </div>
-      <span className="text-zinc-600 text-[10px] font-mono truncate pl-4">{rel}</span>
+      <span className="text-muted-foreground/50 text-[10px] font-mono truncate pl-4">{rel}</span>
     </button>
   )
 }
 
 // ── Monaco 에디터 ─────────────────────────────────────────────────
 function MonacoEditor({ path, content, getApiUrl }: { path: string; content: string; getApiUrl: (p: string) => string }) {
+  const { t } = useLocale()
   const name = path.split('/').pop() ?? path
   const lang = extLang(name)
 
@@ -168,10 +170,8 @@ function MonacoEditor({ path, content, getApiUrl }: { path: string; content: str
   const [dirty, setDirty]   = useState(false)
   const [saved, setSaved]   = useState(false)
   const [saving, setSaving] = useState(false)
-  // handleSave의 최신 참조를 저장 (addCommand에서 항상 최신 함수 호출)
   const saveRef = useRef<() => void>(() => {})
 
-  // path/content가 바뀌면 내용 초기화
   useEffect(() => {
     setValue(content)
     setDirty(false)
@@ -197,7 +197,6 @@ function MonacoEditor({ path, content, getApiUrl }: { path: string; content: str
     }
   }, [dirty, saving, path, value])
 
-  // ref 항상 최신 유지
   useEffect(() => { saveRef.current = handleSave }, [handleSave])
 
   const handleMount: OnMount = (editor, monaco) => {
@@ -210,16 +209,16 @@ function MonacoEditor({ path, content, getApiUrl }: { path: string; content: str
   return (
     <div className="flex flex-col h-full">
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-zinc-900 border-b border-zinc-800 shrink-0">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-card border-b border-border shrink-0">
         <div className="flex items-center gap-1.5 min-w-0">
           <File className={cn('w-3.5 h-3.5 shrink-0', extColor(name))} />
           <span className="text-xs font-mono truncate min-w-0" title={path}>
-            <span className="text-zinc-500">{path.slice(0, path.lastIndexOf('/') + 1)}</span>
-            <span className="text-zinc-200">{name}</span>
+            <span className="text-muted-foreground">{path.slice(0, path.lastIndexOf('/') + 1)}</span>
+            <span className="text-foreground">{name}</span>
           </span>
-          <span className="text-zinc-600 text-[10px] shrink-0 ml-1">{lang}</span>
+          <span className="text-muted-foreground/50 text-[10px] shrink-0 ml-1">{lang}</span>
           {dirty && (
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="저장되지 않은 변경사항" />
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title={t.files.unsavedChanges} />
           )}
         </div>
         <button
@@ -228,15 +227,15 @@ function MonacoEditor({ path, content, getApiUrl }: { path: string; content: str
           className={cn(
             'flex items-center gap-1 text-xs transition-colors shrink-0 px-2 py-0.5 rounded',
             dirty && !saving
-              ? 'text-zinc-200 hover:bg-zinc-700 cursor-pointer'
-              : 'text-zinc-600 cursor-default'
+              ? 'text-foreground hover:bg-muted cursor-pointer'
+              : 'text-muted-foreground/50 cursor-default'
           )}
         >
           {saved
-            ? <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">저장됨</span></>
+            ? <><Check className="w-3 h-3 text-emerald-400" /><span className="text-emerald-400">{t.files.saved}</span></>
             : saving
-              ? <><RefreshCw className="w-3 h-3 animate-spin" /><span>저장 중...</span></>
-              : <><Save className="w-3 h-3" /><span>저장</span></>
+              ? <><RefreshCw className="w-3 h-3 animate-spin" /><span>{t.files.saving}</span></>
+              : <><Save className="w-3 h-3" /><span>{t.files.save}</span></>
           }
         </button>
       </div>
@@ -281,6 +280,7 @@ function MonacoEditor({ path, content, getApiUrl }: { path: string; content: str
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────
 export default function FileTree() {
+  const { t } = useLocale()
   const { activeProject } = useProject()
   const { getApiUrl }     = useServer()
 
@@ -322,10 +322,10 @@ export default function FileTree() {
         const data = await res.json()
         setFileContent(data.content as string)
       } else {
-        setFileContent('파일을 읽을 수 없습니다.')
+        setFileContent(t.files.readError)
       }
     } catch {
-      setFileContent('읽기 오류가 발생했습니다.')
+      setFileContent(t.files.readErrorGeneric)
     } finally {
       setFileLoading(false)
     }
@@ -341,34 +341,34 @@ export default function FileTree() {
   const rootPath = activeProject?.path ?? ''
 
   return (
-    <div className="flex h-full bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800">
+    <div className="flex h-full bg-background rounded-lg overflow-hidden border border-border">
 
       {/* ── 좌측: 파일 트리 ──────────────────────── */}
-      <div className="flex flex-col w-64 shrink-0 border-r border-zinc-800">
+      <div className="flex flex-col w-64 shrink-0 border-r border-border">
         {/* 헤더 */}
-        <div className="flex items-center gap-1.5 px-2 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0">
-          <span className="text-xs text-zinc-400 truncate flex-1 font-mono">
-            {activeProject ? activeProject.name : '프로젝트 선택'}
+        <div className="flex items-center gap-1.5 px-2 py-2 bg-card border-b border-border shrink-0">
+          <span className="text-xs text-muted-foreground truncate flex-1 font-mono">
+            {activeProject ? activeProject.name : t.files.selectProject}
           </span>
-          <Button variant="ghost" size="icon" className="h-5 w-5 text-zinc-500 hover:text-zinc-200"
+          <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground"
             onClick={loadTree} disabled={loading}>
             <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} />
           </Button>
         </div>
 
         {/* 검색창 */}
-        <div className="px-2 py-1.5 border-b border-zinc-800 shrink-0">
-          <div className="flex items-center gap-1.5 bg-zinc-800 rounded px-2 py-1">
-            <Search className="w-3 h-3 text-zinc-500 shrink-0" />
+        <div className="px-2 py-1.5 border-b border-border shrink-0">
+          <div className="flex items-center gap-1.5 bg-muted rounded px-2 py-1">
+            <Search className="w-3 h-3 text-muted-foreground shrink-0" />
             <input
               value={query}
               onChange={e => setQuery(e.target.value)}
-              placeholder="파일 검색..."
-              className="flex-1 bg-transparent text-xs text-zinc-200 placeholder:text-zinc-600 outline-none"
+              placeholder={t.files.search}
+              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/40 outline-none"
             />
             {query && (
               <button onClick={() => setQuery('')}>
-                <X className="w-3 h-3 text-zinc-500 hover:text-zinc-200" />
+                <X className="w-3 h-3 text-muted-foreground hover:text-foreground" />
               </button>
             )}
           </div>
@@ -388,11 +388,11 @@ export default function FileTree() {
                   />
                 ))
               ) : (
-                <p className="text-xs text-zinc-600 text-center py-6">검색 결과 없음</p>
+                <p className="text-xs text-muted-foreground/50 text-center py-6">{t.files.noResults}</p>
               )
             ) : (
               tree.length === 0 && !loading
-                ? <p className="text-xs text-zinc-600 text-center py-6">파일 없음</p>
+                ? <p className="text-xs text-muted-foreground/50 text-center py-6">{t.files.noFiles}</p>
                 : tree.map(node => (
                     <FileNodeItem
                       key={node.path} node={node}
@@ -409,15 +409,15 @@ export default function FileTree() {
       <div className="flex-1 min-w-0 overflow-hidden">
         {fileLoading ? (
           <div className="flex items-center justify-center h-full">
-            <RefreshCw className="w-5 h-5 text-zinc-600 animate-spin" />
+            <RefreshCw className="w-5 h-5 text-muted-foreground/50 animate-spin" />
           </div>
         ) : selectedNode && fileContent !== null ? (
           <MonacoEditor path={selectedNode.path} content={fileContent} getApiUrl={getApiUrl} />
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-center">
-            <File className="w-10 h-10 text-zinc-700" />
-            <p className="text-sm text-zinc-500">파일을 선택하세요</p>
-            <p className="text-xs text-zinc-600">왼쪽 트리에서 파일을 클릭하면 내용이 표시됩니다</p>
+            <File className="w-10 h-10 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">{t.files.selectFile}</p>
+            <p className="text-xs text-muted-foreground/50">{t.files.selectFileHint}</p>
           </div>
         )}
       </div>

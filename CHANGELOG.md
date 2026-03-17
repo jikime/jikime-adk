@@ -5,6 +5,19 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-03-17
+
+### Fixed
+
+- **Webchat — Light/Dark theme color consistency**:
+  - Replaced all hardcoded `text-blue-400` / `text-blue-300` with `dark:text-blue-400 text-blue-600` / `dark:text-blue-300 text-blue-700` across `AppLayout`, `Sidebar`, `ChatInterface` so colors are visible in both light and dark themes
+  - **Language dropdown z-index**: Header raised to `z-20 relative` so the dropdown paints above `z-10` tab panels
+  - **Send button**: Changed from hardcoded `bg-orange-500 text-white` to `dark:bg-blue-600 bg-blue-700` with `disabled:text-muted-foreground` so the icon is visible when disabled in light mode
+  - **Tab icons**: Added colored icons to each tab button — Chat (`MessageSquare`/sky), Terminal (`SquareTerminal`/emerald), Files (`FolderOpen`/amber), Git (`GitBranch`/purple)
+  - **Settings modal**: Selected model and permission-mode items fixed from `text-blue-300` to `dark:text-blue-300 text-blue-700`; description text opacity raised for light mode readability
+  - **Server picker**: Server icon, Globe icon, Check icon, connection status text, and URL text all updated with theme-responsive color variants
+  - **Active tab**: Dark/light responsive blue highlight (`dark:bg-blue-500/25 dark:text-blue-200` / `bg-blue-600/15 text-blue-700`)
+
 ## [1.6.0] - 2026-03-17
 
 ### Added

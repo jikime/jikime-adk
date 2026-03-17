@@ -4,11 +4,9 @@ import { useEffect, useRef, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
+import { useLocale } from '@/contexts/LocaleContext'
 
 type Status = 'connecting' | 'ready' | 'dead' | 'error'
-const STATUS_LABEL: Record<Status, string> = {
-  connecting: '연결 중...', ready: '연결됨', dead: '세션 종료', error: '오류',
-}
 const STATUS_VARIANT: Record<Status, 'default' | 'secondary' | 'destructive' | 'outline'> = {
   connecting: 'secondary', ready: 'default', dead: 'outline', error: 'destructive',
 }
@@ -22,6 +20,7 @@ const XTERM_STYLES = `
 `
 
 export default function ShellPanel() {
+  const { t } = useLocale()
   const { activeProject } = useProject()
   const { getWsUrl }      = useServer()
   const containerRef   = useRef<HTMLDivElement>(null)
@@ -178,18 +177,20 @@ export default function ShellPanel() {
   }, [activeProject?.path, getWsUrl]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0a0a] rounded-lg overflow-hidden border border-zinc-800">
+    <div className="flex flex-col h-full bg-[#0a0a0a] rounded-lg overflow-hidden border border-border">
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 bg-card border-b border-border shrink-0">
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500/80" />
             <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
             <div className="w-3 h-3 rounded-full bg-green-500/80" />
           </div>
-          <span className="text-xs text-zinc-400 ml-1 font-mono">Claude Code Terminal</span>
+          <span className="text-xs text-muted-foreground ml-1 font-mono">Claude Code Terminal</span>
         </div>
-        <Badge variant={STATUS_VARIANT[status]} className="text-xs">{STATUS_LABEL[status]}</Badge>
+        <Badge variant={STATUS_VARIANT[status]} className="text-xs">
+          {status === 'connecting' ? t.shell.connecting : status === 'ready' ? t.shell.ready : status === 'dead' ? t.shell.dead : t.shell.error}
+        </Badge>
       </div>
 
       {/* xterm 컨테이너: h-full w-full, outline 없음 (claudecodeui 동일) */}

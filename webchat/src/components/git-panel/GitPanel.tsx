@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
+import { useLocale } from '@/contexts/LocaleContext'
 
 // ── API 헬퍼 ──────────────────────────────────────────────────────
 async function gitCmd(apiUrl: string, cwd: string, body: Record<string, unknown>): Promise<string> {
@@ -48,9 +49,9 @@ function statusBadge(xy: string): { label: string; color: string } {
 }
 
 // ── Diff 컬러 렌더러 ──────────────────────────────────────────────
-function DiffViewer({ content }: { content: string }) {
+function DiffViewer({ content, noChangesLabel }: { content: string; noChangesLabel: string }) {
   if (!content.trim()) {
-    return <p className="text-xs text-zinc-500 text-center py-8">변경사항 없음</p>
+    return <p className="text-xs text-muted-foreground text-center py-8">{noChangesLabel}</p>
   }
   return (
     <div className="font-mono text-xs leading-5">
@@ -65,8 +66,8 @@ function DiffViewer({ content }: { content: string }) {
             isAdd    && 'bg-emerald-950/40 text-emerald-300',
             isRemove && 'bg-red-950/40 text-red-300',
             isHunk   && 'bg-blue-950/30 text-blue-300 font-semibold',
-            isMeta   && 'text-zinc-500',
-            !isAdd && !isRemove && !isHunk && !isMeta && 'text-zinc-400',
+            isMeta   && 'text-muted-foreground',
+            !isAdd && !isRemove && !isHunk && !isMeta && 'text-foreground/60',
           )}>
             {isAdd    && <Plus  className="inline w-3 h-3 mr-1 shrink-0" />}
             {isRemove && <Minus className="inline w-3 h-3 mr-1 shrink-0" />}
@@ -80,6 +81,7 @@ function DiffViewer({ content }: { content: string }) {
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────
 export default function GitPanel() {
+  const { t } = useLocale()
   const { activeProject } = useProject()
   const { getApiUrl }     = useServer()
   const cwd = activeProject?.path ?? ''
@@ -124,7 +126,6 @@ export default function GitPanel() {
       const cur = branchList.find(b => b.startsWith('* '))?.replace('* ', '') ?? ''
       setCurrentBranch(cur)
 
-      // 선택 파일 diff 갱신
       if (selectedFile) loadDiff(selectedFile)
     } catch (e: unknown) {
       if ((e as Error).message === 'NOT_GIT_REPO') setIsGitRepo(false)
@@ -198,38 +199,38 @@ export default function GitPanel() {
   // ── Not a git repo ────────────────────────────────────────────
   if (!activeProject) {
     return (
-      <div className="flex items-center justify-center flex-1 h-full text-xs text-zinc-600">
-        프로젝트를 선택하세요
+      <div className="flex items-center justify-center flex-1 h-full text-xs text-muted-foreground/50">
+        {t.git.selectProject}
       </div>
     )
   }
 
   if (!isGitRepo) {
     return (
-      <div className="flex flex-col h-full bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800">
+      <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden border border-border">
         <GitHeader currentBranch="" loading={loading} onRefresh={refresh} />
         <div className="flex flex-col items-center justify-center flex-1 gap-2 text-center px-4">
-          <GitBranch className="w-8 h-8 text-zinc-700" />
-          <p className="text-sm text-zinc-500">Git 저장소가 아닙니다</p>
-          <p className="text-xs text-zinc-600 font-mono break-all">{cwd}</p>
+          <GitBranch className="w-8 h-8 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">{t.git.notGitRepo}</p>
+          <p className="text-xs text-muted-foreground/50 font-mono break-all">{cwd}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800">
+    <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden border border-border">
       <GitHeader currentBranch={currentBranch} loading={loading} onRefresh={refresh} />
 
       {/* 탭 */}
-      <div className="flex gap-0 px-2 pt-2 shrink-0 border-b border-zinc-800">
-        {(['changes', 'log', 'branches'] as Tab[]).map(t => (
-          <button key={t} onClick={() => setTab(t)}
+      <div className="flex gap-0 px-2 pt-2 shrink-0 border-b border-border">
+        {(['changes', 'log', 'branches'] as Tab[]).map(tabId => (
+          <button key={tabId} onClick={() => setTab(tabId)}
             className={cn(
               'px-3 py-1.5 text-xs font-medium rounded-t transition-colors',
-              tab === t ? 'bg-zinc-800 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'
+              tab === tabId ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground/80'
             )}>
-            {t === 'changes' ? `변경사항${files.length > 0 ? ` (${files.length})` : ''}` : t === 'log' ? '로그' : '브랜치'}
+            {tabId === 'changes' ? `${t.git.changes}${files.length > 0 ? ` (${files.length})` : ''}` : tabId === 'log' ? t.git.log : t.git.branch}
           </button>
         ))}
       </div>
@@ -238,26 +239,26 @@ export default function GitPanel() {
       {tab === 'changes' && (
         <div className="flex flex-col flex-1 min-h-0">
           {/* 파일 목록 */}
-          <div className="shrink-0 border-b border-zinc-800" style={{ maxHeight: '40%' }}>
-            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-zinc-800/50">
+          <div className="shrink-0 border-b border-border" style={{ maxHeight: '40%' }}>
+            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/50">
               <input type="checkbox"
                 checked={files.length > 0 && checked.size === files.length}
                 onChange={toggleAll}
                 className="w-3 h-3 accent-blue-500"
               />
-              <span className="text-xs text-zinc-500">전체 선택</span>
+              <span className="text-xs text-muted-foreground">{t.git.selectAll}</span>
             </div>
             <ScrollArea style={{ maxHeight: 'calc(40vh - 60px)' }}>
               {files.length === 0
-                ? <p className="text-xs text-zinc-600 text-center py-4">변경사항 없음</p>
+                ? <p className="text-xs text-muted-foreground/50 text-center py-4">{t.git.noChanges}</p>
                 : files.map(f => {
                     const badge = statusBadge(f.status)
                     return (
                       <div key={f.path}
                         onClick={() => handleSelectFile(f.path)}
                         className={cn(
-                          'flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-zinc-800/50 transition-colors',
-                          selectedFile === f.path && 'bg-zinc-800'
+                          'flex items-center gap-2 px-3 py-1.5 cursor-pointer hover:bg-muted/50 transition-colors',
+                          selectedFile === f.path && 'bg-muted'
                         )}>
                         <input type="checkbox"
                           checked={checked.has(f.path)}
@@ -267,7 +268,7 @@ export default function GitPanel() {
                         <span className={cn('text-xs font-bold rounded px-1 shrink-0', badge.color)}>
                           {badge.label}
                         </span>
-                        <span className="text-xs text-zinc-300 truncate font-mono">{f.path}</span>
+                        <span className="text-xs text-foreground/80 truncate font-mono">{f.path}</span>
                       </div>
                     )
                   })
@@ -279,24 +280,24 @@ export default function GitPanel() {
           <div className="flex-1 min-h-0 overflow-hidden">
             <ScrollArea className="h-full">
               {diffLoading
-                ? <p className="text-xs text-zinc-500 text-center py-4">로딩 중...</p>
+                ? <p className="text-xs text-muted-foreground text-center py-4">{t.git.loading}</p>
                 : selectedFile
-                ? <DiffViewer content={diff} />
-                : <p className="text-xs text-zinc-600 text-center py-8">파일을 선택하면 diff가 표시됩니다</p>
+                ? <DiffViewer content={diff} noChangesLabel={t.git.noChanges} />
+                : <p className="text-xs text-muted-foreground/50 text-center py-8">{t.git.selectFileDiff}</p>
               }
             </ScrollArea>
           </div>
 
           {/* 커밋 영역 */}
-          <div className="shrink-0 border-t border-zinc-800 p-2 space-y-1.5">
+          <div className="shrink-0 border-t border-border p-2 space-y-1.5">
             <div className="flex gap-1.5">
               <input
                 value={commitMsg}
                 onChange={e => setCommitMsg(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) handleCommit() }}
-                placeholder={checked.size > 0 ? '커밋 메시지...' : '파일을 선택하세요'}
+                placeholder={checked.size > 0 ? t.git.commitPlaceholder : t.git.selectFilePlaceholder}
                 disabled={checked.size === 0 || committing}
-                className="flex-1 text-xs bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-zinc-100 placeholder:text-zinc-600 outline-none focus:border-blue-500 disabled:opacity-40"
+                className="flex-1 text-xs bg-muted border border-border rounded px-2 py-1.5 text-foreground placeholder:text-muted-foreground/40 outline-none focus:border-blue-500 disabled:opacity-40"
               />
               <Button
                 size="sm"
@@ -305,11 +306,11 @@ export default function GitPanel() {
                 className="shrink-0 text-xs h-7 px-2.5 bg-emerald-700 hover:bg-emerald-600 disabled:opacity-40"
               >
                 <GitCommit className="w-3 h-3 mr-1" />
-                커밋
+                {t.git.commit}
               </Button>
             </div>
             {checked.size > 0 && (
-              <p className="text-xs text-zinc-500">{checked.size}개 파일 선택됨</p>
+              <p className="text-xs text-muted-foreground">{checked.size}개 파일 선택됨</p>
             )}
           </div>
         </div>
@@ -321,13 +322,13 @@ export default function GitPanel() {
           {log.split('\n').filter(Boolean).map((line, i) => {
             const [hash, ...rest] = line.split(' ')
             return (
-              <div key={i} className="flex items-start gap-2 py-1.5 border-b border-zinc-800/50 last:border-0">
+              <div key={i} className="flex items-start gap-2 py-1.5 border-b border-border/50 last:border-0">
                 <span className="text-xs font-mono text-blue-400 shrink-0">{hash}</span>
-                <span className="text-xs text-zinc-300">{rest.join(' ')}</span>
+                <span className="text-xs text-foreground/80">{rest.join(' ')}</span>
               </div>
             )
           })}
-          {!log && <p className="text-xs text-zinc-600 text-center py-8">커밋 없음</p>}
+          {!log && <p className="text-xs text-muted-foreground/50 text-center py-8">{t.git.noCommits}</p>}
         </ScrollArea>
       )}
 
@@ -343,17 +344,17 @@ export default function GitPanel() {
                 disabled={isCurrent || isRemote}
                 className={cn(
                   'flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-left transition-colors',
-                  isCurrent  ? 'bg-purple-900/30 text-purple-300 cursor-default' : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200',
+                  isCurrent  ? 'bg-purple-900/30 text-purple-300 cursor-default' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                   isRemote   && 'opacity-50 cursor-default',
                 )}>
                 {isCurrent && <Check className="w-3 h-3 shrink-0 text-purple-400" />}
-                {!isCurrent && <GitBranch className="w-3 h-3 shrink-0 text-zinc-600" />}
+                {!isCurrent && <GitBranch className="w-3 h-3 shrink-0 text-muted-foreground/50" />}
                 <span className="font-mono truncate">{name}</span>
-                {isRemote && <span className="ml-auto text-zinc-600 text-xs">remote</span>}
+                {isRemote && <span className="ml-auto text-muted-foreground/50 text-xs">remote</span>}
               </button>
             )
           })}
-          {branches.length === 0 && <p className="text-xs text-zinc-600 text-center py-8">브랜치 없음</p>}
+          {branches.length === 0 && <p className="text-xs text-muted-foreground/50 text-center py-8">{t.git.noBranches}</p>}
         </ScrollArea>
       )}
     </div>
@@ -367,17 +368,17 @@ function GitHeader({ currentBranch, loading, onRefresh }: {
   onRefresh: () => void
 }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2.5 bg-zinc-900 border-b border-zinc-800 shrink-0">
+    <div className="flex items-center justify-between px-3 py-2.5 bg-card border-b border-border shrink-0">
       <div className="flex items-center gap-2">
         <GitBranch className="w-4 h-4 text-purple-400" />
-        <span className="text-sm font-medium text-zinc-200">Git</span>
+        <span className="text-sm font-medium text-foreground">Git</span>
         {currentBranch && (
-          <span className="text-xs text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded">
+          <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
             {currentBranch}
           </span>
         )}
       </div>
-      <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-500 hover:text-zinc-200"
+      <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground"
         onClick={onRefresh} disabled={loading}>
         <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} />
       </Button>

@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useProject } from '@/contexts/ProjectContext'
 import { MODELS, loadSettings, type ModelId } from '@/components/sidebar/Sidebar'
+import { useLocale } from '@/contexts/LocaleContext'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
@@ -55,6 +56,7 @@ interface PermissionRequest {
 // ── 서브 컴포넌트 ─────────────────────────────────────────────────
 
 function ThinkingIndicator() {
+  const { t } = useLocale()
   return (
     <>
       <style>{`
@@ -121,8 +123,8 @@ function ThinkingIndicator() {
         </div>
 
         {/* 텍스트 + 바운스 점 */}
-        <span className="text-xs text-zinc-400 flex items-center gap-1.5">
-          생각 중
+        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+          {t.chat.thinking}
           {[0, 0.18, 0.36].map((delay, i) => (
             <span
               key={i}
@@ -152,9 +154,9 @@ function ToolCallView({ tool }: { tool: ToolCall }) {
       <CollapsibleContent>
         <div className="mt-1 space-y-1">
           {tool.input !== undefined && (
-            <pre className="text-xs bg-zinc-900 rounded p-2 overflow-auto text-zinc-300 border border-zinc-700 max-h-40
+            <pre className="text-xs bg-background rounded p-2 overflow-auto text-foreground/80 border border-border max-h-40
               [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:h-1
-              [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-600
+              [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border
               [&::-webkit-scrollbar-track]:bg-transparent">
               {inputStr}
             </pre>
@@ -201,14 +203,14 @@ function MessageBubble({ msg }: { msg: Message }) {
       <div className={cn('space-y-1 min-w-0', isUser ? 'max-w-[82%]' : 'w-full')}>
         {/* Thinking */}
         {msg.thinking && (
-          <div className="bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-700">
+          <div className="bg-card rounded-lg px-3 py-2 border border-border">
             <ThinkingView text={msg.thinking} />
           </div>
         )}
 
         {/* Tool calls */}
         {msg.toolCalls && msg.toolCalls.length > 0 && (
-          <div className="bg-zinc-900 rounded-lg px-3 py-2 border border-zinc-700 space-y-1">
+          <div className="bg-card rounded-lg px-3 py-2 border border-border space-y-1">
             {msg.toolCalls.map((tool, i) => (
               <ToolCallView key={i} tool={tool} />
             ))}
@@ -218,29 +220,29 @@ function MessageBubble({ msg }: { msg: Message }) {
         {/* Message text */}
         {(msg.text || msg.status === 'streaming') && (
           isUser ? (
-            <div className="rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed bg-blue-600 text-white rounded-tr-sm">
+            <div className="rounded-2xl px-4 py-3 text-base leading-relaxed bg-blue-600 text-white rounded-tr-sm">
               <span className="whitespace-pre-wrap break-words">{msg.text}</span>
             </div>
           ) : msg.status === 'streaming' && !msg.text ? (
             /* 텍스트가 아직 없는 스트리밍 초기 — 궤도 애니메이션 */
             <ThinkingIndicator />
           ) : (
-            <div className={cn('text-sm leading-relaxed py-1',
+            <div className={cn('text-base leading-relaxed py-1',
               msg.status === 'error' && 'bg-red-950/50 text-red-200 border border-red-800/50 rounded-lg px-3.5 py-2.5'
             )}>
-              <div className="prose prose-sm prose-invert max-w-none
-                prose-p:my-1 prose-p:leading-relaxed
-                prose-headings:text-zinc-100 prose-headings:font-semibold prose-headings:mt-3 prose-headings:mb-1
-                prose-h1:text-base prose-h2:text-sm prose-h3:text-xs
-                prose-strong:text-zinc-100
-                prose-code:text-amber-300 prose-code:bg-zinc-900 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:before:content-none prose-code:after:content-none
-                prose-pre:bg-zinc-900 prose-pre:border prose-pre:border-zinc-700 prose-pre:rounded-lg prose-pre:text-xs
-                prose-pre:[&::-webkit-scrollbar]:h-1 prose-pre:[&::-webkit-scrollbar-thumb]:bg-zinc-600 prose-pre:[&::-webkit-scrollbar-thumb]:rounded-full prose-pre:[&::-webkit-scrollbar-track]:bg-transparent
+              <div className="prose prose-base dark:prose-invert max-w-none
+                prose-p:my-1.5 prose-p:leading-relaxed
+                prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-1.5
+                prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
+                prose-strong:text-foreground
+                prose-code:text-amber-300 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
+                prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:text-sm
+                prose-pre:[&::-webkit-scrollbar]:h-1 prose-pre:[&::-webkit-scrollbar-thumb]:bg-border prose-pre:[&::-webkit-scrollbar-thumb]:rounded-full prose-pre:[&::-webkit-scrollbar-track]:bg-transparent
                 prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
-                prose-blockquote:border-zinc-600 prose-blockquote:text-zinc-400 prose-blockquote:not-italic
+                prose-blockquote:border-border prose-blockquote:text-muted-foreground prose-blockquote:not-italic
                 prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1
-                prose-hr:border-zinc-700
-                prose-table:text-xs prose-th:text-zinc-300 prose-td:text-zinc-400">
+                prose-hr:border-border
+                prose-table:text-xs prose-th:text-foreground/80 prose-td:text-muted-foreground">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {msg.text || ''}
                 </ReactMarkdown>
@@ -255,7 +257,7 @@ function MessageBubble({ msg }: { msg: Message }) {
                 </div>
               )}
               {msg.status === 'aborted' && (
-                <div className="flex items-center gap-1 mt-1 text-zinc-500 text-xs">
+                <div className="flex items-center gap-1 mt-1 text-muted-foreground text-xs">
                   <Square className="w-3 h-3" />
                   중단됨
                 </div>
@@ -274,10 +276,10 @@ function TokenBar({ budget }: { budget: TokenBudget }) {
   const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'
   return (
     <div className="flex items-center gap-1.5 ml-auto">
-      <div className="w-20 h-1.5 bg-zinc-700 rounded-full overflow-hidden">
+      <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
         <div className={cn('h-full rounded-full transition-all', color)} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-zinc-500 tabular-nums whitespace-nowrap">
+      <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
         {(budget.used / 1000).toFixed(1)}k / {(budget.total / 1000).toFixed(0)}k
       </span>
     </div>
@@ -294,6 +296,7 @@ function PermissionBanner({
   onAllow: (alwaysAllow: boolean) => void
   onDeny: () => void
 }) {
+  const { t } = useLocale()
   const inputPreview = typeof req.input === 'string'
     ? req.input.slice(0, 120)
     : JSON.stringify(req.input).slice(0, 120)
@@ -303,10 +306,10 @@ function PermissionBanner({
       <div className="flex items-start gap-2">
         <Shield className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-amber-300">도구 실행 승인 요청</p>
+          <p className="text-xs font-medium text-amber-300">{t.chat.permissionRequest}</p>
           <p className="text-xs text-amber-400 font-mono mt-0.5">{req.toolName}</p>
           {inputPreview && (
-            <p className="text-xs text-zinc-400 mt-0.5 truncate">{inputPreview}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 truncate">{inputPreview}</p>
           )}
         </div>
       </div>
@@ -315,19 +318,19 @@ function PermissionBanner({
           onClick={() => onAllow(false)}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-emerald-700 hover:bg-emerald-600 text-white transition-colors"
         >
-          <Check className="w-3 h-3" /> 허용
+          <Check className="w-3 h-3" /> {t.chat.allow}
         </button>
         <button
           onClick={() => onAllow(true)}
-          className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-zinc-600 hover:bg-zinc-500 text-zinc-200 transition-colors"
+          className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-muted hover:bg-accent text-foreground/80 transition-colors"
         >
-          <Check className="w-3 h-3" /> 항상 허용
+          <Check className="w-3 h-3" /> {t.chat.alwaysAllow}
         </button>
         <button
           onClick={onDeny}
           className="flex items-center gap-1 px-2 py-1 rounded text-xs bg-red-900 hover:bg-red-800 text-red-200 transition-colors"
         >
-          <X className="w-3 h-3" /> 거부
+          <X className="w-3 h-3" /> {t.chat.deny}
         </button>
       </div>
     </div>
@@ -336,6 +339,7 @@ function PermissionBanner({
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────
 export default function ChatInterface() {
+  const { t } = useLocale()
   const { sendMessage, onMessage } = useWebSocket()
   const { activeProject, activeSessionId, setActiveSessionId } = useProject()
 
@@ -433,14 +437,11 @@ export default function ChatInterface() {
   }, [listening])
 
   // 세션 변경 시 히스토리 로드
-  // 서버가 할당한 세션 ID(serverAssignedIdRef)와 일치하면 건너뜀 — 스트리밍 중이므로
-  // ref를 소비(초기화)하지 않아야 React StrictMode 이중 실행에서도 안전
   useEffect(() => {
     if (activeSessionId !== null && serverAssignedIdRef.current === activeSessionId) {
-      return  // 서버 할당 세션 — 현재 스트리밍 중, 히스토리 로드 불필요
+      return
     }
-    // 사용자가 직접 세션을 변경했을 때만 도달
-    serverAssignedIdRef.current = null  // ref 초기화
+    serverAssignedIdRef.current = null
     setMessages([])
     setTokenBudget(null)
     setPermissionReq(null)
@@ -475,7 +476,6 @@ export default function ChatInterface() {
     const unsub = onMessage((msg) => {
       const id = streamingIdRef.current
 
-      // permission_request 는 streamingId 와 무관하게 처리
       if (msg.type === 'permission_request') {
         setPermissionReq({
           requestId: msg.requestId as string,
@@ -493,7 +493,6 @@ export default function ChatInterface() {
       if (!id) return
 
       if (msg.type === 'session_id') {
-        // 서버가 새로 할당한 session ID를 보관 — 히스토리 로드 건너뜀에 사용
         serverAssignedIdRef.current = msg.sessionId as string
         setActiveSessionId(msg.sessionId as string)
       } else if (msg.type === 'text') {
@@ -542,7 +541,6 @@ export default function ChatInterface() {
     const text = input.trim()
     if ((!text && attachments.length === 0) || isStreaming) return
 
-    // 첨부파일을 prompt에 추가
     const parts: string[] = [text]
     for (const att of attachments) {
       if (att.content !== undefined) {
@@ -575,7 +573,7 @@ export default function ChatInterface() {
       permissionMode:   loadSettings().permissionMode,
     })
 
-    if (inputRef.current) inputRef.current.style.height = '52px'
+    if (inputRef.current) inputRef.current.style.height = '64px'
     inputRef.current?.focus()
   }, [input, attachments, isStreaming, sendMessage, activeSessionId, activeProject, model, extendedThinking])
 
@@ -609,26 +607,24 @@ export default function ChatInterface() {
   }
 
   const currentModel   = MODELS.find(m => m.id === model) ?? MODELS[0]
-  const featuredModels = MODELS.slice(0, 3)   // 상위 3개 기본 노출
-  const moreModels     = MODELS.slice(3)       // 나머지는 접어서 보관
+  const featuredModels = MODELS.slice(0, 3)
+  const moreModels     = MODELS.slice(3)
 
   return (
-    <div className="flex flex-col h-full bg-zinc-950 rounded-lg overflow-hidden border border-zinc-800">
+    <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden border border-border">
 
       {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0">
-        <Bot className="w-4 h-4 text-blue-400 shrink-0" />
-        <span className="text-sm font-medium text-zinc-200 shrink-0">Claude</span>
+      <div className="flex items-center gap-3 px-5 py-3 bg-card border-b border-border shrink-0">
+        <Bot className="w-5 h-5 text-blue-400 shrink-0" />
+        <span className="text-base font-semibold text-foreground shrink-0">Claude</span>
         {activeProject && (
-          <span className="text-xs text-zinc-500 truncate min-w-0">· {activeProject.name}</span>
+          <span className="text-sm text-muted-foreground truncate min-w-0">· {activeProject.name}</span>
         )}
 
-        {/* 토큰 사용량 */}
         {tokenBudget && <div className="ml-auto"><TokenBar budget={tokenBudget} /></div>}
 
-        {/* 세션 ID */}
         {activeSessionId && !tokenBudget && (
-          <span className="text-xs text-zinc-600 font-mono shrink-0">{activeSessionId.slice(0, 8)}</span>
+          <span className="text-xs text-muted-foreground/50 font-mono shrink-0">{activeSessionId.slice(0, 8)}</span>
         )}
       </div>
 
@@ -644,22 +640,24 @@ export default function ChatInterface() {
       {/* 메시지 목록 */}
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-zinc-700 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent"
+        className="flex-1 min-h-0 overflow-y-auto [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent"
         onClick={() => setShowModelMenu(false)}
       >
-        <div className="flex flex-col gap-4 p-4">
+        <div className="flex flex-col gap-6 p-6 min-h-full">
           {historyLoading ? (
-            <div className="flex flex-col items-center justify-center h-48 gap-2">
-              <RefreshCw className="w-5 h-5 text-zinc-600 animate-spin" />
-              <p className="text-xs text-zinc-600">이전 대화 불러오는 중...</p>
+            <div className="flex flex-col items-center justify-center flex-1 min-h-64 gap-3">
+              <RefreshCw className="w-6 h-6 text-muted-foreground/50 animate-spin" />
+              <p className="text-sm text-muted-foreground/50">{t.chat.loadingHistory}</p>
             </div>
           ) : messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-48 text-center gap-3">
-              <Bot className="w-12 h-12 text-zinc-700" />
-              <div>
-                <p className="text-sm text-zinc-400">Claude Code에게 작업을 요청하세요</p>
-                <p className="text-xs text-zinc-600 mt-1">
-                  {activeProject ? `프로젝트: ${activeProject.path}` : '사이드바에서 프로젝트를 선택하세요'}
+            <div className="flex flex-col items-center justify-center flex-1 min-h-64 text-center gap-5">
+              <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                <Bot className="w-10 h-10 text-blue-400/70" />
+              </div>
+              <div className="space-y-2">
+                <p className="text-lg font-semibold text-foreground/80">{t.chat.emptyState}</p>
+                <p className="text-sm text-muted-foreground">
+                  {activeProject ? t.chat.projectLabel(activeProject.path) : t.chat.selectProject}
                 </p>
               </div>
             </div>
@@ -669,9 +667,9 @@ export default function ChatInterface() {
       </div>
 
       {/* 입력창 */}
-      <div className="shrink-0 border-t border-zinc-800 bg-zinc-950 px-3 py-3">
+      <div className="shrink-0 border-t border-border bg-background px-4 py-4">
         <div
-          className="bg-zinc-800 border border-zinc-700 rounded-2xl focus-within:border-zinc-500 transition-colors"
+          className="bg-muted border border-border rounded-2xl focus-within:border-ring transition-colors"
           onDragOver={e => e.preventDefault()}
           onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
         >
@@ -679,22 +677,22 @@ export default function ChatInterface() {
           {(attachments.length > 0 || uploading) && (
             <div className="flex flex-wrap gap-1.5 px-3 pt-2.5">
               {attachments.map(att => (
-                <div key={att.id} className="flex items-center gap-1.5 bg-zinc-700 border border-zinc-600 rounded-lg pl-2 pr-1 py-1 text-xs group">
+                <div key={att.id} className="flex items-center gap-1.5 bg-accent border border-border rounded-lg pl-2 pr-1 py-1 text-xs group">
                   {att.preview
                     ? <img src={att.preview} alt={att.name} className="w-5 h-5 rounded object-cover shrink-0" />
                     : att.content !== undefined
-                    ? <FileText className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
-                    : <ImageIcon className="w-3.5 h-3.5 shrink-0 text-zinc-400" />
+                    ? <FileText className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                    : <ImageIcon className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
                   }
-                  <span className="truncate max-w-[120px] text-zinc-300">{att.name}</span>
-                  <span className="text-zinc-500 text-[10px]">{(att.size / 1024).toFixed(0)}K</span>
-                  <button onClick={() => removeAttachment(att.id)} className="ml-0.5 text-zinc-500 hover:text-red-400 transition-colors">
+                  <span className="truncate max-w-[120px] text-foreground/80">{att.name}</span>
+                  <span className="text-muted-foreground/60 text-[10px]">{(att.size / 1024).toFixed(0)}K</span>
+                  <button onClick={() => removeAttachment(att.id)} className="ml-0.5 text-muted-foreground hover:text-red-400 transition-colors">
                     <X className="w-3 h-3" />
                   </button>
                 </div>
               ))}
               {uploading && (
-                <div className="flex items-center gap-1.5 bg-zinc-700 border border-zinc-600 rounded-lg px-2 py-1 text-xs text-zinc-500">
+                <div className="flex items-center gap-1.5 bg-accent border border-border rounded-lg px-2 py-1 text-xs text-muted-foreground">
                   <Loader2 className="w-3 h-3 animate-spin" /> 처리 중...
                 </div>
               )}
@@ -707,15 +705,15 @@ export default function ChatInterface() {
             value={input}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder={isStreaming ? '응답 중...' : '작업 내용을 입력하세요...'}
+            placeholder={isStreaming ? t.chat.placeholderStreaming : t.chat.placeholder}
             rows={1}
             disabled={isStreaming}
-            className="w-full bg-transparent px-4 pt-3 pb-2 text-sm text-zinc-100 placeholder:text-zinc-500 outline-none resize-none min-h-[52px] max-h-[200px] disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ height: '52px' }}
+            className="w-full bg-transparent px-5 pt-4 pb-2 text-base text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[64px] max-h-[240px] disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ height: '64px' }}
           />
 
           {/* 하단 툴바 */}
-          <div className="flex items-center gap-2 px-3 pb-3">
+          <div className="flex items-center gap-2 px-4 pb-4">
             {/* 숨겨진 파일 입력 */}
             <input
               ref={fileInputRef}
@@ -729,10 +727,10 @@ export default function ChatInterface() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              title="파일 첨부"
-              className="w-8 h-8 rounded-full border border-zinc-600 flex items-center justify-center text-zinc-400 hover:text-zinc-200 hover:border-zinc-400 transition-colors"
+              title={t.chat.attachFile}
+              className="w-9 h-9 rounded-full border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-foreground/50 transition-colors"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-5 h-5" />
             </button>
 
             <div className="flex-1" />
@@ -742,26 +740,26 @@ export default function ChatInterface() {
               <button
                 type="button"
                 onClick={() => setShowModelMenu(v => !v)}
-                className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-zinc-700 hover:bg-zinc-600 text-xs text-zinc-200 transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 h-9 px-4 rounded-full bg-accent hover:bg-accent/80 text-sm text-foreground transition-colors whitespace-nowrap"
               >
                 <span className="font-medium">{currentModel.label}</span>
-                {extendedThinking && <span className="text-zinc-400">확장</span>}
-                <ChevronDown className="w-3 h-3 text-zinc-400" />
+                {extendedThinking && <span className="text-muted-foreground">{t.chat.extendedThinking}</span>}
+                <ChevronDown className="w-3 h-3 text-muted-foreground" />
               </button>
 
               {showModelMenu && (
-                <div className="absolute right-0 bottom-full mb-2 z-20 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl w-72 py-2 overflow-hidden">
+                <div className="absolute right-0 bottom-full mb-2 z-20 bg-card border border-border rounded-2xl shadow-2xl w-72 py-2 overflow-hidden">
 
                   {/* 기본 모델 3개 */}
                   {featuredModels.map(m => (
                     <button
                       key={m.id}
                       onClick={() => { setModel(m.id); setShowModelMenu(false) }}
-                      className="flex items-center w-full px-4 py-3 text-left hover:bg-zinc-800/60 transition-colors"
+                      className="flex items-center w-full px-4 py-3 text-left hover:bg-muted/60 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-zinc-100 leading-snug">{m.label}</p>
-                        <p className="text-xs text-zinc-500 mt-0.5 leading-snug">{m.description}</p>
+                        <p className="text-sm font-semibold text-foreground leading-snug">{m.label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{t.sidebar.models[m.descKey]}</p>
                       </div>
                       <span className="w-6 flex justify-end shrink-0">
                         {model === m.id && <Check className="w-4 h-4 text-blue-400" />}
@@ -775,9 +773,9 @@ export default function ChatInterface() {
                       <button
                         type="button"
                         onClick={() => setShowMoreModels(v => !v)}
-                        className="flex items-center w-full px-4 py-2.5 text-sm text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 transition-colors"
+                        className="flex items-center w-full px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
                       >
-                        <span className="flex-1 text-left">더 많은 모델</span>
+                        <span className="flex-1 text-left">{t.chat.moreModels}</span>
                         <ChevronRight className={cn('w-4 h-4 transition-transform', showMoreModels && 'rotate-90')} />
                       </button>
 
@@ -785,11 +783,11 @@ export default function ChatInterface() {
                         <button
                           key={m.id}
                           onClick={() => { setModel(m.id); setShowModelMenu(false) }}
-                          className="flex items-center w-full px-4 py-3 text-left hover:bg-zinc-800/60 transition-colors bg-zinc-800/30"
+                          className="flex items-center w-full px-4 py-3 text-left hover:bg-muted/60 transition-colors bg-muted/30"
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-zinc-100 leading-snug">{m.label}</p>
-                            <p className="text-xs text-zinc-500 mt-0.5 leading-snug">{m.description}</p>
+                            <p className="text-sm font-semibold text-foreground leading-snug">{m.label}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{t.sidebar.models[m.descKey]}</p>
                           </div>
                           <span className="w-6 flex justify-end shrink-0">
                             {model === m.id && <Check className="w-4 h-4 text-blue-400" />}
@@ -800,18 +798,18 @@ export default function ChatInterface() {
                   )}
 
                   {/* 확장 사고 — 둥근 카드 블록 */}
-                  <div className="mx-2 mt-1 mb-1 rounded-xl bg-zinc-800 px-3 py-3">
+                  <div className="mx-2 mt-1 mb-1 rounded-xl bg-muted px-3 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-zinc-100">확장 사고</p>
-                        <p className="text-xs text-zinc-500 mt-0.5">복잡한 작업을 위해 더 오래 사고</p>
+                        <p className="text-sm font-medium text-foreground">{t.chat.extendedThinkingTitle}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{t.chat.extendedThinkingDesc}</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setExtendedThinking(v => !v)}
                         className={cn(
                           'relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0',
-                          extendedThinking ? 'bg-blue-500' : 'bg-zinc-600'
+                          extendedThinking ? 'bg-blue-500' : 'bg-muted-foreground/40'
                         )}
                       >
                         <span className={cn(
@@ -831,12 +829,12 @@ export default function ChatInterface() {
               <button
                 type="button"
                 onClick={toggleMic}
-                title={listening ? '음성 인식 중지' : '음성으로 입력'}
+                title={listening ? t.chat.voiceStop : t.chat.voiceStart}
                 className={cn(
-                  'w-8 h-8 rounded-full border flex items-center justify-center transition-all',
+                  'w-9 h-9 rounded-full border flex items-center justify-center transition-all',
                   listening
                     ? 'border-red-500 bg-red-500/20 text-red-400 animate-pulse'
-                    : 'border-zinc-600 text-zinc-400 hover:text-zinc-200 hover:border-zinc-400'
+                    : 'border-border text-muted-foreground hover:text-foreground hover:border-foreground/50'
                 )}
               >
                 {listening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
@@ -848,23 +846,23 @@ export default function ChatInterface() {
               <button
                 type="button"
                 onClick={abort}
-                className="w-9 h-9 rounded-xl bg-red-600 hover:bg-red-500 flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-xl bg-red-600 hover:bg-red-500 flex items-center justify-center transition-colors"
               >
-                <Square className="w-3.5 h-3.5 text-white" />
+                <Square className="w-4 h-4 text-white" />
               </button>
             ) : (
               <button
                 type="button"
                 onClick={submit}
                 disabled={!input.trim() && attachments.length === 0}
-                className="w-9 h-9 rounded-xl bg-orange-500 hover:bg-orange-400 disabled:bg-zinc-700 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                className="w-10 h-10 rounded-xl dark:bg-blue-600 dark:hover:bg-blue-500 bg-blue-700 hover:bg-blue-600 disabled:bg-muted disabled:cursor-not-allowed flex items-center justify-center transition-colors text-white disabled:text-muted-foreground"
               >
-                <Send className="w-4 h-4 text-white" />
+                <Send className="w-5 h-5" />
               </button>
             )}
           </div>
         </div>
-        <p className="text-xs text-zinc-600 mt-1.5 text-center">Enter 전송 · Shift+Enter 줄바꿈</p>
+        <p className="text-xs text-muted-foreground/50 mt-1.5 text-center">Enter 전송 · Shift+Enter 줄바꿈</p>
       </div>
     </div>
   )

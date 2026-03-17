@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "@xterm/xterm/css/xterm.css";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { LocaleProvider } from "@/contexts/LocaleContext";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -17,7 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider>
-          {children}
+          <LocaleProvider>
+            {children}
+          </LocaleProvider>
         </ThemeProvider>
       </body>
     </html>
