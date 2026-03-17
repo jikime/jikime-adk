@@ -58,10 +58,12 @@ function findClaudePath(): string | undefined {
 
   const check = (p: string): string | undefined => {
     try {
-      const real = fs.realpathSync(p)  // 심볼릭 링크 해소
+      // symlink는 해소하지 않음 — 래퍼/심링크 경로가 올바른 진입점
+      // 단, isNativeBinary 확인은 실제 파일로
+      const real = fs.realpathSync(p)
       if (isNativeBinary(real)) {
-        console.log(`[server] claude 네이티브 바이너리: ${real}`)
-        return real
+        console.log(`[server] claude 바이너리: ${p}`)
+        return p  // 원본 경로(래퍼/심링크) 반환
       }
     } catch { /* */ }
     return undefined
@@ -96,6 +98,17 @@ function findClaudePath(): string | undefined {
 }
 
 const CLAUDE_PATH = findClaudePath()
+
+// 시작 시 claude 동작 확인
+if (CLAUDE_PATH) {
+  try {
+    const ver = execSync(`"${CLAUDE_PATH}" --version 2>&1`, { encoding: 'utf8', timeout: 5000 }).trim()
+    console.log(`[server] claude 버전: ${ver}`)
+  } catch (e: unknown) {
+    const err = e as { stderr?: string; stdout?: string; message?: string }
+    console.warn(`[server] claude --version 실패: ${err.stderr || err.stdout || err.message}`)
+  }
+}
 
 // ── PTY Session Store ──────────────────────────────────────────
 interface PtySession {
@@ -293,14 +306,21 @@ async function handleClaudeMessage(
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[chat] error:', msg)
 
-    // exit code 1 — 인증 미완료 또는 claude CLI 설정 문제
+    // exit code 1 — claude CLI 실행 실패
     if (msg.includes('exit') && msg.includes('code 1')) {
+      // 실제 오류 확인을 위해 직접 실행
+      let detail = ''
+      try {
+        execSync(`"${CLAUDE_PATH ?? 'claude'}" --dangerously-skip-permissions --output-format stream-json -p "ping" 2>&1`, {
+          encoding: 'utf8', timeout: 10000,
+        })
+      } catch (e: unknown) {
+        const ce = e as { stderr?: string; stdout?: string; message?: string }
+        detail = (ce.stderr || ce.stdout || ce.message || '').trim()
+      }
       const hint = [
-        'claude CLI 종료 코드 1 — 아래를 확인하세요:',
-        `  1. 원격 서버에서 인증: claude login`,
-        `  2. 또는 환경변수: export ANTHROPIC_API_KEY=sk-ant-...`,
-        `  3. 테스트: claude -p "hello"`,
-        `  claude 경로: ${CLAUDE_PATH ?? '(자동탐색)'}`,
+        `claude 종료 코드 1 (경로: ${CLAUDE_PATH ?? 'claude'})`,
+        detail ? `오류: ${detail}` : '원격 서버에서 직접 확인: claude --dangerously-skip-permissions --output-format stream-json -p "hello"',
       ].join('\n')
       console.error('[chat]', hint)
       ws.send(JSON.stringify({ type: 'error', message: hint }))
