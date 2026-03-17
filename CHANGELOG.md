@@ -5,6 +5,20 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-03-18
+
+### Changed
+
+- **Webchat — UI 레이아웃 & 테마 전면 개선**:
+  - 테마 파일(`globals.css`) 전면 교체 — warm 계열 oklch 색상 시스템 적용, shadow 변수 추가
+  - 헤더: 라이트 모드 배경 `#cb6441` 적용, 모든 텍스트·아이콘·탭 버튼 흰색 계열로 변경, hover 배경 제거
+  - 헤더: collapse 아이콘 → `Menu`(햄버거) 아이콘으로 변경, 설정 버튼 헤더 우측으로 이전
+  - 사이드바: 라운드(`rounded-lg`) + 여백(`p-2`) 적용, 내부 섹션 구분선 전체 제거
+  - 사이드바 하단 설정 버튼 제거 → `SettingsModal` export 후 헤더 우측 ⚙️ 버튼으로 이전
+  - Body 영역: 라이트 `bg-muted` / 다크 `bg-muted` 배경 적용으로 사이드바·메인 패널 레이어 구분
+  - 각 탭 패널: `bg-white` 배경 + `rounded-lg`, 헤더 `bg-white dark:bg-accent` 로 구분감 부여
+  - 채팅 입력 폼: 입력 박스 `bg-white shadow-sm`, 외부 컨테이너 `bg-white`, 힌트 텍스트 진하게
+
 ## [1.6.3] - 2026-03-17
 
 ### Changed

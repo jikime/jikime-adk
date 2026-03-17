@@ -6,7 +6,6 @@ import {
   RefreshCw, Search, X, Save, Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
@@ -161,7 +160,7 @@ function SearchResultItem({
 }
 
 // ── Monaco 에디터 ─────────────────────────────────────────────────
-function MonacoEditor({ path, content, getApiUrl }: { path: string; content: string; getApiUrl: (p: string) => string }) {
+function MonacoEditor({ path, content, getApiUrl, onClose }: { path: string; content: string; getApiUrl: (p: string) => string; onClose: () => void }) {
   const { t } = useLocale()
   const name = path.split('/').pop() ?? path
   const lang = extLang(name)
@@ -209,8 +208,8 @@ function MonacoEditor({ path, content, getApiUrl }: { path: string; content: str
   return (
     <div className="flex flex-col h-full">
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-card border-b border-border shrink-0">
-        <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-accent border-b border-border shrink-0">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <File className={cn('w-3.5 h-3.5 shrink-0', extColor(name))} />
           <span className="text-xs font-mono truncate min-w-0" title={path}>
             <span className="text-muted-foreground">{path.slice(0, path.lastIndexOf('/') + 1)}</span>
@@ -221,14 +220,13 @@ function MonacoEditor({ path, content, getApiUrl }: { path: string; content: str
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title={t.files.unsavedChanges} />
           )}
         </div>
-        <button
+        <Button
+          variant="ghost" size="sm"
           onClick={handleSave}
           disabled={!dirty || saving}
           className={cn(
-            'flex items-center gap-1 text-xs transition-colors shrink-0 px-2 py-0.5 rounded',
-            dirty && !saving
-              ? 'text-foreground hover:bg-muted cursor-pointer'
-              : 'text-muted-foreground/50 cursor-default'
+            'flex items-center gap-1 h-6 px-2 text-xs shrink-0',
+            dirty && !saving ? 'text-foreground' : 'text-muted-foreground/50'
           )}
         >
           {saved
@@ -237,7 +235,15 @@ function MonacoEditor({ path, content, getApiUrl }: { path: string; content: str
               ? <><RefreshCw className="w-3 h-3 animate-spin" /><span>{t.files.saving}</span></>
               : <><Save className="w-3 h-3" /><span>{t.files.save}</span></>
           }
-        </button>
+        </Button>
+        <Button
+          variant="ghost" size="icon-sm"
+          onClick={onClose}
+          className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
+          title="닫기"
+        >
+          <X className="w-3.5 h-3.5" />
+        </Button>
       </div>
 
       {/* Monaco Editor */}
@@ -341,12 +347,12 @@ export default function FileTree() {
   const rootPath = activeProject?.path ?? ''
 
   return (
-    <div className="flex h-full bg-background rounded-lg overflow-hidden border border-border">
+    <div className="flex h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-border">
 
       {/* ── 좌측: 파일 트리 ──────────────────────── */}
       <div className="flex flex-col w-64 shrink-0 border-r border-border">
         {/* 헤더 */}
-        <div className="flex items-center gap-1.5 px-2 py-2 bg-card border-b border-border shrink-0">
+        <div className="flex items-center gap-1.5 px-2 py-2 bg-white dark:bg-accent border-b border-border shrink-0">
           <span className="text-xs text-muted-foreground truncate flex-1 font-mono">
             {activeProject ? activeProject.name : t.files.selectProject}
           </span>
@@ -375,7 +381,13 @@ export default function FileTree() {
         </div>
 
         {/* 트리 / 검색 결과 */}
-        <ScrollArea className="flex-1">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden
+          [&::-webkit-scrollbar]:w-[3px]
+          [&::-webkit-scrollbar-track]:bg-transparent
+          [&::-webkit-scrollbar-thumb]:bg-transparent
+          [&::-webkit-scrollbar-thumb]:rounded-full
+          hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/25
+          [&::-webkit-scrollbar-thumb]:transition-colors">
           <div className="py-1 px-1">
             {searchResults ? (
               searchResults.length > 0 ? (
@@ -402,7 +414,7 @@ export default function FileTree() {
                   ))
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* ── 우측: 코드 뷰어 ──────────────────────── */}
@@ -412,7 +424,12 @@ export default function FileTree() {
             <RefreshCw className="w-5 h-5 text-muted-foreground/50 animate-spin" />
           </div>
         ) : selectedNode && fileContent !== null ? (
-          <MonacoEditor path={selectedNode.path} content={fileContent} getApiUrl={getApiUrl} />
+          <MonacoEditor
+            path={selectedNode.path}
+            content={fileContent}
+            getApiUrl={getApiUrl}
+            onClose={() => { setSelectedNode(null); setFileContent(null) }}
+          />
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-center">
             <File className="w-10 h-10 text-muted-foreground/30" />

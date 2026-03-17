@@ -617,10 +617,10 @@ export default function ChatInterface() {
   const moreModels     = MODELS.slice(3)
 
   return (
-    <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden border border-border">
+    <div className="flex flex-col h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-border">
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3 bg-card border-b border-border shrink-0">
+      <div className="flex items-center gap-3 px-5 py-3 bg-white dark:bg-accent border-b border-border shrink-0">
         <Bot className="w-5 h-5 text-blue-400 shrink-0" />
         <span className="text-base font-semibold text-foreground shrink-0">Claude</span>
         {activeProject && (
@@ -673,9 +673,9 @@ export default function ChatInterface() {
       </div>
 
       {/* 입력창 */}
-      <div className="shrink-0 border-t border-border bg-background px-4 py-4">
+      <div className="shrink-0 border-t border-border bg-white dark:bg-background px-4 py-4">
         <div
-          className="bg-muted border border-border rounded-2xl focus-within:border-ring transition-colors"
+          className="bg-white dark:bg-muted border border-border rounded-2xl shadow-sm focus-within:border-ring transition-colors"
           onDragOver={e => e.preventDefault()}
           onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
         >
@@ -858,7 +858,7 @@ export default function ChatInterface() {
             )}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground/50 mt-1.5 text-center">Enter 전송 · Shift+Enter 줄바꿈</p>
+        <p className="text-xs text-muted-foreground mt-1.5 text-center">Enter 전송 · Shift+Enter 줄바꿈</p>
       </div>
     </div>
   )

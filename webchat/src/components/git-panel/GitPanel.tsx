@@ -247,7 +247,7 @@ export default function GitPanel() {
 
   if (!isGitRepo) {
     return (
-      <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden border border-border">
+      <div className="flex flex-col h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-border">
         <GitHeader currentBranch="" loading={loading} onRefresh={refresh} pushing={pushing} pulling={pulling} onPush={handlePush} onPull={handlePull} />
         <div className="flex flex-col items-center justify-center flex-1 gap-2 text-center px-4">
           <GitBranch className="w-8 h-8 text-muted-foreground/30" />
@@ -259,7 +259,7 @@ export default function GitPanel() {
   }
 
   return (
-    <div className="flex flex-col h-full bg-background rounded-lg overflow-hidden border border-border">
+    <div className="flex flex-col h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-border">
       <GitHeader
         currentBranch={currentBranch}
         loading={loading}
@@ -438,7 +438,7 @@ function GitHeader({ currentBranch, loading, onRefresh, pushing, pulling, onPush
   onPull: () => void
 }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2.5 bg-card border-b border-border shrink-0">
+    <div className="flex items-center justify-between px-3 py-2.5 bg-white dark:bg-accent border-b border-border shrink-0">
       <div className="flex items-center gap-2">
         <GitBranch className="w-4 h-4 text-purple-400" />
         <span className="text-sm font-medium text-foreground">Git</span>

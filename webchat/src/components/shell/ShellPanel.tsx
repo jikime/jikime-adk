@@ -179,7 +179,7 @@ export default function ShellPanel() {
   return (
     <div className="flex flex-col h-full bg-[#0a0a0a] rounded-lg overflow-hidden border border-border">
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 py-2 bg-card border-b border-border shrink-0">
+      <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-accent border-b border-border shrink-0">
         <div className="flex items-center gap-2">
           <div className="flex gap-1.5">
             <div className="w-3 h-3 rounded-full bg-red-500/80" />

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import {
   Folder, FolderOpen, MessageSquare, Plus, RefreshCw,
-  ChevronDown, ChevronRight, Settings, X, Check,
+  ChevronDown, ChevronRight, X, Check,
   Server, Trash2, Edit2, Globe, AlertTriangle, Eye, EyeOff, KeyRound,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -125,7 +125,7 @@ function ServerForm({
 }
 
 // ── 설정 모달 ─────────────────────────────────────────────────────
-function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { t } = useLocale()
   const [settings, setSettings] = useState<AppSettings>(() => loadSettings())
   const [showPat, setShowPat] = useState(false)
@@ -234,7 +234,7 @@ function SettingsModal({ open, onClose }: { open: boolean; onClose: () => void }
           </div>
 
           {/* 현재 설정 요약 */}
-          <div className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 border-t border-border pt-3">
+          <div className="text-[10px] dark:text-muted-foreground/50 text-muted-foreground/70 pt-3">
             {t.sidebar.activeModel}: <span className="text-foreground/70">{MODELS.find(m => m.id === settings.model)?.label}</span>
           </div>
         </div>
@@ -253,7 +253,6 @@ export default function Sidebar() {
 
   const [loading,          setLoading]         = useState(false)
   const [openProjects,     setOpenProjects]     = useState<Set<string>>(new Set())
-  const [showSettings,     setShowSettings]     = useState(false)
   const [showServerPicker, setShowServerPicker] = useState(false)
   const [addingServer,     setAddingServer]     = useState(false)
   const [editingServerId,  setEditingServerId]  = useState<string | null>(null)
@@ -325,10 +324,10 @@ export default function Sidebar() {
   }
 
   return (
-    <div className="relative flex flex-col h-full bg-card">
+    <div className="relative flex flex-col h-full bg-white dark:bg-muted">
 
       {/* ── 서버 선택기 ── */}
-      <div className="shrink-0 border-b border-border">
+      <div className="shrink-0">
         <button
           onClick={() => setShowServerPicker(v => !v)}
           className="flex items-center gap-2 w-full px-3 py-2 text-left hover:bg-muted transition-colors"
@@ -356,7 +355,7 @@ export default function Sidebar() {
 
         {/* 서버 드롭다운 */}
         {showServerPicker && (
-          <div className="border-t border-border">
+          <div>
             {/* 서버 목록 */}
             <div className="py-1">
               {servers.map(s => (
@@ -416,7 +415,7 @@ export default function Sidebar() {
             </div>
 
             {/* 서버 추가 */}
-            <div className="border-t border-border p-2">
+            <div className="p-2">
               {addingServer ? (
                 <ServerForm
                   onSave={(s) => { addServer(s); setAddingServer(false) }}
@@ -438,7 +437,7 @@ export default function Sidebar() {
       </div>
 
       {/* ── 프로젝트 헤더 ── */}
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-border shrink-0">
+      <div className="flex items-center justify-between px-3 py-2.5 shrink-0">
         <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{t.sidebar.projects}</span>
         <Button
           variant="ghost" size="icon"
@@ -551,19 +550,6 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* ── 하단 설정 버튼 ── */}
-      <div className="shrink-0 border-t border-border px-2 py-2">
-        <Button
-          variant="ghost"
-          onClick={() => setShowSettings(true)}
-          className="flex items-center gap-2 w-full justify-start px-2 h-7 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <Settings className="w-3.5 h-3.5" />
-          {t.sidebar.settings}
-        </Button>
-      </div>
-
-      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* ── 프로젝트 삭제 확인 ── */}
       <AlertDialog open={!!deletingProject} onOpenChange={(open) => { if (!open) setDeletingProject(null) }}>

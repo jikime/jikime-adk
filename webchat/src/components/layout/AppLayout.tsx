@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
-import { Bot, PanelLeftClose, PanelLeftOpen, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch } from 'lucide-react'
+import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import Sidebar from '@/components/sidebar/Sidebar'
+import Sidebar, { SettingsModal } from '@/components/sidebar/Sidebar'
 import ChatInterface from '@/components/chat/ChatInterface'
 import { useLocale } from '@/contexts/LocaleContext'
 import { LOCALES } from '@/i18n'
@@ -30,13 +30,13 @@ function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      className="h-7 w-7 text-foreground/60 hover:text-foreground"
+      className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent dark:text-foreground/60 dark:hover:text-foreground dark:hover:bg-transparent"
       onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
       title={resolvedTheme === 'dark' ? t.layout.theme.toLight : t.layout.theme.toDark}
     >
       {resolvedTheme === 'dark'
         ? <Sun className="w-4 h-4 text-amber-400" />
-        : <Moon className="w-4 h-4 text-indigo-500" />
+        : <Moon className="w-4 h-4 text-white/90" />
       }
     </Button>
   )
@@ -58,7 +58,7 @@ function LanguageSelector() {
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2 gap-1 text-muted-foreground hover:text-foreground"
+        className="h-7 px-2 gap-1 text-white/70 hover:text-white hover:bg-transparent dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-transparent"
         onClick={() => setOpen(v => !v)}
       >
         <span className="text-sm">{current?.flag}</span>
@@ -96,13 +96,14 @@ export default function AppLayout() {
   const { t } = useLocale()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [activeTab, setActiveTab] = useState<Tab>('chat')
+  const [showSettings, setShowSettings] = useState(false)
   const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(new Set(['chat']))
 
   const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'chat',     label: t.layout.tabs.chat,     icon: <MessageSquare  className="w-3.5 h-3.5 shrink-0 text-sky-400" /> },
-    { id: 'terminal', label: t.layout.tabs.terminal, icon: <SquareTerminal className="w-3.5 h-3.5 shrink-0 text-emerald-400" /> },
-    { id: 'files',    label: t.layout.tabs.files,    icon: <FolderOpen     className="w-3.5 h-3.5 shrink-0 text-amber-400" /> },
-    { id: 'git',      label: t.layout.tabs.git,      icon: <GitBranch      className="w-3.5 h-3.5 shrink-0 text-purple-400" /> },
+    { id: 'chat',     label: t.layout.tabs.chat,     icon: <MessageSquare  className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-sky-400" /> },
+    { id: 'terminal', label: t.layout.tabs.terminal, icon: <SquareTerminal className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-emerald-400" /> },
+    { id: 'files',    label: t.layout.tabs.files,    icon: <FolderOpen     className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-amber-400" /> },
+    { id: 'git',      label: t.layout.tabs.git,      icon: <GitBranch      className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-purple-400" /> },
   ]
 
   const handleTabChange = (tab: Tab) => {
@@ -111,17 +112,17 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground overflow-hidden">
+    <div className="flex flex-col h-screen bg-muted dark:bg-muted text-foreground overflow-hidden">
       {/* Top bar — z-20 so dropdown escapes above z-10 tab panels */}
-      <header className="flex items-center bg-card border-b border-border shrink-0 z-20 relative">
+      <header className="flex items-center bg-[#cb6441] dark:bg-card border-b border-border shrink-0 z-20 relative">
         {/* Logo — same width as sidebar */}
         <div className={cn(
-          'flex items-center gap-1.5 shrink-0 transition-all duration-200 overflow-hidden border-r border-border',
+          'flex items-center gap-1.5 shrink-0 transition-all duration-200 overflow-hidden',
           sidebarOpen ? 'w-64 px-3 py-2' : 'w-0 px-0 py-2'
         )}>
-          <Bot className="w-4 h-4 dark:text-blue-400 text-blue-600 shrink-0" />
-          <span className="text-sm font-bold dark:text-blue-400 text-blue-600 whitespace-nowrap">JiKiME-ADK</span>
-          <span className="text-[10px] text-muted-foreground whitespace-nowrap">Claude Code</span>
+          <Bot className="w-4 h-4 dark:text-blue-400 text-white/90 shrink-0" />
+          <span className="text-sm font-bold dark:text-blue-400 text-white whitespace-nowrap">JiKiME-ADK</span>
+          <span className="text-[10px] dark:text-muted-foreground text-white/60 whitespace-nowrap">Claude Code</span>
         </div>
 
         {/* Collapse icon + Tab buttons */}
@@ -129,10 +130,10 @@ export default function AppLayout() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-foreground/60 hover:text-foreground"
+            className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent dark:text-foreground/60 dark:hover:text-foreground dark:hover:bg-transparent"
             onClick={() => setSidebarOpen(v => !v)}
           >
-            {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+            <Menu className="w-4 h-4" />
           </Button>
           {TABS.map(tab => (
             <button
@@ -141,8 +142,8 @@ export default function AppLayout() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
                 activeTab === tab.id
-                  ? 'dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-500/30 bg-blue-600/15 text-blue-700 border-blue-600/40 border'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted border border-transparent'
+                  ? 'dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-500/30 bg-white/20 text-white border-white/30 border'
+                  : 'text-white/70 hover:text-white hover:bg-white/15 border border-transparent dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted'
               )}
             >
               {tab.icon}
@@ -151,52 +152,61 @@ export default function AppLayout() {
           ))}
         </div>
 
-        {/* Language selector + Theme toggle — right side */}
+        {/* Settings + Language selector + Theme toggle — right side */}
         <div className="flex items-center gap-0.5 px-2 py-2 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent dark:text-foreground/60 dark:hover:text-foreground dark:hover:bg-transparent"
+            onClick={() => setShowSettings(true)}
+          >
+            <Settings className="w-4 h-4" />
+          </Button>
           <LanguageSelector />
           <ThemeToggle />
         </div>
       </header>
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* Body */}
-      <div className="flex flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-1 min-h-0 overflow-hidden bg-muted dark:bg-muted">
         {/* Sidebar */}
         <aside
           className={cn(
-            'shrink-0 transition-all duration-200 overflow-hidden border-r border-border',
-            sidebarOpen ? 'w-64' : 'w-0'
+            'shrink-0 transition-all duration-200 overflow-hidden bg-white dark:bg-muted',
+            sidebarOpen ? 'w-64 p-2 pr-0' : 'w-0'
           )}
         >
-          <div className={cn('h-full', sidebarOpen ? 'block' : 'hidden')}>
+          <div className={cn('h-full rounded-lg overflow-hidden', sidebarOpen ? 'block' : 'hidden')}>
             <Sidebar />
           </div>
         </aside>
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 overflow-hidden relative">
-          <div className={cn('absolute inset-0 p-2 transition-none',
+        <main className="flex-1 min-w-0 overflow-hidden relative bg-white dark:bg-muted">
+          <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
             activeTab === 'chat' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-            <ChatInterface />
+            <div className="h-full rounded-lg bg-muted dark:bg-background"><ChatInterface /></div>
           </div>
 
           {mountedTabs.has('terminal') && (
-            <div className={cn('absolute inset-0 p-2 transition-none',
+            <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
               activeTab === 'terminal' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-              <ShellPanel />
+              <div className="h-full rounded-lg bg-muted dark:bg-background"><ShellPanel /></div>
             </div>
           )}
 
           {mountedTabs.has('files') && (
-            <div className={cn('absolute inset-0 p-2 transition-none',
+            <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
               activeTab === 'files' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-              <FileTree />
+              <div className="h-full rounded-lg bg-muted dark:bg-background"><FileTree /></div>
             </div>
           )}
 
           {mountedTabs.has('git') && (
-            <div className={cn('absolute inset-0 p-2 transition-none',
+            <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
               activeTab === 'git' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-              <GitPanel />
+              <div className="h-full rounded-lg bg-muted dark:bg-background"><GitPanel /></div>
             </div>
           )}
         </main>
