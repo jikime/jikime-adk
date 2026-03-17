@@ -31,6 +31,34 @@ process.on('unhandledRejection', (reason) => {
 const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
 
+// ── Claude CLI 경로 탐색 ────────────────────────────────────────
+function findClaudePath(): string | undefined {
+  // 1. 환경변수로 명시된 경우 최우선
+  if (process.env.CLAUDE_PATH) return process.env.CLAUDE_PATH
+  // 2. which / where 로 탐색
+  const candidates = ['which claude', 'which claude-code']
+  for (const cmd of candidates) {
+    try {
+      const p = execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim()
+      if (p) { console.log(`[server] claude 경로: ${p}`); return p }
+    } catch { /* */ }
+  }
+  // 3. 흔한 글로벌 설치 경로 직접 확인
+  const guesses = [
+    '/usr/local/bin/claude',
+    '/usr/bin/claude',
+    `${os.homedir()}/.npm-global/bin/claude`,
+    `${os.homedir()}/.local/bin/claude`,
+  ]
+  for (const p of guesses) {
+    if (fs.existsSync(p)) { console.log(`[server] claude 경로(guess): ${p}`); return p }
+  }
+  console.warn('[server] claude 실행 파일을 찾지 못했습니다. CLAUDE_PATH 환경변수를 설정하거나 npm i -g @anthropic-ai/claude-code 를 실행하세요.')
+  return undefined
+}
+
+const CLAUDE_PATH = findClaudePath()
+
 // ── PTY Session Store ──────────────────────────────────────────
 interface PtySession {
   pty: import('node-pty').IPty
@@ -136,6 +164,7 @@ async function handleClaudeMessage(
     permissionMode,
     model,
     ...(permissionMode === 'bypassPermissions' && { allowDangerouslySkipPermissions: true }),
+    ...(CLAUDE_PATH && { pathToClaudeCodeExecutable: CLAUDE_PATH }),
   }
   if (claudeSessionId) options.resume = claudeSessionId
 
