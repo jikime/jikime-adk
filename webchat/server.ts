@@ -2,11 +2,20 @@ import { createServer } from 'http'
 import { parse } from 'url'
 import next from 'next'
 import { WebSocketServer, WebSocket } from 'ws'
-import * as pty from 'node-pty'
 import * as fs from 'fs'
 import * as path from 'path'
 import { execSync } from 'child_process'
 import * as os from 'os'
+
+// node-pty 지연 로딩 — Linux에서 컴파일 안 된 경우에도 서버가 정상 기동
+// 터미널 기능만 비활성화되고 채팅/파일/Git은 정상 동작
+let pty: typeof import('node-pty') | null = null
+try {
+  pty = require('node-pty')
+} catch (e) {
+  console.warn('[server] node-pty 로드 실패 — 터미널 기능 비활성화됨')
+  console.warn('[server] 해결: sudo dnf install -y python3 make gcc gcc-c++ && pnpm rebuild node-pty')
+}
 
 const dev = process.env.NODE_ENV !== 'production'
 const hostname = process.env.HOSTNAME || 'localhost'
@@ -25,7 +34,7 @@ const handle = app.getRequestHandler()
 
 // ── PTY Session Store ──────────────────────────────────────────
 interface PtySession {
-  pty: pty.IPty
+  pty: import('node-pty').IPty
   clients: Set<WebSocket>
   created: number
   lastActivity: number
@@ -33,6 +42,7 @@ interface PtySession {
 const ptySessions = new Map<string, PtySession>()
 
 function getOrCreatePtySession(sessionId: string, cwd: string, cols: number, rows: number): PtySession {
+  if (!pty) throw new Error('node-pty unavailable')
   if (ptySessions.has(sessionId)) {
     return ptySessions.get(sessionId)!
   }
@@ -645,6 +655,17 @@ app.prepare().then(() => {
           const cwd = msg.cwd || os.homedir()
           const cols = msg.cols || 120
           const rows = msg.rows || 40
+
+          if (!pty) {
+            ws.send(JSON.stringify({
+              type: 'output',
+              data: '\r\n\x1b[31m[터미널 비활성화]\x1b[0m node-pty 컴파일이 필요합니다.\r\n' +
+                    '  sudo dnf install -y python3 make gcc gcc-c++\r\n' +
+                    '  pnpm rebuild node-pty\r\n' +
+                    '그 후 서버를 재시작하세요.\r\n',
+            }))
+            return
+          }
 
           const session = getOrCreatePtySession(sessionId, cwd, cols, rows)
           session.clients.add(ws)
