@@ -34,24 +34,27 @@ export default function AppLayout() {
 
   return (
     <div className="flex flex-col h-screen bg-zinc-950 text-zinc-100 overflow-hidden">
-      {/* Top bar */}
-      <header className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border-b border-zinc-800 shrink-0 z-10">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-zinc-400 hover:text-zinc-100"
-          onClick={() => setSidebarOpen(v => !v)}
-        >
-          {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
-        </Button>
-        <div className="flex items-center gap-1.5">
-          <Bot className="w-4 h-4 text-blue-400" />
-          <span className="text-sm font-bold text-blue-400">JiKiME</span>
-          <span className="text-xs text-zinc-500">Claude Code</span>
+      {/* Top bar — mirrors body layout: [logo area | collapse + tabs] */}
+      <header className="flex items-center bg-zinc-900 border-b border-zinc-800 shrink-0 z-10 overflow-hidden">
+        {/* Logo — same width as sidebar */}
+        <div className={cn(
+          'flex items-center gap-1.5 shrink-0 transition-all duration-200 overflow-hidden border-r border-zinc-800',
+          sidebarOpen ? 'w-64 px-3 py-2' : 'w-0 px-0 py-2'
+        )}>
+          <Bot className="w-4 h-4 text-blue-400 shrink-0" />
+          <span className="text-sm font-bold text-blue-400 whitespace-nowrap">JiKiME-ADK</span>
         </div>
 
-        {/* Tab buttons in header */}
-        <div className="flex items-center gap-0.5 ml-4">
+        {/* Collapse icon + Tab buttons — aligned with main content */}
+        <div className="flex items-center gap-0.5 px-2 py-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-zinc-400 hover:text-zinc-100"
+            onClick={() => setSidebarOpen(v => !v)}
+          >
+            {sidebarOpen ? <PanelLeftClose className="w-4 h-4" /> : <PanelLeftOpen className="w-4 h-4" />}
+          </Button>
           {TABS.map(tab => (
             <button
               key={tab.id}
