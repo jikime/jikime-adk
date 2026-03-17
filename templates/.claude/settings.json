@@ -71,6 +71,16 @@
             "type": "command",
             "command": "jikime hooks post-tool-lsp",
             "timeout": 30000
+          },
+          {
+            "type": "command",
+            "command": "jikime hooks plans-watcher",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "jikime hooks guardrail-engine",
+            "timeout": 10000
           }
         ]
       },

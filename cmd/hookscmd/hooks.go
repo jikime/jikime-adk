@@ -30,6 +30,8 @@ func NewHooks() *cobra.Command {
 	hooks.AddCommand(PostToolAstGrepCmd)
 	hooks.AddCommand(PostToolLspCmd)
 	hooks.AddCommand(PostBashCmd)
+	hooks.AddCommand(PlansWatcherCmd)    // Plans.md structure validator
+	hooks.AddCommand(GuardrailEngineCmd) // Harness guardrail rules R01-R08
 
 	// Stop hooks
 	hooks.AddCommand(StopLoopCmd)

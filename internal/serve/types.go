@@ -94,11 +94,12 @@ type TokenTotals struct {
 
 // AgentEvent is an event emitted by the agent runner back to the orchestrator.
 type AgentEvent struct {
-	Type      AgentEventType
-	IssueID   string
-	Message   string
-	Tokens    *TokenUsage
-	Timestamp time.Time
+	Type            AgentEventType
+	IssueID         string
+	IssueIdentifier string
+	Message         string
+	Tokens          *TokenUsage
+	Timestamp       time.Time
 }
 
 // AgentEventType categorizes agent events.
