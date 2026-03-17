@@ -292,7 +292,19 @@ async function handleClaudeMessage(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
     console.error('[chat] error:', msg)
-    if (msg.includes('interrupt') || msg.includes('abort') || msg.includes('cancel')) {
+
+    // exit code 1 — 인증 미완료 또는 claude CLI 설정 문제
+    if (msg.includes('exit') && msg.includes('code 1')) {
+      const hint = [
+        'claude CLI 종료 코드 1 — 아래를 확인하세요:',
+        `  1. 원격 서버에서 인증: claude login`,
+        `  2. 또는 환경변수: export ANTHROPIC_API_KEY=sk-ant-...`,
+        `  3. 테스트: claude -p "hello"`,
+        `  claude 경로: ${CLAUDE_PATH ?? '(자동탐색)'}`,
+      ].join('\n')
+      console.error('[chat]', hint)
+      ws.send(JSON.stringify({ type: 'error', message: hint }))
+    } else if (msg.includes('interrupt') || msg.includes('abort') || msg.includes('cancel')) {
       ws.send(JSON.stringify({ type: 'aborted' }))
     } else {
       ws.send(JSON.stringify({ type: 'error', message: msg }))
