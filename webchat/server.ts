@@ -80,6 +80,7 @@ function findClaudePath(): string | undefined {
 
   // 3. 흔한 네이티브 설치 경로 직접 확인
   const guesses = [
+    `${os.homedir()}/.local/bin/claude`,           // Linux npm install 기본 경로
     '/usr/local/bin/claude',
     '/usr/bin/claude',
     `${os.homedir()}/.claude/local/claude`,

@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Webchat
 
-## Getting Started
+Claude Code를 웹 브라우저에서 사용할 수 있는 웹 인터페이스입니다.
+로컬 및 원격 서버 모두 지원하며, 채팅 · 파일 편집 · 터미널 · Git 작업을 한 화면에서 처리할 수 있습니다.
 
-First, run the development server:
+## 빠른 시작
+
+### 로컬 실행
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`http://localhost:4000` 접속
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Docker 실행
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+docker compose up -d --build
 
-## Learn More
+# Claude CLI 인증 (최초 1회)
+docker exec -it webchat bash
+claude auth login
+```
 
-To learn more about Next.js, take a look at the following resources:
+`http://localhost:4000` 접속
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 주요 기능
 
-## Deploy on Vercel
+- **Claude 채팅** — 스트리밍 응답, 세션 히스토리, 도구 사용 승인
+- **파일 편집기** — 파일 트리 탐색 + Monaco 에디터
+- **웹 터미널** — node-pty 기반 쉘 접속 (xterm.js)
+- **Git 패널** — 상태 조회, 스테이징, 커밋, 브랜치 관리
+- **원격 서버** — 여러 서버를 등록하고 브라우저에서 전환
+- **권한 모드** — bypassPermissions / acceptEdits / default
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 문서
+
+자세한 내용은 `docs/` 디렉터리를 참고하세요.
+
+| 문서 | 내용 |
+|---|---|
+| [설치 가이드](./docs/installation.md) | 로컬 / Docker 설치 방법 |
+| [사용법](./docs/usage.md) | 화면 구성, 채팅, 터미널, Git 사용법 |
+| [원격 서버 연결](./docs/remote-server.md) | 원격 서버 등록 및 접속 방법 |
+| [아키텍처](./docs/architecture.md) | 프로젝트 구조 및 기술 스택 |
+| [트러블슈팅](./docs/troubleshooting.md) | 자주 발생하는 오류 해결법 |
+
+---
+
+## 스크립트
+
+| 명령 | 설명 |
+|---|---|
+| `pnpm dev` | 개발 서버 실행 (tsx server.ts) |
+| `pnpm build` | Next.js 프로덕션 빌드 |
+| `pnpm fix-pty` | Linux node-pty 수동 재컴파일 |
