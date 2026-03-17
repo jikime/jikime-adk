@@ -32,28 +32,66 @@ const app = next({ dev, hostname, port })
 const handle = app.getRequestHandler()
 
 // ── Claude CLI 경로 탐색 ────────────────────────────────────────
+// 파일 첫 4바이트로 네이티브 바이너리 여부 확인
+// ELF(Linux): 7F 45 4C 46 / Mach-O(macOS): FE ED FA CE/CF 또는 CE/CF FA ED FE
+function isNativeBinary(filePath: string): boolean {
+  try {
+    const buf = Buffer.alloc(4)
+    const fd = fs.openSync(filePath, 'r')
+    fs.readSync(fd, buf, 0, 4, 0)
+    fs.closeSync(fd)
+    // ELF
+    if (buf[0] === 0x7f && buf[1] === 0x45 && buf[2] === 0x4c && buf[3] === 0x46) return true
+    // Mach-O (LE/BE, 32/64bit)
+    const magic = buf.readUInt32LE(0)
+    if ([0xFEEDFACE, 0xCEFAEDFE, 0xFEEDFACF, 0xCFFAEDFE].includes(magic)) return true
+    return false
+  } catch { return false }
+}
+
 function findClaudePath(): string | undefined {
-  // 1. 환경변수로 명시된 경우 최우선
-  if (process.env.CLAUDE_PATH) return process.env.CLAUDE_PATH
-  // 2. which / where 로 탐색
-  const candidates = ['which claude', 'which claude-code']
-  for (const cmd of candidates) {
-    try {
-      const p = execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim()
-      if (p) { console.log(`[server] claude 경로: ${p}`); return p }
-    } catch { /* */ }
+  // 1. 환경변수로 명시된 경우 최우선 (네이티브 여부 검사 없이 신뢰)
+  if (process.env.CLAUDE_PATH) {
+    console.log(`[server] claude 경로 (CLAUDE_PATH): ${process.env.CLAUDE_PATH}`)
+    return process.env.CLAUDE_PATH
   }
-  // 3. 흔한 글로벌 설치 경로 직접 확인
+
+  const check = (p: string): string | undefined => {
+    try {
+      const real = fs.realpathSync(p)  // 심볼릭 링크 해소
+      if (isNativeBinary(real)) {
+        console.log(`[server] claude 네이티브 바이너리: ${real}`)
+        return real
+      }
+    } catch { /* */ }
+    return undefined
+  }
+
+  // 2. which -a 로 PATH 전체 탐색 (여러 후보 확인)
+  try {
+    const all = execSync('which -a claude 2>/dev/null || which claude', { encoding: 'utf8', stdio: 'pipe' })
+    for (const line of all.split('\n').map(l => l.trim()).filter(Boolean)) {
+      const found = check(line)
+      if (found) return found
+    }
+  } catch { /* */ }
+
+  // 3. 흔한 네이티브 설치 경로 직접 확인
   const guesses = [
     '/usr/local/bin/claude',
     '/usr/bin/claude',
-    `${os.homedir()}/.npm-global/bin/claude`,
-    `${os.homedir()}/.local/bin/claude`,
+    `${os.homedir()}/.claude/local/claude`,
+    `${os.homedir()}/.local/share/claude/claude`,
   ]
   for (const p of guesses) {
-    if (fs.existsSync(p)) { console.log(`[server] claude 경로(guess): ${p}`); return p }
+    if (fs.existsSync(p)) {
+      const found = check(p)
+      if (found) return found
+    }
   }
-  console.warn('[server] claude 실행 파일을 찾지 못했습니다. CLAUDE_PATH 환경변수를 설정하거나 npm i -g @anthropic-ai/claude-code 를 실행하세요.')
+
+  console.warn('[server] claude 네이티브 바이너리를 찾지 못했습니다.')
+  console.warn('[server] 해결: CLAUDE_PATH=/path/to/claude pnpm dev  (네이티브 설치 경로 직접 지정)')
   return undefined
 }
 
