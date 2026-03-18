@@ -5,6 +5,27 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.5] - 2026-03-18
+
+### Fixed
+
+- **Webchat — Docker: terminal `execvp(3) failed` on shell spawn**:
+  - `server.ts`: Shell detection now probes candidates in order (`$SHELL` → `/bin/bash` → `/bin/zsh` → `/bin/sh`) using `fs.existsSync`, preventing crash when `zsh` is absent in slim Docker images
+  - `Dockerfile`: Added `zsh` to runner stage `apt-get install` for full shell support
+  - `docker-compose.yml`: Added `SHELL=/bin/bash` environment variable as explicit fallback
+
+- **Webchat — Docker: `cwd` ENOENT misreported as "Claude Code native binary not found"**:
+  - `server.ts`: Validates `projectPath` with `fs.existsSync` before passing as `cwd` to the SDK; falls back to `os.homedir()` when the path does not exist
+  - Prevents Node.js `spawn` ENOENT (caused by a non-existent working directory) from being incorrectly surfaced as a binary detection error by the SDK
+
+- **Webchat — Docker: file tree resolves to wrong container path**:
+  - `server.ts`: `/api/ws/files` now validates the requested path and falls back to `os.homedir()` when not found; response includes `{ path, tree }` so the UI shows the actual resolved path
+  - `FileTree.tsx`: Handles both legacy array response and new `{ path, tree }` shape; header now displays the real resolved path with a tooltip
+
+- **Webchat — Session history silently fails on parse error**:
+  - `server.ts`: `/api/ws/session` parse errors now log to server console and return `[]` (200) instead of crashing with 500, so the client always receives valid JSON
+  - Added server-side logging for session file lookup (`[session] jsonl not found`) and successful loads (`[session] loaded N messages`)
+
 ## [1.6.4] - 2026-03-18
 
 ### Changed
