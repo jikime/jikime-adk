@@ -125,7 +125,15 @@ function getOrCreatePtySession(sessionId: string, cwd: string, cols: number, row
   if (ptySessions.has(sessionId)) {
     return ptySessions.get(sessionId)!
   }
-  const shell = process.env.SHELL || '/bin/zsh'
+  // SHELL 환경변수 → 시스템에 실제 존재하는 셸 순서로 폴백
+  // Docker(node:slim)에는 zsh 없이 bash/sh만 있음
+  const shellCandidates = [
+    process.env.SHELL,
+    '/bin/bash',
+    '/bin/zsh',
+    '/bin/sh',
+  ]
+  const shell = shellCandidates.find(s => s && fs.existsSync(s)) ?? '/bin/sh'
   const ptyProcess = pty.spawn(shell, [], {
     name: 'xterm-256color',
     cols,
@@ -201,7 +209,14 @@ async function handleClaudeMessage(
   permissionMode = 'bypassPermissions',
   extendedThinking = false,
 ) {
-  console.log(`[chat] start — model=${model} mode=${permissionMode} thinking=${extendedThinking} cwd=${projectPath}`)
+  // cwd 존재 여부 검증 — 없으면 홈 디렉터리로 폴백
+  // (Node.js spawn은 cwd가 없으면 ENOENT를 던지는데, SDK가 이를 바이너리 오류로 잘못 해석함)
+  const effectiveCwd = fs.existsSync(projectPath) ? projectPath : os.homedir()
+  if (effectiveCwd !== projectPath) {
+    console.warn(`[chat] cwd does not exist: ${projectPath} — falling back to ${effectiveCwd}`)
+  }
+
+  console.log(`[chat] start — model=${model} mode=${permissionMode} thinking=${extendedThinking} cwd=${effectiveCwd}`)
   const { query } = await import('@anthropic-ai/claude-agent-sdk')
 
   let capturedSessionId = claudeSessionId
@@ -212,7 +227,7 @@ async function handleClaudeMessage(
     isRoot && permissionMode === 'bypassPermissions' ? 'acceptEdits' : permissionMode
 
   const options: Record<string, unknown> = {
-    cwd: projectPath,
+    cwd: effectiveCwd,
     permissionMode: effectivePermissionMode,
     model,
     ...(!isRoot && permissionMode === 'bypassPermissions' && { allowDangerouslySkipPermissions: true }),

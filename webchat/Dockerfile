@@ -30,6 +30,7 @@ FROM node:22-slim AS runner
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 make gcc g++ libc6-dev \
     curl ca-certificates git \
+    zsh \
     && rm -rf /var/lib/apt/lists/*
 
 # pnpm 활성화
