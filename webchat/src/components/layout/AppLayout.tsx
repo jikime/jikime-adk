@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import dynamic from 'next/dynamic'
-import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings } from 'lucide-react'
+import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings, Zap } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -10,6 +10,9 @@ import Sidebar, { SettingsModal } from '@/components/sidebar/Sidebar'
 import ChatInterface from '@/components/chat/ChatInterface'
 import { useLocale } from '@/contexts/LocaleContext'
 import { LOCALES } from '@/i18n'
+import { useServer } from '@/contexts/ServerContext'
+import { useProject } from '@/contexts/ProjectContext'
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle, usePanelRef } from '@/components/ui/resizable'
 
 const ShellPanel = dynamic(() => import('@/components/shell/ShellPanel'), { ssr: false })
 const FileTree = dynamic(() => import('@/components/file-tree/FileTree'), { ssr: false })
@@ -30,7 +33,7 @@ const ThemeToggle = memo(function ThemeToggle() {
     <Button
       variant="ghost"
       size="icon"
-      className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent dark:text-foreground/60 dark:hover:text-foreground dark:hover:bg-transparent"
+      className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent"
       onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
       title={resolvedTheme === 'dark' ? t.layout.theme.toLight : t.layout.theme.toDark}
     >
@@ -94,16 +97,22 @@ const LanguageSelector = memo(function LanguageSelector() {
 
 export default function AppLayout() {
   const { t } = useLocale()
+  const { getApiUrl } = useServer()
+  const { activeProject } = useProject()
+  const sidebarPanelRef = usePanelRef()
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarPx, setSidebarPx] = useState(256)
   const [activeTab, setActiveTab] = useState<Tab>('chat')
   const [showSettings, setShowSettings] = useState(false)
   const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(new Set(['chat']))
+  const [harnessRunning, setHarnessRunning] = useState(false)
+  const [harnessActiveCount, setHarnessActiveCount] = useState(0)
 
   const TABS = useMemo<{ id: Tab; label: string; icon: React.ReactNode }[]>(() => [
-    { id: 'chat',     label: t.layout.tabs.chat,     icon: <MessageSquare  className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-sky-400" /> },
-    { id: 'terminal', label: t.layout.tabs.terminal, icon: <SquareTerminal className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-emerald-400" /> },
-    { id: 'files',    label: t.layout.tabs.files,    icon: <FolderOpen     className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-amber-400" /> },
-    { id: 'git',      label: t.layout.tabs.git,      icon: <GitBranch      className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-purple-400" /> },
+    { id: 'chat',     label: t.layout.tabs.chat,     icon: <MessageSquare  className="w-3.5 h-3.5 shrink-0 text-white/80" /> },
+    { id: 'terminal', label: t.layout.tabs.terminal, icon: <SquareTerminal className="w-3.5 h-3.5 shrink-0 text-white/80" /> },
+    { id: 'files',    label: t.layout.tabs.files,    icon: <FolderOpen     className="w-3.5 h-3.5 shrink-0 text-white/80" /> },
+    { id: 'git',      label: t.layout.tabs.git,      icon: <GitBranch      className="w-3.5 h-3.5 shrink-0 text-white/80" /> },
   ], [t.layout.tabs])
 
   const handleTabChange = useCallback((tab: Tab) => {
@@ -111,18 +120,47 @@ export default function AppLayout() {
     setMountedTabs(prev => prev.has(tab) ? prev : new Set([...prev, tab]))
   }, [])
 
+  // Harness 상태 폴링 (5초 간격) — 프로젝트 선택 시에만
+  useEffect(() => {
+    const projectPath = activeProject?.path
+    if (!projectPath) { setHarnessRunning(false); setHarnessActiveCount(0); return }
+    const check = async () => {
+      try {
+        const res = await fetch(getApiUrl(`/api/harness/status?projectPath=${encodeURIComponent(projectPath)}`))
+        if (res.ok) {
+          const data = await res.json() as { status: string; activeCount?: number }
+          setHarnessRunning(data.status === 'running')
+          setHarnessActiveCount(data.activeCount ?? 0)
+        }
+      } catch { /* ignore */ }
+    }
+    check()
+    const id = setInterval(check, 5000)
+    return () => clearInterval(id)
+  }, [activeProject?.path, getApiUrl])
+
+  // 사이드바 토글 — ResizablePanel collapse/expand 연동
+  const handleToggleSidebar = useCallback(() => {
+    if (sidebarOpen) {
+      sidebarPanelRef.current?.collapse()
+    } else {
+      sidebarPanelRef.current?.expand()
+    }
+    setSidebarOpen(v => !v)
+  }, [sidebarOpen, sidebarPanelRef])
+
   return (
     <div className="flex flex-col h-screen bg-muted dark:bg-muted text-foreground overflow-hidden">
       {/* Top bar — z-20 so dropdown escapes above z-10 tab panels */}
-      <header className="flex items-center bg-[#cb6441] dark:bg-card border-b border-border shrink-0 z-20 relative">
+      <header className="flex items-center bg-primary border-b border-border shrink-0 z-20 relative">
         {/* Logo — same width as sidebar */}
-        <div className={cn(
-          'flex items-center gap-1.5 shrink-0 transition-all duration-200 overflow-hidden',
-          sidebarOpen ? 'w-64 px-3 py-2' : 'w-0 px-0 py-2'
-        )}>
-          <Bot className="w-4 h-4 dark:text-blue-400 text-white/90 shrink-0" />
-          <span className="text-sm font-bold dark:text-blue-400 text-white whitespace-nowrap">JiKiME-ADK</span>
-          <span className="text-[10px] dark:text-muted-foreground text-white/60 whitespace-nowrap">Claude Code</span>
+        <div
+          className="flex items-center gap-1.5 shrink-0 transition-all duration-200 overflow-hidden py-2"
+          style={{ width: sidebarOpen ? sidebarPx : 0, paddingLeft: sidebarOpen ? 12 : 0, paddingRight: sidebarOpen ? 12 : 0 }}
+        >
+          <Bot className="w-4 h-4 text-white/90 shrink-0" />
+          <span className="text-sm font-bold text-white whitespace-nowrap">JiKiME-ADK</span>
+          <span className="text-[10px] text-white/60 whitespace-nowrap">Claude Code</span>
         </div>
 
         {/* Collapse icon + Tab buttons */}
@@ -130,8 +168,8 @@ export default function AppLayout() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent dark:text-foreground/60 dark:hover:text-foreground dark:hover:bg-transparent"
-            onClick={() => setSidebarOpen(v => !v)}
+            className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent"
+            onClick={handleToggleSidebar}
           >
             <Menu className="w-4 h-4" />
           </Button>
@@ -142,8 +180,8 @@ export default function AppLayout() {
               className={cn(
                 'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
                 activeTab === tab.id
-                  ? 'dark:bg-blue-500/25 dark:text-blue-200 dark:border-blue-500/30 bg-white/20 text-white border-white/30 border'
-                  : 'text-white/70 hover:text-white hover:bg-white/15 border border-transparent dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-muted'
+                  ? 'bg-white/20 text-white border border-white/30'
+                  : 'text-white/70 hover:text-white hover:bg-white/15 border border-transparent'
               )}
             >
               {tab.icon}
@@ -152,12 +190,26 @@ export default function AppLayout() {
           ))}
         </div>
 
+        {/* Harness 진행 상태 뱃지 */}
+        {harnessRunning && (
+          <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[10px] font-medium shrink-0">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <Zap className="w-2.5 h-2.5 shrink-0" />
+            Harness
+            {harnessActiveCount > 0 && (
+              <span className="bg-emerald-500 text-white rounded-full w-3.5 h-3.5 flex items-center justify-center text-[9px] font-bold shrink-0">
+                {harnessActiveCount}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Settings + Language selector + Theme toggle — right side */}
         <div className="flex items-center gap-0.5 px-2 py-2 shrink-0">
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent dark:text-foreground/60 dark:hover:text-foreground dark:hover:bg-transparent"
+            className="h-7 w-7 text-white/70 hover:text-white hover:bg-transparent"
             onClick={() => setShowSettings(true)}
           >
             <Settings className="w-4 h-4" />
@@ -169,48 +221,61 @@ export default function AppLayout() {
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* Body */}
-      <div className="flex flex-1 min-h-0 overflow-hidden bg-muted dark:bg-muted">
+      <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0 bg-muted dark:bg-muted">
         {/* Sidebar */}
-        <aside
-          className={cn(
-            'shrink-0 transition-all duration-200 overflow-hidden bg-white dark:bg-muted',
-            sidebarOpen ? 'w-64 p-2 pr-0' : 'w-0'
-          )}
+        <ResizablePanel
+          panelRef={sidebarPanelRef}
+          defaultSize="256px"
+          minSize="160px"
+          maxSize="480px"
+          collapsible
+          collapsedSize="0px"
+          onResize={(size) => {
+            setSidebarOpen(size.asPercentage > 0)
+            if (size.inPixels > 0) setSidebarPx(size.inPixels)
+          }}
+          className="min-w-0 bg-white dark:bg-muted"
         >
-          <div className={cn('h-full rounded-lg overflow-hidden', sidebarOpen ? 'block' : 'hidden')}>
-            <Sidebar />
+          <div className="h-full p-2 pr-0">
+            <div className="h-full rounded-lg overflow-hidden">
+              <Sidebar />
+            </div>
           </div>
-        </aside>
+        </ResizablePanel>
+
+        <ResizableHandle withHandle={true} />
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 overflow-hidden relative bg-white dark:bg-muted">
-          <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
-            activeTab === 'chat' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-            <div className="h-full rounded-lg bg-muted dark:bg-background"><ChatInterface /></div>
-          </div>
-
-          {mountedTabs.has('terminal') && (
+        <ResizablePanel minSize="320px" className="min-w-0 bg-white dark:bg-muted">
+          <main className="h-full overflow-hidden relative">
             <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
-              activeTab === 'terminal' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-              <div className="h-full rounded-lg bg-muted dark:bg-background"><ShellPanel /></div>
+              activeTab === 'chat' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
+              <div className="h-full rounded-lg bg-muted dark:bg-background"><ChatInterface /></div>
             </div>
-          )}
 
-          {mountedTabs.has('files') && (
-            <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
-              activeTab === 'files' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
+            {mountedTabs.has('terminal') && (
+              <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
+                activeTab === 'terminal' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
+                <div className="h-full rounded-lg bg-muted dark:bg-background"><ShellPanel /></div>
+              </div>
+            )}
+
+            {mountedTabs.has('files') && (
+              <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
+                activeTab === 'files' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
               <div className="h-full rounded-lg bg-muted dark:bg-background"><FileTree /></div>
             </div>
-          )}
+            )}
 
-          {mountedTabs.has('git') && (
-            <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
-              activeTab === 'git' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-              <div className="h-full rounded-lg bg-muted dark:bg-background"><GitPanel /></div>
-            </div>
-          )}
-        </main>
-      </div>
+            {mountedTabs.has('git') && (
+              <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
+                activeTab === 'git' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
+                <div className="h-full rounded-lg bg-muted dark:bg-background"><GitPanel /></div>
+              </div>
+            )}
+          </main>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   )
 }

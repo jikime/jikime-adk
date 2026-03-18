@@ -5,7 +5,7 @@ import {
   Send, Square, Bot, ChevronDown, ChevronRight,
   Wrench, AlertCircle, Brain, Shield, Check, X, RefreshCw,
   Plus, Mic, MicOff, FileText, Image as ImageIcon, Loader2,
-  Trash2, HelpCircle, Terminal, RotateCcw,
+  Trash2, HelpCircle, Terminal, RotateCcw, FolderOpen, Copy, Download,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -248,6 +248,29 @@ const ThinkingView = memo(function ThinkingView({ text }: { text: string }) {
   )
 })
 
+// ── 마크다운 코드 블록 — 복사 버튼 포함 ─────────────────────────
+function MarkdownCodeBlock({ children }: { children?: React.ReactNode }) {
+  const [copied, setCopied] = useState(false)
+  const preRef = useRef<HTMLPreElement>(null)
+  return (
+    <div className="relative group/code">
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(preRef.current?.innerText ?? '').catch(() => {})
+          setCopied(true)
+          setTimeout(() => setCopied(false), 2000)
+        }}
+        className="absolute right-2 top-2 z-10 opacity-0 group-hover/code:opacity-100 transition-opacity bg-zinc-700 hover:bg-zinc-600 text-zinc-400 hover:text-white rounded px-1.5 py-0.5 text-[10px] flex items-center gap-1"
+        title="복사"
+      >
+        {copied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+        {copied ? '복사됨' : '복사'}
+      </button>
+      <pre ref={preRef}>{children}</pre>
+    </div>
+  )
+}
+
 const MessageBubble = memo(function MessageBubble({ msg }: { msg: Message }) {
   const isUser = msg.role === 'user'
   return (
@@ -295,7 +318,7 @@ const MessageBubble = memo(function MessageBubble({ msg }: { msg: Message }) {
                 prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1
                 prose-hr:border-border
                 prose-table:text-xs prose-th:text-foreground/80 prose-td:text-muted-foreground">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownCodeBlock }}>
                   {msg.text || ''}
                 </ReactMarkdown>
                 {msg.status === 'streaming' && (
@@ -845,22 +868,54 @@ export default function ChatInterface() {
     moreModels:     MODELS.slice(3),
   }), [model])
 
+  // 마크다운 내보내기
+  const handleExport = useCallback(() => {
+    const lines: string[] = [`# Chat Export\n\nDate: ${new Date().toLocaleString()}\n`]
+    for (const msg of messages) {
+      if (msg.status === 'streaming') continue
+      lines.push(`---\n\n## ${msg.role === 'user' ? 'User' : 'Assistant'}\n\n${msg.text || ''}`)
+    }
+    const blob = new Blob([lines.join('\n\n')], { type: 'text/markdown' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `chat-${new Date().toISOString().slice(0, 10)}.md`
+    a.click()
+    URL.revokeObjectURL(url)
+  }, [messages])
+
   return (
-    <div className="flex flex-col h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-border">
+    <div className="flex flex-col h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-600">
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3 bg-white dark:bg-accent border-b border-border shrink-0">
+      <div className="flex items-center gap-2.5 px-5 py-3 bg-white dark:bg-accent border-b border-border shrink-0 min-w-0">
         <Bot className="w-5 h-5 text-blue-400 shrink-0" />
         <span className="text-base font-semibold text-foreground shrink-0">Claude</span>
         {activeProject && (
-          <span className="text-sm text-muted-foreground truncate min-w-0">· {activeProject.name}</span>
+          <span
+            className="inline-flex items-center gap-1 text-[11px] font-mono bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 rounded px-1.5 py-0.5 truncate"
+            title={activeProject.path}
+          >
+            <FolderOpen className="w-3 h-3 shrink-0" />
+            <span className="truncate">{activeProject.path}</span>
+          </span>
         )}
 
-        {tokenBudget && <div className="ml-auto"><TokenBar budget={tokenBudget} /></div>}
-
-        {activeSessionId && !tokenBudget && (
-          <span className="text-xs text-muted-foreground/50 font-mono shrink-0">{activeSessionId.slice(0, 8)}</span>
-        )}
+        <div className="ml-auto flex items-center gap-1.5 shrink-0">
+          {messages.length > 0 && !isStreaming && (
+            <button
+              onClick={handleExport}
+              title="마크다운으로 내보내기"
+              className="text-muted-foreground hover:text-foreground transition-colors rounded p-1 hover:bg-muted"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          )}
+          {tokenBudget && <TokenBar budget={tokenBudget} />}
+          {activeSessionId && !tokenBudget && (
+            <span className="text-xs text-muted-foreground/50 font-mono">{activeSessionId.slice(0, 8)}</span>
+          )}
+        </div>
       </div>
 
       {/* 권한 요청 배너 */}

@@ -5,6 +5,27 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.10] - 2026-03-18
+
+### Added
+
+- **Webchat — Resizable sidebar**: Left sidebar now uses `react-resizable-panels` v4; drag the handle to adjust width (default 256 px, min 160 px, max 480 px); collapse/expand via the Menu button; header logo width dynamically syncs to the actual panel size
+- **Webchat — Code block copy button**: Hovering over a code block in chat messages reveals a copy button; shows a checkmark for 2 s after copying to clipboard
+- **Webchat — Markdown export**: Download button in the chat header exports the full conversation as a `.md` file
+- **Webchat — Harness progress badge**: Header displays a pulsing green badge with active agent count while a Harness Engineering workflow is running for the selected project
+- **Webchat — Git Changes tab — vertical resizable split**: File list (top) and diff viewer (bottom) can be resized by dragging the separator; default 40 / 60 split
+- **Webchat — Git Log tab — vertical resizable split**: Commit list (top) and diff viewer (bottom) follow the same resizable pattern
+- **Webchat — Resizable handle icon**: Invisible separator line with a subtle pill icon indicating the drag area; pill is vertical `│` for left-right splits and horizontal `—` for top-bottom splits
+
+### Changed
+
+- **Webchat — Git diff viewer**: Light/dark theme-aware colors for added lines (`emerald`), removed lines (`red`), and hunk headers (`blue`); padding added above and below diff content for readability
+
+### Fixed
+
+- **Webchat — `react-resizable-panels` v4 API**: Corrected prop names (`orientation` instead of `direction`; `panelRef` instead of `ref`; `onResize` with `PanelSize` object instead of raw number); numeric size values are pixels in v4 — switched to explicit `"256px"` string format; `usePanelRef()` hook used for imperative collapse/expand
+- **Webchat — Turbopack CSS build error**: Replaced arbitrary CSS variant selectors (`[aria-orientation=horizontal_&]`, `group-aria-[...]`) that Turbopack's CSS parser cannot handle with JSX conditional logic for orientation-aware handle icon sizing
+
 ## [1.6.6] - 2026-03-18
 
 ### Added

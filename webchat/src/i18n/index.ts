@@ -58,6 +58,28 @@ export type Messages = {
     loading: string; selectFileDiff: string; commitPlaceholder: string
     selectFilePlaceholder: string; noCommits: string; noBranches: string; commit: string
     notGitRepo: string; selectProject: string; issues: string
+    // issues panel
+    issuesSelectProject: string; issuesNoPat: string; issuesRepoError: string
+    issuesNoIssues: string; issuesPatHint: string
+    issuesPollingTarget: string; issuesOther: string
+    issuesProcessing: string; issuesPollingLabel: string
+    issuesAutoPolling: string; issuesIntervalSuffix: string
+    issuesActiveCount: (n: number) => string
+    issuesLastCheck: string; issuesLastCheckAgo: (s: number) => string; issuesChecking: string
+    issuesStopPolling: string; issuesStartPolling: string; issuesStarting: string; issuesStop: string
+    issuesPolling: string
+    issuesNewIssue: string; issuesTitlePlaceholder: string; issuesBodyPlaceholder: string
+    issuesCreate: string; issuesCreating: string
+    issuesAutoProcessing: string
+    issuesManualProcess: string; issuesStopManual: string
+    issuesLogRunning: string; issuesLogDone: string; issuesLogError: string
+    // harness setup
+    harnessSetup: string; harnessSetupTitle: string; harnessSetupNoWorkflow: string
+    harnessSlug: string; harnessLabel: string; harnessWorkspaceRoot: string
+    harnessPort: string; harnessMaxAgents: string; harnessMode: string
+    harnessModeBasic: string; harnessModeJikiMe: string; harnessAutoDetected: string
+    harnessGenerate: string; harnessGenerating: string
+    harnessStart: string; harnessRunning: string
   }
 }
 

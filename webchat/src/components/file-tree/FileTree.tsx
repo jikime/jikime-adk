@@ -206,7 +206,7 @@ function MonacoEditor({ path, content, getApiUrl, onClose }: { path: string; con
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-600">
       {/* 헤더 */}
       <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-accent border-b border-border shrink-0">
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
@@ -361,7 +361,7 @@ export default function FileTree() {
     <div className="flex h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-border">
 
       {/* ── 좌측: 파일 트리 ──────────────────────── */}
-      <div className="flex flex-col w-64 shrink-0 border-r border-border">
+      <div className="flex flex-col w-64 shrink-0 border-r border-border bg-white dark:bg-zinc-900">
         {/* 헤더 */}
         <div className="flex items-center gap-1.5 px-2 py-2 bg-white dark:bg-accent border-b border-border shrink-0">
           <span className="text-xs text-muted-foreground truncate flex-1 font-mono" title={rootPath}>
