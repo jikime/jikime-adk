@@ -191,6 +191,32 @@ interface IssueProcessor {
 }
 const issueProcessors = new Map<string, IssueProcessor>()
 
+// ── GitHub Poller Store (자동 폴링 루프) ──────────────────────────
+interface PollerEvent {
+  type: 'tick' | 'issue_found' | 'issue_done' | 'error'
+  lastCheck?: string
+  activeCount?: number
+  issueNumber?: number
+  issueTitle?: string
+  status?: string
+  message?: string
+}
+interface ProjectPoller {
+  projectPath: string
+  token: string
+  owner: string
+  repo: string
+  intervalMs: number
+  maxConcurrent: number
+  model: string
+  timer: ReturnType<typeof setInterval> | null
+  status: 'running' | 'stopped'
+  lastCheck: string | null
+  activeIssues: Set<number>
+  sseClients: Set<import('http').ServerResponse>
+}
+const projectPollers = new Map<string, ProjectPoller>()  // key: projectPath
+
 // ── Token Budget Extractor ──────────────────────────────────────
 function extractTokenBudget(resultMsg: Record<string, unknown>): { used: number; total: number } | null {
   const modelUsage = resultMsg.modelUsage as Record<string, Record<string, number>> | undefined
@@ -809,6 +835,142 @@ async function processIssueWithADK(
   }
 }
 
+// ── GitHub Poller Functions ────────────────────────────────────
+
+function broadcastPollerEvent(poller: ProjectPoller, data: PollerEvent) {
+  const payload = `data: ${JSON.stringify(data)}\n\n`
+  for (const client of poller.sseClients) {
+    try { client.write(payload) } catch { poller.sseClients.delete(client) }
+  }
+}
+
+async function pollOnce(poller: ProjectPoller): Promise<void> {
+  poller.lastCheck = new Date().toISOString()
+  try {
+    const issues = await githubApiRequest(
+      `/repos/${poller.owner}/${poller.repo}/issues?state=open&per_page=50&labels=jikime-todo`,
+      poller.token,
+    ) as Array<Record<string, unknown>>
+
+    for (const issue of issues) {
+      if (poller.status !== 'running') break
+
+      const number = issue.number as number
+      const issueKey = `${poller.owner}/${poller.repo}#${number}`
+
+      // 이미 처리 중이면 skip
+      const existing = issueProcessors.get(issueKey)
+      if (existing?.status === 'running') continue
+      if (poller.activeIssues.has(number)) continue
+
+      // maxConcurrent 제한
+      if (poller.activeIssues.size >= poller.maxConcurrent) continue
+
+      poller.activeIssues.add(number)
+      broadcastPollerEvent(poller, {
+        type: 'issue_found',
+        issueNumber: number,
+        issueTitle: issue.title as string,
+        activeCount: poller.activeIssues.size,
+      })
+
+      // IssueProcessor 등록
+      const processor: IssueProcessor = {
+        status: 'running',
+        events: [],
+        interrupt: null,
+        sseClients: new Set(),
+      }
+      issueProcessors.set(issueKey, processor)
+
+      // ADK 처리 (비동기)
+      processIssueWithADK(
+        issueKey,
+        poller.projectPath,
+        poller.token,
+        number,
+        issue.title as string,
+        (issue.body as string) ?? '',
+        poller.owner,
+        poller.repo,
+        poller.model,
+      ).then(() => {
+        poller.activeIssues.delete(number)
+        broadcastPollerEvent(poller, {
+          type: 'issue_done',
+          issueNumber: number,
+          status: issueProcessors.get(issueKey)?.status ?? 'done',
+          activeCount: poller.activeIssues.size,
+        })
+      }).catch(() => {
+        poller.activeIssues.delete(number)
+        broadcastPollerEvent(poller, {
+          type: 'issue_done',
+          issueNumber: number,
+          status: 'error',
+          activeCount: poller.activeIssues.size,
+        })
+      })
+    }
+
+    broadcastPollerEvent(poller, {
+      type: 'tick',
+      lastCheck: poller.lastCheck,
+      activeCount: poller.activeIssues.size,
+    })
+  } catch (err: unknown) {
+    broadcastPollerEvent(poller, { type: 'error', message: (err as Error).message })
+  }
+}
+
+function startProjectPoller(
+  projectPath: string,
+  token: string,
+  owner: string,
+  repo: string,
+  intervalMs = 15000,
+  maxConcurrent = 3,
+  model = 'claude-sonnet-4-6',
+): ProjectPoller {
+  // 기존 폴러 정리
+  stopProjectPoller(projectPath)
+
+  const poller: ProjectPoller = {
+    projectPath, token, owner, repo,
+    intervalMs, maxConcurrent, model,
+    timer: null,
+    status: 'running',
+    lastCheck: null,
+    activeIssues: new Set(),
+    sseClients: new Set(),
+  }
+  projectPollers.set(projectPath, poller)
+
+  // 즉시 첫 폴링 후 주기적 실행
+  pollOnce(poller).catch(() => {})
+  poller.timer = setInterval(() => {
+    if (poller.status === 'running') pollOnce(poller).catch(() => {})
+  }, intervalMs)
+
+  console.log(`[poller] started — ${owner}/${repo} every ${intervalMs}ms (max ${maxConcurrent} concurrent)`)
+  return poller
+}
+
+function stopProjectPoller(projectPath: string): void {
+  const poller = projectPollers.get(projectPath)
+  if (!poller) return
+  if (poller.timer) clearInterval(poller.timer)
+  poller.status = 'stopped'
+  // 처리 중인 이슈 모두 중단
+  for (const number of poller.activeIssues) {
+    const issueKey = `${poller.owner}/${poller.repo}#${number}`
+    const proc = issueProcessors.get(issueKey)
+    proc?.interrupt?.().catch(() => {})
+  }
+  projectPollers.delete(projectPath)
+  console.log(`[poller] stopped — ${poller.owner}/${poller.repo}`)
+}
+
 // ── CORS 헤더 (원격 브라우저에서 접근 허용) ───────────────────────
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
@@ -1203,6 +1365,112 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     }
     res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
     res.end(JSON.stringify({ ok: true }))
+    return true
+  }
+
+  // ── Poller API ────────────────────────────────────────────────
+
+  // POST /api/ws/github/poller — 자동 폴링 시작
+  // body: { projectPath, token, intervalMs?, maxConcurrent?, model? }
+  if (pathname === '/api/ws/github/poller' && req.method === 'POST') {
+    let body = ''
+    req.on('data', c => { body += c })
+    req.on('end', () => {
+      try {
+        const {
+          projectPath, token,
+          intervalMs = 15000,
+          maxConcurrent = 3,
+          model = 'claude-sonnet-4-6',
+        } = JSON.parse(body) as {
+          projectPath: string; token: string
+          intervalMs?: number; maxConcurrent?: number; model?: string
+        }
+        if (!token || !projectPath) {
+          res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'projectPath and token required' })); return
+        }
+        const ghRepo = detectGitHubRepo(projectPath)
+        if (!ghRepo) {
+          res.writeHead(404, CORS_HEADERS); res.end(JSON.stringify({ error: 'Cannot detect GitHub repo' })); return
+        }
+        // 라벨 준비 (비동기, 오류 무시)
+        ensureIssueLabels(ghRepo.owner, ghRepo.repo, token).catch(() => {})
+
+        const poller = startProjectPoller(
+          projectPath, token, ghRepo.owner, ghRepo.repo,
+          intervalMs, maxConcurrent, model,
+        )
+        res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+        res.end(JSON.stringify({
+          status: 'started',
+          owner: poller.owner,
+          repo: poller.repo,
+          intervalMs: poller.intervalMs,
+          maxConcurrent: poller.maxConcurrent,
+        }))
+      } catch (e: unknown) {
+        res.writeHead(500, CORS_HEADERS); res.end(JSON.stringify({ error: (e as Error).message }))
+      }
+    })
+    return true
+  }
+
+  // DELETE /api/ws/github/poller?projectPath=... — 폴링 중지
+  if (pathname === '/api/ws/github/poller' && req.method === 'DELETE') {
+    const projectPath = url.searchParams.get('projectPath') ?? ''
+    stopProjectPoller(projectPath)
+    res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+    res.end(JSON.stringify({ status: 'stopped' }))
+    return true
+  }
+
+  // GET /api/ws/github/poller?projectPath=... — 폴러 상태 조회
+  if (pathname === '/api/ws/github/poller' && req.method === 'GET') {
+    const projectPath = url.searchParams.get('projectPath') ?? ''
+    const poller = projectPollers.get(projectPath)
+    if (!poller) {
+      res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+      res.end(JSON.stringify({ status: 'stopped' }))
+      return true
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+    res.end(JSON.stringify({
+      status: poller.status,
+      owner: poller.owner,
+      repo: poller.repo,
+      intervalMs: poller.intervalMs,
+      maxConcurrent: poller.maxConcurrent,
+      lastCheck: poller.lastCheck,
+      activeCount: poller.activeIssues.size,
+      activeIssues: Array.from(poller.activeIssues),
+    }))
+    return true
+  }
+
+  // GET /api/ws/github/poller-events?projectPath=... — SSE 폴러 이벤트 스트리밍
+  if (pathname === '/api/ws/github/poller-events' && req.method === 'GET') {
+    const projectPath = url.searchParams.get('projectPath') ?? ''
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      ...CORS_HEADERS,
+    })
+    const poller = projectPollers.get(projectPath)
+    if (!poller) {
+      res.write(`data: ${JSON.stringify({ type: 'tick', status: 'stopped' })}\n\n`)
+      res.end()
+      return true
+    }
+    // 현재 상태 즉시 전송
+    res.write(`data: ${JSON.stringify({
+      type: 'tick',
+      lastCheck: poller.lastCheck,
+      activeCount: poller.activeIssues.size,
+      activeIssues: Array.from(poller.activeIssues),
+    })}\n\n`)
+    poller.sseClients.add(res)
+    req.on('close', () => poller.sseClients.delete(res))
     return true
   }
 
