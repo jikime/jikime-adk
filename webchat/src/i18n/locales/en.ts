@@ -66,6 +66,9 @@ export default {
     alwaysAllow: 'Always allow',
     deny: 'Deny',
     emptyState: 'Ask Claude Code for a task',
+    stopResponding: 'Stop responding',
+    abortedBanner: "Claude's response was interrupted",
+    retry: 'Retry',
   },
   shell: {
     connecting: 'Connecting...',

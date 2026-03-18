@@ -230,6 +230,8 @@ async function handleClaudeMessage(
     cwd: effectiveCwd,
     permissionMode: effectivePermissionMode,
     model,
+    // user + project settings 로드 — 슬래시 커맨드(/jikime:*, /sc:* 등) 인식에 필수
+    settingSources: ['user', 'project'],
     ...(!isRoot && permissionMode === 'bypassPermissions' && { allowDangerouslySkipPermissions: true }),
     ...(CLAUDE_PATH && { pathToClaudeCodeExecutable: CLAUDE_PATH }),
     ...(extendedThinking && { thinking: { type: 'enabled', budget_tokens: 10000 } }),
@@ -362,7 +364,8 @@ async function handleClaudeMessage(
 // 파일시스템을 탐색해 인코딩된 경로를 실제 경로로 복원
 // Claude는 경로의 '/'를 '-'로 인코딩 → 경로 내에 '-'가 있으면 단순 치환 불가
 // 예) -home-anthony-jikime-adk-webchat → /home/anthony/jikime-adk/webchat
-function decodeProjectPath(encoded: string): string {
+// 파일시스템에서 실제 경로를 찾지 못하면 null 반환 (잘못된 치환 방지)
+function decodeProjectPath(encoded: string): string | null {
   if (!encoded.startsWith('-')) return encoded.replace(/-/g, '/')
 
   // 파일시스템 탐색으로 올바른 경로 복원
@@ -388,7 +391,7 @@ function decodeProjectPath(encoded: string): string {
     return null
   }
 
-  return find(encoded, '/') ?? encoded.replace(/^-/, '/').replace(/-/g, '/')
+  return find(encoded, '/')
 }
 
 function discoverProjects(): Array<{ id: string; name: string; path: string; sessions: string[] }> {
@@ -417,6 +420,7 @@ function discoverProjects(): Array<{ id: string; name: string; path: string; ses
       } catch { /* */ }
 
       const actualPath = decodeProjectPath(entry)
+      if (actualPath === null) continue  // 경로 복원 실패 시 건너뜀
 
       projects.push({
         id: entry,
@@ -730,6 +734,65 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
       res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
       res.end(JSON.stringify([]))
     }
+    return true
+  }
+
+  // GET /api/ws/commands?projectPath=...
+  // {projectPath}/.claude/commands/jikime/ 의 .md 파일을 파일명 기준 정렬해서 반환
+  if (pathname === '/api/ws/commands' && req.method === 'GET') {
+    const projectPath = url.searchParams.get('projectPath') ?? ''
+    if (!projectPath) {
+      res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+      res.end(JSON.stringify([]))
+      return true
+    }
+
+    const commandsDir = path.join(projectPath, '.claude', 'commands', 'jikime')
+
+    interface SlashCommandMeta {
+      name: string        // 파일명에서 .md 제거
+      description: string // frontmatter description
+      argumentHint: string // frontmatter argument-hint
+      context: string     // frontmatter context
+    }
+
+    const commands: SlashCommandMeta[] = []
+
+    try {
+      if (fs.existsSync(commandsDir)) {
+        const files = fs.readdirSync(commandsDir)
+          .filter(f => f.endsWith('.md'))
+          .sort()  // 파일명 기준 오름차순
+
+        for (const file of files) {
+          const filePath = path.join(commandsDir, file)
+          const name = file.replace(/\.md$/, '')
+          let description = ''
+          let argumentHint = ''
+          let context = ''
+
+          try {
+            const content = fs.readFileSync(filePath, 'utf8')
+            // frontmatter 파싱 (--- 사이의 YAML)
+            const fmMatch = content.match(/^---\n([\s\S]*?)\n---/)
+            if (fmMatch) {
+              const fm = fmMatch[1]
+              const descMatch    = fm.match(/^description:\s*["']?(.*?)["']?\s*$/m)
+              const argMatch     = fm.match(/^argument-hint:\s*["']?(.*?)["']?\s*$/m)
+              const ctxMatch     = fm.match(/^context:\s*["']?(.*?)["']?\s*$/m)
+              if (descMatch)    description  = descMatch[1].trim()
+              if (argMatch)     argumentHint = argMatch[1].trim()
+              if (ctxMatch)     context      = ctxMatch[1].trim()
+            }
+          } catch { /* frontmatter 없으면 빈 값 */ }
+
+          commands.push({ name, description, argumentHint, context })
+        }
+      }
+    } catch { /* commandsDir 접근 불가 시 빈 배열 */ }
+
+    res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+    res.end(JSON.stringify(commands))
     return true
   }
 

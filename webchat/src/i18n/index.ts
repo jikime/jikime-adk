@@ -45,7 +45,7 @@ export type Messages = {
     extendedThinkingTitle: string; extendedThinkingDesc: string
     voiceStop: string; voiceStart: string; thinking: string
     allow: string; alwaysAllow: string; deny: string
-    emptyState: string
+    emptyState: string; stopResponding: string; abortedBanner: string; retry: string
   }
   shell: { connecting: string; ready: string; dead: string; error: string }
   files: {

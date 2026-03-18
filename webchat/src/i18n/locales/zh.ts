@@ -66,6 +66,9 @@ export default {
     alwaysAllow: '始终允许',
     deny: '拒绝',
     emptyState: '请向 Claude Code 提交任务',
+    stopResponding: '停止响应',
+    abortedBanner: 'Claude 的响应已中断',
+    retry: '重试',
   },
   shell: {
     connecting: '连接中...',

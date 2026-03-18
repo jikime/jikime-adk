@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import {
   Folder, FolderOpen, MessageSquare, Plus, RefreshCw,
   ChevronDown, ChevronRight, X, Check,
@@ -244,6 +244,128 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
 }
 
 
+// ── 세션 아이템 ───────────────────────────────────────────────────
+const SessionItem = memo(function SessionItem({
+  sessionId, project, isActive, isDeleting,
+  onSelect, onDelete,
+}: {
+  sessionId: string
+  project: Project
+  isActive: boolean
+  isDeleting: boolean
+  onSelect: (project: Project, sessionId: string) => void
+  onDelete: (project: Project, sessionId: string) => void
+}) {
+  const { t } = useLocale()
+  return (
+    <div className="flex items-center group/session">
+      <button
+        className={cn(
+          'flex flex-1 items-center gap-2 pl-2 pr-1 py-1 text-xs rounded-md transition-colors min-w-0',
+          isActive
+            ? 'bg-accent text-foreground'
+            : 'text-muted-foreground hover:text-foreground/80 hover:bg-muted'
+        )}
+        onClick={() => onSelect(project, sessionId)}
+      >
+        {isDeleting
+          ? <RefreshCw className="w-3 h-3 shrink-0 animate-spin" />
+          : <MessageSquare className="w-3 h-3 shrink-0" />
+        }
+        <span className="truncate font-mono">{sessionId.slice(0, 20)}...</span>
+      </button>
+      <button
+        onClick={e => { e.stopPropagation(); onDelete(project, sessionId) }}
+        disabled={isDeleting}
+        className="p-1 mr-0.5 rounded opacity-0 group-hover/session:opacity-100 text-muted-foreground/50 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
+        title={t.sidebar.deleteSession}
+      >
+        <Trash2 className="w-3 h-3" />
+      </button>
+    </div>
+  )
+})
+
+// ── 프로젝트 아이템 ───────────────────────────────────────────────
+const ProjectItem = memo(function ProjectItem({
+  project, isOpen, isActive, deletingId, deletingSessionId, activeSessionId,
+  onToggle, onSelect, onDeleteProject, onSelectSession, onDeleteSession,
+}: {
+  project: Project
+  isOpen: boolean
+  isActive: boolean
+  deletingId: string | null
+  deletingSessionId: string | null
+  activeSessionId: string | null
+  onToggle: (id: string) => void
+  onSelect: (p: Project) => void
+  onDeleteProject: (p: Project) => void
+  onSelectSession: (project: Project, sessionId: string) => void
+  onDeleteSession: (project: Project, sessionId: string) => void
+}) {
+  const { t } = useLocale()
+  return (
+    <div>
+      <div className="flex items-center group">
+        <button
+          onClick={() => onToggle(project.id)}
+          className="p-0.5 ml-1 text-muted-foreground hover:text-foreground/80"
+        >
+          {isOpen
+            ? <ChevronDown className="w-3 h-3" />
+            : <ChevronRight className="w-3 h-3" />}
+        </button>
+        <button
+          className={cn(
+            'flex flex-1 items-center gap-2 px-2 py-1.5 text-left rounded-md ml-1 text-sm transition-colors min-w-0',
+            isActive ? 'bg-accent text-foreground' : 'text-foreground/80 hover:bg-muted'
+          )}
+          onClick={() => onSelect(project)}
+        >
+          {deletingId === project.id
+            ? <RefreshCw className="w-3.5 h-3.5 text-muted-foreground shrink-0 animate-spin" />
+            : isOpen
+              ? <FolderOpen className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+              : <Folder className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+          }
+          <span className="truncate text-xs">{project.name}</span>
+        </button>
+        <button
+          onClick={e => { e.stopPropagation(); onDeleteProject(project) }}
+          disabled={deletingId === project.id}
+          className="mr-1.5 p-1 rounded opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
+          title={t.sidebar.deleteProject}
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="ml-5">
+          <button
+            className="flex items-center gap-2 px-3 py-1 text-xs text-muted-foreground hover:text-foreground/80 w-full hover:bg-muted rounded-md"
+            onClick={() => onSelectSession(project, '')}
+          >
+            <Plus className="w-3 h-3" />
+            {t.sidebar.newChat}
+          </button>
+          {project.sessions.slice(0, 10).map(sessionId => (
+            <SessionItem
+              key={sessionId}
+              sessionId={sessionId}
+              project={project}
+              isActive={activeSessionId === sessionId}
+              isDeleting={deletingSessionId === sessionId}
+              onSelect={onSelectSession}
+              onDelete={onDeleteSession}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+})
+
 // ── 메인 사이드바 ─────────────────────────────────────────────────
 export default function Sidebar() {
   const { t } = useLocale()
@@ -263,13 +385,13 @@ export default function Sidebar() {
   const [deletingSession,    setDeletingSession]    = useState<SessionTarget | null>(null)
   const [deletingSessionId,  setDeletingSessionId]  = useState<string | null>(null)
 
-  const handleRefresh = async () => {
+  const handleRefresh = useCallback(async () => {
     setLoading(true)
     await refreshProjects()
     setLoading(false)
-  }
+  }, [refreshProjects])
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = useCallback(async () => {
     if (!deletingProject) return
     const id = deletingProject.id
     setDeletingProject(null)
@@ -277,7 +399,6 @@ export default function Sidebar() {
     try {
       const res = await fetch(getApiUrl(`/api/ws/project?id=${encodeURIComponent(id)}`), { method: 'DELETE' })
       if (res.ok) {
-        // 삭제된 프로젝트가 활성화 상태면 초기화
         if (activeProject?.id === id) {
           setActiveProject(null)
           setActiveSessionId(null)
@@ -287,9 +408,9 @@ export default function Sidebar() {
     } catch { /* */ } finally {
       setDeletingId(null)
     }
-  }
+  }, [deletingProject, getApiUrl, activeProject?.id, setActiveProject, setActiveSessionId, refreshProjects])
 
-  const handleSessionDeleteConfirm = async () => {
+  const handleSessionDeleteConfirm = useCallback(async () => {
     if (!deletingSession) return
     const { project, sessionId } = deletingSession
     setDeletingSession(null)
@@ -306,22 +427,22 @@ export default function Sidebar() {
     } catch { /* */ } finally {
       setDeletingSessionId(null)
     }
-  }
+  }, [deletingSession, getApiUrl, activeSessionId, setActiveSessionId, refreshProjects])
 
-  const toggleProject = (id: string) => {
+  const toggleProject = useCallback((id: string) => {
     setOpenProjects(prev => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
       return next
     })
-  }
+  }, [])
 
-  const selectProject = (p: Project) => {
+  const selectProject = useCallback((p: Project) => {
     setActiveProject(p)
     setActiveSessionId(null)
-    if (!openProjects.has(p.id)) toggleProject(p.id)
-  }
+    setOpenProjects(prev => prev.has(p.id) ? prev : new Set([...prev, p.id]))
+  }, [setActiveProject, setActiveSessionId])
 
   return (
     <div className="relative flex flex-col h-full bg-white dark:bg-muted">
@@ -465,88 +586,25 @@ export default function Sidebar() {
             </div>
           )}
 
-          {projects.map((project) => {
-            const isOpen = openProjects.has(project.id)
-            return (
-              <div key={project.id}>
-                <div className="flex items-center group">
-                  <button
-                    onClick={() => toggleProject(project.id)}
-                    className="p-0.5 ml-1 text-muted-foreground hover:text-foreground/80"
-                  >
-                    {isOpen
-                      ? <ChevronDown className="w-3 h-3" />
-                      : <ChevronRight className="w-3 h-3" />}
-                  </button>
-                  <button
-                    className={cn(
-                      'flex flex-1 items-center gap-2 px-2 py-1.5 text-left rounded-md ml-1 text-sm transition-colors min-w-0',
-                      activeProject?.id === project.id && activeSessionId === null
-                        ? 'bg-accent text-foreground'
-                        : 'text-foreground/80 hover:bg-muted'
-                    )}
-                    onClick={() => selectProject(project)}
-                  >
-                    {deletingId === project.id
-                      ? <RefreshCw className="w-3.5 h-3.5 text-muted-foreground shrink-0 animate-spin" />
-                      : isOpen
-                        ? <FolderOpen className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                        : <Folder className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    }
-                    <span className="truncate text-xs">{project.name}</span>
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); setDeletingProject(project) }}
-                    disabled={deletingId === project.id}
-                    className="mr-1.5 p-1 rounded opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
-                    title={t.sidebar.deleteProject}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-
-                {isOpen && (
-                  <div className="ml-5">
-                    <button
-                      className="flex items-center gap-2 px-3 py-1 text-xs text-muted-foreground hover:text-foreground/80 w-full hover:bg-muted rounded-md"
-                      onClick={() => { setActiveProject(project); setActiveSessionId(null) }}
-                    >
-                      <Plus className="w-3 h-3" />
-                      {t.sidebar.newChat}
-                    </button>
-
-                    {project.sessions.slice(0, 10).map((sessionId) => (
-                      <div key={sessionId} className="flex items-center group/session">
-                        <button
-                          className={cn(
-                            'flex flex-1 items-center gap-2 pl-2 pr-1 py-1 text-xs rounded-md transition-colors min-w-0',
-                            activeSessionId === sessionId
-                              ? 'bg-accent text-foreground'
-                              : 'text-muted-foreground hover:text-foreground/80 hover:bg-muted'
-                          )}
-                          onClick={() => { setActiveProject(project); setActiveSessionId(sessionId) }}
-                        >
-                          {deletingSessionId === sessionId
-                            ? <RefreshCw className="w-3 h-3 shrink-0 animate-spin" />
-                            : <MessageSquare className="w-3 h-3 shrink-0" />
-                          }
-                          <span className="truncate font-mono">{sessionId.slice(0, 20)}...</span>
-                        </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); setDeletingSession({ project, sessionId }) }}
-                          disabled={deletingSessionId === sessionId}
-                          className="p-1 mr-0.5 rounded opacity-0 group-hover/session:opacity-100 text-muted-foreground/50 hover:text-red-400 hover:bg-red-400/10 transition-all shrink-0"
-                          title={t.sidebar.deleteSession}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )
-          })}
+          {projects.map((project) => (
+            <ProjectItem
+              key={project.id}
+              project={project}
+              isOpen={openProjects.has(project.id)}
+              isActive={activeProject?.id === project.id && activeSessionId === null}
+              deletingId={deletingId}
+              deletingSessionId={deletingSessionId}
+              activeSessionId={activeSessionId}
+              onToggle={toggleProject}
+              onSelect={selectProject}
+              onDeleteProject={setDeletingProject}
+              onSelectSession={(p, sId) => {
+                setActiveProject(p)
+                setActiveSessionId(sId || null)
+              }}
+              onDeleteSession={(p, sId) => setDeletingSession({ project: p, sessionId: sId })}
+            />
+          ))}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, type ReactNode } from 'react'
 import { type Locale, type Messages, messages } from '@/i18n'
 
 const STORAGE_KEY = 'webchat_locale'
@@ -23,13 +23,18 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     } catch { /* */ }
   }, [])
 
-  const setLocale = (l: Locale) => {
+  const setLocale = useCallback((l: Locale) => {
     setLocaleState(l)
     try { localStorage.setItem(STORAGE_KEY, l) } catch { /* */ }
-  }
+  }, [])
+
+  const value = useMemo(
+    () => ({ locale, setLocale, t: messages[locale] }),
+    [locale, setLocale],
+  )
 
   return (
-    <LocaleContext.Provider value={{ locale, setLocale, t: messages[locale] }}>
+    <LocaleContext.Provider value={value}>
       {children}
     </LocaleContext.Provider>
   )

@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useRef, useCallback, useEffect } from 'react'
+import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react'
 import {
   Send, Square, Bot, ChevronDown, ChevronRight,
   Wrench, AlertCircle, Brain, Shield, Check, X, RefreshCw,
   Plus, Mic, MicOff, FileText, Image as ImageIcon, Loader2,
-  Trash2, HelpCircle, Sparkles, Code2, Zap,
-  SearchCode, Wrench as WrenchIcon, TestTube2, BookOpen,
-  GitBranch, Layers, RotateCcw,
+  Trash2, HelpCircle, Terminal, RotateCcw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -16,6 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useProject } from '@/contexts/ProjectContext'
+import { useServer } from '@/contexts/ServerContext'
 import { MODELS, loadSettings, type ModelId } from '@/components/sidebar/Sidebar'
 import { useLocale } from '@/contexts/LocaleContext'
 import ReactMarkdown from 'react-markdown'
@@ -31,10 +30,10 @@ interface SlashCommand {
   type: SlashCommandType
   icon: React.ReactNode
   args?: string         // optional argument hint, e.g. "<topic>"
+  context?: string      // optional context hint from frontmatter
 }
 
 const SLASH_COMMANDS: SlashCommand[] = [
-  // ── A: 클라이언트 처리 ──────────────────────────────────────────
   {
     name: 'clear',
     description: 'Clear conversation and start a new session',
@@ -56,111 +55,15 @@ const SLASH_COMMANDS: SlashCommand[] = [
     type: 'client',
     icon: <HelpCircle className="w-3.5 h-3.5" />,
   },
-  // ── B: Claude Code 패스스루 ────────────────────────────────────
-  {
-    name: 'explain',
-    description: 'Explain code, a concept, or how something works',
-    usage: '/explain',
-    type: 'passthrough',
-    icon: <BookOpen className="w-3.5 h-3.5" />,
-    args: '<topic or code>',
-  },
-  {
-    name: 'analyze',
-    description: 'Analyze code quality, performance, or security',
-    usage: '/analyze',
-    type: 'passthrough',
-    icon: <SearchCode className="w-3.5 h-3.5" />,
-    args: '<target>',
-  },
-  {
-    name: 'implement',
-    description: 'Implement a feature, function, or component',
-    usage: '/implement',
-    type: 'passthrough',
-    icon: <Code2 className="w-3.5 h-3.5" />,
-    args: '<description>',
-  },
-  {
-    name: 'improve',
-    description: 'Improve or refactor existing code',
-    usage: '/improve',
-    type: 'passthrough',
-    icon: <Sparkles className="w-3.5 h-3.5" />,
-    args: '<target>',
-  },
-  {
-    name: 'fix',
-    description: 'Fix a bug or error in the code',
-    usage: '/fix',
-    type: 'passthrough',
-    icon: <WrenchIcon className="w-3.5 h-3.5" />,
-    args: '<issue>',
-  },
-  {
-    name: 'test',
-    description: 'Write or run tests for the code',
-    usage: '/test',
-    type: 'passthrough',
-    icon: <TestTube2 className="w-3.5 h-3.5" />,
-    args: '<target>',
-  },
-  {
-    name: 'document',
-    description: 'Generate documentation or comments',
-    usage: '/document',
-    type: 'passthrough',
-    icon: <FileText className="w-3.5 h-3.5" />,
-    args: '<target>',
-  },
-  {
-    name: 'build',
-    description: 'Build or set up a project structure',
-    usage: '/build',
-    type: 'passthrough',
-    icon: <Layers className="w-3.5 h-3.5" />,
-    args: '<target>',
-  },
-  {
-    name: 'git',
-    description: 'Perform a git workflow task',
-    usage: '/git',
-    type: 'passthrough',
-    icon: <GitBranch className="w-3.5 h-3.5" />,
-    args: '<operation>',
-  },
-  {
-    name: 'design',
-    description: 'Design system architecture or API structure',
-    usage: '/design',
-    type: 'passthrough',
-    icon: <Zap className="w-3.5 h-3.5" />,
-    args: '<domain>',
-  },
 ]
 
 const HELP_TEXT = `**Available Slash Commands**
 
-**Client Commands** (processed locally)
 | Command | Description |
 |---------|-------------|
 | \`/clear\` | Clear conversation and start a new session |
 | \`/new\` | Start a new session (alias for /clear) |
 | \`/help\` | Show this help message |
-
-**Claude Code Commands** (sent to Claude)
-| Command | Description |
-|---------|-------------|
-| \`/explain <topic>\` | Explain code or a concept |
-| \`/analyze <target>\` | Analyze code quality, performance, or security |
-| \`/implement <desc>\` | Implement a feature or function |
-| \`/improve <target>\` | Improve or refactor existing code |
-| \`/fix <issue>\` | Fix a bug or error |
-| \`/test <target>\` | Write or run tests |
-| \`/document <target>\` | Generate documentation |
-| \`/build <target>\` | Build or set up a project |
-| \`/git <operation>\` | Perform a git workflow task |
-| \`/design <domain>\` | Design architecture or API |
 
 > 💡 **Tip**: Type \`/\` to open the command menu and use ↑↓ to navigate.`
 
@@ -204,7 +107,7 @@ interface PermissionRequest {
 
 // ── 서브 컴포넌트 ─────────────────────────────────────────────────
 
-function ThinkingIndicator() {
+const ThinkingIndicator = memo(function ThinkingIndicator() {
   const { t } = useLocale()
   return (
     <>
@@ -285,9 +188,9 @@ function ThinkingIndicator() {
       </div>
     </>
   )
-}
+})
 
-function ToolCallView({ tool }: { tool: ToolCall }) {
+const ToolCallView = memo(function ToolCallView({ tool }: { tool: ToolCall }) {
   const [open, setOpen] = useState(false)
   const inputStr = typeof tool.input === 'string'
     ? tool.input
@@ -322,9 +225,9 @@ function ToolCallView({ tool }: { tool: ToolCall }) {
       </CollapsibleContent>
     </Collapsible>
   )
-}
+})
 
-function ThinkingView({ text }: { text: string }) {
+const ThinkingView = memo(function ThinkingView({ text }: { text: string }) {
   const [open, setOpen] = useState(false)
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -343,9 +246,9 @@ function ThinkingView({ text }: { text: string }) {
       </CollapsibleContent>
     </Collapsible>
   )
-}
+})
 
-function MessageBubble({ msg }: { msg: Message }) {
+const MessageBubble = memo(function MessageBubble({ msg }: { msg: Message }) {
   const isUser = msg.role === 'user'
   return (
     <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
@@ -405,22 +308,22 @@ function MessageBubble({ msg }: { msg: Message }) {
                   오류가 발생했어요
                 </div>
               )}
-              {msg.status === 'aborted' && (
-                <div className="flex items-center gap-1 mt-1 text-muted-foreground text-xs">
-                  <Square className="w-3 h-3" />
-                  중단됨
-                </div>
-              )}
             </div>
           )
         )}
       </div>
     </div>
   )
-}
+}, (prev, next) =>
+  prev.msg.id === next.msg.id &&
+  prev.msg.text === next.msg.text &&
+  prev.msg.status === next.msg.status &&
+  prev.msg.thinking === next.msg.thinking &&
+  prev.msg.toolCalls === next.msg.toolCalls
+)
 
 // 토큰 사용량 바
-function TokenBar({ budget }: { budget: TokenBudget }) {
+const TokenBar = memo(function TokenBar({ budget }: { budget: TokenBudget }) {
   const pct = Math.min(100, Math.round((budget.used / budget.total) * 100))
   const color = pct >= 90 ? 'bg-red-500' : pct >= 70 ? 'bg-amber-500' : 'bg-emerald-500'
   return (
@@ -433,10 +336,10 @@ function TokenBar({ budget }: { budget: TokenBudget }) {
       </span>
     </div>
   )
-}
+})
 
 // 권한 요청 배너
-function PermissionBanner({
+const PermissionBanner = memo(function PermissionBanner({
   req,
   onAllow,
   onDeny,
@@ -487,13 +390,14 @@ function PermissionBanner({
       </div>
     </div>
   )
-}
+})
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────
 export default function ChatInterface() {
   const { t } = useLocale()
   const { sendMessage, onMessage } = useWebSocket()
   const { activeProject, activeSessionId, setActiveSessionId } = useProject()
+  const { getApiUrl } = useServer()
 
   const [messages, setMessages]               = useState<Message[]>([])
   const [input, setInput]                     = useState('')
@@ -511,14 +415,17 @@ export default function ChatInterface() {
   const [historyLoading, setHistoryLoading]   = useState(false)
 
   // 슬래시 커맨드 드롭다운
-  const [slashOpen, setSlashOpen]   = useState(false)
+  const [slashOpen, setSlashOpen]     = useState(false)
   const [slashFilter, setSlashFilter] = useState('')
-  const [slashIndex, setSlashIndex] = useState(0)
+  const [slashIndex, setSlashIndex]   = useState(0)
+  const [projectCommands, setProjectCommands] = useState<SlashCommand[]>([])
+  const [tipPos, setTipPos] = useState<{ x: number; y: number; text: string } | null>(null)
 
-  const streamingIdRef  = useRef<string | null>(null)
-  const scrollRef       = useRef<HTMLDivElement>(null)
-  const inputRef        = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef    = useRef<HTMLInputElement>(null)
+  const streamingIdRef    = useRef<string | null>(null)
+  const lastPromptRef     = useRef<string>('')          // 재시도용 마지막 프롬프트
+  const scrollRef         = useRef<HTMLDivElement>(null)
+  const inputRef          = useRef<HTMLTextAreaElement>(null)
+  const fileInputRef      = useRef<HTMLInputElement>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef  = useRef<any>(null)
   // 서버가 새로 할당한 session ID를 저장 — 히스토리 로드를 건너뛸 때 사용
@@ -606,7 +513,7 @@ export default function ChatInterface() {
 
     setHistoryLoading(true)
     const params = new URLSearchParams({ projectPath: activeProject.path, sessionId: activeSessionId })
-    fetch(`/api/ws/session?${params}`)
+    fetch(getApiUrl(`/api/ws/session?${params}`))
       .then(r => r.json())
       .then(data => setMessages(data))
       .catch(() => {/* */})
@@ -730,6 +637,8 @@ export default function ChatInterface() {
     setInput('')
     setAttachments([])
 
+    lastPromptRef.current = prompt
+
     sendMessage({
       type:             'chat',
       sessionId:        activeSessionId,
@@ -745,16 +654,51 @@ export default function ChatInterface() {
   }, [input, attachments, isStreaming, sendMessage, activeSessionId, activeProject, model, extendedThinking])
 
   const abort = useCallback(() => {
+    // updater 함수가 실행될 시점에 ref는 이미 null이 되므로
+    // 반드시 먼저 로컬 변수에 캡처해야 함
+    const abortingId = streamingIdRef.current
     sendMessage({ type: 'abort' })
-    if (streamingIdRef.current) {
+    if (abortingId) {
       setMessages(prev => prev.map(m =>
-        m.id === streamingIdRef.current ? { ...m, status: 'aborted' } : m
+        m.id === abortingId ? { ...m, status: 'aborted' } : m
       ))
     }
     setIsStreaming(false)
     streamingIdRef.current = null
     setPermissionReq(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sendMessage])
+
+  // 중단된 응답 재시도 — 마지막 어시스턴트 메시지 제거 후 동일 프롬프트 재전송
+  const retry = useCallback(() => {
+    const prompt = lastPromptRef.current
+    if (!prompt || isStreaming) return
+
+    // 마지막 aborted 어시스턴트 메시지 제거
+    setMessages(prev => {
+      const lastAbortedIdx = [...prev].reverse().findIndex(m => m.role === 'assistant' && m.status === 'aborted')
+      if (lastAbortedIdx === -1) return prev
+      const idx = prev.length - 1 - lastAbortedIdx
+      return prev.filter((_, i) => i !== idx)
+    })
+
+    const assistantId = `assistant-${Date.now()}`
+    const assistantMsg: Message = { id: assistantId, role: 'assistant', text: '', status: 'streaming', toolCalls: [] }
+    setMessages(prev => [...prev, assistantMsg])
+    streamingIdRef.current = assistantId
+    setIsStreaming(true)
+
+    sendMessage({
+      type:           'chat',
+      sessionId:      activeSessionId,
+      projectPath:    activeProject?.path || process.env.HOME || '/tmp',
+      prompt,
+      model,
+      extendedThinking,
+      permissionMode: loadSettings().permissionMode,
+    })
+    inputRef.current?.focus()
+  }, [sendMessage, isStreaming, activeSessionId, activeProject, model, extendedThinking])
 
   const handlePermission = useCallback((allow: boolean, alwaysAllow = false) => {
     if (!permissionReq) return
@@ -762,9 +706,34 @@ export default function ChatInterface() {
     setPermissionReq(null)
   }, [permissionReq, sendMessage])
 
-  // 슬래시 커맨드 필터링
-  const filteredCommands = SLASH_COMMANDS.filter(c =>
-    c.name.startsWith(slashFilter.toLowerCase())
+  // 프로젝트 변경 시 .claude/commands/jikime 커맨드 로드
+  useEffect(() => {
+    if (!activeProject?.path) { setProjectCommands([]); return }
+    fetch(getApiUrl(`/api/ws/commands?projectPath=${encodeURIComponent(activeProject.path)}`))
+      .then(r => r.json())
+      .then((data: Array<{ name: string; description: string; argumentHint: string; context: string }>) => {
+        const cmds: SlashCommand[] = data.map(c => ({
+          name:        c.name,
+          description: c.description || c.name,
+          usage:       `/jikime:${c.name}`,
+          type:        'passthrough' as const,
+          icon:        <Terminal className="w-3.5 h-3.5" />,
+          args:        c.argumentHint || undefined,
+          context:     c.context || undefined,
+        }))
+        setProjectCommands(cmds)
+      })
+      .catch(() => setProjectCommands([]))
+  }, [activeProject?.path, getApiUrl])
+
+  // 슬래시 커맨드 필터링: 고정 커맨드 + 프로젝트 커맨드 합산
+  const allCommands = useMemo(
+    () => [...SLASH_COMMANDS, ...projectCommands],
+    [projectCommands],
+  )
+  const filteredCommands = useMemo(
+    () => allCommands.filter(c => c.usage.slice(1).startsWith(slashFilter.toLowerCase())),
+    [allCommands, slashFilter],
   )
 
   const closeSlash = useCallback(() => {
@@ -805,8 +774,8 @@ export default function ChatInterface() {
     if (cmd.type === 'client') {
       runClientCommand(cmd.name)
     } else {
-      // 패스스루: 커맨드명만 입력창에 채워줌 (인자 입력 대기)
-      const text = `/${cmd.name}${cmd.args ? ' ' : ''}`
+      // 패스스루: 전체 usage(/jikime:name)를 입력창에 채워줌 (인자 입력 대기)
+      const text = `${cmd.usage}${cmd.args ? ' ' : ''}`
       setInput(text)
       closeSlash()
       inputRef.current?.focus()
@@ -820,7 +789,7 @@ export default function ChatInterface() {
     }
   }, [runClientCommand, closeSlash])
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     // 슬래시 메뉴가 열려있을 때 키보드 탐색
     if (slashOpen && filteredCommands.length > 0) {
       if (e.key === 'ArrowDown') {
@@ -850,9 +819,9 @@ export default function ChatInterface() {
       }
     }
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
-  }
+  }, [slashOpen, filteredCommands, slashIndex, selectSlashCommand, closeSlash, submit])
 
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value
     setInput(val)
     const el = e.target
@@ -868,11 +837,13 @@ export default function ChatInterface() {
     } else {
       closeSlash()
     }
-  }
+  }, [closeSlash])
 
-  const currentModel   = MODELS.find(m => m.id === model) ?? MODELS[0]
-  const featuredModels = MODELS.slice(0, 3)
-  const moreModels     = MODELS.slice(3)
+  const { currentModel, featuredModels, moreModels } = useMemo(() => ({
+    currentModel:   MODELS.find(m => m.id === model) ?? MODELS[0],
+    featuredModels: MODELS.slice(0, 3),
+    moreModels:     MODELS.slice(3),
+  }), [model])
 
   return (
     <div className="flex flex-col h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-border">
@@ -926,7 +897,25 @@ export default function ChatInterface() {
               </div>
             </div>
           ) : null}
-          {messages.map(msg => <MessageBubble key={msg.id} msg={msg} />)}
+          {messages.map(msg => (
+            <div key={msg.id}>
+              <MessageBubble msg={msg} />
+              {msg.role === 'assistant' && msg.status === 'aborted' && (
+                <div className="flex items-center gap-3 mt-2 px-3 py-2.5 rounded-xl border border-border bg-card text-sm text-foreground/70">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1">{t.chat.abortedBanner}</span>
+                  <button
+                    type="button"
+                    onClick={retry}
+                    disabled={isStreaming}
+                    className="shrink-0 px-3 py-1 rounded-lg border border-border text-sm font-medium text-foreground/80 hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {t.chat.retry}
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
@@ -936,57 +925,81 @@ export default function ChatInterface() {
 
         {/* ── 슬래시 커맨드 드롭다운 ─────────────────────────────── */}
         {slashOpen && filteredCommands.length > 0 && (
-          <div className="absolute bottom-full mb-2 left-0 right-0 z-30 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
+          <div className="absolute bottom-full mb-2 left-0 z-30 w-80 bg-card border border-border rounded-xl shadow-xl">
             {/* 헤더 */}
             <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-muted/50">
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Slash Commands</span>
-              <span className="ml-auto text-[10px] text-muted-foreground">↑↓ navigate · Enter/Tab select · Esc close</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">↑↓ · Enter · Esc</span>
             </div>
-            {filteredCommands.map((cmd, i) => (
-              <button
-                key={cmd.name}
-                type="button"
-                onMouseDown={e => { e.preventDefault(); selectSlashCommand(cmd) }}
-                onMouseEnter={() => setSlashIndex(i)}
-                className={cn(
-                  'flex items-center gap-3 w-full px-3 py-2 text-left transition-colors',
-                  i === slashIndex
-                    ? 'bg-primary/10 text-foreground'
-                    : 'hover:bg-muted text-foreground/80'
-                )}
-              >
-                {/* 타입 배지 + 아이콘 */}
-                <span className={cn(
-                  'flex items-center justify-center w-6 h-6 rounded-md shrink-0',
-                  cmd.type === 'client'
-                    ? 'bg-amber-500/15 text-amber-500 dark:text-amber-400'
-                    : 'bg-blue-500/15 text-blue-500 dark:text-blue-400'
-                )}>
-                  {cmd.icon}
-                </span>
-                {/* 커맨드명 */}
-                <span className="font-mono text-sm font-semibold shrink-0 w-24">
-                  /{cmd.name}
-                  {cmd.args && <span className="ml-1 font-normal text-muted-foreground text-xs">{cmd.args}</span>}
-                </span>
-                {/* 설명 */}
-                <span className="text-xs text-muted-foreground truncate">{cmd.description}</span>
-                {/* 타입 태그 */}
-                <span className={cn(
-                  'ml-auto text-[10px] px-1.5 py-0.5 rounded shrink-0 font-medium',
-                  cmd.type === 'client'
-                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
-                )}>
-                  {cmd.type === 'client' ? 'local' : 'claude'}
-                </span>
-              </button>
-            ))}
+            {/* 스크롤 영역 */}
+            <div className="max-h-[240px] overflow-y-auto overflow-x-hidden
+              [&::-webkit-scrollbar]:w-1
+              [&::-webkit-scrollbar-track]:bg-transparent
+              [&::-webkit-scrollbar-thumb]:bg-border
+              [&::-webkit-scrollbar-thumb]:rounded-full
+              [&::-webkit-scrollbar-thumb:hover]:bg-muted-foreground/40">
+              {filteredCommands.map((cmd, i) => (
+                <button
+                  key={`${cmd.type}-${cmd.name}`}
+                  type="button"
+                  onMouseDown={e => { e.preventDefault(); selectSlashCommand(cmd) }}
+                  onMouseEnter={() => setSlashIndex(i)}
+                  className={cn(
+                    'flex items-center gap-2.5 w-full px-3 py-2 text-left transition-colors',
+                    i === slashIndex
+                      ? 'bg-primary/10 text-foreground'
+                      : 'hover:bg-muted text-foreground/80'
+                  )}
+                >
+                  {/* 타입 배지 + 아이콘 */}
+                  <span className={cn(
+                    'flex items-center justify-center w-5 h-5 rounded shrink-0',
+                    cmd.type === 'client'
+                      ? 'bg-amber-500/15 text-amber-500 dark:text-amber-400'
+                      : 'bg-blue-500/15 text-blue-500 dark:text-blue-400'
+                  )}>
+                    {cmd.icon}
+                  </span>
+                  {/* 커맨드명 */}
+                  <span className="font-mono text-sm font-medium truncate flex-1">{cmd.usage}</span>
+                  {/* args ? 배지 — 툴팁은 fixed로 overflow 탈출 */}
+                  {cmd.args && (
+                    <span
+                      className="shrink-0 flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold
+                        bg-muted-foreground/15 text-muted-foreground hover:bg-muted-foreground/30 cursor-default"
+                      onMouseEnter={e => {
+                        const r = e.currentTarget.getBoundingClientRect()
+                        setTipPos({ x: r.right + 8, y: r.top + r.height / 2, text: cmd.args! })
+                      }}
+                      onMouseLeave={() => setTipPos(null)}
+                    >
+                      ?
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* args fixed 툴팁 — overflow 클리핑 완전 탈출 */}
+        {tipPos && (
+          <div
+            className="fixed z-[200] px-2 py-1 rounded-md text-xs whitespace-nowrap pointer-events-none
+              bg-popover text-popover-foreground border border-border shadow-md"
+            style={{ left: tipPos.x, top: tipPos.y, transform: 'translateY(-50%)' }}
+          >
+            {tipPos.text}
           </div>
         )}
 
         <div
-          className="bg-white dark:bg-muted border border-border rounded-2xl shadow-sm focus-within:border-ring transition-colors"
+          className={cn(
+            'bg-white dark:bg-muted border rounded-2xl shadow-sm transition-colors',
+            isStreaming
+              ? 'border-foreground/25 ring-2 ring-foreground/5'
+              : 'border-border focus-within:border-ring'
+          )}
           onDragOver={e => e.preventDefault()}
           onDrop={e => { e.preventDefault(); handleFiles(e.dataTransfer.files) }}
         >
@@ -1022,9 +1035,8 @@ export default function ChatInterface() {
             value={input}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
-            placeholder={isStreaming ? t.chat.placeholderStreaming : t.chat.placeholder}
+            placeholder={t.chat.placeholder}
             rows={1}
-            disabled={isStreaming}
             className="w-full bg-transparent border-0 ring-0 shadow-none px-5 pt-4 pb-2 text-base text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[64px] max-h-[240px] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-0 focus-visible:border-0"
             style={{ height: '64px', fieldSizing: 'fixed' } as React.CSSProperties}
           />
@@ -1150,13 +1162,15 @@ export default function ChatInterface() {
 
             {/* 전송 / 중단 버튼 */}
             {isStreaming ? (
-              <Button
-                type="button" size="icon"
+              <button
+                type="button"
                 onClick={abort}
-                className="w-10 h-10 rounded-xl bg-red-600 hover:bg-red-500"
+                title={t.chat.stopResponding}
+                className="relative flex items-center justify-center w-10 h-10 rounded-xl border border-border bg-background hover:bg-muted transition-colors group"
               >
-                <Square className="w-4 h-4 text-white" />
-              </Button>
+                <span className="absolute inset-0 rounded-xl bg-foreground/10 animate-ping" />
+                <Square className="relative w-3.5 h-3.5 text-foreground/80 group-hover:text-foreground fill-current transition-colors" />
+              </button>
             ) : (
               <Button
                 type="button" size="icon"

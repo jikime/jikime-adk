@@ -66,6 +66,9 @@ export default {
     alwaysAllow: '항상 허용',
     deny: '거부',
     emptyState: 'Claude Code에게 작업을 요청하세요',
+    stopResponding: '응답 중지',
+    abortedBanner: 'Claude의 응답이 중단되었습니다',
+    retry: '재시도',
   },
   shell: {
     connecting: '연결 중...',

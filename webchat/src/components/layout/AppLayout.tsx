@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import dynamic from 'next/dynamic'
 import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings } from 'lucide-react'
 import { useTheme } from 'next-themes'
@@ -17,7 +17,7 @@ const GitPanel = dynamic(() => import('@/components/git-panel/GitPanel'), { ssr:
 
 type Tab = 'chat' | 'terminal' | 'files' | 'git'
 
-function ThemeToggle() {
+const ThemeToggle = memo(function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
   const { t } = useLocale()
   const [mounted, setMounted] = useState(false)
@@ -40,9 +40,9 @@ function ThemeToggle() {
       }
     </Button>
   )
-}
+})
 
-function LanguageSelector() {
+const LanguageSelector = memo(function LanguageSelector() {
   const { locale, setLocale } = useLocale()
   const [open, setOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -90,7 +90,7 @@ function LanguageSelector() {
       )}
     </div>
   )
-}
+})
 
 export default function AppLayout() {
   const { t } = useLocale()
@@ -99,17 +99,17 @@ export default function AppLayout() {
   const [showSettings, setShowSettings] = useState(false)
   const [mountedTabs, setMountedTabs] = useState<Set<Tab>>(new Set(['chat']))
 
-  const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  const TABS = useMemo<{ id: Tab; label: string; icon: React.ReactNode }[]>(() => [
     { id: 'chat',     label: t.layout.tabs.chat,     icon: <MessageSquare  className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-sky-400" /> },
     { id: 'terminal', label: t.layout.tabs.terminal, icon: <SquareTerminal className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-emerald-400" /> },
     { id: 'files',    label: t.layout.tabs.files,    icon: <FolderOpen     className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-amber-400" /> },
     { id: 'git',      label: t.layout.tabs.git,      icon: <GitBranch      className="w-3.5 h-3.5 shrink-0 text-white/80 dark:text-purple-400" /> },
-  ]
+  ], [t.layout.tabs])
 
-  const handleTabChange = (tab: Tab) => {
+  const handleTabChange = useCallback((tab: Tab) => {
     setActiveTab(tab)
     setMountedTabs(prev => prev.has(tab) ? prev : new Set([...prev, tab]))
-  }
+  }, [])
 
   return (
     <div className="flex flex-col h-screen bg-muted dark:bg-muted text-foreground overflow-hidden">

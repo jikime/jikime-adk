@@ -66,6 +66,9 @@ export default {
     alwaysAllow: '常に許可',
     deny: '拒否',
     emptyState: 'Claude Code にタスクを依頼してください',
+    stopResponding: '応答を停止',
+    abortedBanner: 'Claude の応答が中断されました',
+    retry: '再試行',
   },
   shell: {
     connecting: '接続中...',
