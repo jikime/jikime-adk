@@ -291,6 +291,7 @@ export default function FileTree() {
   const { getApiUrl }     = useServer()
 
   const [tree, setTree]           = useState<FileNode[]>([])
+  const [resolvedPath, setResolvedPath] = useState<string>('')
   const [loading, setLoading]     = useState(false)
   const [query, setQuery]         = useState('')
   const [selectedNode, setSelectedNode] = useState<FileNode | null>(null)
@@ -303,7 +304,17 @@ export default function FileTree() {
     setLoading(true)
     try {
       const res = await fetch(getApiUrl(`/api/ws/files?path=${encodeURIComponent(activeProject.path)}`))
-      if (res.ok) setTree(await res.json())
+      if (res.ok) {
+        const data = await res.json()
+        // API가 { path, tree } 형태 또는 이전 호환 배열 형태 모두 처리
+        if (Array.isArray(data)) {
+          setTree(data)
+          setResolvedPath(activeProject.path)
+        } else {
+          setTree(data.tree ?? [])
+          setResolvedPath(data.path ?? activeProject.path)
+        }
+      }
     } catch { /* */ } finally {
       setLoading(false)
     }
@@ -344,7 +355,7 @@ export default function FileTree() {
     return flattenFiles(tree).filter(f => f.name.toLowerCase().includes(q)).slice(0, 50)
   }, [query, tree])
 
-  const rootPath = activeProject?.path ?? ''
+  const rootPath = resolvedPath || activeProject?.path || ''
 
   return (
     <div className="flex h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-border">
@@ -353,8 +364,8 @@ export default function FileTree() {
       <div className="flex flex-col w-64 shrink-0 border-r border-border">
         {/* 헤더 */}
         <div className="flex items-center gap-1.5 px-2 py-2 bg-white dark:bg-accent border-b border-border shrink-0">
-          <span className="text-xs text-muted-foreground truncate flex-1 font-mono">
-            {activeProject ? activeProject.name : t.files.selectProject}
+          <span className="text-xs text-muted-foreground truncate flex-1 font-mono" title={rootPath}>
+            {activeProject ? (rootPath || activeProject.name) : t.files.selectProject}
           </span>
           <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground"
             onClick={loadTree} disabled={loading}>

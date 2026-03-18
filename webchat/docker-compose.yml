@@ -11,6 +11,8 @@ services:
     environment:
       # Claude CLI 경로 (컨테이너 내부 경로)
       - CLAUDE_PATH=/usr/local/bin/claude
+      # 터미널 기본 셸 (node:slim 에는 zsh 없으므로 bash 지정)
+      - SHELL=/bin/bash
       # 포트 / 호스트
       - PORT=4000
       - HOSTNAME=0.0.0.0
@@ -18,10 +20,10 @@ services:
     volumes:
       # Claude 세션 히스토리 / 프로젝트 목록 유지
       - claude_data:/root/.claude
-      # 작업 프로젝트 디렉터리 마운트 (호스트 경로를 컨테이너 내부에 동일하게 노출)
-      # 필요에 따라 주석 해제하여 사용
-      # - /home:/home:ro
-      # - /root:/root/host:ro
+      # 호스트의 프로젝트 폴더를 컨테이너에 동일 경로로 마운트
+      # (파일 탭에서 호스트 파일 탐색 가능, 필요에 따라 주석 해제)
+      # - /home:/home
+      # - /root/projects:/root/projects
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:4000/api/ws/health"]
       interval: 30s

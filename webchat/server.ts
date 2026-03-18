@@ -715,16 +715,20 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     }
     const jsonlPath = findSessionJsonl(projectPath, sessionId)
     if (!jsonlPath) {
+      console.warn(`[session] jsonl not found — projectPath=${projectPath} sessionId=${sessionId}`)
       res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
       res.end(JSON.stringify([]))
       return true
     }
     try {
       const messages = parseSessionHistory(jsonlPath)
+      console.log(`[session] loaded ${messages.length} messages from ${jsonlPath}`)
       res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
       res.end(JSON.stringify(messages))
     } catch (e) {
-      res.writeHead(500, CORS_HEADERS); res.end(String(e))
+      console.error(`[session] parse error — ${jsonlPath}:`, e)
+      res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+      res.end(JSON.stringify([]))
     }
     return true
   }
@@ -735,9 +739,16 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     if (!filePath) {
       res.writeHead(400, CORS_HEADERS); res.end('Missing path'); return true
     }
-    const tree = getFileTree(filePath)
+    // 경로가 존재하지 않으면 홈 디렉터리로 폴백
+    const effectivePath = fs.existsSync(filePath) ? filePath : os.homedir()
+    if (effectivePath !== filePath) {
+      console.warn(`[files] path not found: ${filePath} — falling back to ${effectivePath}`)
+    } else {
+      console.log(`[files] tree request: ${effectivePath}`)
+    }
+    const tree = getFileTree(effectivePath)
     res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
-    res.end(JSON.stringify(tree))
+    res.end(JSON.stringify({ path: effectivePath, tree }))
     return true
   }
 
