@@ -5,6 +5,9 @@ import {
   Send, Square, Bot, ChevronDown, ChevronRight,
   Wrench, AlertCircle, Brain, Shield, Check, X, RefreshCw,
   Plus, Mic, MicOff, FileText, Image as ImageIcon, Loader2,
+  Trash2, HelpCircle, Sparkles, Code2, Zap,
+  SearchCode, Wrench as WrenchIcon, TestTube2, BookOpen,
+  GitBranch, Layers, RotateCcw,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -17,6 +20,149 @@ import { MODELS, loadSettings, type ModelId } from '@/components/sidebar/Sidebar
 import { useLocale } from '@/contexts/LocaleContext'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+
+// ── 슬래시 커맨드 정의 ────────────────────────────────────────────
+type SlashCommandType = 'client' | 'passthrough'
+
+interface SlashCommand {
+  name: string          // e.g. "clear"
+  description: string
+  usage: string         // e.g. "/clear"
+  type: SlashCommandType
+  icon: React.ReactNode
+  args?: string         // optional argument hint, e.g. "<topic>"
+}
+
+const SLASH_COMMANDS: SlashCommand[] = [
+  // ── A: 클라이언트 처리 ──────────────────────────────────────────
+  {
+    name: 'clear',
+    description: 'Clear conversation and start a new session',
+    usage: '/clear',
+    type: 'client',
+    icon: <Trash2 className="w-3.5 h-3.5" />,
+  },
+  {
+    name: 'new',
+    description: 'Start a new session (alias for /clear)',
+    usage: '/new',
+    type: 'client',
+    icon: <RotateCcw className="w-3.5 h-3.5" />,
+  },
+  {
+    name: 'help',
+    description: 'Show all available slash commands',
+    usage: '/help',
+    type: 'client',
+    icon: <HelpCircle className="w-3.5 h-3.5" />,
+  },
+  // ── B: Claude Code 패스스루 ────────────────────────────────────
+  {
+    name: 'explain',
+    description: 'Explain code, a concept, or how something works',
+    usage: '/explain',
+    type: 'passthrough',
+    icon: <BookOpen className="w-3.5 h-3.5" />,
+    args: '<topic or code>',
+  },
+  {
+    name: 'analyze',
+    description: 'Analyze code quality, performance, or security',
+    usage: '/analyze',
+    type: 'passthrough',
+    icon: <SearchCode className="w-3.5 h-3.5" />,
+    args: '<target>',
+  },
+  {
+    name: 'implement',
+    description: 'Implement a feature, function, or component',
+    usage: '/implement',
+    type: 'passthrough',
+    icon: <Code2 className="w-3.5 h-3.5" />,
+    args: '<description>',
+  },
+  {
+    name: 'improve',
+    description: 'Improve or refactor existing code',
+    usage: '/improve',
+    type: 'passthrough',
+    icon: <Sparkles className="w-3.5 h-3.5" />,
+    args: '<target>',
+  },
+  {
+    name: 'fix',
+    description: 'Fix a bug or error in the code',
+    usage: '/fix',
+    type: 'passthrough',
+    icon: <WrenchIcon className="w-3.5 h-3.5" />,
+    args: '<issue>',
+  },
+  {
+    name: 'test',
+    description: 'Write or run tests for the code',
+    usage: '/test',
+    type: 'passthrough',
+    icon: <TestTube2 className="w-3.5 h-3.5" />,
+    args: '<target>',
+  },
+  {
+    name: 'document',
+    description: 'Generate documentation or comments',
+    usage: '/document',
+    type: 'passthrough',
+    icon: <FileText className="w-3.5 h-3.5" />,
+    args: '<target>',
+  },
+  {
+    name: 'build',
+    description: 'Build or set up a project structure',
+    usage: '/build',
+    type: 'passthrough',
+    icon: <Layers className="w-3.5 h-3.5" />,
+    args: '<target>',
+  },
+  {
+    name: 'git',
+    description: 'Perform a git workflow task',
+    usage: '/git',
+    type: 'passthrough',
+    icon: <GitBranch className="w-3.5 h-3.5" />,
+    args: '<operation>',
+  },
+  {
+    name: 'design',
+    description: 'Design system architecture or API structure',
+    usage: '/design',
+    type: 'passthrough',
+    icon: <Zap className="w-3.5 h-3.5" />,
+    args: '<domain>',
+  },
+]
+
+const HELP_TEXT = `**Available Slash Commands**
+
+**Client Commands** (processed locally)
+| Command | Description |
+|---------|-------------|
+| \`/clear\` | Clear conversation and start a new session |
+| \`/new\` | Start a new session (alias for /clear) |
+| \`/help\` | Show this help message |
+
+**Claude Code Commands** (sent to Claude)
+| Command | Description |
+|---------|-------------|
+| \`/explain <topic>\` | Explain code or a concept |
+| \`/analyze <target>\` | Analyze code quality, performance, or security |
+| \`/implement <desc>\` | Implement a feature or function |
+| \`/improve <target>\` | Improve or refactor existing code |
+| \`/fix <issue>\` | Fix a bug or error |
+| \`/test <target>\` | Write or run tests |
+| \`/document <target>\` | Generate documentation |
+| \`/build <target>\` | Build or set up a project |
+| \`/git <operation>\` | Perform a git workflow task |
+| \`/design <domain>\` | Design architecture or API |
+
+> 💡 **Tip**: Type \`/\` to open the command menu and use ↑↓ to navigate.`
 
 // ── 타입 ─────────────────────────────────────────────────────────
 interface AttachedFile {
@@ -364,6 +510,11 @@ export default function ChatInterface() {
   const [micSupported, setMicSupported]       = useState(false)
   const [historyLoading, setHistoryLoading]   = useState(false)
 
+  // 슬래시 커맨드 드롭다운
+  const [slashOpen, setSlashOpen]   = useState(false)
+  const [slashFilter, setSlashFilter] = useState('')
+  const [slashIndex, setSlashIndex] = useState(0)
+
   const streamingIdRef  = useRef<string | null>(null)
   const scrollRef       = useRef<HTMLDivElement>(null)
   const inputRef        = useRef<HTMLTextAreaElement>(null)
@@ -547,6 +698,16 @@ export default function ChatInterface() {
     const text = input.trim()
     if ((!text && attachments.length === 0) || isStreaming) return
 
+    // 클라이언트 슬래시 커맨드 처리 (Enter로 직접 실행 시)
+    const clientCmds = ['clear', 'new', 'help']
+    if (text.startsWith('/')) {
+      const cmdName = text.slice(1).split(' ')[0].toLowerCase()
+      if (clientCmds.includes(cmdName)) {
+        runClientCommand(cmdName)
+        return
+      }
+    }
+
     const parts: string[] = [text]
     for (const att of attachments) {
       if (att.content !== undefined) {
@@ -601,15 +762,112 @@ export default function ChatInterface() {
     setPermissionReq(null)
   }, [permissionReq, sendMessage])
 
+  // 슬래시 커맨드 필터링
+  const filteredCommands = SLASH_COMMANDS.filter(c =>
+    c.name.startsWith(slashFilter.toLowerCase())
+  )
+
+  const closeSlash = useCallback(() => {
+    setSlashOpen(false)
+    setSlashFilter('')
+    setSlashIndex(0)
+  }, [])
+
+  // 클라이언트 커맨드 실행 (서버 전송 없음)
+  const runClientCommand = useCallback((name: string) => {
+    if (name === 'clear' || name === 'new') {
+      setActiveSessionId(null)
+      setMessages(prev => {
+        void prev
+        return [{
+          id: `sys-${Date.now()}`,
+          role: 'assistant' as const,
+          text: '✅ Conversation cleared. Starting a new session.',
+          status: 'done' as const,
+        }]
+      })
+    } else if (name === 'help') {
+      setMessages(prev => [...prev, {
+        id: `sys-${Date.now()}`,
+        role: 'assistant' as const,
+        text: HELP_TEXT,
+        status: 'done' as const,
+      }])
+    }
+    setInput('')
+    closeSlash()
+    if (inputRef.current) inputRef.current.style.height = '64px'
+    inputRef.current?.focus()
+  }, [setActiveSessionId, closeSlash])
+
+  // 슬래시 메뉴에서 커맨드 선택
+  const selectSlashCommand = useCallback((cmd: SlashCommand) => {
+    if (cmd.type === 'client') {
+      runClientCommand(cmd.name)
+    } else {
+      // 패스스루: 커맨드명만 입력창에 채워줌 (인자 입력 대기)
+      const text = `/${cmd.name}${cmd.args ? ' ' : ''}`
+      setInput(text)
+      closeSlash()
+      inputRef.current?.focus()
+      // 커서를 끝으로
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.selectionStart = text.length
+          inputRef.current.selectionEnd   = text.length
+        }
+      }, 0)
+    }
+  }, [runClientCommand, closeSlash])
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // 슬래시 메뉴가 열려있을 때 키보드 탐색
+    if (slashOpen && filteredCommands.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSlashIndex(i => (i + 1) % filteredCommands.length)
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSlashIndex(i => (i - 1 + filteredCommands.length) % filteredCommands.length)
+        return
+      }
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        selectSlashCommand(filteredCommands[slashIndex])
+        return
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closeSlash()
+        return
+      }
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        selectSlashCommand(filteredCommands[slashIndex])
+        return
+      }
+    }
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
   }
 
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value)
+    const val = e.target.value
+    setInput(val)
     const el = e.target
     el.style.height = 'auto'
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`
+
+    // 슬래시 커맨드 감지: 입력이 '/'로 시작하고 공백 없는 경우
+    if (val.startsWith('/') && !val.includes(' ') && val.length >= 1) {
+      const filter = val.slice(1)  // '/' 이후 문자
+      setSlashFilter(filter)
+      setSlashIndex(0)
+      setSlashOpen(true)
+    } else {
+      closeSlash()
+    }
   }
 
   const currentModel   = MODELS.find(m => m.id === model) ?? MODELS[0]
@@ -674,6 +932,59 @@ export default function ChatInterface() {
 
       {/* 입력창 */}
       <div className="shrink-0 border-t border-border bg-white dark:bg-background px-4 py-4">
+        <div className="relative">
+
+        {/* ── 슬래시 커맨드 드롭다운 ─────────────────────────────── */}
+        {slashOpen && filteredCommands.length > 0 && (
+          <div className="absolute bottom-full mb-2 left-0 right-0 z-30 bg-card border border-border rounded-xl shadow-xl overflow-hidden">
+            {/* 헤더 */}
+            <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border bg-muted/50">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Slash Commands</span>
+              <span className="ml-auto text-[10px] text-muted-foreground">↑↓ navigate · Enter/Tab select · Esc close</span>
+            </div>
+            {filteredCommands.map((cmd, i) => (
+              <button
+                key={cmd.name}
+                type="button"
+                onMouseDown={e => { e.preventDefault(); selectSlashCommand(cmd) }}
+                onMouseEnter={() => setSlashIndex(i)}
+                className={cn(
+                  'flex items-center gap-3 w-full px-3 py-2 text-left transition-colors',
+                  i === slashIndex
+                    ? 'bg-primary/10 text-foreground'
+                    : 'hover:bg-muted text-foreground/80'
+                )}
+              >
+                {/* 타입 배지 + 아이콘 */}
+                <span className={cn(
+                  'flex items-center justify-center w-6 h-6 rounded-md shrink-0',
+                  cmd.type === 'client'
+                    ? 'bg-amber-500/15 text-amber-500 dark:text-amber-400'
+                    : 'bg-blue-500/15 text-blue-500 dark:text-blue-400'
+                )}>
+                  {cmd.icon}
+                </span>
+                {/* 커맨드명 */}
+                <span className="font-mono text-sm font-semibold shrink-0 w-24">
+                  /{cmd.name}
+                  {cmd.args && <span className="ml-1 font-normal text-muted-foreground text-xs">{cmd.args}</span>}
+                </span>
+                {/* 설명 */}
+                <span className="text-xs text-muted-foreground truncate">{cmd.description}</span>
+                {/* 타입 태그 */}
+                <span className={cn(
+                  'ml-auto text-[10px] px-1.5 py-0.5 rounded shrink-0 font-medium',
+                  cmd.type === 'client'
+                    ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                    : 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                )}>
+                  {cmd.type === 'client' ? 'local' : 'claude'}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+
         <div
           className="bg-white dark:bg-muted border border-border rounded-2xl shadow-sm focus-within:border-ring transition-colors"
           onDragOver={e => e.preventDefault()}
@@ -858,7 +1169,8 @@ export default function ChatInterface() {
             )}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 text-center">Enter 전송 · Shift+Enter 줄바꿈</p>
+        <p className="text-xs text-muted-foreground mt-1.5 text-center">Enter 전송 · Shift+Enter 줄바꿈 · / 슬래시 커맨드</p>
+        </div>{/* relative wrapper */}
       </div>
     </div>
   )

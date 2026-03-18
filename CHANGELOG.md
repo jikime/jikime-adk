@@ -5,6 +5,26 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.6] - 2026-03-18
+
+### Added
+
+- **Webchat — Slash command menu**:
+  - Typing `/` in the chat input opens an autocomplete dropdown listing all available commands
+  - Keyboard navigation: `↑` / `↓` to move, `Enter` or `Tab` to select, `Esc` to close; mouse hover also updates the highlighted row
+  - Commands are filtered in real-time as the user continues typing after `/`
+  - Each entry shows an icon, command name, argument hint, description, and a `local` / `claude` type badge
+  - **Direction A — client-side commands** (no server call):
+    - `/clear` — clears the message list and starts a new Claude session
+    - `/new` — alias for `/clear`
+    - `/help` — renders a Markdown help table in the chat with all available commands
+  - **Direction B — Claude Code passthrough commands**:
+    - `/explain`, `/analyze`, `/implement`, `/improve`, `/fix`, `/test`, `/document`, `/build`, `/git`, `/design`
+    - Selecting a passthrough command fills the input with `/<name> ` and waits for the user to add arguments before sending
+    - Typing `/explain some topic` and pressing Enter sends the full text to Claude as a prompt
+  - Client commands (`/clear`, `/new`, `/help`) are also intercepted when submitted directly via Enter without opening the menu
+  - Hint text updated: `Enter 전송 · Shift+Enter 줄바꿈 · / 슬래시 커맨드`
+
 ## [1.6.5] - 2026-03-18
 
 ### Fixed
