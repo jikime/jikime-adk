@@ -105,5 +105,6 @@ export default {
     commit: 'Commit',
     notGitRepo: 'Not a git repository',
     selectProject: 'Select a project',
+    issues: 'Issues',
   },
 } as const

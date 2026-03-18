@@ -57,7 +57,7 @@ export type Messages = {
     noChanges: string; changes: string; log: string; branch: string; selectAll: string
     loading: string; selectFileDiff: string; commitPlaceholder: string
     selectFilePlaceholder: string; noCommits: string; noBranches: string; commit: string
-    notGitRepo: string; selectProject: string
+    notGitRepo: string; selectProject: string; issues: string
   }
 }
 

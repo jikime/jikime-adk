@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { GitBranch, RefreshCw, GitCommit, Check, Plus, Minus, ArrowUp, ArrowDown } from 'lucide-react'
+import { GitBranch, RefreshCw, GitCommit, Check, Plus, Minus, ArrowUp, ArrowDown, CircleDot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -15,6 +15,7 @@ import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
 import { useLocale } from '@/contexts/LocaleContext'
 import { loadSettings } from '@/components/sidebar/Sidebar'
+import IssuesPanel from './IssuesPanel'
 
 // ── API 헬퍼 ──────────────────────────────────────────────────────
 async function gitCmd(apiUrl: string, cwd: string, body: Record<string, unknown>, pat?: string): Promise<string> {
@@ -35,7 +36,7 @@ interface GitFile {
   path: string
 }
 
-type Tab = 'changes' | 'log' | 'branches'
+type Tab = 'changes' | 'log' | 'branches' | 'issues'
 
 // ── git status --short 파싱 ────────────────────────────────────────
 function parseStatus(raw: string): GitFile[] {
@@ -272,13 +273,17 @@ export default function GitPanel() {
 
       {/* 탭 */}
       <div className="flex gap-0 px-2 pt-2 shrink-0 border-b border-border">
-        {(['changes', 'log', 'branches'] as Tab[]).map(tabId => (
+        {(['changes', 'log', 'branches', 'issues'] as Tab[]).map(tabId => (
           <button key={tabId} onClick={() => setTab(tabId)}
             className={cn(
-              'px-3 py-1.5 text-xs font-medium rounded-t transition-colors',
+              'px-3 py-1.5 text-xs font-medium rounded-t transition-colors flex items-center gap-1',
               tab === tabId ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground/80'
             )}>
-            {tabId === 'changes' ? `${t.git.changes}${files.length > 0 ? ` (${files.length})` : ''}` : tabId === 'log' ? t.git.log : t.git.branch}
+            {tabId === 'issues' && <CircleDot className="w-3 h-3" />}
+            {tabId === 'changes' ? `${t.git.changes}${files.length > 0 ? ` (${files.length})` : ''}` :
+             tabId === 'log'     ? t.git.log :
+             tabId === 'branches'? t.git.branch :
+             t.git.issues}
           </button>
         ))}
       </div>
@@ -405,6 +410,13 @@ export default function GitPanel() {
           })}
           {branches.length === 0 && <p className="text-xs text-muted-foreground/50 text-center py-8">{t.git.noBranches}</p>}
         </ScrollArea>
+      )}
+
+      {/* Issues 탭 */}
+      {tab === 'issues' && (
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <IssuesPanel />
+        </div>
       )}
 
       {/* ── 에러 알림 ── */}

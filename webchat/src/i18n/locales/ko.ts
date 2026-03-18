@@ -105,5 +105,6 @@ export default {
     commit: '커밋',
     notGitRepo: 'Git 저장소가 아닙니다',
     selectProject: '프로젝트를 선택하세요',
+    issues: '이슈',
   },
 } as const

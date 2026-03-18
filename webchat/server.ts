@@ -182,6 +182,15 @@ interface ChatSession {
 }
 const chatSessions = new Map<string, ChatSession>()
 
+// ── GitHub Issue Processor Store ────────────────────────────────
+interface IssueProcessor {
+  status: 'running' | 'done' | 'error'
+  events: string[]
+  interrupt: (() => Promise<void>) | null
+  sseClients: Set<import('http').ServerResponse>
+}
+const issueProcessors = new Map<string, IssueProcessor>()
+
 // ── Token Budget Extractor ──────────────────────────────────────
 function extractTokenBudget(resultMsg: Record<string, unknown>): { used: number; total: number } | null {
   const modelUsage = resultMsg.modelUsage as Record<string, Record<string, number>> | undefined
@@ -627,6 +636,179 @@ function runGitWithPat(cwd: string, action: 'push' | 'pull', pat: string): strin
   }
 }
 
+// ── GitHub API Helpers ──────────────────────────────────────────
+
+/** git remote origin URL에서 owner/repo 자동 감지 */
+function detectGitHubRepo(cwd: string): { owner: string; repo: string } | null {
+  try {
+    const remoteUrl = execSync('git remote get-url origin', { cwd, encoding: 'utf8', timeout: 3000 }).trim()
+    const m = remoteUrl.match(/github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?$/)
+    if (m) return { owner: m[1], repo: m[2] }
+  } catch { /* not a git repo or no origin */ }
+  return null
+}
+
+/** GitHub REST API 호출 (https 모듈 사용) */
+function githubApiRequest(
+  path: string,
+  token: string,
+  options: { method?: string; body?: unknown } = {}
+): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    const https = require('https') as typeof import('https')
+    const bodyStr = options.body ? JSON.stringify(options.body) : undefined
+    const req = https.request({
+      hostname: 'api.github.com',
+      path,
+      method: options.method ?? 'GET',
+      headers: {
+        Authorization:           `Bearer ${token}`,
+        Accept:                  'application/vnd.github+json',
+        'X-GitHub-Api-Version':  '2022-11-28',
+        'User-Agent':            'JiKiME-ADK-webchat',
+        ...(bodyStr && {
+          'Content-Type':   'application/json',
+          'Content-Length': Buffer.byteLength(bodyStr).toString(),
+        }),
+      },
+    }, (ghRes) => {
+      let data = ''
+      ghRes.on('data', (c: Buffer) => { data += c })
+      ghRes.on('end', () => {
+        try {
+          const parsed: unknown = data ? JSON.parse(data) : {}
+          const statusCode = ghRes.statusCode ?? 0
+          if (statusCode >= 400) {
+            const msg = (parsed as { message?: string })?.message ?? data
+            reject(new Error(`GitHub API ${statusCode}: ${msg}`))
+          } else {
+            resolve(parsed)
+          }
+        } catch { resolve(data) }
+      })
+    })
+    req.on('error', reject)
+    if (bodyStr) req.write(bodyStr)
+    req.end()
+  })
+}
+
+/** jikime-todo / jikime-done 라벨이 없으면 자동 생성 */
+async function ensureIssueLabels(owner: string, repo: string, token: string): Promise<void> {
+  const labels = [
+    { name: 'jikime-todo', color: '0075ca', description: 'JiKiME: pending task' },
+    { name: 'jikime-done', color: '0e8a16', description: 'JiKiME: completed task' },
+  ]
+  for (const label of labels) {
+    try {
+      await githubApiRequest(`/repos/${owner}/${repo}/labels`, token, { method: 'POST', body: label })
+    } catch (e: unknown) {
+      // 422 = 이미 존재 → 무시
+      if (!(e as Error).message?.includes('422')) throw e
+    }
+  }
+}
+
+/** ADK로 GitHub 이슈 처리 (비동기, 백그라운드 실행) */
+async function processIssueWithADK(
+  issueKey: string,
+  projectPath: string,
+  token: string,
+  issueNumber: number,
+  issueTitle: string,
+  issueBody: string,
+  owner: string,
+  repo: string,
+  model: string,
+): Promise<void> {
+  const processor = issueProcessors.get(issueKey)
+  if (!processor) return
+
+  const emit = (message: string) => {
+    processor.events.push(message)
+    const payload = `data: ${JSON.stringify({ type: 'event', message })}\n\n`
+    for (const client of processor.sseClients) {
+      try { client.write(payload) } catch { /* client disconnected */ }
+    }
+  }
+  const sendDone = (status: 'done' | 'error') => {
+    processor.status = status
+    const payload = `data: ${JSON.stringify({ type: 'done', status })}\n\n`
+    for (const client of processor.sseClients) {
+      try { client.write(payload); client.end() } catch { /* */ }
+    }
+  }
+
+  try {
+    emit(`🚀 이슈 #${issueNumber} 처리 시작: ${issueTitle}`)
+    const { query } = await import('@anthropic-ai/claude-agent-sdk')
+    const effectiveCwd = fs.existsSync(projectPath) ? projectPath : os.homedir()
+    const isRoot = process.getuid?.() === 0
+
+    const prompt = [
+      `You are an autonomous software engineer working on a GitHub issue.`,
+      `Repository: https://github.com/${owner}/${repo}`,
+      ``,
+      `## Issue #${issueNumber}: ${issueTitle}`,
+      ``,
+      issueBody || '(no description)',
+      ``,
+      `## Instructions`,
+      `1. Analyze the issue and understand what needs to be done.`,
+      `2. Implement the necessary changes in the repository.`,
+      `3. Commit your changes with a clear message referencing the issue.`,
+      `4. Push the branch and create a pull request if appropriate.`,
+      `Work autonomously. Use the available tools to read files, make edits, and run commands.`,
+    ].join('\n')
+
+    const options: Record<string, unknown> = {
+      cwd: effectiveCwd,
+      permissionMode: isRoot ? 'acceptEdits' : 'bypassPermissions',
+      model,
+      settingSources: ['user', 'project'],
+      ...(!isRoot && { allowDangerouslySkipPermissions: true }),
+      ...(CLAUDE_PATH && { pathToClaudeCodeExecutable: CLAUDE_PATH }),
+    }
+
+    const queryInstance = query({ prompt, options })
+    processor.interrupt = queryInstance.interrupt?.bind(queryInstance) ?? null
+
+    for await (const event of queryInstance) {
+      if (processor.status !== 'running') break
+      const e = event as Record<string, unknown>
+      if (e.type === 'assistant') {
+        const content = (e.message as { content?: unknown[] } | undefined)?.content ?? []
+        for (const block of content as Record<string, unknown>[]) {
+          if (block.type === 'text' && typeof block.text === 'string') {
+            emit(block.text.slice(0, 300))
+          } else if (block.type === 'tool_use' && typeof block.name === 'string') {
+            const inputPreview = block.input ? JSON.stringify(block.input).slice(0, 80) : ''
+            emit(`🔧 ${block.name}: ${inputPreview}`)
+          }
+        }
+      }
+    }
+
+    // 완료 시 라벨 교체: jikime-todo → jikime-done
+    await githubApiRequest(`/repos/${owner}/${repo}/issues/${issueNumber}/labels`, token, {
+      method: 'POST',
+      body: { labels: ['jikime-done'] },
+    }).catch(() => {})
+    await githubApiRequest(
+      `/repos/${owner}/${repo}/issues/${issueNumber}/labels/jikime-todo`,
+      token,
+      { method: 'DELETE' },
+    ).catch(() => {})
+
+    emit(`✅ 이슈 #${issueNumber} 처리 완료`)
+    sendDone('done')
+  } catch (err: unknown) {
+    const msg = (err as Error).message ?? String(err)
+    emit(`❌ 오류: ${msg}`)
+    sendDone('error')
+  }
+}
+
 // ── CORS 헤더 (원격 브라우저에서 접근 허용) ───────────────────────
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
@@ -852,6 +1034,178 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   }
 
   // POST /api/ws/git
+  // ── GitHub Issues API ─────────────────────────────────────────
+
+  // GET /api/ws/github/repo?projectPath=...
+  // git remote origin 에서 owner/repo 자동 감지
+  if (pathname === '/api/ws/github/repo' && req.method === 'GET') {
+    const projectPath = url.searchParams.get('projectPath') ?? ''
+    const result = projectPath ? detectGitHubRepo(projectPath) : null
+    res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+    res.end(JSON.stringify(result ?? { error: 'Could not detect GitHub repository' }))
+    return true
+  }
+
+  // GET /api/ws/github/issues?projectPath=...&token=...
+  // GitHub 이슈 최근 20개 조회
+  if (pathname === '/api/ws/github/issues' && req.method === 'GET') {
+    const projectPath = url.searchParams.get('projectPath') ?? ''
+    const token = url.searchParams.get('token') ?? ''
+    if (!token) {
+      res.writeHead(401, CORS_HEADERS); res.end(JSON.stringify({ error: 'GitHub PAT required' })); return true
+    }
+    const ghRepo = detectGitHubRepo(projectPath)
+    if (!ghRepo) {
+      res.writeHead(404, CORS_HEADERS); res.end(JSON.stringify({ error: 'Cannot detect GitHub repo from git remote' })); return true
+    }
+    ;(async () => {
+      try {
+        const issues = await githubApiRequest(
+          `/repos/${ghRepo.owner}/${ghRepo.repo}/issues?state=all&per_page=20&sort=created&direction=desc`,
+          token,
+        ) as Array<Record<string, unknown>>
+        // PR 제외
+        const filtered = issues
+          .filter(i => !i.pull_request)
+          .map(i => ({
+            number:    i.number,
+            title:     i.title,
+            state:     i.state,
+            body:      (i.body as string | null)?.slice(0, 500) ?? '',
+            url:       i.html_url,
+            createdAt: i.created_at,
+            closedAt:  i.closed_at,
+            labels:    (i.labels as Array<{ name: string }>).map(l => l.name),
+          }))
+        res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+        res.end(JSON.stringify({ owner: ghRepo.owner, repo: ghRepo.repo, issues: filtered }))
+      } catch (e: unknown) {
+        res.writeHead(500, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+        res.end(JSON.stringify({ error: (e as Error).message }))
+      }
+    })()
+    return true
+  }
+
+  // POST /api/ws/github/issues
+  // body: { projectPath, token, title, body? }
+  // GitHub 이슈 생성 (jikime-todo 라벨 자동 추가)
+  if (pathname === '/api/ws/github/issues' && req.method === 'POST') {
+    let body = ''
+    req.on('data', c => { body += c })
+    req.on('end', () => {
+      ;(async () => {
+        try {
+          const { projectPath, token, title, body: issueBody } = JSON.parse(body) as {
+            projectPath: string; token: string; title: string; body?: string
+          }
+          if (!token || !title) {
+            res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'token and title required' })); return
+          }
+          const ghRepo = detectGitHubRepo(projectPath)
+          if (!ghRepo) {
+            res.writeHead(404, CORS_HEADERS); res.end(JSON.stringify({ error: 'Cannot detect GitHub repo' })); return
+          }
+          await ensureIssueLabels(ghRepo.owner, ghRepo.repo, token)
+          const created = await githubApiRequest(
+            `/repos/${ghRepo.owner}/${ghRepo.repo}/issues`,
+            token,
+            { method: 'POST', body: { title, body: issueBody ?? '', labels: ['jikime-todo'] } },
+          ) as Record<string, unknown>
+          res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+          res.end(JSON.stringify({ number: created.number, url: created.html_url, title: created.title }))
+        } catch (e: unknown) {
+          res.writeHead(500, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+          res.end(JSON.stringify({ error: (e as Error).message }))
+        }
+      })()
+    })
+    return true
+  }
+
+  // POST /api/ws/github/process
+  // body: { projectPath, token, issueNumber, issueTitle, issueBody, owner, repo, model? }
+  // ADK로 이슈 처리 시작 (백그라운드)
+  if (pathname === '/api/ws/github/process' && req.method === 'POST') {
+    let body = ''
+    req.on('data', c => { body += c })
+    req.on('end', () => {
+      try {
+        const {
+          projectPath, token, issueNumber, issueTitle, issueBody, owner, repo,
+          model = 'claude-sonnet-4-6',
+        } = JSON.parse(body) as {
+          projectPath: string; token: string; issueNumber: number
+          issueTitle: string; issueBody: string; owner: string; repo: string; model?: string
+        }
+        const issueKey = `${owner}/${repo}#${issueNumber}`
+        if (issueProcessors.has(issueKey) && issueProcessors.get(issueKey)?.status === 'running') {
+          res.writeHead(409, CORS_HEADERS); res.end(JSON.stringify({ error: 'Already processing', issueKey })); return
+        }
+        const processor: IssueProcessor = {
+          status: 'running',
+          events: [],
+          interrupt: null,
+          sseClients: new Set(),
+        }
+        issueProcessors.set(issueKey, processor)
+        // 비동기 백그라운드 실행
+        processIssueWithADK(issueKey, projectPath, token, issueNumber, issueTitle, issueBody, owner, repo, model)
+          .catch(e => console.error('[issue-process]', e))
+        res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+        res.end(JSON.stringify({ issueKey, status: 'started' }))
+      } catch (e: unknown) {
+        res.writeHead(500, CORS_HEADERS); res.end(JSON.stringify({ error: (e as Error).message }))
+      }
+    })
+    return true
+  }
+
+  // GET /api/ws/github/events?issueKey=owner/repo%23number
+  // SSE: 이슈 처리 이벤트 실시간 스트리밍
+  if (pathname === '/api/ws/github/events' && req.method === 'GET') {
+    const issueKey = url.searchParams.get('issueKey') ?? ''
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      ...CORS_HEADERS,
+    })
+    const processor = issueProcessors.get(issueKey)
+    if (!processor) {
+      res.write(`data: ${JSON.stringify({ type: 'error', message: 'No processor found for ' + issueKey })}\n\n`)
+      res.end()
+      return true
+    }
+    // 기존 이벤트 재전송
+    for (const evt of processor.events) {
+      res.write(`data: ${JSON.stringify({ type: 'event', message: evt })}\n\n`)
+    }
+    if (processor.status !== 'running') {
+      res.write(`data: ${JSON.stringify({ type: 'done', status: processor.status })}\n\n`)
+      res.end()
+      return true
+    }
+    // 실시간 구독
+    processor.sseClients.add(res)
+    req.on('close', () => processor.sseClients.delete(res))
+    return true
+  }
+
+  // DELETE /api/ws/github/process?issueKey=...
+  // 이슈 처리 중단
+  if (pathname === '/api/ws/github/process' && req.method === 'DELETE') {
+    const issueKey = url.searchParams.get('issueKey') ?? ''
+    const processor = issueProcessors.get(issueKey)
+    if (processor) {
+      processor.interrupt?.().catch(() => {})
+      processor.status = 'error'
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+    res.end(JSON.stringify({ ok: true }))
+    return true
+  }
+
   if (pathname === '/api/ws/git' && req.method === 'POST') {
     let body = ''
     req.on('data', (chunk) => { body += chunk })

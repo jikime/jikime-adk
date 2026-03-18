@@ -105,5 +105,6 @@ export default {
     commit: '提交',
     notGitRepo: '非 Git 仓库',
     selectProject: '请选择项目',
+    issues: '议题',
   },
 } as const
