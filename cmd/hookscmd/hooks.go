@@ -55,5 +55,11 @@ func NewHooks() *cobra.Command {
 	hooks.AddCommand(SubagentStartCmd)    // SubagentStart: log subagent startup
 	hooks.AddCommand(SubagentStopCmd)     // SubagentStop: log subagent completion
 
+	// Team orchestration hooks (v1.5.x+, activated by JIKIME_TEAM_NAME)
+	hooks.AddCommand(TeamAgentStartCmd)  // SessionStart: register agent in team registry
+	hooks.AddCommand(TeamAgentStopCmd)   // SessionEnd: release tasks + mark offline
+	hooks.AddCommand(TeamCostTrackCmd)   // PostToolUse: track tokens + enforce budget
+	hooks.AddCommand(TeamPlanGateCmd)    // UserPromptSubmit: gate on plan approval
+
 	return hooks
 }

@@ -17,6 +17,7 @@ import (
 	"jikime-adk/cmd/statuscmd"
 	"jikime-adk/cmd/statuslinecmd"
 	"jikime-adk/cmd/tagcmd"
+	"jikime-adk/cmd/teamcmd"
 	"jikime-adk/cmd/updatecmd"
 	"jikime-adk/cmd/worktreecmd"
 	"jikime-adk/version"
@@ -71,6 +72,9 @@ func NewRoot() *cobra.Command {
 
 	// Banner preview (dev tool)
 	root.AddCommand(banner.NewBannerPreview())
+
+	// Multi-agent team orchestration
+	root.AddCommand(teamcmd.NewTeam())
 
 	return root
 }

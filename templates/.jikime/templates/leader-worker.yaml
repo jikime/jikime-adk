@@ -1,0 +1,78 @@
+name: leader-worker
+version: "1.0.0"
+description: "Standard leader + 2 workers team. Leader distributes tasks, workers execute in parallel."
+default_budget: 200000
+
+agents:
+  - id: leader
+    role: leader
+    auto_spawn: true
+    description: "Orchestrates the team, creates and distributes tasks to workers"
+    task: |
+      Goal: {{goal}}
+
+      Your responsibilities as team leader:
+      1. Analyze the goal and break it into concrete, parallelizable tasks.
+      2. Create a task for each unit of work:
+         jikime team tasks create {{team_name}} "Task title" --desc "What to do" --dod "Done when..."
+      3. Workers will claim and execute tasks. Monitor progress:
+         jikime team status {{team_name}}
+      4. Read worker updates from your inbox:
+         jikime team inbox receive {{team_name}}
+      5. When ALL tasks are done, YOU must perform final integration:
+         a. Review all files created/modified by workers.
+         b. Fix any integration issues (missing imports, broken references, type errors).
+         c. Run the build or test command to verify everything compiles and works.
+         d. Fix any build errors you find.
+         e. Commit the final integrated result with a clear summary commit message.
+      6. After successful integration, shut down the team:
+         jikime team inbox broadcast {{team_name}} "Integration complete. Shutting down."
+         jikime team lifecycle shutdown {{team_name}}
+
+      Available workers: worker-1, worker-2
+
+  - id: worker-1
+    role: worker
+    auto_spawn: true
+    description: "Executes tasks assigned by the leader"
+    task: |
+      Goal: {{goal}}
+
+      Your responsibilities as worker:
+      Loop until no pending tasks remain:
+      1. Check for available tasks:
+         jikime team tasks list {{team_name}} --status pending
+      2. Claim a task:
+         jikime team tasks claim {{team_name}} <task-id> --agent {{agent_id}}
+      3. Read the task details and implement the work.
+      4. Mark the task complete:
+         jikime team tasks complete {{team_name}} <task-id> --result "Brief summary of what was done"
+      5. Notify the leader:
+         jikime team inbox send {{team_name}} leader "Completed <task-id>: <one-line summary>"
+      6. Repeat from step 1.
+
+      When no tasks remain:
+         jikime team inbox send {{team_name}} leader "No more pending tasks. Idle."
+
+  - id: worker-2
+    role: worker
+    auto_spawn: true
+    description: "Executes tasks assigned by the leader"
+    task: |
+      Goal: {{goal}}
+
+      Your responsibilities as worker:
+      Loop until no pending tasks remain:
+      1. Check for available tasks:
+         jikime team tasks list {{team_name}} --status pending
+      2. Claim a task:
+         jikime team tasks claim {{team_name}} <task-id> --agent {{agent_id}}
+      3. Read the task details and implement the work.
+      4. Mark the task complete:
+         jikime team tasks complete {{team_name}} <task-id> --result "Brief summary of what was done"
+      5. Notify the leader:
+         jikime team inbox send {{team_name}} leader "Completed <task-id>: <one-line summary>"
+      6. Repeat from step 1.
+
+      When no tasks remain:
+         jikime team inbox send {{team_name}} leader "No more pending tasks. Idle."

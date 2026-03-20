@@ -614,6 +614,27 @@ skills:
     user_invocable: false
     tags: ["workflow", "agent-teams", "parallel", "orchestration", "team"]
 
+  - name: jikime-team-leader
+    domain: team
+    description: "Leader agent role guide for jikime team orchestration. Task distribution, plan approval, worker monitoring."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["team", "leader", "orchestration", "task-distribution"]
+
+  - name: jikime-team-worker
+    domain: team
+    description: "Worker agent role guide for jikime team orchestration. Task claiming, execution, plan submission, completion reporting."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["team", "worker", "task-execution", "plan-submit"]
+
+  - name: jikime-team-reviewer
+    domain: team
+    description: "Reviewer agent role guide for jikime team orchestration. Plan review, quality assessment, acceptance criteria validation."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["team", "reviewer", "quality", "plan-review"]
+
   - name: jikime-workflow-testing
     domain: workflow
     description: "Comprehensive development workflow specialist combining DDD, debugging, performance optimization, code review, PR review, and quality assurance into unified development workflows"

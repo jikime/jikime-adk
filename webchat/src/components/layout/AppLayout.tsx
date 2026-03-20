@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import dynamic from 'next/dynamic'
-import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings, Zap } from 'lucide-react'
+import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings, Zap, Users } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -14,11 +14,12 @@ import { useServer } from '@/contexts/ServerContext'
 import { useProject } from '@/contexts/ProjectContext'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle, usePanelRef } from '@/components/ui/resizable'
 
-const ShellPanel = dynamic(() => import('@/components/shell/ShellPanel'), { ssr: false })
-const FileTree = dynamic(() => import('@/components/file-tree/FileTree'), { ssr: false })
-const GitPanel = dynamic(() => import('@/components/git-panel/GitPanel'), { ssr: false })
+const ShellPanel  = dynamic(() => import('@/components/shell/ShellPanel'), { ssr: false })
+const FileTree    = dynamic(() => import('@/components/file-tree/FileTree'), { ssr: false })
+const GitPanel    = dynamic(() => import('@/components/git-panel/GitPanel'), { ssr: false })
+const BoardPanel  = dynamic(() => import('@/components/team/BoardPanel'), { ssr: false })
 
-type Tab = 'chat' | 'terminal' | 'files' | 'git'
+type Tab = 'chat' | 'terminal' | 'files' | 'git' | 'board'
 
 const ThemeToggle = memo(function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
@@ -64,7 +65,7 @@ const LanguageSelector = memo(function LanguageSelector() {
         className="h-7 px-2 gap-1 text-white/70 hover:text-white hover:bg-transparent dark:text-muted-foreground dark:hover:text-foreground dark:hover:bg-transparent"
         onClick={() => setOpen(v => !v)}
       >
-        <span className="text-sm">{current?.flag}</span>
+        <span className="text-lg">{current?.flag}</span>
         <ChevronDown className={cn('w-3 h-3 transition-transform', open && 'rotate-180')} />
       </Button>
 
@@ -77,7 +78,7 @@ const LanguageSelector = memo(function LanguageSelector() {
                 key={l.id}
                 onClick={() => { setLocale(l.id); setOpen(false) }}
                 className={cn(
-                  'flex items-center gap-2 w-full px-3 py-1.5 text-xs transition-colors',
+                  'flex items-center gap-2 w-full px-3 py-1.5 text-base transition-colors',
                   locale === l.id
                     ? 'text-blue-400'
                     : 'text-foreground/80 hover:bg-muted hover:text-foreground'
@@ -113,6 +114,7 @@ export default function AppLayout() {
     { id: 'terminal', label: t.layout.tabs.terminal, icon: <SquareTerminal className="w-3.5 h-3.5 shrink-0 text-white/80" /> },
     { id: 'files',    label: t.layout.tabs.files,    icon: <FolderOpen     className="w-3.5 h-3.5 shrink-0 text-white/80" /> },
     { id: 'git',      label: t.layout.tabs.git,      icon: <GitBranch      className="w-3.5 h-3.5 shrink-0 text-white/80" /> },
+    { id: 'board',    label: 'Team',                 icon: <Users          className="w-3.5 h-3.5 shrink-0 text-white/80" /> },
   ], [t.layout.tabs])
 
   const handleTabChange = useCallback((tab: Tab) => {
@@ -159,7 +161,7 @@ export default function AppLayout() {
           style={{ width: sidebarOpen ? sidebarPx : 0, paddingLeft: sidebarOpen ? 12 : 0, paddingRight: sidebarOpen ? 12 : 0 }}
         >
           <Bot className="w-4 h-4 text-white/90 shrink-0" />
-          <span className="text-sm font-bold text-white whitespace-nowrap">JiKiME-ADK</span>
+          <span className="text-lg font-bold text-white whitespace-nowrap">JiKiME-ADK</span>
           <span className="text-[10px] text-white/60 whitespace-nowrap">Claude Code</span>
         </div>
 
@@ -178,7 +180,7 @@ export default function AppLayout() {
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
               className={cn(
-                'flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors',
+                'flex items-center gap-1.5 px-3 py-1 rounded-md text-base font-medium transition-colors',
                 activeTab === tab.id
                   ? 'bg-white/20 text-white border border-white/30'
                   : 'text-white/70 hover:text-white hover:bg-white/15 border border-transparent'
@@ -221,9 +223,10 @@ export default function AppLayout() {
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
 
       {/* Body */}
-      <ResizablePanelGroup orientation="horizontal" className="flex-1 min-h-0 bg-muted dark:bg-muted">
+      <ResizablePanelGroup id="app-layout" orientation="horizontal" className="flex-1 min-h-0 bg-muted dark:bg-muted">
         {/* Sidebar */}
         <ResizablePanel
+          id="sidebar-panel"
           panelRef={sidebarPanelRef}
           defaultSize="256px"
           minSize="160px"
@@ -243,10 +246,10 @@ export default function AppLayout() {
           </div>
         </ResizablePanel>
 
-        <ResizableHandle withHandle={true} />
+        <ResizableHandle id="main-handle" withHandle={true} />
 
         {/* Main content */}
-        <ResizablePanel minSize="320px" className="min-w-0 bg-white dark:bg-muted">
+        <ResizablePanel id="content-panel" minSize="320px" className="min-w-0 bg-white dark:bg-muted">
           <main className="h-full overflow-hidden relative">
             <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
               activeTab === 'chat' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
@@ -271,6 +274,13 @@ export default function AppLayout() {
               <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
                 activeTab === 'git' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
                 <div className="h-full rounded-lg bg-muted dark:bg-background"><GitPanel /></div>
+              </div>
+            )}
+
+            {mountedTabs.has('board') && (
+              <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
+                activeTab === 'board' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
+                <div className="h-full rounded-lg bg-muted dark:bg-background overflow-hidden"><BoardPanel /></div>
               </div>
             )}
           </main>

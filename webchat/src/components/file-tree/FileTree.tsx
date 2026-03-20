@@ -89,7 +89,7 @@ function FileNodeItem({
     <div>
       <button
         className={cn(
-          'flex items-center gap-1.5 w-full text-left py-0.5 rounded text-xs transition-colors',
+          'flex items-center gap-1.5 w-full text-left py-0.5 rounded text-base transition-colors',
           isDir ? 'text-foreground/80 hover:text-foreground hover:bg-muted' : 'hover:bg-muted',
           !isDir && selectedPath === node.path
             ? 'bg-muted text-foreground'
@@ -146,7 +146,7 @@ function SearchResultItem({
     <button
       onClick={() => onSelect(node)}
       className={cn(
-        'flex flex-col w-full text-left px-2 py-1.5 rounded text-xs transition-colors hover:bg-muted',
+        'flex flex-col w-full text-left px-2 py-1.5 rounded text-base transition-colors hover:bg-muted',
         selectedPath === node.path ? 'bg-muted text-foreground' : 'text-muted-foreground'
       )}
     >
@@ -211,7 +211,7 @@ function MonacoEditor({ path, content, getApiUrl, onClose }: { path: string; con
       <div className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-accent border-b border-border shrink-0">
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
           <File className={cn('w-3.5 h-3.5 shrink-0', extColor(name))} />
-          <span className="text-xs font-mono truncate min-w-0" title={path}>
+          <span className="text-base font-mono truncate min-w-0" title={path}>
             <span className="text-muted-foreground">{path.slice(0, path.lastIndexOf('/') + 1)}</span>
             <span className="text-foreground">{name}</span>
           </span>
@@ -225,7 +225,7 @@ function MonacoEditor({ path, content, getApiUrl, onClose }: { path: string; con
           onClick={handleSave}
           disabled={!dirty || saving}
           className={cn(
-            'flex items-center gap-1 h-6 px-2 text-xs shrink-0',
+            'flex items-center gap-1 h-6 px-2 text-base shrink-0',
             dirty && !saving ? 'text-foreground' : 'text-muted-foreground/50'
           )}
         >
@@ -364,7 +364,7 @@ export default function FileTree() {
       <div className="flex flex-col w-64 shrink-0 border-r border-border bg-white dark:bg-zinc-900">
         {/* 헤더 */}
         <div className="flex items-center gap-1.5 px-2 py-2 bg-white dark:bg-accent border-b border-border shrink-0">
-          <span className="text-xs text-muted-foreground truncate flex-1 font-mono" title={rootPath}>
+          <span className="text-base text-muted-foreground truncate flex-1 font-mono" title={rootPath}>
             {activeProject ? (rootPath || activeProject.name) : t.files.selectProject}
           </span>
           <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground"
@@ -381,7 +381,7 @@ export default function FileTree() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder={t.files.search}
-              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/40 outline-none"
+              className="flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/40 outline-none"
             />
             {query && (
               <button onClick={() => setQuery('')}>
@@ -411,11 +411,11 @@ export default function FileTree() {
                   />
                 ))
               ) : (
-                <p className="text-xs text-muted-foreground/50 text-center py-6">{t.files.noResults}</p>
+                <p className="text-base text-muted-foreground/50 text-center py-6">{t.files.noResults}</p>
               )
             ) : (
               tree.length === 0 && !loading
-                ? <p className="text-xs text-muted-foreground/50 text-center py-6">{t.files.noFiles}</p>
+                ? <p className="text-base text-muted-foreground/50 text-center py-6">{t.files.noFiles}</p>
                 : tree.map(node => (
                     <FileNodeItem
                       key={node.path} node={node}
@@ -444,8 +444,8 @@ export default function FileTree() {
         ) : (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-center">
             <File className="w-10 h-10 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">{t.files.selectFile}</p>
-            <p className="text-xs text-muted-foreground/50">{t.files.selectFileHint}</p>
+            <p className="text-lg text-muted-foreground">{t.files.selectFile}</p>
+            <p className="text-base text-muted-foreground/50">{t.files.selectFileHint}</p>
           </div>
         )}
       </div>

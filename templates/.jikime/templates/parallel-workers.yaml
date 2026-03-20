@@ -1,0 +1,68 @@
+name: parallel-workers
+version: "1.0.0"
+description: "3 parallel workers with no leader. Best for homogeneous tasks where each worker is self-directing."
+default_budget: 150000
+
+agents:
+  - id: worker-1
+    role: worker
+    auto_spawn: true
+    description: "Self-directing worker — claims and executes tasks independently"
+    task: |
+      Goal: {{goal}}
+
+      You are a self-directing worker. There is no leader — coordinate via the shared task queue.
+
+      Loop until no pending tasks remain:
+      1. Check for available tasks:
+         jikime team tasks list {{team_name}} --status pending
+      2. Claim a task (first come, first served):
+         jikime team tasks claim {{team_name}} <task-id> --agent {{agent_id}}
+      3. Implement the work.
+      4. Mark complete:
+         jikime team tasks complete {{team_name}} <task-id> --result "Summary"
+      5. Repeat from step 1.
+
+      When no tasks remain, you are done. No shutdown needed — all workers stop independently.
+
+  - id: worker-2
+    role: worker
+    auto_spawn: true
+    description: "Self-directing worker — claims and executes tasks independently"
+    task: |
+      Goal: {{goal}}
+
+      You are a self-directing worker. There is no leader — coordinate via the shared task queue.
+
+      Loop until no pending tasks remain:
+      1. Check for available tasks:
+         jikime team tasks list {{team_name}} --status pending
+      2. Claim a task (first come, first served):
+         jikime team tasks claim {{team_name}} <task-id> --agent {{agent_id}}
+      3. Implement the work.
+      4. Mark complete:
+         jikime team tasks complete {{team_name}} <task-id> --result "Summary"
+      5. Repeat from step 1.
+
+      When no tasks remain, you are done. No shutdown needed — all workers stop independently.
+
+  - id: worker-3
+    role: worker
+    auto_spawn: true
+    description: "Self-directing worker — claims and executes tasks independently"
+    task: |
+      Goal: {{goal}}
+
+      You are a self-directing worker. There is no leader — coordinate via the shared task queue.
+
+      Loop until no pending tasks remain:
+      1. Check for available tasks:
+         jikime team tasks list {{team_name}} --status pending
+      2. Claim a task (first come, first served):
+         jikime team tasks claim {{team_name}} <task-id> --agent {{agent_id}}
+      3. Implement the work.
+      4. Mark complete:
+         jikime team tasks complete {{team_name}} <task-id> --result "Summary"
+      5. Repeat from step 1.
+
+      When no tasks remain, you are done. No shutdown needed — all workers stop independently.

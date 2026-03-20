@@ -123,7 +123,7 @@ function IssueCard({
               <span className="text-[10px] text-blue-400/70">{t.issuesPollingLabel}</span>
             )}
           </div>
-          <p className="text-xs font-medium text-foreground/90 truncate">
+          <p className="text-base font-medium text-foreground/90 truncate">
             <span className="text-muted-foreground mr-1">#{issue.number}</span>
             {issue.title}
           </p>
@@ -143,8 +143,12 @@ function ProcessingLog({ events, status, t }: { events: string[]; status: 'runni
   const bottomRef = useRef<HTMLDivElement>(null)
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [events])
   if (events.length === 0) return null
+
+  const msgs: WorkerMsg[] = events.map((text, id) => ({ id, kind: parseWorkerMsg(text), text }))
+
   return (
     <div className="border-t border-border">
+      {/* 헤더 */}
       <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted/50">
         {status === 'running' && <Loader2 className="w-3 h-3 animate-spin text-blue-400" />}
         {status === 'done'    && <CircleCheck className="w-3 h-3 text-emerald-400" />}
@@ -153,11 +157,42 @@ function ProcessingLog({ events, status, t }: { events: string[]; status: 'runni
           {status === 'running' ? t.issuesLogRunning : status === 'done' ? t.issuesLogDone : t.issuesLogError}
         </span>
       </div>
-      <ScrollArea className="max-h-36">
-        <div className="px-3 py-2 space-y-0.5">
-          {events.map((evt, i) => (
-            <p key={i} className="text-[11px] font-mono text-foreground/70 whitespace-pre-wrap break-words">{evt}</p>
-          ))}
+      {/* 메시지 목록 */}
+      <ScrollArea className="max-h-64">
+        <div className="px-2.5 py-2 space-y-1.5">
+          {msgs.map(m => {
+            if (m.kind === 'tool') {
+              return <ToolBubble key={m.id} text={m.text} />
+            }
+            if (m.kind === 'status') {
+              return (
+                <p key={m.id} className="text-[10px] text-muted-foreground/70 leading-relaxed">
+                  {m.text}
+                </p>
+              )
+            }
+            // claude 말풍선
+            return (
+              <div key={m.id} className="flex items-start gap-1.5">
+                <span className="mt-0.5 shrink-0 w-4 h-4 rounded-full bg-orange-500/80 flex items-center justify-center text-[8px] font-bold text-white">C</span>
+                <div className="flex-1 bg-orange-500/8 border border-orange-500/15 rounded-lg px-2.5 py-1.5 min-w-0">
+                  <div className="prose prose-xs dark:prose-invert max-w-none
+                    prose-p:my-0.5 prose-p:leading-relaxed prose-p:text-[11px]
+                    prose-headings:text-foreground/90 prose-headings:font-semibold prose-headings:mt-2 prose-headings:mb-0.5
+                    prose-strong:text-foreground/90
+                    prose-code:text-amber-600 dark:prose-code:text-amber-300 prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[10px] prose-code:before:content-none prose-code:after:content-none
+                    prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded prose-pre:text-[10px] prose-pre:my-1
+                    prose-ul:my-0.5 prose-ol:my-0.5 prose-li:my-0 prose-li:text-[11px]
+                    prose-a:text-blue-500 dark:prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline
+                    prose-blockquote:border-border prose-blockquote:text-muted-foreground prose-blockquote:not-italic prose-blockquote:text-[11px]
+                    prose-hr:border-border prose-hr:my-1
+                    text-foreground/80">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.text}</ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
@@ -372,7 +407,7 @@ function HarnessWorkerStream({
                   <div className="prose prose-xs dark:prose-invert max-w-none
                     prose-p:my-0.5 prose-p:leading-relaxed prose-p:text-[11px]
                     prose-headings:text-foreground/90 prose-headings:font-semibold prose-headings:mt-2 prose-headings:mb-0.5
-                    prose-h1:text-sm prose-h2:text-xs prose-h3:text-xs
+                    prose-h1:text-lg prose-h2:text-base prose-h3:text-base
                     prose-strong:text-foreground/90
                     prose-code:text-amber-600 dark:prose-code:text-amber-300 prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-[10px] prose-code:before:content-none prose-code:after:content-none
                     prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded prose-pre:text-[10px] prose-pre:my-1
@@ -415,7 +450,7 @@ function HarnessBanner({
       <div className="flex items-center gap-2">
         <Zap className="w-3.5 h-3.5 text-blue-500 animate-pulse shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-foreground">
+          <p className="text-base font-semibold text-foreground">
             {t.harnessRunning}
             <span className="ml-1.5 font-mono font-normal text-muted-foreground text-[10px]">
               {(harnessStatus.intervalMs ?? 15000) / 1000}{t.issuesIntervalSuffix}
@@ -730,7 +765,7 @@ export default function IssuesPanel() {
   // ── 가드 ────────────────────────────────────────────────
   if (!activeProject) {
     return (
-      <div className="flex items-center justify-center flex-1 h-full text-xs text-muted-foreground/50">
+      <div className="flex items-center justify-center flex-1 h-full text-base text-muted-foreground/50">
         {t.git.issuesSelectProject}
       </div>
     )
@@ -767,7 +802,7 @@ export default function IssuesPanel() {
 
       {/* ── 헤더 ── */}
       <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/50 shrink-0">
-        <span className="text-xs font-semibold text-foreground/80 flex-1 truncate">
+        <span className="text-base font-semibold text-foreground/80 flex-1 truncate">
           {ghRepo ? `${ghRepo.owner}/${ghRepo.repo}` : t.git.issues}
           {issues.length > 0 && <span className="ml-1 text-muted-foreground">({issues.length})</span>}
         </span>
@@ -776,7 +811,7 @@ export default function IssuesPanel() {
         </Button>
         <Button
           variant="outline" size="sm"
-          className={cn('h-6 px-2 text-xs gap-1 shrink-0', sidePanel === 'create' && 'bg-muted')}
+          className={cn('h-6 px-2 text-base gap-1 shrink-0', sidePanel === 'create' && 'bg-muted')}
           onClick={sidePanel === 'create' ? closePanel : openCreate}
           disabled={!ghRepo || !pat}
         >
@@ -789,7 +824,7 @@ export default function IssuesPanel() {
             type="button"
             onClick={sidePanel === 'harness-setup' ? closePanel : openHarnessSetup}
             className={cn(
-              'inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs shrink-0 border transition-colors',
+              'inline-flex items-center gap-1 h-6 px-2 rounded-md text-base shrink-0 border transition-colors',
               'border-amber-500/50 text-amber-400 bg-transparent',
               'hover:border-amber-400',
               sidePanel === 'harness-setup' && 'border-amber-400/70',
@@ -806,7 +841,7 @@ export default function IssuesPanel() {
             <button
               type="button"
               onClick={stopHarness}
-              className="inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs shrink-0 border transition-colors border-red-500/50 text-red-400 bg-transparent hover:border-red-400"
+              className="inline-flex items-center gap-1 h-6 px-2 rounded-md text-base shrink-0 border transition-colors border-red-500/50 text-red-400 bg-transparent hover:border-red-400"
             >
               <Square className="w-3 h-3 fill-current" />
               {t.git.issuesStop}
@@ -816,7 +851,7 @@ export default function IssuesPanel() {
               type="button"
               onClick={startHarness}
               disabled={harnessStarting}
-              className="inline-flex items-center gap-1 h-6 px-2 rounded-md text-xs shrink-0 border transition-colors border-blue-500/50 text-blue-400 bg-transparent hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1 h-6 px-2 rounded-md text-base shrink-0 border transition-colors border-blue-500/50 text-blue-400 bg-transparent hover:border-blue-400 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {harnessStarting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />}
               {harnessStarting ? t.git.issuesStarting : t.git.harnessStart}
@@ -827,12 +862,12 @@ export default function IssuesPanel() {
 
       {/* ── 경고 ── */}
       {!pat && (
-        <div className="mx-3 mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700/40 dark:text-amber-300 text-xs shrink-0">
+        <div className="mx-3 mt-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-950/30 dark:border-amber-700/40 dark:text-amber-300 text-base shrink-0">
           {t.git.issuesNoPat}
         </div>
       )}
       {pat && repoError && (
-        <div className="mx-3 mt-2 p-2 rounded-lg bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-700/40 dark:text-red-300 text-xs shrink-0">
+        <div className="mx-3 mt-2 p-2 rounded-lg bg-red-50 border border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-700/40 dark:text-red-300 text-base shrink-0">
           <p className="font-medium">{t.git.issuesRepoError}</p>
           <p className="mt-0.5 font-mono text-[11px] opacity-70 break-all">{repoError}</p>
         </div>
@@ -840,7 +875,7 @@ export default function IssuesPanel() {
 
       {/* ── WORKFLOW.md 없음 안내 배너 ── */}
       {workflowExists === false && ghRepo && (
-        <div className="mx-3 mt-2 flex items-center gap-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-700/30 dark:text-amber-300/80 text-xs shrink-0">
+        <div className="mx-3 mt-2 flex items-center gap-2 p-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-700 dark:bg-amber-950/20 dark:border-amber-700/30 dark:text-amber-300/80 text-base shrink-0">
           <Settings className="w-3.5 h-3.5 shrink-0 text-amber-400" />
           <span className="flex-1">{t.git.harnessSetupNoWorkflow}</span>
           <button
@@ -862,11 +897,11 @@ export default function IssuesPanel() {
         {/* ── 이슈 목록 (왼쪽) ── */}
         <ScrollArea className="flex-1 min-w-0 border-r border-border">
           {loading ? (
-            <div className="flex items-center justify-center py-8 gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center justify-center py-8 gap-2 text-base text-muted-foreground">
               <Loader2 className="w-4 h-4 animate-spin" /> {t.git.loading}
             </div>
           ) : issues.length === 0 ? (
-            <p className="text-xs text-muted-foreground/50 text-center py-8">
+            <p className="text-base text-muted-foreground/50 text-center py-8">
               {!pat ? t.git.issuesPatHint : t.git.issuesNoIssues}
             </p>
           ) : (() => {
@@ -1011,7 +1046,7 @@ export default function IssuesPanel() {
                       value={hSlug}
                       onChange={e => setHSlug(e.target.value)}
                       placeholder="owner/repo"
-                      className="h-7 text-xs"
+                      className="h-7 text-base"
                     />
                   </div>
 
@@ -1024,7 +1059,7 @@ export default function IssuesPanel() {
                       value={hLabel}
                       onChange={e => setHLabel(e.target.value)}
                       placeholder="jikime-todo"
-                      className="h-7 text-xs"
+                      className="h-7 text-base"
                     />
                   </div>
 
@@ -1037,7 +1072,7 @@ export default function IssuesPanel() {
                       value={hWorkspaceRoot}
                       onChange={e => setHWorkspaceRoot(e.target.value)}
                       placeholder="~/jikime_workspaces"
-                      className="h-7 text-xs"
+                      className="h-7 text-base"
                     />
                   </div>
 
@@ -1053,7 +1088,7 @@ export default function IssuesPanel() {
                         max={65535}
                         value={hPort}
                         onChange={e => setHPort(Number(e.target.value))}
-                        className="h-7 text-xs"
+                        className="h-7 text-base"
                       />
                     </div>
                     <div className="flex-1">
@@ -1066,7 +1101,7 @@ export default function IssuesPanel() {
                         max={10}
                         value={hMaxAgents}
                         onChange={e => setHMaxAgents(Number(e.target.value))}
-                        className="h-7 text-xs"
+                        className="h-7 text-base"
                       />
                     </div>
                   </div>
@@ -1074,7 +1109,7 @@ export default function IssuesPanel() {
                   {/* 생성 버튼 */}
                   <Button
                     size="sm"
-                    className="w-full h-7 text-xs gap-1.5 bg-amber-700 hover:bg-amber-600 text-white"
+                    className="w-full h-7 text-base gap-1.5 bg-amber-700 hover:bg-amber-600 text-white"
                     onClick={generateWorkflow}
                     disabled={!hSlug.trim() || generatingWorkflow}
                   >
@@ -1090,7 +1125,7 @@ export default function IssuesPanel() {
               /* ── 이슈 상세 ── */
               <ScrollArea className="flex-1 min-h-0">
                 <div className="px-2.5 py-2 space-y-2">
-                  <p className="text-xs font-medium text-foreground/90 leading-relaxed">
+                  <p className="text-base font-medium text-foreground/90 leading-relaxed">
                     {selected.title}
                   </p>
                   {selected.labels.length > 0 && (
@@ -1114,7 +1149,7 @@ export default function IssuesPanel() {
                     isManualProcessingSelected && manualProcStatus === 'running' ? (
                       <Button
                         size="sm" variant="outline"
-                        className="w-full h-7 text-xs gap-1.5 border-red-500/40 text-red-400 hover:bg-red-950/30"
+                        className="w-full h-7 text-base gap-1.5 border-red-500/40 text-red-400 hover:bg-red-950/30"
                         onClick={stopManualProcess}
                       >
                         <Square className="w-3 h-3 fill-current" /> {t.git.issuesStopManual}
@@ -1122,7 +1157,7 @@ export default function IssuesPanel() {
                     ) : (
                       <Button
                         size="sm"
-                        className="w-full h-7 text-xs gap-1.5 bg-emerald-700 hover:bg-emerald-600 text-white"
+                        className="w-full h-7 text-base gap-1.5 bg-emerald-700 hover:bg-emerald-600 text-white"
                         onClick={() => startManualProcess(selected)}
                         disabled={manualProcStatus === 'running'}
                       >
@@ -1143,7 +1178,7 @@ export default function IssuesPanel() {
                   value={newTitle}
                   onChange={e => setNewTitle(e.target.value)}
                   placeholder={t.git.issuesTitlePlaceholder}
-                  className="h-8 text-xs shrink-0"
+                  className="h-8 text-base shrink-0"
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) createIssue() }}
                   autoFocus
                 />
@@ -1151,11 +1186,11 @@ export default function IssuesPanel() {
                   value={newBody}
                   onChange={e => setNewBody(e.target.value)}
                   placeholder={t.git.issuesBodyPlaceholder}
-                  className="text-xs resize-none flex-1 min-h-0"
+                  className="text-base resize-none flex-1 min-h-0"
                 />
                 <Button
                   size="sm"
-                  className="w-full h-7 text-xs bg-blue-700 hover:bg-blue-600 text-white shrink-0"
+                  className="w-full h-7 text-base bg-blue-700 hover:bg-blue-600 text-white shrink-0"
                   onClick={createIssue}
                   disabled={!newTitle.trim() || creating}
                 >

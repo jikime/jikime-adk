@@ -186,9 +186,9 @@ export default function ShellPanel() {
             <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
             <div className="w-3 h-3 rounded-full bg-green-500/80" />
           </div>
-          <span className="text-xs text-muted-foreground ml-1 font-mono">Claude Code Terminal</span>
+          <span className="text-base text-muted-foreground ml-1 font-mono">Claude Code Terminal</span>
         </div>
-        <Badge variant={STATUS_VARIANT[status]} className="text-xs">
+        <Badge variant={STATUS_VARIANT[status]} className="text-base">
           {status === 'connecting' ? t.shell.connecting : status === 'ready' ? t.shell.ready : status === 'dead' ? t.shell.dead : t.shell.error}
         </Badge>
       </div>

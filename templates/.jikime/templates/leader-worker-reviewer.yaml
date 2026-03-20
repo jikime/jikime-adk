@@ -1,0 +1,93 @@
+name: leader-worker-reviewer
+version: "1.0.0"
+description: "Leader + 2 workers + 1 reviewer. Reviewer validates completed tasks before they're merged."
+default_budget: 300000
+
+agents:
+  - id: leader
+    role: leader
+    auto_spawn: true
+    description: "Orchestrates the team, approves plans, monitors progress"
+    task: |
+      Goal: {{goal}}
+
+      Your responsibilities as team leader:
+      1. Analyze the goal and break it into concrete tasks.
+      2. Create tasks for workers:
+         jikime team tasks create {{team_name}} "Task title" --desc "What to do" --dod "Done when..."
+      3. Workers implement tasks; reviewer validates them. Monitor progress:
+         jikime team status {{team_name}}
+      4. Read team updates:
+         jikime team inbox receive {{team_name}}
+      5. When ALL tasks are reviewed and approved, shut down:
+         jikime team inbox broadcast {{team_name}} "All tasks complete. Shutting down."
+         jikime team lifecycle shutdown {{team_name}}
+
+      Team: worker-1, worker-2 (implement), reviewer (validates completed work)
+
+  - id: worker-1
+    role: worker
+    auto_spawn: true
+    description: "Executes tasks assigned by the leader"
+    task: |
+      Goal: {{goal}}
+
+      Your responsibilities as worker:
+      Loop until no pending tasks remain:
+      1. Check for available tasks:
+         jikime team tasks list {{team_name}} --status pending
+      2. Claim a task:
+         jikime team tasks claim {{team_name}} <task-id> --agent {{agent_id}}
+      3. Implement the work.
+      4. Mark complete for reviewer:
+         jikime team tasks complete {{team_name}} <task-id> --result "Summary of what was done"
+      5. Notify leader:
+         jikime team inbox send {{team_name}} leader "Completed <task-id> — awaiting review"
+      6. Repeat from step 1.
+
+      When no tasks remain:
+         jikime team inbox send {{team_name}} leader "No more pending tasks. Idle."
+
+  - id: worker-2
+    role: worker
+    auto_spawn: true
+    description: "Executes tasks assigned by the leader"
+    task: |
+      Goal: {{goal}}
+
+      Your responsibilities as worker:
+      Loop until no pending tasks remain:
+      1. Check for available tasks:
+         jikime team tasks list {{team_name}} --status pending
+      2. Claim a task:
+         jikime team tasks claim {{team_name}} <task-id> --agent {{agent_id}}
+      3. Implement the work.
+      4. Mark complete for reviewer:
+         jikime team tasks complete {{team_name}} <task-id> --result "Summary of what was done"
+      5. Notify leader:
+         jikime team inbox send {{team_name}} leader "Completed <task-id> — awaiting review"
+      6. Repeat from step 1.
+
+      When no tasks remain:
+         jikime team inbox send {{team_name}} leader "No more pending tasks. Idle."
+
+  - id: reviewer
+    role: reviewer
+    auto_spawn: true
+    description: "Reviews completed tasks and approves plans before worker execution"
+    task: |
+      Goal: {{goal}}
+
+      Your responsibilities as reviewer:
+      Loop until all tasks are reviewed:
+      1. Check for completed tasks:
+         jikime team tasks list {{team_name}} --status done
+      2. Review each task's result for quality and correctness.
+      3. If approved — notify the leader:
+         jikime team inbox send {{team_name}} leader "Approved <task-id>: <review notes>"
+      4. If revision needed — send back and notify:
+         jikime team tasks update {{team_name}} <task-id> --status pending
+         jikime team inbox send {{team_name}} leader "Revision needed for <task-id>: <what to fix>"
+
+      Check your inbox for messages:
+         jikime team inbox receive {{team_name}}

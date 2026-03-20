@@ -5,6 +5,27 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-03-20
+
+### Added
+
+- **Team — Multi-agent orchestration**: Full `jikime team` CLI for distributed AI agent teams; create, start, stop, and delete named teams; each agent runs in an isolated git worktree (`~/.jikime/worktrees/<team>/<agent>/`) on its own branch (`jikime-<team>-<agent>`) to prevent conflicts
+- **Team — File-based distributed state**: Team state stored under `~/.jikime/teams/<name>/` with subdirectories for `tasks/`, `registry/`, `inbox/`, and `costs/`; fully inspectable and reproducible without a database
+- **Team — Task assignment & routing**: `jikime team task` creates tasks with priority, type, and agent assignment; tasks routed to agent inboxes and processed asynchronously; status tracked through `pending → assigned → running → done/failed` lifecycle
+- **Team — Agent registry**: `jikime team agent` commands to register, list, and remove agents; each agent has role, skills, model, and availability metadata; `registry/agents.json` updated atomically
+- **Team — Cost tracking**: Per-agent and per-team cost ledgers in `costs/`; `jikime team cost` subcommand displays token usage and estimated spend; rolling summaries aggregated from individual run records
+- **Team — Web UI — Team panel**: New "Team" tab in webchat sidebar; create and manage teams, assign agents, monitor task queues in real time through SSE streaming
+- **Team — Web UI — Agent cards**: Each agent displayed as a card with role badge, current task, status indicator, and cost meter; expandable to show recent activity log
+- **Team — Web UI — Task board**: Kanban-style task board per team (pending / running / done / failed columns); drag-and-drop task reassignment; click to inspect full task detail including AI output
+- **Team — GitHub Issues integration**: `jikime team harness` connects GitHub Issues to team agents; issues assigned to agents automatically; ADK `query()` drives the work loop; results posted back as issue comments
+- **Webchat — Issues tab log format**: Processing log in the Issues tab now renders with the same visual language as the Chat tab — `ToolBubble` for `🔧 ToolName: {json}` events, emoji-prefixed status lines styled as muted text, and Claude text responses rendered with ReactMarkdown + `remark-gfm`
+- **Webchat — Full tool JSON in streaming events**: `server.ts` and `harness.ts` now emit the complete `JSON.stringify(block.input)` for `tool_use` content blocks instead of a truncated 80-character preview, enabling `parseTool()` to correctly reconstruct tool arguments in the UI
+
+### Documentation
+
+- **`docs/en/team.md`**: Comprehensive 12-section English reference covering architecture, CLI reference, web UI guide, agent configuration, task lifecycle, cost management, GitHub integration, environment variables, troubleshooting, and advanced patterns
+- **`docs/ko/team.md`**: Full Korean translation of team documentation with culturally adapted examples and terminology
+
 ## [1.6.10] - 2026-03-18
 
 ### Added

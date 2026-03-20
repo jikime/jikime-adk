@@ -81,6 +81,52 @@ export type Messages = {
     harnessGenerate: string; harnessGenerating: string
     harnessStart: string; harnessRunning: string
   }
+  team: {
+    // Toolbar & tabs
+    tabBoard: string; tabAgents: string
+    selectTeam: string; noTeams: string
+    addTask: string; refresh: string; runTeam: string; newTeam: string
+    live: string; offline: string
+    members: (n: number) => string
+    ledBy: (name: string) => string
+    // Empty states
+    selectProject: string; selectProjectHint: string
+    selectTeamHint: (project: string) => string
+    selectTeamDesc: string
+    noAgents: string; noAgentsHint: string
+    // Board sections
+    sectionMembers: string; sectionMessages: string; sectionTasks: string
+    noMembers: string; noMessages: string; inboxEmpty: string; inboxMsg: (n: number) => string
+    // Kanban status columns
+    statusPending: string; statusInProgress: string; statusBlocked: string
+    statusDone: string; statusFailed: string
+    // Team create modal
+    createTitle: string; createNameLabel: string
+    createTemplateLabel: string; createWorkersLabel: string
+    createBudgetLabel: string; createBudgetHint: string
+    createTemplateCustom: string; createTemplateManage: string
+    creating: string; createFailed: string; createBtn: string
+    // Task add modal
+    addTaskTitle: string; taskTitleLabel: string; taskDescLabel: string
+    taskTitlePlaceholder: string; taskDescPlaceholder: string
+    adding: string; addBtn: string
+    // Team serve/run modal
+    runTitle: string; goalLabel: string; goalPlaceholder: string
+    worktreeLabel: string; running: string; runFailed: string; runBtn: string
+    // Template manager
+    templateTitle: string; templateSidebarHeader: string
+    templateNewBlank: string; templatePresetsTitle: string; templatePresetsHint: string
+    templateBuiltinNotice: string; templateBack: string
+    templateDelete: string; templateSave: string; templateSaving: string
+    templateSaveFailed: string; templateNoNameError: string
+    templateDeleteConfirm: (name: string) => string
+    templateNone: string; builtinBadge: string; templateSelectPrompt: string
+    newTemplateLabel: string
+    // AI generation
+    aiGenerate: string; aiGenerating: string; aiGenerateBtn: string; aiPromptPlaceholder: string
+    // Common
+    cancel: string
+  }
 }
 
 export const messages: Record<Locale, Messages> = { ko, en, zh, ja }

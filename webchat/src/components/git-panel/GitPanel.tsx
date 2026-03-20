@@ -60,10 +60,10 @@ function statusBadge(xy: string): { label: string; color: string } {
 // ── Diff 컬러 렌더러 ──────────────────────────────────────────────
 function DiffViewer({ content, noChangesLabel }: { content: string; noChangesLabel: string }) {
   if (!content.trim()) {
-    return <p className="text-xs text-muted-foreground text-center py-8">{noChangesLabel}</p>
+    return <p className="text-base text-muted-foreground text-center py-8">{noChangesLabel}</p>
   }
   return (
-    <div className="font-mono text-xs leading-5 pt-4 pb-16">
+    <div className="font-mono text-base leading-5 pt-4 pb-16">
       {content.split('\n').map((line, i) => {
         const isAdd    = line.startsWith('+') && !line.startsWith('+++')
         const isRemove = line.startsWith('-') && !line.startsWith('---')
@@ -261,7 +261,7 @@ export default function GitPanel() {
   // ── Not a git repo ────────────────────────────────────────────
   if (!activeProject) {
     return (
-      <div className="flex items-center justify-center flex-1 h-full text-xs text-muted-foreground/50">
+      <div className="flex items-center justify-center flex-1 h-full text-base text-muted-foreground/50">
         {t.git.selectProject}
       </div>
     )
@@ -273,8 +273,8 @@ export default function GitPanel() {
         <GitHeader currentBranch="" />
         <div className="flex flex-col items-center justify-center flex-1 gap-2 text-center px-4">
           <GitBranch className="w-8 h-8 text-muted-foreground/30" />
-          <p className="text-sm text-muted-foreground">{t.git.notGitRepo}</p>
-          <p className="text-xs text-muted-foreground/50 font-mono break-all">{cwd}</p>
+          <p className="text-lg text-muted-foreground">{t.git.notGitRepo}</p>
+          <p className="text-base text-muted-foreground/50 font-mono break-all">{cwd}</p>
         </div>
       </div>
     )
@@ -289,7 +289,7 @@ export default function GitPanel() {
         {(['changes', 'log', 'branches', 'issues'] as Tab[]).map(tabId => (
           <button key={tabId} onClick={() => setTab(tabId)}
             className={cn(
-              'px-3 py-1.5 text-xs font-medium rounded-t transition-colors flex items-center gap-1',
+              'px-3 py-1.5 text-base font-medium rounded-t transition-colors flex items-center gap-1',
               tab === tabId ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground/80'
             )}>
             {tabId === 'issues' && <CircleDot className="w-3 h-3" />}
@@ -312,7 +312,7 @@ export default function GitPanel() {
             <div className="flex items-center gap-1 shrink-0">
               <Button
                 variant="ghost" size="sm"
-                className="h-5 px-2 text-xs gap-1 text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 disabled:opacity-40"
+                className="h-5 px-2 text-base gap-1 text-sky-600 dark:text-sky-400 hover:bg-sky-500/10 disabled:opacity-40"
                 onClick={handlePull} disabled={pulling || loading}
               >
                 <ArrowDown className={cn('w-3 h-3', pulling && 'animate-bounce')} />
@@ -320,7 +320,7 @@ export default function GitPanel() {
               </Button>
               <Button
                 variant="ghost" size="sm"
-                className="h-5 px-2 text-xs gap-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40"
+                className="h-5 px-2 text-base gap-1 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-40"
                 onClick={handlePush} disabled={pushing || loading}
               >
                 <ArrowUp className={cn('w-3 h-3', pushing && 'animate-bounce')} />
@@ -330,7 +330,7 @@ export default function GitPanel() {
               <Button
                 variant="ghost" size="sm"
                 className={cn(
-                  'h-5 px-2 text-xs gap-1 disabled:opacity-40',
+                  'h-5 px-2 text-base gap-1 disabled:opacity-40',
                   commitPanelOpen
                     ? 'bg-primary/10 text-primary'
                     : 'text-foreground/70 hover:bg-muted'
@@ -364,7 +364,7 @@ export default function GitPanel() {
                   onCheckedChange={() => toggleAll()}
                   className="w-3 h-3"
                 />
-                <span className="text-xs text-muted-foreground flex-1">{t.git.selectAll}</span>
+                <span className="text-base text-muted-foreground flex-1">{t.git.selectAll}</span>
                 <button
                   onClick={refresh}
                   disabled={loading}
@@ -376,7 +376,7 @@ export default function GitPanel() {
               </div>
               <ScrollArea className="flex-1">
                 {files.length === 0
-                  ? <p className="text-xs text-muted-foreground/50 text-center py-4">{t.git.noChanges}</p>
+                  ? <p className="text-base text-muted-foreground/50 text-center py-4">{t.git.noChanges}</p>
                   : files.map(f => {
                       const badge = statusBadge(f.status)
                       return (
@@ -392,10 +392,10 @@ export default function GitPanel() {
                             onClick={(e: React.MouseEvent) => e.stopPropagation()}
                             className="w-3 h-3 shrink-0"
                           />
-                          <span className={cn('text-xs font-bold rounded px-1 shrink-0', badge.color)}>
+                          <span className={cn('text-base font-bold rounded px-1 shrink-0', badge.color)}>
                             {badge.label}
                           </span>
-                          <span className="text-xs text-foreground/80 truncate font-mono">{f.path}</span>
+                          <span className="text-base text-foreground/80 truncate font-mono">{f.path}</span>
                         </div>
                       )
                     })
@@ -409,10 +409,10 @@ export default function GitPanel() {
             <ResizablePanel minSize="80px">
               <ScrollArea className="h-full">
                 {diffLoading
-                  ? <p className="text-xs text-muted-foreground text-center py-4">{t.git.loading}</p>
+                  ? <p className="text-base text-muted-foreground text-center py-4">{t.git.loading}</p>
                   : selectedFile
                   ? <DiffViewer content={diff} noChangesLabel={t.git.noChanges} />
-                  : <p className="text-xs text-muted-foreground/50 text-center py-8">{t.git.selectFileDiff}</p>
+                  : <p className="text-base text-muted-foreground/50 text-center py-8">{t.git.selectFileDiff}</p>
                 }
               </ScrollArea>
             </ResizablePanel>
@@ -428,7 +428,7 @@ export default function GitPanel() {
                 {/* 패널 헤더 — 좌측 파일 목록 헤더와 높이/테두리 일치 */}
                 <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/50 shrink-0">
                   <GitCommit className="w-3 h-3 text-primary shrink-0" />
-                  <span className="text-xs font-semibold text-foreground flex-1">
+                  <span className="text-base font-semibold text-foreground flex-1">
                     {t.git.commit}
                   </span>
                   {checked.size > 0 && (
@@ -500,13 +500,13 @@ export default function GitPanel() {
                     onKeyDown={e => { if (e.key === 'Enter' && e.metaKey) handleCommit() }}
                     placeholder={t.git.commitPlaceholder}
                     disabled={committing}
-                    className="flex-1 w-full resize-none rounded-md border border-input bg-muted/30 px-2.5 py-2 text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background disabled:opacity-40 transition-colors min-h-0"
+                    className="flex-1 w-full resize-none rounded-md border border-input bg-muted/30 px-2.5 py-2 text-base text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary focus:bg-background disabled:opacity-40 transition-colors min-h-0"
                   />
                   <button
                     onClick={handleCommit}
                     disabled={!commitMsg.trim() || checked.size === 0 || committing}
                     className={cn(
-                      'w-full h-7 rounded-md text-xs font-medium flex items-center justify-center gap-1.5 transition-colors',
+                      'w-full h-7 rounded-md text-base font-medium flex items-center justify-center gap-1.5 transition-colors',
                       'bg-primary text-primary-foreground hover:bg-primary/90',
                       'disabled:opacity-40 disabled:cursor-not-allowed'
                     )}
@@ -531,7 +531,7 @@ export default function GitPanel() {
           {/* 헤더 */}
           <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/50 shrink-0">
             <GitCommit className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-            <span className="text-xs text-muted-foreground flex-1">{t.git.log}</span>
+            <span className="text-base text-muted-foreground flex-1">{t.git.log}</span>
             {log && (
               <span className="text-[10px] text-muted-foreground/50">
                 {log.split('\n').filter(Boolean).length}개
@@ -563,12 +563,12 @@ export default function GitPanel() {
                           selectedCommit === hash && 'bg-muted'
                         )}
                       >
-                        <span className="text-xs font-mono text-blue-400 shrink-0">{hash}</span>
-                        <span className="text-xs text-foreground/80 truncate">{rest.join(' ')}</span>
+                        <span className="text-base font-mono text-blue-400 shrink-0">{hash}</span>
+                        <span className="text-base text-foreground/80 truncate">{rest.join(' ')}</span>
                       </button>
                     )
                   })}
-                  {!log && <p className="text-xs text-muted-foreground/50 text-center py-8">{t.git.noCommits}</p>}
+                  {!log && <p className="text-base text-muted-foreground/50 text-center py-8">{t.git.noCommits}</p>}
                 </div>
               </ScrollArea>
             </ResizablePanel>
@@ -580,13 +580,13 @@ export default function GitPanel() {
               {selectedCommit ? (
                 <ScrollArea className="h-full">
                   {commitDiffLoading
-                    ? <p className="text-xs text-muted-foreground text-center py-4">{t.git.loading}</p>
+                    ? <p className="text-base text-muted-foreground text-center py-4">{t.git.loading}</p>
                     : <DiffViewer content={commitDiff} noChangesLabel={t.git.noChanges} />
                   }
                 </ScrollArea>
               ) : (
                 <div className="flex items-center justify-center h-full">
-                  <p className="text-xs text-muted-foreground/40">커밋을 클릭하면 diff를 볼 수 있어요</p>
+                  <p className="text-base text-muted-foreground/40">커밋을 클릭하면 diff를 볼 수 있어요</p>
                 </div>
               )}
             </ResizablePanel>
@@ -599,7 +599,7 @@ export default function GitPanel() {
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border/50 shrink-0">
             <GitBranch className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-            <span className="text-xs text-muted-foreground flex-1">{t.git.branch}</span>
+            <span className="text-base text-muted-foreground flex-1">{t.git.branch}</span>
             {branches.length > 0 && (
               <span className="text-[10px] text-muted-foreground/50">
                 {branches.filter(Boolean).length}개
@@ -624,18 +624,18 @@ export default function GitPanel() {
                   <button key={i} onClick={() => handleCheckout(b)}
                     disabled={isCurrent || isRemote}
                     className={cn(
-                      'flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-left transition-colors',
+                      'flex items-center gap-2 w-full px-2 py-1.5 rounded text-base text-left transition-colors',
                       isCurrent  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 cursor-default' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                       isRemote   && 'opacity-50 cursor-default',
                     )}>
                     {isCurrent && <Check className="w-3 h-3 shrink-0 text-purple-500 dark:text-purple-400" />}
                     {!isCurrent && <GitBranch className="w-3 h-3 shrink-0 text-muted-foreground/50" />}
                     <span className="font-mono truncate">{name}</span>
-                    {isRemote && <span className="ml-auto text-muted-foreground/50 text-xs">remote</span>}
+                    {isRemote && <span className="ml-auto text-muted-foreground/50 text-base">remote</span>}
                   </button>
                 )
               })}
-              {branches.length === 0 && <p className="text-xs text-muted-foreground/50 text-center py-8">{t.git.noBranches}</p>}
+              {branches.length === 0 && <p className="text-base text-muted-foreground/50 text-center py-8">{t.git.noBranches}</p>}
             </div>
           </ScrollArea>
         </div>
@@ -652,13 +652,13 @@ export default function GitPanel() {
       <AlertDialog open={!!errorMsg} onOpenChange={(open) => { if (!open) setErrorMsg(null) }}>
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-sm text-destructive">Git 오류</AlertDialogTitle>
-            <AlertDialogDescription className="text-xs font-mono whitespace-pre-wrap break-all">
+            <AlertDialogTitle className="text-lg text-destructive">Git 오류</AlertDialogTitle>
+            <AlertDialogDescription className="text-base font-mono whitespace-pre-wrap break-all">
               {errorMsg}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction onClick={() => setErrorMsg(null)} size="sm" className="text-xs">
+            <AlertDialogAction onClick={() => setErrorMsg(null)} size="sm" className="text-base">
               확인
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -679,9 +679,9 @@ function GitHeader({ currentBranch }: {
     <div className="flex items-center px-3 py-2.5 bg-white dark:bg-accent border-b border-border shrink-0">
       <div className="flex items-center gap-2 min-w-0">
         <GitBranch className="w-4 h-4 text-purple-400 shrink-0" />
-        <span className="text-sm font-medium text-foreground shrink-0">Git</span>
+        <span className="text-lg font-medium text-foreground shrink-0">Git</span>
         {currentBranch && (
-          <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded shrink-0">
+          <span className="text-base text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded shrink-0">
             {currentBranch}
           </span>
         )}

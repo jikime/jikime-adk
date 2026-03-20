@@ -359,8 +359,8 @@ async function runADK(
         if (block.type === 'text' && typeof block.text === 'string') {
           msg = block.text.slice(0, 300)
         } else if (block.type === 'tool_use' && typeof block.name === 'string') {
-          const preview = block.input ? JSON.stringify(block.input).slice(0, 80) : ''
-          msg = `🔧 ${block.name}: ${preview}`
+          const inputJson = block.input ? JSON.stringify(block.input) : '{}'
+          msg = `🔧 ${block.name}: ${inputJson}`
         }
         if (msg) {
           worker.events.push(msg)

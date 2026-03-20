@@ -6,6 +6,7 @@ import * as path from 'path'
 import { execSync } from 'child_process'
 import * as os from 'os'
 import { handleHarnessRoutes } from './harness'
+import { handleTeamRoutes }   from './team'
 
 // node-pty 지연 로딩 — Linux에서 컴파일 안 된 경우에도 서버가 정상 기동
 // 터미널 기능만 비활성화되고 채팅/파일/Git은 정상 동작
@@ -126,22 +127,67 @@ function getOrCreatePtySession(sessionId: string, cwd: string, cols: number, row
   if (ptySessions.has(sessionId)) {
     return ptySessions.get(sessionId)!
   }
-  // SHELL 환경변수 → 시스템에 실제 존재하는 셸 순서로 폴백
-  // Docker(node:slim)에는 zsh 없이 bash/sh만 있음
-  const shellCandidates = [
-    process.env.SHELL,
-    '/bin/bash',
-    '/bin/zsh',
-    '/bin/sh',
-  ]
-  const shell = shellCandidates.find(s => s && fs.existsSync(s)) ?? '/bin/sh'
-  const ptyProcess = pty.spawn(shell, [], {
-    name: 'xterm-256color',
-    cols,
-    rows,
-    cwd: fs.existsSync(cwd) ? cwd : os.homedir(),
-    env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor' },
-  })
+
+  let ptyProcess: import('node-pty').IPty
+
+  // tmux: prefix → 기존 tmux 세션을 linked-session 으로 뷰어 생성
+  if (sessionId.startsWith('tmux:')) {
+    const tmuxSession = sessionId.slice(5) // "tmux:jikime-lotto-team-leader" → "jikime-lotto-team-leader"
+
+    // ── new-session -t 방식 (linked session) ────────────────────────────
+    // attach-session 은 모든 클라이언트 중 가장 작은 크기로 윈도우를 제약해
+    // 기존 세션이 더 넓은 경우 xterm 에서 줄이 겹쳐 보임.
+    // new-session -t <원본세션> 은 같은 window group 을 공유하되
+    // 각 세션이 독립적인 크기를 가지므로 줄겹침이 발생하지 않음.
+    const linkedName = `web-${Date.now().toString(36)}`
+    ptyProcess = pty.spawn('tmux', [
+      'new-session',
+      '-t', tmuxSession,  // 원본 세션의 window group 에 링크
+      '-s', linkedName,   // 웹 뷰어 전용 세션 이름
+      '-x', String(cols), // 이 세션만의 너비 — 원본과 독립
+      '-y', String(rows), // 이 세션만의 높이
+    ], {
+      name:              'xterm-256color',
+      cols,
+      rows,
+      cwd:               os.homedir(),
+      handleFlowControl: true,
+      flowControlPause:  '\x13', // XOFF
+      flowControlResume: '\x11', // XON
+      env: {
+        ...process.env,
+        TERM:      'xterm-256color',
+        COLORTERM: 'truecolor',
+        LANG:      'en_US.UTF-8',
+        LC_ALL:    'en_US.UTF-8',
+      },
+    })
+
+    // PTY 종료 시 linked session 정리 (원본 세션은 그대로 유지)
+    ptyProcess.onExit(() => {
+      try {
+        const { execSync } = require('child_process') as typeof import('child_process')
+        execSync(`tmux kill-session -t ${linkedName}`, { stdio: 'ignore' })
+      } catch { /* 이미 없으면 무시 */ }
+    })
+  } else {
+    // SHELL 환경변수 → 시스템에 실제 존재하는 셸 순서로 폴백
+    // Docker(node:slim)에는 zsh 없이 bash/sh만 있음
+    const shellCandidates = [
+      process.env.SHELL,
+      '/bin/bash',
+      '/bin/zsh',
+      '/bin/sh',
+    ]
+    const shell = shellCandidates.find(s => s && fs.existsSync(s)) ?? '/bin/sh'
+    ptyProcess = pty.spawn(shell, [], {
+      name: 'xterm-256color',
+      cols,
+      rows,
+      cwd: fs.existsSync(cwd) ? cwd : os.homedir(),
+      env: { ...process.env, TERM: 'xterm-256color', COLORTERM: 'truecolor' },
+    })
+  }
   const session: PtySession = {
     pty: ptyProcess,
     clients: new Set(),
@@ -455,7 +501,17 @@ function discoverProjects(): Array<{ id: string; name: string; path: string; ses
         for (const file of files) sessions.push(file.replace('.jsonl', ''))
       } catch { /* */ }
 
-      const actualPath = decodeProjectPath(entry)
+      // 1차: 파일시스템 탐색으로 경로 복원
+      // 2차: _webchat_path 파일에 저장된 원본 경로 사용 (경로가 존재하지 않아도 등록 가능)
+      let actualPath = decodeProjectPath(entry)
+      if (actualPath === null) {
+        try {
+          const metaFile = path.join(fullPath, '_webchat_path')
+          if (fs.existsSync(metaFile)) {
+            actualPath = fs.readFileSync(metaFile, 'utf8').trim()
+          }
+        } catch { /* */ }
+      }
       if (actualPath === null) continue  // 경로 복원 실패 시 건너뜀
 
       projects.push({
@@ -809,8 +865,8 @@ async function processIssueWithADK(
           if (block.type === 'text' && typeof block.text === 'string') {
             emit(block.text.slice(0, 300))
           } else if (block.type === 'tool_use' && typeof block.name === 'string') {
-            const inputPreview = block.input ? JSON.stringify(block.input).slice(0, 80) : ''
-            emit(`🔧 ${block.name}: ${inputPreview}`)
+            const inputJson = block.input ? JSON.stringify(block.input) : '{}'
+            emit(`🔧 ${block.name}: ${inputJson}`)
           }
         }
       }
@@ -1052,6 +1108,51 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     } catch (e) {
       res.writeHead(500, CORS_HEADERS); res.end('Delete failed')
     }
+    return true
+  }
+
+  // POST /api/ws/project — 새 프로젝트 경로 등록 (경로 디렉터리가 없어도 가능)
+  if (pathname === '/api/ws/project' && req.method === 'POST') {
+    let body = ''
+    req.on('data', (chunk: Buffer) => { body += chunk })
+    req.on('end', () => {
+      try {
+        const { path: projectPath } = JSON.parse(body) as { path?: string }
+        if (!projectPath || typeof projectPath !== 'string') {
+          res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'Missing path' })); return
+        }
+        const normalized = projectPath.replace(/\/+$/, '') // trailing slash 제거
+        if (!normalized.startsWith('/')) {
+          res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: '절대 경로를 입력하세요' })); return
+        }
+        const encoded = normalized.replace(/\//g, '-')
+        const claudeDir = path.join(os.homedir(), '.claude', 'projects')
+        const projectDir = path.join(claudeDir, encoded)
+        // 경로 탈출 방지
+        if (!projectDir.startsWith(claudeDir + path.sep) && projectDir !== claudeDir) {
+          res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'Invalid path' })); return
+        }
+        if (!fs.existsSync(projectDir)) {
+          fs.mkdirSync(projectDir, { recursive: true })
+        }
+        // 실제 프로젝트 폴더도 없으면 생성
+        if (!fs.existsSync(normalized)) {
+          fs.mkdirSync(normalized, { recursive: true })
+        }
+        // 원본 경로 저장 — decodeProjectPath 실패 시 fallback
+        fs.writeFileSync(path.join(projectDir, '_webchat_path'), normalized, 'utf8')
+        const project = {
+          id: encoded,
+          name: path.basename(normalized) || encoded,
+          path: normalized,
+          sessions: [],
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+        res.end(JSON.stringify({ ok: true, project }))
+      } catch {
+        res.writeHead(500, CORS_HEADERS); res.end(JSON.stringify({ error: '서버 오류' }))
+      }
+    })
     return true
   }
 
@@ -1537,6 +1638,9 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   // ── Harness Engineering (WORKFLOW.md 기반 자율 이슈 처리) ────────
   if (handleHarnessRoutes(req, res, pathname, CLAUDE_PATH)) return true
 
+  // ── Team Orchestration (jikime team 기반 멀티 에이전트 팀) ──────
+  if (handleTeamRoutes(req, res, pathname)) return true
+
   return false
 }
 
@@ -1605,7 +1709,18 @@ app.prepare().then(() => {
           const session = ptySessions.get(sessionId)
           if (session && msg.cols && msg.rows) {
             session.pty.resize(msg.cols, msg.rows)
+            // linked session 은 PTY resize 만으로 충분 — tmux 가 SIGWINCH 를 감지해 갱신함
           }
+
+        } else if (msg.type === 'pause' && sessionId) {
+          // ✅ 흐름 제어: 클라이언트 버퍼 포화 시 PTY 출력 일시 중지
+          const session = ptySessions.get(sessionId)
+          if (session) session.pty.pause()
+
+        } else if (msg.type === 'resume' && sessionId) {
+          // ✅ 흐름 제어: 클라이언트 렌더 완료 후 PTY 출력 재개
+          const session = ptySessions.get(sessionId)
+          if (session) session.pty.resume()
         }
       } catch (err) {
         console.error('Terminal WS error:', err)

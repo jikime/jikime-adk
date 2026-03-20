@@ -175,7 +175,7 @@ const ThinkingIndicator = memo(function ThinkingIndicator() {
         </div>
 
         {/* 텍스트 + 바운스 점 */}
-        <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <span className="text-base text-muted-foreground flex items-center gap-1.5">
           {t.chat.thinking}
           {[0, 0.18, 0.36].map((delay, i) => (
             <span
@@ -198,7 +198,7 @@ const ToolCallView = memo(function ToolCallView({ tool }: { tool: ToolCall }) {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs dark:text-amber-400 dark:hover:text-amber-300 text-amber-600 hover:text-amber-700 py-0.5 w-full text-left">
+      <CollapsibleTrigger className="flex items-center gap-1.5 text-base dark:text-amber-400 dark:hover:text-amber-300 text-amber-600 hover:text-amber-700 py-0.5 w-full text-left">
         <Wrench className="w-3 h-3 shrink-0" />
         <span className="font-mono truncate">{tool.name}</span>
         {open ? <ChevronDown className="w-3 h-3 ml-auto shrink-0" /> : <ChevronRight className="w-3 h-3 ml-auto shrink-0" />}
@@ -206,7 +206,7 @@ const ToolCallView = memo(function ToolCallView({ tool }: { tool: ToolCall }) {
       <CollapsibleContent>
         <div className="mt-1 space-y-1">
           {tool.input !== undefined && (
-            <pre className="text-xs bg-background rounded p-2 overflow-auto text-foreground/80 border border-border max-h-40
+            <pre className="text-base bg-background rounded p-2 overflow-auto text-foreground/80 border border-border max-h-40
               [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:h-1
               [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border
               [&::-webkit-scrollbar-track]:bg-transparent">
@@ -214,7 +214,7 @@ const ToolCallView = memo(function ToolCallView({ tool }: { tool: ToolCall }) {
             </pre>
           )}
           {tool.result !== undefined && (
-            <pre className="text-xs dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2 overflow-auto max-h-40
+            <pre className="text-base dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/50 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded p-2 overflow-auto max-h-40
               [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:h-1
               [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-emerald-900 [&::-webkit-scrollbar-thumb]:bg-emerald-200
               [&::-webkit-scrollbar-track]:bg-transparent">
@@ -231,13 +231,13 @@ const ThinkingView = memo(function ThinkingView({ text }: { text: string }) {
   const [open, setOpen] = useState(false)
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <CollapsibleTrigger className="flex items-center gap-1.5 text-xs dark:text-purple-400 dark:hover:text-purple-300 text-purple-600 hover:text-purple-700 py-0.5 w-full text-left">
+      <CollapsibleTrigger className="flex items-center gap-1.5 text-base dark:text-purple-400 dark:hover:text-purple-300 text-purple-600 hover:text-purple-700 py-0.5 w-full text-left">
         <Brain className="w-3 h-3 shrink-0" />
         <span>Thinking...</span>
         {open ? <ChevronDown className="w-3 h-3 ml-auto shrink-0" /> : <ChevronRight className="w-3 h-3 ml-auto shrink-0" />}
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <pre className="mt-1 text-xs dark:bg-purple-950/20 dark:text-purple-200 dark:border-purple-900/40 bg-purple-50 text-purple-800 border border-purple-200 rounded p-2 overflow-auto whitespace-pre-wrap max-h-48
+        <pre className="mt-1 text-base dark:bg-purple-950/20 dark:text-purple-200 dark:border-purple-900/40 bg-purple-50 text-purple-800 border border-purple-200 rounded p-2 overflow-auto whitespace-pre-wrap max-h-48
           [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:h-1
           [&::-webkit-scrollbar-thumb]:rounded-full dark:[&::-webkit-scrollbar-thumb]:bg-purple-800/60 [&::-webkit-scrollbar-thumb]:bg-purple-200
           [&::-webkit-scrollbar-track]:bg-transparent">
@@ -295,29 +295,29 @@ const MessageBubble = memo(function MessageBubble({ msg }: { msg: Message }) {
         {/* Message text */}
         {(msg.text || msg.status === 'streaming') && (
           isUser ? (
-            <div className="rounded-2xl px-4 py-3 text-base leading-relaxed bg-blue-600 text-white rounded-tr-sm">
+            <div className="rounded-2xl px-4 py-3 text-xl leading-relaxed bg-blue-600 text-white rounded-tr-sm">
               <span className="whitespace-pre-wrap break-words">{msg.text}</span>
             </div>
           ) : msg.status === 'streaming' && !msg.text ? (
             /* 텍스트가 아직 없는 스트리밍 초기 — 궤도 애니메이션 */
             <ThinkingIndicator />
           ) : (
-            <div className={cn('text-base leading-relaxed py-1',
+            <div className={cn('text-xl leading-relaxed py-1',
               msg.status === 'error' && 'dark:bg-red-950/50 dark:text-red-200 dark:border-red-800/50 bg-red-50 text-red-800 border border-red-200 rounded-lg px-3.5 py-2.5'
             )}>
               <div className="prose prose-base dark:prose-invert max-w-none
                 prose-p:my-1.5 prose-p:leading-relaxed
                 prose-headings:text-foreground prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-1.5
-                prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
+                prose-h1:text-xl prose-h2:text-xl prose-h3:text-xl
                 prose-strong:text-foreground
-                dark:prose-code:text-amber-300 prose-code:text-amber-700 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
-                prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:text-sm
+                dark:prose-code:text-amber-300 prose-code:text-amber-700 prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-lg prose-code:before:content-none prose-code:after:content-none
+                prose-pre:bg-muted prose-pre:border prose-pre:border-border prose-pre:rounded-lg prose-pre:text-lg
                 prose-pre:[&::-webkit-scrollbar]:h-1 prose-pre:[&::-webkit-scrollbar-thumb]:bg-border prose-pre:[&::-webkit-scrollbar-thumb]:rounded-full prose-pre:[&::-webkit-scrollbar-track]:bg-transparent
                 dark:prose-a:text-blue-400 prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline
                 prose-blockquote:border-border prose-blockquote:text-muted-foreground prose-blockquote:not-italic
                 prose-li:my-0.5 prose-ul:my-1 prose-ol:my-1
                 prose-hr:border-border
-                prose-table:text-xs prose-th:text-foreground/80 prose-td:text-muted-foreground">
+                prose-table:text-base prose-th:text-foreground/80 prose-td:text-muted-foreground">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} components={{ pre: MarkdownCodeBlock }}>
                   {msg.text || ''}
                 </ReactMarkdown>
@@ -326,7 +326,7 @@ const MessageBubble = memo(function MessageBubble({ msg }: { msg: Message }) {
                 )}
               </div>
               {msg.status === 'error' && (
-                <div className="flex items-center gap-1 mt-1 dark:text-red-400 text-red-600 text-xs">
+                <div className="flex items-center gap-1 mt-1 dark:text-red-400 text-red-600 text-base">
                   <AlertCircle className="w-3 h-3" />
                   오류가 발생했어요
                 </div>
@@ -354,7 +354,7 @@ const TokenBar = memo(function TokenBar({ budget }: { budget: TokenBudget }) {
       <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
         <div className={cn('h-full rounded-full transition-all', color)} style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+      <span className="text-base text-muted-foreground tabular-nums whitespace-nowrap">
         {(budget.used / 1000).toFixed(1)}k / {(budget.total / 1000).toFixed(0)}k
       </span>
     </div>
@@ -381,10 +381,10 @@ const PermissionBanner = memo(function PermissionBanner({
       <div className="flex items-start gap-2">
         <Shield className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-amber-300">{t.chat.permissionRequest}</p>
-          <p className="text-xs text-amber-400 font-mono mt-0.5">{req.toolName}</p>
+          <p className="text-base font-medium text-amber-300">{t.chat.permissionRequest}</p>
+          <p className="text-base text-amber-400 font-mono mt-0.5">{req.toolName}</p>
           {inputPreview && (
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">{inputPreview}</p>
+            <p className="text-base text-muted-foreground mt-0.5 truncate">{inputPreview}</p>
           )}
         </div>
       </div>
@@ -392,21 +392,21 @@ const PermissionBanner = memo(function PermissionBanner({
         <Button
           size="sm"
           onClick={() => onAllow(false)}
-          className="h-6 px-2 text-xs bg-emerald-700 hover:bg-emerald-600 text-white"
+          className="h-6 px-2 text-base bg-emerald-700 hover:bg-emerald-600 text-white"
         >
           <Check className="w-3 h-3" /> {t.chat.allow}
         </Button>
         <Button
           size="sm" variant="outline"
           onClick={() => onAllow(true)}
-          className="h-6 px-2 text-xs"
+          className="h-6 px-2 text-base"
         >
           <Check className="w-3 h-3" /> {t.chat.alwaysAllow}
         </Button>
         <Button
           size="sm"
           onClick={onDeny}
-          className="h-6 px-2 text-xs bg-red-900 hover:bg-red-800 text-red-200 border-0"
+          className="h-6 px-2 text-base bg-red-900 hover:bg-red-800 text-red-200 border-0"
         >
           <X className="w-3 h-3" /> {t.chat.deny}
         </Button>
@@ -890,7 +890,7 @@ export default function ChatInterface() {
       {/* Header */}
       <div className="flex items-center gap-2.5 px-5 py-3 bg-white dark:bg-accent border-b border-border shrink-0 min-w-0">
         <Bot className="w-5 h-5 text-blue-400 shrink-0" />
-        <span className="text-base font-semibold text-foreground shrink-0">Claude</span>
+        <span className="text-xl font-semibold text-foreground shrink-0">Claude</span>
         {activeProject && (
           <span
             className="inline-flex items-center gap-1 text-[11px] font-mono bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 rounded px-1.5 py-0.5 truncate"
@@ -913,7 +913,7 @@ export default function ChatInterface() {
           )}
           {tokenBudget && <TokenBar budget={tokenBudget} />}
           {activeSessionId && !tokenBudget && (
-            <span className="text-xs text-muted-foreground/50 font-mono">{activeSessionId.slice(0, 8)}</span>
+            <span className="text-base text-muted-foreground/50 font-mono">{activeSessionId.slice(0, 8)}</span>
           )}
         </div>
       </div>
@@ -937,7 +937,7 @@ export default function ChatInterface() {
           {historyLoading ? (
             <div className="flex flex-col items-center justify-center flex-1 min-h-64 gap-3">
               <RefreshCw className="w-6 h-6 text-muted-foreground/50 animate-spin" />
-              <p className="text-sm text-muted-foreground/50">{t.chat.loadingHistory}</p>
+              <p className="text-lg text-muted-foreground/50">{t.chat.loadingHistory}</p>
             </div>
           ) : messages.length === 0 ? (
             <div className="flex flex-col items-center justify-center flex-1 min-h-64 text-center gap-5">
@@ -945,8 +945,8 @@ export default function ChatInterface() {
                 <Bot className="w-10 h-10 text-blue-400/70" />
               </div>
               <div className="space-y-2">
-                <p className="text-lg font-semibold text-foreground/80">{t.chat.emptyState}</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-xl font-semibold text-foreground/80">{t.chat.emptyState}</p>
+                <p className="text-lg text-muted-foreground">
                   {activeProject ? t.chat.projectLabel(activeProject.path) : t.chat.selectProject}
                 </p>
               </div>
@@ -956,14 +956,14 @@ export default function ChatInterface() {
             <div key={msg.id}>
               <MessageBubble msg={msg} />
               {msg.role === 'assistant' && msg.status === 'aborted' && (
-                <div className="flex items-center gap-3 mt-2 px-3 py-2.5 rounded-xl border border-border bg-card text-sm text-foreground/70">
+                <div className="flex items-center gap-3 mt-2 px-3 py-2.5 rounded-xl border border-border bg-card text-lg text-foreground/70">
                   <AlertCircle className="w-4 h-4 shrink-0 text-muted-foreground" />
                   <span className="flex-1">{t.chat.abortedBanner}</span>
                   <button
                     type="button"
                     onClick={retry}
                     disabled={isStreaming}
-                    className="shrink-0 px-3 py-1 rounded-lg border border-border text-sm font-medium text-foreground/80 hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="shrink-0 px-3 py-1 rounded-lg border border-border text-lg font-medium text-foreground/80 hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     {t.chat.retry}
                   </button>
@@ -1016,7 +1016,7 @@ export default function ChatInterface() {
                     {cmd.icon}
                   </span>
                   {/* 커맨드명 */}
-                  <span className="font-mono text-sm font-medium truncate flex-1">{cmd.usage}</span>
+                  <span className="font-mono text-lg font-medium truncate flex-1">{cmd.usage}</span>
                   {/* args ? 배지 — 툴팁은 fixed로 overflow 탈출 */}
                   {cmd.args && (
                     <span
@@ -1040,7 +1040,7 @@ export default function ChatInterface() {
         {/* args fixed 툴팁 — overflow 클리핑 완전 탈출 */}
         {tipPos && (
           <div
-            className="fixed z-[200] px-2 py-1 rounded-md text-xs whitespace-nowrap pointer-events-none
+            className="fixed z-[200] px-2 py-1 rounded-md text-base whitespace-nowrap pointer-events-none
               bg-popover text-popover-foreground border border-border shadow-md"
             style={{ left: tipPos.x, top: tipPos.y, transform: 'translateY(-50%)' }}
           >
@@ -1062,7 +1062,7 @@ export default function ChatInterface() {
           {(attachments.length > 0 || uploading) && (
             <div className="flex flex-wrap gap-1.5 px-3 pt-2.5">
               {attachments.map(att => (
-                <div key={att.id} className="flex items-center gap-1.5 bg-accent border border-border rounded-lg pl-2 pr-1 py-1 text-xs group">
+                <div key={att.id} className="flex items-center gap-1.5 bg-accent border border-border rounded-lg pl-2 pr-1 py-1 text-base group">
                   {att.preview
                     ? <img src={att.preview} alt={att.name} className="w-5 h-5 rounded object-cover shrink-0" />
                     : att.content !== undefined
@@ -1077,7 +1077,7 @@ export default function ChatInterface() {
                 </div>
               ))}
               {uploading && (
-                <div className="flex items-center gap-1.5 bg-accent border border-border rounded-lg px-2 py-1 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5 bg-accent border border-border rounded-lg px-2 py-1 text-base text-muted-foreground">
                   <Loader2 className="w-3 h-3 animate-spin" /> 처리 중...
                 </div>
               )}
@@ -1092,7 +1092,7 @@ export default function ChatInterface() {
             onKeyDown={handleKeyDown}
             placeholder={t.chat.placeholder}
             rows={1}
-            className="w-full bg-transparent border-0 ring-0 shadow-none px-5 pt-4 pb-2 text-base text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[64px] max-h-[240px] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-0 focus-visible:border-0"
+            className="w-full bg-transparent border-0 ring-0 shadow-none px-5 pt-4 pb-2 text-xl text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[64px] max-h-[240px] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-0 focus-visible:border-0"
             style={{ height: '64px', fieldSizing: 'fixed' } as React.CSSProperties}
           />
 
@@ -1124,7 +1124,7 @@ export default function ChatInterface() {
               <button
                 type="button"
                 onClick={() => setShowModelMenu(v => !v)}
-                className="flex items-center gap-1.5 h-9 px-4 rounded-full bg-accent hover:bg-accent/80 text-sm text-foreground transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 h-9 px-4 rounded-full bg-accent hover:bg-accent/80 text-lg text-foreground transition-colors whitespace-nowrap"
               >
                 <span className="font-medium">{currentModel.label}</span>
                 {extendedThinking && <span className="text-muted-foreground">{t.chat.extendedThinking}</span>}
@@ -1142,8 +1142,8 @@ export default function ChatInterface() {
                       className="flex items-center w-full px-4 py-3 text-left hover:bg-muted/60 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground leading-snug">{m.label}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{t.sidebar.models[m.descKey]}</p>
+                        <p className="text-lg font-semibold text-foreground leading-snug">{m.label}</p>
+                        <p className="text-base text-muted-foreground mt-0.5 leading-snug">{t.sidebar.models[m.descKey]}</p>
                       </div>
                       <span className="w-6 flex justify-end shrink-0">
                         {model === m.id && <Check className="w-4 h-4 text-blue-400" />}
@@ -1157,7 +1157,7 @@ export default function ChatInterface() {
                       <button
                         type="button"
                         onClick={() => setShowMoreModels(v => !v)}
-                        className="flex items-center w-full px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
+                        className="flex items-center w-full px-4 py-2.5 text-lg text-muted-foreground hover:bg-muted/60 hover:text-foreground transition-colors"
                       >
                         <span className="flex-1 text-left">{t.chat.moreModels}</span>
                         <ChevronRight className={cn('w-4 h-4 transition-transform', showMoreModels && 'rotate-90')} />
@@ -1170,8 +1170,8 @@ export default function ChatInterface() {
                           className="flex items-center w-full px-4 py-3 text-left hover:bg-muted/60 transition-colors bg-muted/30"
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground leading-snug">{m.label}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{t.sidebar.models[m.descKey]}</p>
+                            <p className="text-lg font-semibold text-foreground leading-snug">{m.label}</p>
+                            <p className="text-base text-muted-foreground mt-0.5 leading-snug">{t.sidebar.models[m.descKey]}</p>
                           </div>
                           <span className="w-6 flex justify-end shrink-0">
                             {model === m.id && <Check className="w-4 h-4 text-blue-400" />}
@@ -1185,8 +1185,8 @@ export default function ChatInterface() {
                   <div className="mx-2 mt-1 mb-1 rounded-xl bg-muted px-3 py-3">
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-foreground">{t.chat.extendedThinkingTitle}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{t.chat.extendedThinkingDesc}</p>
+                        <p className="text-lg font-medium text-foreground">{t.chat.extendedThinkingTitle}</p>
+                        <p className="text-base text-muted-foreground mt-0.5">{t.chat.extendedThinkingDesc}</p>
                       </div>
                       <Switch
                         checked={extendedThinking}
@@ -1238,7 +1238,7 @@ export default function ChatInterface() {
             )}
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 text-center">Enter 전송 · Shift+Enter 줄바꿈 · / 슬래시 커맨드</p>
+        <p className="text-base text-muted-foreground mt-1.5 text-center">Enter 전송 · Shift+Enter 줄바꿈 · / 슬래시 커맨드</p>
         </div>{/* relative wrapper */}
       </div>
     </div>
