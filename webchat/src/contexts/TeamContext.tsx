@@ -11,7 +11,8 @@ export interface TeamTask {
   title:       string
   description: string
   status:      'pending' | 'in_progress' | 'done' | 'failed' | 'blocked'
-  agent_id:    string
+  owner?:      string   // pre-assigned agent ID (set at creation; separate from agent_id)
+  agent_id:    string   // agent that claimed the task (set on claim)
   priority:    number
   tags:        string[]
   depends_on:  string[]

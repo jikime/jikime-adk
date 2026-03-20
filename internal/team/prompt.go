@@ -91,24 +91,24 @@ func defaultTaskBody(cfg PromptConfig) string {
 
 Your responsibilities as team leader:
 1. Analyze the goal and break it into concrete, parallelizable tasks.
-2. Create a task for each unit of work:
-   jikime team tasks create %s "Task title" --desc "What to do" --dod "Done when..."
-3. Workers will claim tasks automatically. Monitor progress:
-   jikime team status %s
-4. Respond to worker messages in your inbox:
-   jikime team inbox receive %s
-5. When ALL tasks are done, YOU must perform final integration:
+2. Create a task for each unit of work, optionally pre-assigning to a worker:
+   jikime team tasks create %s "Task title" --desc "What to do" --dod "Done when..." --owner worker-1
+3. After creating all tasks, run the blocking wait command that monitors completion:
+   jikime team tasks wait %s --timeout 3600
+   (This command polls every 5 seconds, drains your inbox, and recovers tasks from dead agents.
+    It returns automatically when ALL tasks are done or failed.)
+4. When wait returns, perform final integration:
    a. Review all files created/modified by workers.
    b. Fix any integration issues (missing imports, broken references, type errors).
    c. Run the build or test command to verify everything compiles and works.
    d. Fix any build errors you find.
    e. Commit the final integrated result with a clear summary commit message.
-6. After successful integration, shut down the team:
+5. After successful integration, shut down the team:
    jikime team inbox broadcast %s "Integration complete. Shutting down."
    jikime team lifecycle shutdown %s
 
 Available workers: %s
-`, goal, team, team, team, team, team, workers)
+`, goal, team, team, team, team, workers)
 
 	case "worker":
 		leaderID := cfg.LeaderID
@@ -118,21 +118,23 @@ Available workers: %s
 		return fmt.Sprintf(`Goal: %s
 
 Your responsibilities as worker:
-Loop until no pending tasks remain:
-1. Check for pending tasks:
+Loop until no tasks remain for you:
+1. Check for tasks assigned to you (pre-assigned owner):
+   jikime team tasks list %s --owner %s
+   If none, also check for any unowned pending tasks:
    jikime team tasks list %s --status pending
-2. Claim a task:
+2. Claim a task (marks it in_progress):
    jikime team tasks claim %s <task-id> --agent %s
 3. Read the task details and implement the work.
 4. Mark the task complete with a brief result summary:
-   jikime team tasks complete %s <task-id> --result "What was done"
+   jikime team tasks complete %s <task-id> --agent %s --result "What was done"
 5. Notify the leader:
    jikime team inbox send %s %s "Completed <task-id>: <one-line summary>"
 6. Repeat from step 1.
 
-When no tasks remain, notify the leader you are idle:
-   jikime team inbox send %s %s "No more pending tasks. Idle."
-`, goal, team, team, agent, team, team, leaderID, team, leaderID)
+When no tasks remain (both --owner and --status pending return empty), notify the leader:
+   jikime team inbox send %s %s "No more tasks. Idle."
+`, goal, team, agent, team, team, agent, team, agent, team, leaderID, team, leaderID)
 
 	case "reviewer":
 		leaderID := cfg.LeaderID
@@ -173,7 +175,8 @@ func coordinationProtocol(cfg PromptConfig) string {
 	switch cfg.Role {
 	case "leader":
 		lines = append(lines,
-			fmt.Sprintf("  jikime team tasks create %s \"title\" --desc \"...\" --dod \"...\"   # create task", team),
+			fmt.Sprintf("  jikime team tasks create %s \"title\" --desc \"...\" --dod \"...\" --owner <worker>   # create task", team),
+			fmt.Sprintf("  jikime team tasks wait %s --timeout 3600                           # BLOCKING: wait for all tasks", team),
 			fmt.Sprintf("  jikime team tasks list %s                                          # view all tasks", team),
 			fmt.Sprintf("  jikime team status %s                                              # team overview", team),
 			fmt.Sprintf("  jikime team inbox receive %s                                       # read messages", team),
@@ -182,9 +185,10 @@ func coordinationProtocol(cfg PromptConfig) string {
 		)
 	case "worker":
 		lines = append(lines,
-			fmt.Sprintf("  jikime team tasks list %s --status pending                         # find available tasks", team),
+			fmt.Sprintf("  jikime team tasks list %s --owner %s                   # find tasks assigned to you", team, agent),
+			fmt.Sprintf("  jikime team tasks list %s --status pending                         # find unowned pending tasks", team),
 			fmt.Sprintf("  jikime team tasks claim %s <id> --agent %s              # claim a task", team, agent),
-			fmt.Sprintf("  jikime team tasks complete %s <id> --result \"summary\"             # mark task done", team),
+			fmt.Sprintf("  jikime team tasks complete %s <id> --agent %s --result \"summary\"  # mark task done", team, agent),
 			fmt.Sprintf("  jikime team inbox send %s %s \"message\"                # message leader", team, leader),
 			fmt.Sprintf("  jikime team inbox receive %s                                       # check your inbox", team),
 		)

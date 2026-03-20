@@ -165,14 +165,16 @@ func (s *Spawner) spawnTmux(cfg SpawnConfig) (*SpawnResult, error) {
 	onExitHook := "jikime team lifecycle on-exit 2>/dev/null; true"
 
 	// Full shell command:
-	//   unset CLAUDECODE* (allow nested claude) → export env vars → cd worktree → claude → on-exit
+	//   unset CLAUDECODE* (allow nested claude) → export env vars → cd worktree → claude → on-exit → exec bash
+	// exec bash at the end keeps the tmux pane alive after claude exits so the
+	// session remains inspectable (no [exited] tombstone).
 	unset := "unset CLAUDECODE CLAUDE_CODE_ENTRYPOINT CLAUDE_CODE_SESSION 2>/dev/null"
 	var fullCmd string
 	if cfg.WorktreePath != "" {
-		fullCmd = fmt.Sprintf("%s; %s; cd %s && %s; %s",
+		fullCmd = fmt.Sprintf("%s; %s; cd %s && %s; %s; exec bash",
 			unset, exportStr, shellQuote(cfg.WorktreePath), claudeCmd, onExitHook)
 	} else {
-		fullCmd = fmt.Sprintf("%s; %s; %s; %s", unset, exportStr, claudeCmd, onExitHook)
+		fullCmd = fmt.Sprintf("%s; %s; %s; %s; exec bash", unset, exportStr, claudeCmd, onExitHook)
 	}
 
 	// Step 1: Create a new detached tmux session with the named window running claude.

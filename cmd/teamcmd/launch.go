@@ -76,7 +76,7 @@ Example:
 					return fmt.Errorf("task store: %w", err)
 				}
 				for _, taskDef := range def.Tasks {
-					t, err := taskStore.Create(taskDef.Subject, taskDef.Description, taskDef.DoD, nil, 0, nil)
+					t, err := taskStore.Create(taskDef.Subject, taskDef.Description, taskDef.DoD, nil, 0, nil, taskDef.Owner)
 					if err != nil {
 						fmt.Printf("  ⚠️  create task %q: %v\n", taskDef.Subject, err)
 						continue

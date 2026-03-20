@@ -85,6 +85,10 @@ type Task struct {
 	// Status is the current lifecycle state of this task.
 	Status TaskStatus `json:"status"`
 
+	// Owner is the agent ID pre-assigned to this task at creation time.
+	// Empty means any worker can claim it (first-come, first-served).
+	Owner string `json:"owner,omitempty"`
+
 	// AgentID is the identifier of the agent that has claimed this task.
 	// Empty when the task is pending.
 	AgentID string `json:"agent_id,omitempty"`

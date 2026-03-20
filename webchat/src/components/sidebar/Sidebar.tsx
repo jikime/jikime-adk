@@ -636,7 +636,8 @@ export default function Sidebar() {
               onSelect={selectProject}
               onDeleteProject={setDeletingProject}
               onSelectSession={(p, sId) => {
-                setActiveProject(p)
+                // 이미 활성 프로젝트면 router.push 없이 세션만 전환
+                if (activeProject?.id !== p.id) setActiveProject(p)
                 setActiveSessionId(sId || null)
               }}
               onDeleteSession={(p, sId) => setDeletingSession({ project: p, sessionId: sId })}

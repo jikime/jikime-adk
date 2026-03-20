@@ -83,9 +83,12 @@ export class TeamFileStore {
       fs.statSync(path.join(this.root, e)).isDirectory()
     )
     if (!projectPath) return all
+    const realQuery = (() => { try { return fs.realpathSync(projectPath) } catch { return projectPath } })()
     return all.filter((name) => {
       const meta = this.getWebchatMeta(name)
-      return meta.projectPath === projectPath
+      if (!meta.projectPath) return false
+      const realMeta = (() => { try { return fs.realpathSync(meta.projectPath) } catch { return meta.projectPath } })()
+      return realMeta === realQuery
     })
   }
 
@@ -103,7 +106,7 @@ export class TeamFileStore {
     fs.writeFileSync(path.join(dir, 'webchat.json'), JSON.stringify(meta))
   }
 
-  listTasks(name: string, status?: string, agent?: string): unknown[] {
+  listTasks(name: string, status?: string, agent?: string, owner?: string): unknown[] {
     const dir = path.join(teamDir(name), 'tasks')
     if (!fs.existsSync(dir)) return []
     return fs.readdirSync(dir)
@@ -111,7 +114,8 @@ export class TeamFileStore {
       .map((f) => readJSON<Record<string, unknown>>(path.join(dir, f), {}))
       .filter((t) => {
         if (status && t['status'] !== status) return false
-        if (agent && t['agent_id'] !== agent) return false
+        if (agent  && t['agent_id'] !== agent)  return false
+        if (owner  && t['owner']    !== owner)   return false
         return true
       })
   }
@@ -569,10 +573,11 @@ Rules:
 
   // GET /api/team/:name/tasks
   if (method === 'GET' && subPath === '/tasks') {
-    const url = new URL(req.url || '', 'http://localhost')
+    const url   = new URL(req.url || '', 'http://localhost')
     const status = url.searchParams.get('status') || ''
     const agent  = url.searchParams.get('agent')  || ''
-    jsonReply(res, 200, { tasks: store.listTasks(teamName, status || undefined, agent || undefined) })
+    const owner  = url.searchParams.get('owner')  || ''
+    jsonReply(res, 200, { tasks: store.listTasks(teamName, status || undefined, agent || undefined, owner || undefined) })
     return true
   }
 
@@ -581,8 +586,9 @@ Rules:
     parseBody(req).then((body) => {
       const b = body as Record<string, string>
       const args = ['team', 'tasks', 'create', teamName, JSON.stringify(b['title'] || 'task')]
-      if (b['desc'])   args.push('--desc', JSON.stringify(b['desc']))
-      if (b['dod'])    args.push('--dod',  JSON.stringify(b['dod']))
+      if (b['desc'])   args.push('--desc',  JSON.stringify(b['desc']))
+      if (b['dod'])    args.push('--dod',   JSON.stringify(b['dod']))
+      if (b['owner'])  args.push('--owner', b['owner'])
       exec(`jikime ${args.join(' ')}`, (err, stdout) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 201, { ok: true, output: stdout.trim() })

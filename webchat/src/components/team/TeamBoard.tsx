@@ -26,6 +26,11 @@ function TaskCard({ task }: { task: TeamTask }) {
       <div className="text-xs font-medium text-foreground leading-tight line-clamp-2">
         {task.title}
       </div>
+      {task.owner && !task.agent_id && (
+        <div className="mt-1 text-[11px] text-muted-foreground">
+          owner: <span className="text-purple-500">{task.owner}</span>
+        </div>
+      )}
       {task.agent_id && (
         <div className="mt-1 text-[11px] text-muted-foreground">
           agent: <span className="text-blue-500">{task.agent_id}</span>

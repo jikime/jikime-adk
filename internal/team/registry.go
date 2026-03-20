@@ -227,18 +227,37 @@ func (r *Registry) path(agentID string) string {
 	return filepath.Join(r.dir, agentID+".json")
 }
 
-// tmuxAlive returns true if the tmux session (or session:window) is running.
+// tmuxAlive returns true if the tmux session (or session:window) is running
+// AND a non-shell process (i.e. claude) is still active in the pane.
+//
+// ClawTeam-compatible liveness check:
+//   - pane_dead=1 → pane is dead
+//   - pane_current_command is bash/zsh/sh/fish → claude exited, only shell remains
 func tmuxAlive(target string) bool {
-	// "jikime-myteam" → check session; "jikime-myteam:worker-1" → check window.
+	// "jikime-myteam:worker-1" → check pane state.
 	if strings.Contains(target, ":") {
-		out, err := exec.Command("tmux", "list-panes", "-t", target).Output()
+		out, err := exec.Command("tmux", "list-panes", "-t", target,
+			"-F", "#{pane_dead} #{pane_current_command}").Output()
 		if err != nil {
 			return false
 		}
-		return len(out) > 0
+		for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+			parts := strings.Fields(line)
+			if len(parts) < 2 {
+				continue
+			}
+			if parts[0] == "1" {
+				return false // pane_dead=1
+			}
+			switch parts[1] {
+			case "bash", "zsh", "sh", "fish", "dash":
+				return false // claude exited; only shell remains
+			}
+		}
+		return true
 	}
-	err := exec.Command("tmux", "has-session", "-t", target).Run()
-	return err == nil
+	// Session-only target: just check if session exists.
+	return exec.Command("tmux", "has-session", "-t", target).Run() == nil
 }
 
 // pidAlive returns true if the process with the given PID is still running.

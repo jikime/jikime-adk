@@ -39,7 +39,6 @@ export default function TeamCreateModal({ open, onClose }: Props) {
   const { t } = useLocale()
   const [name,     setName]     = useState('')
   const [template, setTemplate] = useState<string | null>('leader-worker')
-  const [workers,  setWorkers]  = useState('2')
   const [budget,   setBudget]   = useState('')
   const [busy,     setBusy]     = useState(false)
   const [error,    setError]    = useState('')
@@ -79,7 +78,6 @@ export default function TeamCreateModal({ open, onClose }: Props) {
         body:    JSON.stringify({
           name:        name.trim(),
           template:    template || undefined,
-          workers,
           budget:      budget || undefined,
           projectPath: activeProject?.path,
         }),
@@ -175,34 +173,19 @@ export default function TeamCreateModal({ open, onClose }: Props) {
               </Select>
             </div>
 
-            {/* 워커 수 + 토큰 예산 — 2열 */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-medium text-muted-foreground">
-                  {t.team.createWorkersLabel}
-                </Label>
-                <Input
-                  type="number"
-                  value={workers}
-                  onChange={(e) => setWorkers(e.target.value)}
-                  min={1}
-                  max={10}
-                  className="h-8 text-[11px] placeholder:text-[11px]"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                  <Coins className="w-3 h-3" />
-                  {t.team.createBudgetLabel}
-                </Label>
-                <Input
-                  type="number"
-                  value={budget}
-                  onChange={(e) => setBudget(e.target.value)}
-                  placeholder={t.team.createBudgetHint}
-                  className="h-8 text-xs placeholder:text-[11px]"
-                />
-              </div>
+            {/* 토큰 예산 */}
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Coins className="w-3 h-3" />
+                {t.team.createBudgetLabel}
+              </Label>
+              <Input
+                type="number"
+                value={budget}
+                onChange={(e) => setBudget(e.target.value)}
+                placeholder={t.team.createBudgetHint}
+                className="h-8 text-xs placeholder:text-[11px]"
+              />
             </div>
 
             {/* 오류 메시지 */}

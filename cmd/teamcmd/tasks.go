@@ -34,6 +34,7 @@ func newTaskCreateCmd() *cobra.Command {
 		dependsOn string
 		priority  int
 		tags      string
+		owner     string
 	)
 
 	cmd := &cobra.Command{
@@ -53,12 +54,15 @@ func newTaskCreateCmd() *cobra.Command {
 			if tags != "" {
 				tagList = strings.Split(tags, ",")
 			}
-			t, err := store.Create(args[1], desc, dod, deps, priority, tagList)
+			t, err := store.Create(args[1], desc, dod, deps, priority, tagList, owner)
 			if err != nil {
 				return err
 			}
 			fmt.Printf("✅ Task created: %s\n", t.ID[:8])
 			fmt.Printf("   title:  %s\n", t.Title)
+			if t.Owner != "" {
+				fmt.Printf("   owner:  %s\n", t.Owner)
+			}
 			fmt.Printf("   status: %s\n", t.Status)
 			return nil
 		},
@@ -68,6 +72,7 @@ func newTaskCreateCmd() *cobra.Command {
 	cmd.Flags().StringVar(&dependsOn, "depends-on", "", "Comma-separated task IDs this depends on")
 	cmd.Flags().IntVarP(&priority, "priority", "p", 0, "Priority (higher = more important)")
 	cmd.Flags().StringVar(&tags, "tags", "", "Comma-separated tags")
+	cmd.Flags().StringVarP(&owner, "owner", "o", "", "Pre-assign task to a specific agent ID")
 	return cmd
 }
 
@@ -262,6 +267,7 @@ func newTaskListCmd() *cobra.Command {
 	var (
 		status  string
 		agentID string
+		owner   string
 	)
 	cmd := &cobra.Command{
 		Use:   "list <team-name>",
@@ -272,7 +278,7 @@ func newTaskListCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			tasks, err := store.List(team.TaskStatus(status), agentID)
+			tasks, err := store.List(team.TaskStatus(status), agentID, owner)
 			if err != nil {
 				return err
 			}
@@ -289,14 +295,19 @@ func newTaskListCmd() *cobra.Command {
 				if agent == "" {
 					agent = "-"
 				}
-				fmt.Printf("  %s  [%-11s]  %-30s  agent:%s\n",
-					id, t.Status, t.Title, agent)
+				ownerLabel := ""
+				if t.Owner != "" {
+					ownerLabel = "  owner:" + t.Owner
+				}
+				fmt.Printf("  %s  [%-11s]  %-30s  agent:%s%s\n",
+					id, t.Status, t.Title, agent, ownerLabel)
 			}
 			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&status, "status", "s", "", "Filter by status")
 	cmd.Flags().StringVarP(&agentID, "agent", "a", "", "Filter by agent ID")
+	cmd.Flags().StringVarP(&owner, "owner", "o", "", "Filter by pre-assigned owner")
 	return cmd
 }
 

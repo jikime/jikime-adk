@@ -1,10 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import dynamic from 'next/dynamic'
 import { useTeam, TeamMessage, TeamMember, TeamStat } from '@/contexts/TeamContext'
 import { useProject } from '@/contexts/ProjectContext'
-import { useServer } from '@/contexts/ServerContext'
 import { useLocale } from '@/contexts/LocaleContext'
 import TeamBoard       from './TeamBoard'
 import TeamCreateModal from './TeamCreateModal'
@@ -14,7 +12,6 @@ import { Button }      from '@/components/ui/button'
 import { Badge }       from '@/components/ui/badge'
 import { ScrollArea }  from '@/components/ui/scroll-area'
 import { Separator }   from '@/components/ui/separator'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Tooltip, TooltipTrigger, TooltipContent, TooltipProvider,
 } from '@/components/ui/tooltip'
@@ -23,15 +20,11 @@ import {
   DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
 import {
-  Plus, RefreshCw, Play, FolderOpen, LayoutDashboard, MonitorPlay,
+  Plus, RefreshCw, Play, FolderOpen,
   ChevronDown, Users, MessageSquare, Kanban, Inbox,
-  CheckCircle2, Clock, XCircle, Ban, Loader2, X,
+  CheckCircle2, Clock, XCircle, Ban, Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-const AgentTerminalPanel = dynamic(() => import('./AgentTerminalPanel'), { ssr: false })
-
-type BoardTab = 'board' | 'agents'
 
 // ── Summary cards ───────────────────────────────────────────────────
 
@@ -194,45 +187,18 @@ function KanbanSection() {
 export default function BoardPanel() {
   const {
     teams, activeTeam, setActiveTeam, refreshTeam,
-    teamBrief, members, taskSummary, messages, connected, agents,
+    teamBrief, members, taskSummary, messages, connected,
   } = useTeam()
   const { activeProject } = useProject()
-  const { getApiUrl } = useServer()
   const { t } = useLocale()
   const [showCreateTeam, setShowCreateTeam] = useState(false)
   const [showAddTask,    setShowAddTask]    = useState(false)
   const [showRunTeam,    setShowRunTeam]    = useState(false)
-  const [boardTab,       setBoardTab]       = useState<BoardTab>('board')
-  const [activeAgent,    setActiveAgent]    = useState<string>('')
-  const [killingAgent,   setKillingAgent]   = useState<string>('')
-
-  const liveAgents = useMemo(
-    () => agents.filter(a => a.tmux_session),
-    [agents]
-  )
-
-  async function killAgent(agentId: string) {
-    if (!activeTeam || killingAgent) return
-    setKillingAgent(agentId)
-    try {
-      await fetch(getApiUrl(`/api/team/${activeTeam}/agents/${encodeURIComponent(agentId)}`), {
-        method: 'DELETE',
-      })
-      await refreshTeam()
-      const killed = liveAgents.find(a => a.id === agentId)
-      if (killed && activeAgent === killed.tmux_session) {
-        const remaining = liveAgents.filter(a => a.id !== agentId)
-        setActiveAgent(remaining[0]?.tmux_session ?? '')
-      }
-    } finally {
-      setKillingAgent('')
-    }
-  }
 
   const currentTeamDesc = useMemo(() => {
     if (!activeTeam) return null
-    const t = teams.find(t => t.name === activeTeam)
-    return (t?.config as { description?: string })?.description ?? null
+    const found = teams.find(t => t.name === activeTeam)
+    return (found?.config as { description?: string })?.description ?? null
   }, [activeTeam, teams])
 
   // 프로젝트 미선택
@@ -259,33 +225,14 @@ export default function BoardPanel() {
         {/* ── Toolbar ──────────────────────────────────────────── */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0 bg-background/95 backdrop-blur-sm">
 
-          {/* Board / Agents 탭 */}
-          {activeTeam && (
-            <Tabs
-              value={boardTab}
-              onValueChange={(v) => {
-                setBoardTab(v as BoardTab)
-                if (v === 'agents' && !activeAgent && liveAgents.length > 0)
-                  setActiveAgent(liveAgents[0].tmux_session)
-              }}
-            >
-              <TabsList variant="default" className="h-7">
-                <TabsTrigger value="board" className="text-[12px] h-6 px-2.5 gap-1.5">
-                  <LayoutDashboard className="w-3 h-3" /> {t.team.tabBoard}
-                </TabsTrigger>
-                <TabsTrigger value="agents" className="text-[12px] h-6 px-2.5 gap-1.5">
-                  <MonitorPlay className="w-3 h-3" /> {t.team.tabAgents}
-                  {liveAgents.length > 0 && (
-                    <Badge className="h-4 px-1 text-[10px] bg-green-500/20 text-green-400 border-green-500/30 ml-0.5">
-                      {liveAgents.length}
-                    </Badge>
-                  )}
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-          )}
+          <span
+            className="inline-flex items-center gap-1 text-[11px] font-mono bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 rounded px-1.5 py-0.5 truncate max-w-[280px]"
+            title={activeProject.path}
+          >
+            <FolderOpen className="w-3 h-3 shrink-0" />
+            <span className="truncate">{activeProject.path}</span>
+          </span>
 
-          {/* 우측 영역 */}
           <div className="ml-auto flex items-center gap-1.5">
 
             {/* 팀 선택 드롭다운 */}
@@ -306,18 +253,18 @@ export default function BoardPanel() {
                     <div className="px-2 py-3 text-center text-[12px] text-muted-foreground">
                       {t.team.noTeams}
                     </div>
-                  ) : teams.map((t) => {
-                    const desc = (t.config as { description?: string }).description
+                  ) : teams.map((team) => {
+                    const desc = (team.config as { description?: string }).description
                     return (
                       <DropdownMenuItem
-                        key={t.name}
-                        onClick={() => { setActiveTeam(t.name); setBoardTab('board') }}
+                        key={team.name}
+                        onClick={() => setActiveTeam(team.name)}
                         className={cn(
                           'flex flex-col items-start gap-0.5 cursor-pointer',
-                          activeTeam === t.name && 'bg-accent',
+                          activeTeam === team.name && 'bg-accent',
                         )}
                       >
-                        <span className="text-[13px] font-medium">{t.name}</span>
+                        <span className="text-[13px] font-medium">{team.name}</span>
                         {desc && <span className="text-[11px] text-muted-foreground">{desc}</span>}
                       </DropdownMenuItem>
                     )
@@ -400,86 +347,9 @@ export default function BoardPanel() {
             </div>
           </div>
 
-        ) : boardTab === 'agents' ? (
-
-          /* ── Agents 탭 ── */
-          <div className="flex flex-col flex-1 min-h-0">
-            {liveAgents.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center px-8">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                  <MonitorPlay className="w-5 h-5 text-muted-foreground/40" />
-                </div>
-                <div>
-                  <p className="text-[13px] font-medium text-foreground mb-1">{t.team.noAgents}</p>
-                  <p className="text-[12px] text-muted-foreground">{t.team.noAgentsHint}</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                {/* 에이전트 탭 바 */}
-                <div className="flex items-center gap-1 px-3 py-1.5 border-b border-border bg-muted/30 shrink-0 overflow-x-auto">
-                  {liveAgents.map((a) => (
-                    <div
-                      key={a.tmux_session}
-                      className={cn(
-                        'flex items-center gap-1 rounded-md text-[12px] font-medium whitespace-nowrap transition-all shrink-0',
-                        activeAgent === a.tmux_session
-                          ? 'bg-background text-foreground border border-border'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-background/50',
-                      )}
-                    >
-                      <button
-                        onClick={() => setActiveAgent(a.tmux_session)}
-                        className="flex items-center gap-1.5 pl-3 pr-1 py-1"
-                      >
-                        <span className={cn(
-                          'w-1.5 h-1.5 rounded-full shrink-0 transition-colors',
-                          a.status === 'active'
-                            ? 'bg-green-400 shadow-[0_0_4px_#4ade80]'
-                            : 'bg-muted-foreground/40',
-                        )} />
-                        {a.id}
-                        <Badge variant="outline" className="text-[10px] h-4 px-1 ml-0.5">
-                          {a.role}
-                        </Badge>
-                      </button>
-                      <Tooltip>
-                        <TooltipTrigger render={<span />}>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); killAgent(a.id) }}
-                            disabled={killingAgent === a.id}
-                            className="pr-1.5 py-1 text-muted-foreground/50 hover:text-red-400 transition-colors disabled:opacity-40"
-                          >
-                            {killingAgent === a.id
-                              ? <Loader2 className="w-3 h-3 animate-spin" />
-                              : <X className="w-3 h-3" />
-                            }
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-[11px]">세션 종료</TooltipContent>
-                      </Tooltip>
-                    </div>
-                  ))}
-                </div>
-
-                {/* 터미널 */}
-                <div className="flex-1 min-h-0">
-                  {liveAgents.map((a) => (
-                    <div
-                      key={a.tmux_session}
-                      className={cn('h-full', activeAgent === a.tmux_session ? 'block' : 'hidden')}
-                    >
-                      <AgentTerminalPanel tmuxSession={a.tmux_session} />
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
         ) : (
 
-          /* ── Board 탭 ── */
+          /* ── Dashboard ── */
           <ScrollArea className="flex-1">
             <div className="px-4 py-4">
 

@@ -30,7 +30,8 @@ func NewStore(taskDir string) (*Store, error) {
 
 // Create adds a new task to the store and returns it.
 // If any dependsOn IDs are provided the task starts as Blocked.
-func (s *Store) Create(title, description, dod string, dependsOn []string, priority int, tags []string) (*Task, error) {
+// owner optionally pre-assigns the task to a specific agent ID.
+func (s *Store) Create(title, description, dod string, dependsOn []string, priority int, tags []string, owner string) (*Task, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -45,6 +46,7 @@ func (s *Store) Create(title, description, dod string, dependsOn []string, prior
 		Description: description,
 		DoD:         dod,
 		Status:      status,
+		Owner:       owner,
 		DependsOn:   dependsOn,
 		Priority:    priority,
 		Tags:        tags,
@@ -93,12 +95,16 @@ func (s *Store) Get(id string) (*Task, error) {
 	return nil, nil
 }
 
-// List returns all tasks, optionally filtered by status or agentID.
+// List returns all tasks, optionally filtered by status, agentID, or owner.
 // Pass empty strings to skip a filter.
-func (s *Store) List(filterStatus TaskStatus, filterAgentID string) ([]*Task, error) {
+func (s *Store) List(filterStatus TaskStatus, filterAgentID string, filterOwner ...string) ([]*Task, error) {
 	entries, err := os.ReadDir(s.taskDir)
 	if err != nil {
 		return nil, fmt.Errorf("team/store: readdir: %w", err)
+	}
+	owner := ""
+	if len(filterOwner) > 0 {
+		owner = filterOwner[0]
 	}
 	var tasks []*Task
 	for _, e := range entries {
@@ -114,6 +120,9 @@ func (s *Store) List(filterStatus TaskStatus, filterAgentID string) ([]*Task, er
 			continue
 		}
 		if filterAgentID != "" && t.AgentID != filterAgentID {
+			continue
+		}
+		if owner != "" && t.Owner != owner {
 			continue
 		}
 		tasks = append(tasks, t)

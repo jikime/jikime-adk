@@ -6,7 +6,6 @@ import * as path from 'path'
 import { execSync } from 'child_process'
 import * as os from 'os'
 import { handleHarnessRoutes } from './harness'
-import { handleTeamRoutes }   from './team'
 
 // node-pty 지연 로딩 — Linux에서 컴파일 안 된 경우에도 서버가 정상 기동
 // 터미널 기능만 비활성화되고 채팅/파일/Git은 정상 동작
@@ -1637,9 +1636,6 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   // ── Harness Engineering (WORKFLOW.md 기반 자율 이슈 처리) ────────
   if (handleHarnessRoutes(req, res, pathname, CLAUDE_PATH)) return true
-
-  // ── Team Orchestration (jikime team 기반 멀티 에이전트 팀) ──────
-  if (handleTeamRoutes(req, res, pathname)) return true
 
   return false
 }
