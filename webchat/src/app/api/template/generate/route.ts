@@ -33,10 +33,21 @@ Rules:
 - Leader creates tasks: jikime team tasks create {{team_name}} "Title" --desc "..." --dod "..."
 - Output ONLY the raw YAML, no markdown fences, no explanation, no commentary`
 
+const MAX_PROMPT_LEN = 2_000
+const MAX_YAML_LEN   = 50_000
+
+/** Neutralize prompt-injection attempts by escaping control chars */
+function sanitizeInput(s: string): string {
+  return s
+    .slice(0, MAX_PROMPT_LEN)
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/g, '')  // strip control chars except \t \n \r
+    .trim()
+}
+
 export async function POST(request: NextRequest) {
   const body         = await request.json() as Record<string, string>
-  const userPrompt   = (body['prompt'] || '').trim()
-  const existingYaml = (body['existingYaml'] || '').trim()
+  const userPrompt   = sanitizeInput(body['prompt'] || '')
+  const existingYaml = (body['existingYaml'] || '').slice(0, MAX_YAML_LEN)
   if (!userPrompt) {
     return new Response(JSON.stringify({ error: 'prompt is required' }), {
       status: 400,
@@ -44,9 +55,10 @@ export async function POST(request: NextRequest) {
     })
   }
 
+  // Wrap user input in clear delimiters to prevent prompt injection
   const userMessage = existingYaml
-    ? `Modify this existing template based on the request.\n\nExisting YAML:\n${existingYaml}\n\nRequest: ${userPrompt}`
-    : `Create a new team template for: ${userPrompt}`
+    ? `Modify this existing template based on the request.\n\nExisting YAML:\n<yaml>\n${existingYaml}\n</yaml>\n\nRequest: <request>\n${userPrompt}\n</request>`
+    : `Create a new team template for: <request>\n${userPrompt}\n</request>`
 
   const fullPrompt = `${SYSTEM_PROMPT}\n\n${userMessage}`
   const encoder    = new TextEncoder()

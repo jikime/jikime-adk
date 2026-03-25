@@ -14,10 +14,16 @@ import { useServer } from '@/contexts/ServerContext'
 import { useProject } from '@/contexts/ProjectContext'
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle, usePanelRef } from '@/components/ui/resizable'
 
-const ShellPanel  = dynamic(() => import('@/components/shell/ShellPanel'), { ssr: false })
-const FileTree    = dynamic(() => import('@/components/file-tree/FileTree'), { ssr: false })
-const GitPanel    = dynamic(() => import('@/components/git-panel/GitPanel'), { ssr: false })
-const BoardPanel  = dynamic(() => import('@/components/team/BoardPanel'), { ssr: false })
+const PanelSkeleton = () => (
+  <div className="h-full flex items-center justify-center text-muted-foreground text-sm animate-pulse">
+    Loading…
+  </div>
+)
+
+const ShellPanel  = dynamic(() => import('@/components/shell/ShellPanel'),  { ssr: false, loading: PanelSkeleton })
+const FileTree    = dynamic(() => import('@/components/file-tree/FileTree'), { ssr: false, loading: PanelSkeleton })
+const GitPanel    = dynamic(() => import('@/components/git-panel/GitPanel'), { ssr: false, loading: PanelSkeleton })
+const BoardPanel  = dynamic(() => import('@/components/team/BoardPanel'),   { ssr: false, loading: PanelSkeleton })
 
 type Tab = 'chat' | 'terminal' | 'files' | 'git' | 'board'
 

@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server'
 import { spawn } from 'child_process'
+import * as fs   from 'fs'
+import * as path from 'path'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,12 +15,22 @@ export const dynamic = 'force-dynamic'
  *   { type: "result", result: "...", ... }
  */
 export async function POST(request: NextRequest) {
-  const body = await request.json()
+  const body    = await request.json()
   const message = (body.message as string)?.trim()
-  const cwd = (body.cwd as string) || '/tmp'
 
   if (!message) {
     return Response.json({ error: 'No message' }, { status: 400 })
+  }
+
+  // Validate cwd: must be an existing absolute directory — prevents path traversal
+  const rawCwd = (body.cwd as string) || ''
+  let cwd = '/tmp'
+  if (rawCwd) {
+    const resolved = path.resolve(rawCwd)
+    try {
+      const stat = fs.statSync(resolved)
+      if (stat.isDirectory()) cwd = resolved
+    } catch { /* path doesn't exist — fall back to /tmp */ }
   }
 
   // CLAUDECODE="" 로 설정 → nested session 오류 방지 (delete는 안됨)

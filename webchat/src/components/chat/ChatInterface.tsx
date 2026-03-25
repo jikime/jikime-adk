@@ -952,7 +952,14 @@ export default function ChatInterface() {
               </div>
             </div>
           ) : null}
-          {messages.map(msg => (
+          {/* Render at most 200 messages to keep DOM size manageable.
+              Older messages remain in state for context but are not painted. */}
+          {messages.length > 200 && (
+            <div className="text-center text-xs text-muted-foreground py-2 border border-dashed border-border rounded-lg">
+              {messages.length - 200} older messages (not rendered)
+            </div>
+          )}
+          {messages.slice(-200).map(msg => (
             <div key={msg.id}>
               <MessageBubble msg={msg} />
               {msg.role === 'assistant' && msg.status === 'aborted' && (

@@ -1278,9 +1278,22 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   // POST /api/ws/file (write/save file)
   if (pathname === '/api/ws/file' && req.method === 'POST') {
+    const MAX_FILE_WRITE = 10 * 1024 * 1024  // 10 MB
     let body = ''
-    req.on('data', (chunk) => { body += chunk })
+    let bodySize = 0
+    let aborted = false
+    req.on('data', (chunk: Buffer) => {
+      bodySize += chunk.length
+      if (bodySize > MAX_FILE_WRITE) {
+        aborted = true
+        res.writeHead(413, CORS_HEADERS); res.end('File too large (max 10 MB)')
+        req.destroy()
+        return
+      }
+      body += chunk
+    })
     req.on('end', () => {
+      if (aborted) return
       try {
         const { path: filePath, content } = JSON.parse(body)
         if (!filePath) {
