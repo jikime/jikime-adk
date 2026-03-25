@@ -367,7 +367,7 @@ const ProjectItem = memo(function ProjectItem({
 })
 
 // ── 메인 사이드바 ─────────────────────────────────────────────────
-export default function Sidebar() {
+function Sidebar() {
   const { t } = useLocale()
   const { projects, activeProject, activeSessionId, setActiveProject, setActiveSessionId, refreshProjects } = useProject()
   const { servers, activeServer, setActiveServerId, addServer, updateServer, removeServer, getApiUrl } = useServer()
@@ -623,7 +623,7 @@ export default function Sidebar() {
             </div>
           )}
 
-          {projects.map((project) => (
+          {projects.slice(0, 50).map((project) => (
             <ProjectItem
               key={project.id}
               project={project}
@@ -757,3 +757,5 @@ export default function Sidebar() {
     </div>
   )
 }
+
+export default memo(Sidebar)

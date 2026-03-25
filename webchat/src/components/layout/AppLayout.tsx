@@ -1,6 +1,37 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import React, { Component, ErrorInfo, ReactNode, useState, useEffect, useCallback, useMemo, memo } from 'react'
+
+// ── Error Boundary ───────────────────────────────────────────────
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false, error: null }
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error('[ErrorBoundary]', error, info.componentStack)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="h-full flex flex-col items-center justify-center gap-3 text-center p-8">
+          <p className="text-base font-medium text-destructive">패널을 로드하는 중 오류가 발생했습니다.</p>
+          <p className="text-base text-muted-foreground font-mono">{this.state.error?.message}</p>
+          <button
+            className="text-base text-blue-500 hover:underline"
+            onClick={() => this.setState({ hasError: false, error: null })}
+          >
+            다시 시도
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 import dynamic from 'next/dynamic'
 import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings, Zap, Users } from 'lucide-react'
 import { useTheme } from 'next-themes'
@@ -259,34 +290,34 @@ export default function AppLayout() {
           <main className="h-full overflow-hidden relative">
             <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
               activeTab === 'chat' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-              <div className="h-full rounded-lg bg-muted dark:bg-background"><ChatInterface /></div>
+              <div className="h-full rounded-lg bg-muted dark:bg-background"><ErrorBoundary><ChatInterface /></ErrorBoundary></div>
             </div>
 
             {mountedTabs.has('terminal') && (
               <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
                 activeTab === 'terminal' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-                <div className="h-full rounded-lg bg-muted dark:bg-background"><ShellPanel /></div>
+                <div className="h-full rounded-lg bg-muted dark:bg-background"><ErrorBoundary><ShellPanel /></ErrorBoundary></div>
               </div>
             )}
 
             {mountedTabs.has('files') && (
               <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
                 activeTab === 'files' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-              <div className="h-full rounded-lg bg-muted dark:bg-background"><FileTree /></div>
+              <div className="h-full rounded-lg bg-muted dark:bg-background"><ErrorBoundary><FileTree /></ErrorBoundary></div>
             </div>
             )}
 
             {mountedTabs.has('git') && (
               <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
                 activeTab === 'git' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-                <div className="h-full rounded-lg bg-muted dark:bg-background"><GitPanel /></div>
+                <div className="h-full rounded-lg bg-muted dark:bg-background"><ErrorBoundary><GitPanel /></ErrorBoundary></div>
               </div>
             )}
 
             {mountedTabs.has('board') && (
               <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
                 activeTab === 'board' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
-                <div className="h-full rounded-lg bg-muted dark:bg-background overflow-hidden"><BoardPanel /></div>
+                <div className="h-full rounded-lg bg-muted dark:bg-background overflow-hidden"><ErrorBoundary><BoardPanel /></ErrorBoundary></div>
               </div>
             )}
           </main>

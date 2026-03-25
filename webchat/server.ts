@@ -1662,9 +1662,9 @@ app.prepare().then(() => {
   })
 
   // WebSocket for Terminal
-  const terminalWss = new WebSocketServer({ noServer: true })
+  const terminalWss = new WebSocketServer({ noServer: true, maxPayload: 5 * 1024 * 1024 })
   // WebSocket for Chat
-  const chatWss = new WebSocketServer({ noServer: true })
+  const chatWss = new WebSocketServer({ noServer: true, maxPayload: 5 * 1024 * 1024 })
 
   // Next.js HMR(/_next/webpack-hmr 등) upgrade 요청도 처리할 수 있도록
   const nextUpgradeHandler = app.getUpgradeHandler()

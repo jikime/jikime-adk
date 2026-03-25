@@ -20,7 +20,7 @@
 import * as fs   from 'fs'
 import * as path from 'path'
 import * as os   from 'os'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import type { IncomingMessage, ServerResponse } from 'http'
 
 // ── Helpers ────────────────────────────────────────────────────────
@@ -58,10 +58,18 @@ function jsonReply(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body))
 }
 
+const PARSE_BODY_LIMIT = 10 * 1024 * 1024  // 10 MB
+const NAME_RE = /^[a-zA-Z0-9_-]{1,80}$/
+
 function parseBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve) => {
     const chunks: Buffer[] = []
-    req.on('data', (chunk: Buffer) => chunks.push(chunk))
+    let totalSize = 0
+    req.on('data', (chunk: Buffer) => {
+      totalSize += chunk.length
+      if (totalSize > PARSE_BODY_LIMIT) { req.destroy(); resolve({}); return }
+      chunks.push(chunk)
+    })
     req.on('end', () => {
       try {
         resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')))
@@ -175,6 +183,15 @@ interface SSEClient {
 
 const sseClients: Set<SSEClient> = new Set()
 const sseWatchers: Map<string, fs.FSWatcher[]> = new Map()
+
+// 5분마다 끊어진 SSE 클라이언트 정리
+setInterval(() => {
+  for (const client of sseClients) {
+    if (client.res.destroyed || client.res.writableEnded) {
+      sseClients.delete(client)
+    }
+  }
+}, 5 * 60 * 1000)
 
 function startTeamWatcher(teamName: string): void {
   if (sseWatchers.has(teamName)) return
@@ -450,6 +467,7 @@ Rules:
   const tmplDeleteMatch = pathname.match(/^\/api\/template\/([^/]+)$/)
   if (method === 'DELETE' && tmplDeleteMatch) {
     const tmplName = decodeURIComponent(tmplDeleteMatch[1] || '')
+    if (!NAME_RE.test(tmplName)) { jsonReply(res, 400, { error: 'Invalid template name' }); return true }
     const BUILTIN = ['leader-worker', 'leader-worker-reviewer', 'parallel-workers']
     if (BUILTIN.includes(tmplName)) {
       jsonReply(res, 403, { error: '내장 템플릿은 삭제할 수 없습니다' }); return true
@@ -476,9 +494,8 @@ Rules:
       if (b['budget'])   args.push('--budget', b['budget'])
       if (b['worktree']) args.push('--worktree')
       const effectiveCwd1 = (projectPath && fs.existsSync(projectPath)) ? projectPath : os.homedir()
-      const execOpts: { timeout: number; cwd: string } = { timeout: 120_000, cwd: effectiveCwd1 }
-      exec(`jikime ${args.join(' ')}`, execOpts, (err, stdout, stderr) => {
-        if (err) { jsonReply(res, 500, { error: err.message, output: (stdout + stderr).trim() }); return }
+      execFile('jikime', args, { timeout: 120_000, cwd: effectiveCwd1 }, (err, stdout, stderr) => {
+        if (err) { jsonReply(res, 500, { error: err.message, output: ((stdout ?? '') + (stderr ?? '')).trim() }); return }
         // Extract team name from output and save webchat meta
         const launched = stdout.match(/Launching team "([^"]+)"/)?.[1] || b['name'] || ''
         if (launched && projectPath) {
@@ -516,7 +533,7 @@ Rules:
       if (b['workers'])  args.push('--workers',  b['workers'])
       if (b['template']) args.push('--template', b['template'])
       if (b['budget'])   args.push('--budget',   b['budget'])
-      exec(`jikime ${args.join(' ')}`, (err, stdout) => {
+      execFile('jikime', args, (err, stdout) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         if (projectPath) {
           try { new TeamFileStore().writeWebchatMeta(name, { projectPath }) } catch { /* */ }
@@ -531,7 +548,8 @@ Rules:
   const teamMatch = pathname.match(/^\/api\/team\/([^/]+)(\/.*)?$/)
   if (!teamMatch) return false
 
-  const teamName = teamMatch[1]
+  const teamName = decodeURIComponent(teamMatch[1])
+  if (!NAME_RE.test(teamName)) { jsonReply(res, 400, { error: 'Invalid team name' }); return true }
   const subPath  = teamMatch[2] || ''
 
   // GET /api/team/:name
@@ -554,7 +572,7 @@ Rules:
   if (method === 'DELETE' && agentKillMatch) {
     const agentId = decodeURIComponent(agentKillMatch[1] || '')
     const sessionName = `jikime-${teamName.replace(/[ /:]/g, '-')}-${agentId.replace(/[ /:]/g, '-')}`
-    exec(`tmux kill-session -t ${sessionName}`, (err) => {
+    execFile('tmux', ['kill-session', '-t', sessionName], (err) => {
       if (err) { jsonReply(res, 500, { error: err.message }); return }
       jsonReply(res, 200, { ok: true })
     })
@@ -563,7 +581,7 @@ Rules:
 
   // DELETE /api/team/:name
   if (method === 'DELETE' && subPath === '') {
-    exec(`jikime team stop ${teamName} --force`, (err) => {
+    execFile('jikime', ['team', 'stop', teamName, '--force'], (err) => {
       if (err) { jsonReply(res, 500, { error: err.message }); return }
       stopTeamWatcher(teamName)
       jsonReply(res, 200, { ok: true })
@@ -589,7 +607,7 @@ Rules:
       if (b['desc'])   args.push('--desc',  JSON.stringify(b['desc']))
       if (b['dod'])    args.push('--dod',   JSON.stringify(b['dod']))
       if (b['owner'])  args.push('--owner', b['owner'])
-      exec(`jikime ${args.join(' ')}`, (err, stdout) => {
+      execFile('jikime', args, (err, stdout) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 201, { ok: true, output: stdout.trim() })
       })
@@ -628,9 +646,8 @@ Rules:
       if (b['goal'])     args.push('--goal', JSON.stringify(b['goal']))
       if (b['worktree']) args.push('--worktree')
       const effectiveCwd2 = (projectPath && fs.existsSync(projectPath)) ? projectPath : os.homedir()
-      const execOpts: { timeout: number; cwd: string } = { timeout: 120_000, cwd: effectiveCwd2 }
-      exec(`jikime ${args.join(' ')}`, execOpts, (err, stdout, stderr) => {
-        if (err) { jsonReply(res, 500, { error: err.message, output: (stdout + stderr).trim() }); return }
+      execFile('jikime', args, { timeout: 120_000, cwd: effectiveCwd2 }, (err, stdout, stderr) => {
+        if (err) { jsonReply(res, 500, { error: err.message, output: ((stdout ?? '') + (stderr ?? '')).trim() }); return }
         if (projectPath) {
           try { store.writeWebchatMeta(teamName, { projectPath }) } catch { /* */ }
         }
@@ -650,7 +667,7 @@ Rules:
       if (b['status'])   args.push('--status', b['status'])
       if (b['agent_id']) args.push('--agent',  b['agent_id'])
       if (b['result'])   args.push('--result',  JSON.stringify(b['result']))
-      exec(`jikime ${args.join(' ')}`, (err) => {
+      execFile('jikime', args, (err) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 200, { ok: true })
       })
@@ -675,7 +692,7 @@ Rules:
       const msg = b['body'] || b['message'] || ''
       const from = b['from'] || 'webchat'
       if (!to || !msg) { jsonReply(res, 400, { error: 'to and body required' }); return }
-      exec(`jikime team inbox send ${teamName} ${to} ${JSON.stringify(msg)} --from ${from}`, (err) => {
+      execFile('jikime', ['team', 'inbox', 'send', teamName, to, msg, '--from', from], (err) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 200, { ok: true })
       })

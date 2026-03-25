@@ -27,6 +27,8 @@ const ServerContext = createContext<ServerContextType | null>(null)
 
 const STORAGE_KEY = 'webchat_servers'
 const LOCAL_ID    = '__local__'
+// host:port 형식 — 외부 입력 검증용
+const HOST_RE = /^[\w.-]+(:\d{1,5})?$/
 
 function loadFromStorage(): { servers: RemoteServer[]; activeId: string } | null {
   try {
@@ -76,11 +78,14 @@ export function ServerProvider({ children }: { children: ReactNode }) {
   const setActiveServerId = useCallback((id: string) => setActiveId(id), [])
 
   const addServer = useCallback((s: Omit<RemoteServer, 'id'>) => {
+    const host = s.host.trim()
+    if (!HOST_RE.test(host)) return  // 잘못된 host 형식 무시
     const id = `server-${Date.now()}`
-    setServers(prev => [...prev, { ...s, id }])
+    setServers(prev => [...prev, { ...s, host, id }])
   }, [])
 
   const updateServer = useCallback((id: string, patch: Partial<Omit<RemoteServer, 'id'>>) => {
+    if (patch.host !== undefined && !HOST_RE.test(patch.host.trim())) return  // 잘못된 host 형식 무시
     setServers(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s))
   }, [])
 

@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { TeamFileStore } from '@/lib/team-store'
+
+const NAME_RE = /^[a-zA-Z0-9_-]{1,80}$/
 
 type Params = { params: Promise<{ name: string }> }
 
 export async function GET(_req: NextRequest, { params }: Params) {
   const { name } = await params
+  if (!NAME_RE.test(name)) return NextResponse.json({ error: 'Invalid team name' }, { status: 400 })
   const store    = new TeamFileStore()
   const config   = store.getConfig(name)
   const tasks    = store.listTasks(name)
@@ -21,8 +24,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
   const { name } = await params
+  if (!NAME_RE.test(name)) return NextResponse.json({ error: 'Invalid team name' }, { status: 400 })
   return new Promise<NextResponse>((resolve) => {
-    exec(`jikime team stop ${name} --force`, (err) => {
+    execFile('jikime', ['team', 'stop', name, '--force'], (err) => {
       if (err) resolve(NextResponse.json({ error: err.message }, { status: 500 }))
       else     resolve(NextResponse.json({ ok: true }))
     })
