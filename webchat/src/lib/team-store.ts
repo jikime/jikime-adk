@@ -41,9 +41,10 @@ export class TeamFileStore {
 
   listTeams(projectPath?: string): string[] {
     if (!fs.existsSync(this.root)) return []
-    const all = fs.readdirSync(this.root).filter((e) =>
-      fs.statSync(path.join(this.root, e)).isDirectory()
-    )
+    // Use withFileTypes to avoid a separate statSync per entry
+    const all = fs.readdirSync(this.root, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name)
     if (!projectPath) return all
     const realQuery = (() => { try { return fs.realpathSync(projectPath) } catch { return projectPath } })()
     return all.filter((name) => {
@@ -75,7 +76,7 @@ export class TeamFileStore {
       .filter((f) => f.endsWith('.json'))
       .map((f) => readJSON<Record<string, unknown>>(path.join(dir, f), {}))
       .filter((t) => {
-        if (status && t['status'] !== status) return false
+        if (status && t['status']   !== status) return false
         if (agent  && t['agent_id'] !== agent)  return false
         if (owner  && t['owner']    !== owner)   return false
         return true
@@ -99,7 +100,7 @@ export class TeamFileStore {
   }
 
   getCosts(name: string): { total: number; agents: Record<string, { tokens: number }> } {
-    const dir = path.join(teamDir(name), 'costs')
+    const dir    = path.join(teamDir(name), 'costs')
     const result: { total: number; agents: Record<string, { tokens: number }> } = { total: 0, agents: {} }
     if (!fs.existsSync(dir)) return result
     fs.readdirSync(dir)
@@ -125,9 +126,24 @@ export class TeamFileStore {
   }
 }
 
+// ── Team Snapshot cache ─────────────────────────────────────────────
+// Prevents redundant full-directory scans when multiple watchers fire in rapid succession.
+
+const SNAPSHOT_TTL_MS = 3_000  // 3 seconds
+
+const snapshotCache = new Map<string, { snapshot: unknown; expiresAt: number }>()
+
+export function invalidateSnapshot(teamName: string): void {
+  snapshotCache.delete(teamName)
+}
+
 // ── Team Snapshot (SSE payload builder) ────────────────────────────
 
 export function buildTeamSnapshot(teamName: string): unknown {
+  const now    = Date.now()
+  const cached = snapshotCache.get(teamName)
+  if (cached && cached.expiresAt > now) return cached.snapshot
+
   const store      = new TeamFileStore()
   const tasksList  = store.listTasks(teamName)  as Array<Record<string, unknown>>
   const agentsList = store.listAgents(teamName) as Array<Record<string, unknown>>
@@ -173,7 +189,7 @@ export function buildTeamSnapshot(teamName: string): unknown {
     }
   } catch { /* log file may not exist yet */ }
 
-  return {
+  const snapshot = {
     type: 'update',
     team: {
       name:        teamName,
@@ -187,4 +203,7 @@ export function buildTeamSnapshot(teamName: string): unknown {
     taskSummary,
     messages,
   }
+
+  snapshotCache.set(teamName, { snapshot, expiresAt: now + SNAPSHOT_TTL_MS })
+  return snapshot
 }

@@ -16,7 +16,8 @@ function StatusIcon({ status }: { status: TeamTask['status'] }) {
   }
 }
 
-function TaskCard({ task }: { task: TeamTask }) {
+// Memoized: only re-renders when the task object reference changes
+const TaskCard = React.memo(function TaskCard({ task }: { task: TeamTask }) {
   return (
     <div className="bg-card rounded border border-border p-2 mb-2 text-xs shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-center gap-1 mb-1">
@@ -43,9 +44,10 @@ function TaskCard({ task }: { task: TeamTask }) {
       )}
     </div>
   )
-}
+})
 
-export default function TeamBoard() {
+// Memoized: re-renders only when tasks or locale changes
+export default React.memo(function TeamBoard() {
   const { tasks, activeTeam } = useTeam()
   const { t } = useLocale()
 
@@ -97,4 +99,4 @@ export default function TeamBoard() {
       ))}
     </div>
   )
-}
+})

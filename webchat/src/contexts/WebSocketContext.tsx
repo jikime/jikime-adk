@@ -13,15 +13,20 @@ interface WebSocketContextType {
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null)
 
+const MAX_RECONNECT_ATTEMPTS = 10
+const BASE_RECONNECT_DELAY_MS = 1_000
+const MAX_RECONNECT_DELAY_MS  = 30_000
+
 export function WebSocketProvider({ children }: { children: ReactNode }) {
   const { getWsUrl } = useServer()
-  const wsRef          = useRef<WebSocket | null>(null)
+  const wsRef              = useRef<WebSocket | null>(null)
   const [isConnected, setIsConnected] = useState(false)
-  const handlersRef    = useRef<Set<(msg: WsMessage) => void>>(new Set())
-  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const disposedRef    = useRef(false)
+  const handlersRef        = useRef<Set<(msg: WsMessage) => void>>(new Set())
+  const reconnectTimer     = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const disposedRef        = useRef(false)
+  const reconnectAttempts  = useRef(0)
   // 항상 최신 connect를 가리키는 ref — stale closure 방지
-  const connectRef     = useRef<() => void>(() => {})
+  const connectRef         = useRef<() => void>(() => {})
 
   const connect = useCallback(() => {
     if (disposedRef.current) return
@@ -29,12 +34,21 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
     const ws  = new WebSocket(url)
     wsRef.current = ws
 
-    ws.onopen  = () => setIsConnected(true)
+    ws.onopen = () => {
+      reconnectAttempts.current = 0  // 연결 성공 시 재시도 카운터 초기화
+      setIsConnected(true)
+    }
     ws.onclose = () => {
       setIsConnected(false)
-      // connectRef.current 사용 → 항상 최신 서버 URL로 재연결
-      if (!disposedRef.current)
-        reconnectTimer.current = setTimeout(() => connectRef.current(), 3000)
+      if (!disposedRef.current && reconnectAttempts.current < MAX_RECONNECT_ATTEMPTS) {
+        // Exponential backoff: 1s, 2s, 4s, 8s, ... (max 30s)
+        const delay = Math.min(
+          BASE_RECONNECT_DELAY_MS * Math.pow(2, reconnectAttempts.current),
+          MAX_RECONNECT_DELAY_MS,
+        )
+        reconnectAttempts.current++
+        reconnectTimer.current = setTimeout(() => connectRef.current(), delay)
+      }
     }
     ws.onerror = () => ws.close()
     ws.onmessage = (e) => {
@@ -52,7 +66,8 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
   // 서버(getWsUrl)가 바뀌면 기존 연결 끊고 새 서버로 재연결
   useEffect(() => {
-    disposedRef.current = false
+    disposedRef.current     = false
+    reconnectAttempts.current = 0  // 서버 전환 시 재시도 카운터 초기화
     if (reconnectTimer.current) clearTimeout(reconnectTimer.current)
     wsRef.current?.close()
     connect()

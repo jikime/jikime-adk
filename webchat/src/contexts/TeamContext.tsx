@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo, ReactNode } from 'react'
 import { useServer } from '@/contexts/ServerContext'
 import { useProject } from '@/contexts/ProjectContext'
 
@@ -228,14 +228,24 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     })
   }, [getApiUrl])
 
+  // useMemo prevents a new object reference on every render,
+  // which would otherwise cause all context consumers to re-render unnecessarily.
+  const contextValue = useMemo(() => ({
+    teams, activeTeam, teamInfo, tasks, agents,
+    members, messages, taskSummary, teamBrief, connected,
+    lastEvent,
+    setActiveTeam, refreshTeams, refreshTeam,
+    createTask, updateTask, sendMessage,
+  }), [
+    teams, activeTeam, teamInfo, tasks, agents,
+    members, messages, taskSummary, teamBrief, connected,
+    lastEvent,
+    setActiveTeam, refreshTeams, refreshTeam,
+    createTask, updateTask, sendMessage,
+  ])
+
   return (
-    <TeamContext.Provider value={{
-      teams, activeTeam, teamInfo, tasks, agents,
-      members, messages, taskSummary, teamBrief, connected,
-      lastEvent,
-      setActiveTeam, refreshTeams, refreshTeam,
-      createTask, updateTask, sendMessage,
-    }}>
+    <TeamContext.Provider value={contextValue}>
       {children}
     </TeamContext.Provider>
   )

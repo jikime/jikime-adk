@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { exec } from 'child_process'
+import { execFile } from 'child_process'
 import { TeamFileStore } from '@/lib/team-store'
 
 type Params = { params: Promise<{ name: string }> }
@@ -10,16 +10,18 @@ export async function GET(_req: NextRequest, { params }: Params) {
   return NextResponse.json({ agents })
 }
 
-// DELETE /api/team/:name/agents/:agentId is handled via a nested dynamic route
-// but agent kill via team name is done here with ?agentId=
 export async function DELETE(request: NextRequest, { params }: Params) {
   const { name }  = await params
   const agentId   = request.nextUrl.searchParams.get('agentId') || ''
   if (!agentId) return NextResponse.json({ error: 'agentId required' }, { status: 400 })
 
-  const sessionName = `jikime-${name.replace(/[ /:]/g, '-')}-${agentId.replace(/[ /:]/g, '-')}`
+  // Sanitize to prevent any shell metachar injection via execFile args
+  const safeName    = name.replace(/[^a-zA-Z0-9_-]/g, '-')
+  const safeAgentId = agentId.replace(/[^a-zA-Z0-9_-]/g, '-')
+  const sessionName = `jikime-${safeName}-${safeAgentId}`
+
   return new Promise<NextResponse>((resolve) => {
-    exec(`tmux kill-session -t ${sessionName}`, (err) => {
+    execFile('tmux', ['kill-session', '-t', sessionName], (err) => {
       if (err) resolve(NextResponse.json({ error: err.message }, { status: 500 }))
       else     resolve(NextResponse.json({ ok: true }))
     })

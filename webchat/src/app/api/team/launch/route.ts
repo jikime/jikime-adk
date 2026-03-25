@@ -1,24 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
-import * as fs from 'fs'
-import * as os from 'os'
-import { exec } from 'child_process'
+import * as fs   from 'fs'
+import * as os   from 'os'
+import * as path from 'path'
+import { execFile } from 'child_process'
 import { TeamFileStore } from '@/lib/team-store'
 
+const NAME_RE   = /^[a-zA-Z0-9_-]{1,80}$/
+const BUDGET_RE = /^\d{1,10}$/
+
 export async function POST(request: NextRequest) {
+  const contentLength = request.headers.get('content-length')
+  if (contentLength && parseInt(contentLength) > 10_240) {
+    return NextResponse.json({ error: 'Request too large' }, { status: 413 })
+  }
+
   const body        = await request.json() as Record<string, string>
-  const tmpl        = body['template'] || 'leader-worker'
+  const tmpl        = (body['template'] || 'leader-worker').slice(0, 80)
   const projectPath = body['projectPath'] || undefined
 
-  const args = ['team', 'launch', '--template', tmpl]
-  if (body['name'])     args.push('--name',   body['name'])
-  if (body['goal'])     args.push('--goal',   JSON.stringify(body['goal']))
-  if (body['budget'])   args.push('--budget', body['budget'])
+  const args: string[] = ['team', 'launch', '--template', tmpl]
+  if (body['name'] && NAME_RE.test(body['name'])) args.push('--name', body['name'])
+  if (body['goal'])   args.push('--goal',   body['goal'].slice(0, 2000))
+  if (body['budget'] && BUDGET_RE.test(body['budget'])) args.push('--budget', body['budget'])
   if (body['worktree']) args.push('--worktree')
 
-  const cwd = (projectPath && fs.existsSync(projectPath)) ? projectPath : os.homedir()
+  // Validate and resolve cwd — only allow existing directories
+  let cwd = os.homedir()
+  if (projectPath) {
+    const resolved = path.resolve(projectPath)
+    try {
+      if (fs.existsSync(resolved) && fs.statSync(resolved).isDirectory()) cwd = resolved
+    } catch { /* use homedir */ }
+  }
 
   return new Promise<NextResponse>((resolve) => {
-    exec(`jikime ${args.join(' ')}`, { timeout: 120_000, cwd }, (err, stdout, stderr) => {
+    execFile('jikime', args, { timeout: 120_000, cwd }, (err, stdout, stderr) => {
       if (err) {
         resolve(NextResponse.json({ error: err.message, output: (stdout + stderr).trim() }, { status: 500 }))
         return

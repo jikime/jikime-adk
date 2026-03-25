@@ -153,8 +153,10 @@ function getPython(): string {
 
 /* ── Cleanup stale sessions every 2 minutes ── */
 
-const SESSION_IDLE_TIMEOUT = 60 * 60 * 1000
-const SESSION_MAX_AGE = 4 * 60 * 60 * 1000
+const SESSION_IDLE_TIMEOUT = 60 * 60 * 1000   // 1 hour idle
+const SESSION_MAX_AGE      = 4 * 60 * 60 * 1000  // 4 hour hard limit
+const SESSION_MAX_COUNT    = 50                 // max concurrent sessions
+const SESSION_BUFFER_LIMIT = 50_000            // 50KB per-session output buffer
 
 if (typeof globalThis !== 'undefined') {
   const cleanup = () => {
@@ -174,6 +176,21 @@ if (typeof globalThis !== 'undefined') {
 }
 
 function createSession(cols = 220, rows = 50, cwd = '/tmp'): string {
+  // Evict oldest inactive session if at capacity
+  if (sessions.size >= SESSION_MAX_COUNT) {
+    let oldestId = ''
+    let oldestActivity = Infinity
+    for (const [id, s] of sessions) {
+      if (s.lastActivity < oldestActivity) { oldestActivity = s.lastActivity; oldestId = id }
+    }
+    if (oldestId) {
+      const s = sessions.get(oldestId)!
+      if (s.idleTimer) clearTimeout(s.idleTimer)
+      try { s.proc.kill('SIGTERM') } catch { /* */ }
+      sessions.delete(oldestId)
+    }
+  }
+
   const id = crypto.randomUUID().slice(0, 8)
   const python = getPython()
   const env = { ...process.env, CLAUDECODE: '' }
@@ -217,7 +234,7 @@ function createSession(cols = 220, rows = 50, cwd = '/tmp'): string {
     session.buffer.push(text)
     let totalLen = 0
     for (const chunk of session.buffer) totalLen += chunk.length
-    while (totalLen > 200_000 && session.buffer.length > 1) {
+    while (totalLen > SESSION_BUFFER_LIMIT && session.buffer.length > 1) {
       totalLen -= session.buffer.shift()!.length
     }
     emitEvent({ type: 'output', text })
