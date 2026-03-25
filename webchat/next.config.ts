@@ -16,7 +16,8 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",                   // Tailwind uses inline styles
       "img-src 'self' data: blob:",
       "font-src 'self' data:",
-      "connect-src 'self' ws: wss: http://localhost:* http://127.0.0.1:*",
+      // ws/wss 와일드카드 대신 포트 명시 — 로컬 서비스 전체 노출 방지
+      "connect-src 'self' ws://localhost:4000 wss://localhost:4000 ws://127.0.0.1:4000 wss://127.0.0.1:4000 http://localhost:4000 http://127.0.0.1:4000",
       "worker-src 'self' blob:",
       "frame-ancestors 'none'",
     ].join('; '),

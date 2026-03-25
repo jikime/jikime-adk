@@ -91,12 +91,20 @@ export class TeamFileStore {
     const all = fs.readdirSync(this.root, { withFileTypes: true })
       .filter(e => e.isDirectory()).map(e => e.name)
     if (!projectPath) return all
-    const realQuery = (() => { try { return fs.realpathSync(projectPath) } catch { return projectPath } })()
+    let realQuery = projectPath
+    try { realQuery = fs.realpathSync(projectPath) } catch { /* use as-is */ }
+    // 팀별 realpathSync 결과를 로컬 캐시 — 반복 syscall 방지
+    const rpCache = new Map<string, string>()
+    const resolve = (p: string): string => {
+      if (!rpCache.has(p)) {
+        try { rpCache.set(p, fs.realpathSync(p)) } catch { rpCache.set(p, p) }
+      }
+      return rpCache.get(p)!
+    }
     return all.filter((name) => {
       const meta = this.getWebchatMeta(name)
       if (!meta.projectPath) return false
-      const realMeta = (() => { try { return fs.realpathSync(meta.projectPath) } catch { return meta.projectPath } })()
-      return realMeta === realQuery
+      return resolve(meta.projectPath as string) === realQuery
     })
   }
 
@@ -193,7 +201,12 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000)
 
+// 팀 이름별 브로드캐스트 디바운스 타이머 — 연속 파일 변경 시 burst 방지
+const _broadcastDebounce = new Map<string, ReturnType<typeof setTimeout>>()
+
 function startTeamWatcher(teamName: string): void {
+  // 진입 시 즉시 NAME_RE 검증 — 경로 탈출 방지
+  if (!NAME_RE.test(teamName)) throw new Error(`Invalid team name: ${teamName}`)
   if (sseWatchers.has(teamName)) return
 
   const watchDirs = ['tasks', 'registry', 'inbox', 'costs'].map((d) =>
@@ -203,7 +216,13 @@ function startTeamWatcher(teamName: string): void {
   for (const dir of watchDirs) {
     if (!fs.existsSync(dir)) continue
     const w = fs.watch(dir, { recursive: false }, () => {
-      broadcastTeamEvent(teamName)
+      // 50ms 디바운스 — 연속 이벤트를 하나로 묶음
+      const existing = _broadcastDebounce.get(teamName)
+      if (existing) clearTimeout(existing)
+      _broadcastDebounce.set(teamName, setTimeout(() => {
+        _broadcastDebounce.delete(teamName)
+        broadcastTeamEvent(teamName)
+      }, 50))
     })
     watchers.push(w)
   }
@@ -217,6 +236,10 @@ function stopTeamWatcher(teamName: string): void {
     sseWatchers.delete(teamName)
   }
 }
+
+// 이벤트 로그 파일 tail 캐시 — 3초 TTL (매 broadcast마다 readFileSync 방지)
+const _eventLogCache = new Map<string, { lines: string[]; ts: number }>()
+const EVENT_LOG_TTL = 3000
 
 function broadcastTeamEvent(teamName: string): void {
   const store      = new TeamFileStore()
@@ -255,12 +278,21 @@ function broadcastTeamEvent(teamName: string): void {
     }
   })
 
-  // Event log messages (last 50 from inbox/event-log.jsonl)
+  // Event log messages (last 50 from inbox/event-log.jsonl) — TTL 캐시 적용
   const eventLogFile = path.join(teamDir(teamName), 'inbox', 'event-log.jsonl')
   const messages: Array<{ from: string; to: string; type: string; timestamp: string; content: string }> = []
   try {
-    const lines = fs.readFileSync(eventLogFile, 'utf8').split('\n').filter(Boolean)
-    for (const line of lines.slice(-50)) {
+    const now = Date.now()
+    const cached = _eventLogCache.get(eventLogFile)
+    const tailLines = (cached && now - cached.ts < EVENT_LOG_TTL)
+      ? cached.lines
+      : (() => {
+          const raw = fs.readFileSync(eventLogFile, 'utf8').split('\n').filter(Boolean)
+          const tail = raw.slice(-50)
+          _eventLogCache.set(eventLogFile, { lines: tail, ts: now })
+          return tail
+        })()
+    for (const line of tailLines) {
       try {
         const m = JSON.parse(line) as Record<string, unknown>
         messages.push({
@@ -485,19 +517,38 @@ Rules:
   // POST /api/team/launch  (team serve: create + spawn all agents from template)
   if (method === 'POST' && pathname === '/api/team/launch') {
     parseBody(req).then((body) => {
-      const b           = body as Record<string, string>
-      const tmpl        = b['template'] || 'leader-worker'
-      const projectPath = b['projectPath'] || undefined
+      const b           = body as Record<string, unknown>
+      const projectPath = (b['projectPath'] as string) || undefined
+
+      // template 화이트리스트 검증
+      const ALLOWED_TEMPLATES = ['leader-worker', 'leader-worker-reviewer', 'parallel-workers']
+      const rawTmpl = (b['template'] as string || 'leader-worker').slice(0, 80)
+      if (!ALLOWED_TEMPLATES.includes(rawTmpl) &&
+          !(projectPath && fs.existsSync(path.join(dataDir(), 'templates', `${rawTmpl}.yaml`)))) {
+        jsonReply(res, 400, { error: `Invalid template: ${rawTmpl}` }); return
+      }
+      const tmpl = rawTmpl
+
+      // name 검증
+      const rawName = (b['name'] as string || '').slice(0, 80)
+      if (rawName && !NAME_RE.test(rawName)) { jsonReply(res, 400, { error: 'Invalid team name' }); return }
+
+      // goal 크기 제한 (2000자)
+      const rawGoal = (b['goal'] as string || '').slice(0, 2000)
+
+      // worktree 는 명시적 boolean true 만 허용
+      const useWorktree = b['worktree'] === true
+
       const args = ['team', 'launch', '--template', tmpl]
-      if (b['name'])     args.push('--name',   b['name'])
-      if (b['goal'])     args.push('--goal',   JSON.stringify(b['goal']))
-      if (b['budget'])   args.push('--budget', b['budget'])
-      if (b['worktree']) args.push('--worktree')
+      if (rawName)    args.push('--name',   rawName)
+      if (rawGoal)    args.push('--goal',   JSON.stringify(rawGoal))
+      if (b['budget']) args.push('--budget', String(b['budget']).slice(0, 20))
+      if (useWorktree) args.push('--worktree')
       const effectiveCwd1 = (projectPath && fs.existsSync(projectPath)) ? projectPath : os.homedir()
       execFile('jikime', args, { timeout: 120_000, cwd: effectiveCwd1 }, (err, stdout, stderr) => {
         if (err) { jsonReply(res, 500, { error: err.message, output: ((stdout ?? '') + (stderr ?? '')).trim() }); return }
         // Extract team name from output and save webchat meta
-        const launched = stdout.match(/Launching team "([^"]+)"/)?.[1] || b['name'] || ''
+        const launched = stdout.match(/Launching team "([^"]+)"/)?.[1] || rawName || ''
         if (launched && projectPath) {
           try { new TeamFileStore().writeWebchatMeta(launched, { projectPath }) } catch { /* */ }
         }
@@ -688,10 +739,13 @@ Rules:
   if (method === 'POST' && subPath === '/inbox/send') {
     parseBody(req).then((body) => {
       const b = body as Record<string, string>
-      const to  = b['to'] || ''
-      const msg = b['body'] || b['message'] || ''
-      const from = b['from'] || 'webchat'
-      if (!to || !msg) { jsonReply(res, 400, { error: 'to and body required' }); return }
+      const to   = (b['to']  || '').slice(0, 80).trim()
+      const msg  = (b['body'] || b['message'] || '').slice(0, 4000).trim()
+      const from = (b['from'] || 'webchat').slice(0, 80).trim()
+      // to/from 은 알파뉴메릭+_- 만 허용 — CLI 파서 혼란 방지
+      if (!NAME_RE.test(to))   { jsonReply(res, 400, { error: '"to" must match [a-zA-Z0-9_-]{1,80}' }); return }
+      if (!msg)                 { jsonReply(res, 400, { error: 'body required' }); return }
+      if (!NAME_RE.test(from)) { jsonReply(res, 400, { error: '"from" must match [a-zA-Z0-9_-]{1,80}' }); return }
       execFile('jikime', ['team', 'inbox', 'send', teamName, to, msg, '--from', from], (err) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 200, { ok: true })

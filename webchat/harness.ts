@@ -214,7 +214,14 @@ function getWorkspacePath(config: WorkflowConfig, issue: HarnessIssue): string {
   return path.join(config.workspace.root, sanitizeKey(issue.identifier))
 }
 
+// hook 스크립트에서 허용하지 않는 셸 확장 패턴 — $(), ``, 파이프 체이닝 등
+// 단순 명령어 + 경로 인수는 허용, 셸 인젝션 벡터는 차단
+const HOOK_UNSAFE_RE = /\$\(|`[^`]*`|\|\||&&|>>/
+
 function runHook(script: string, cwd: string, timeoutMs: number): Promise<void> {
+  if (HOOK_UNSAFE_RE.test(script)) {
+    return Promise.reject(new Error(`훅 스크립트에 허용되지 않는 셸 문법이 포함되어 있습니다: ${script.slice(0, 80)}`))
+  }
   return new Promise((resolve, reject) => {
     const proc = exec(script, { cwd, shell: '/bin/bash' })
     const timer = setTimeout(() => {

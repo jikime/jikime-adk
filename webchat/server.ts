@@ -118,6 +118,7 @@ interface PtySession {
   clients: Set<WebSocket>
   created: number
   lastActivity: number
+  _lastInputMs: number  // rate limit 추적
 }
 const ptySessions = new Map<string, PtySession>()
 
@@ -192,6 +193,7 @@ function getOrCreatePtySession(sessionId: string, cwd: string, cols: number, row
     clients: new Set(),
     created: Date.now(),
     lastActivity: Date.now(),
+    _lastInputMs: 0,
   }
   ptyProcess.onData((data: string) => {
     session.lastActivity = Date.now()
@@ -721,6 +723,31 @@ function runGitAsync(cwd: string, args: string[]): Promise<string> {
   })
 }
 
+// 디렉터리별 git 동시 실행 세마포어 — 무제한 git 프로세스 생성 방지
+const _gitQueues = new Map<string, Array<() => void>>()
+const MAX_CONCURRENT_GIT = 3
+const _gitActive = new Map<string, number>()
+
+async function runGitSemaphore(cwd: string, args: string[]): Promise<string> {
+  const active = _gitActive.get(cwd) ?? 0
+  if (active >= MAX_CONCURRENT_GIT) {
+    // 대기열에 등록 후 순서 대기
+    await new Promise<void>(resolve => {
+      if (!_gitQueues.has(cwd)) _gitQueues.set(cwd, [])
+      _gitQueues.get(cwd)!.push(resolve)
+    })
+  }
+  _gitActive.set(cwd, (_gitActive.get(cwd) ?? 0) + 1)
+  try {
+    return await runGitAsync(cwd, args)
+  } finally {
+    _gitActive.set(cwd, (_gitActive.get(cwd) ?? 1) - 1)
+    const next = _gitQueues.get(cwd)?.shift()
+    if (next) next()
+    else if ((_gitActive.get(cwd) ?? 0) === 0) { _gitQueues.delete(cwd); _gitActive.delete(cwd) }
+  }
+}
+
 function runGit(cwd: string, args: string[]): string {
   try {
     return execSync(`git ${args.join(' ')}`, { cwd, encoding: 'utf8', timeout: 30000 })
@@ -1167,15 +1194,24 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
         if (!projectPath || typeof projectPath !== 'string') {
           res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'Missing path' })); return
         }
-        const normalized = projectPath.replace(/\/+$/, '') // trailing slash 제거
+        const normalized = path.resolve(projectPath.replace(/\/+$/, '').trim())
         if (!normalized.startsWith('/')) {
           res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: '절대 경로를 입력하세요' })); return
         }
+        // 시스템 루트 디렉터리 등록 방지
+        const BLOCKED_PREFIXES = ['/', '/etc', '/root', '/var', '/sys', '/proc', '/dev', '/boot']
+        if (BLOCKED_PREFIXES.some(p => normalized === p || normalized.startsWith(p + '/'))) {
+          res.writeHead(403, CORS_HEADERS); res.end(JSON.stringify({ error: '시스템 경로는 등록할 수 없습니다' })); return
+        }
+        // 파일이면 거부
+        if (fs.existsSync(normalized) && !fs.statSync(normalized).isDirectory()) {
+          res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: '파일 경로는 등록할 수 없습니다' })); return
+        }
         const encoded = normalized.replace(/\//g, '-')
-        const claudeDir = path.join(os.homedir(), '.claude', 'projects')
+        const claudeDir = path.resolve(path.join(os.homedir(), '.claude', 'projects'))
         const projectDir = path.join(claudeDir, encoded)
-        // 경로 탈출 방지
-        if (!projectDir.startsWith(claudeDir + path.sep) && projectDir !== claudeDir) {
+        // path.resolve() 기반 엄격한 경로 탈출 방지
+        if (!path.resolve(projectDir).startsWith(claudeDir + path.sep)) {
           res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'Invalid path' })); return
         }
         if (!fs.existsSync(projectDir)) {
@@ -1379,14 +1415,18 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   }
 
   // GET /api/ws/github/issues?projectPath=...
-  // Authorization: Bearer <PAT> 헤더로 토큰 전달 (URL 쿼리 파라미터는 서버 로그에 노출되므로 지양)
+  // 반드시 Authorization: Bearer <PAT> 헤더로 토큰 전달 — URL 쿼리 파라미터는 서버 로그에 노출되므로 완전 차단
   if (pathname === '/api/ws/github/issues' && req.method === 'GET') {
     const projectPath = url.searchParams.get('projectPath') ?? ''
-    // Authorization 헤더 우선, 폴백으로 쿼리 파라미터 지원 (하위 호환)
+    if (url.searchParams.has('token')) {
+      res.writeHead(400, CORS_HEADERS)
+      res.end(JSON.stringify({ error: 'URL query param token is not allowed. Use Authorization: Bearer <token> header.' }))
+      return true
+    }
     const authHeader = req.headers['authorization'] ?? ''
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : (url.searchParams.get('token') ?? '')
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
     if (!token) {
-      res.writeHead(401, CORS_HEADERS); res.end(JSON.stringify({ error: 'GitHub PAT required' })); return true
+      res.writeHead(401, CORS_HEADERS); res.end(JSON.stringify({ error: 'GitHub PAT required (Authorization: Bearer <token>)' })); return true
     }
     const ghRepo = detectGitHubRepo(projectPath)
     if (!ghRepo) {
@@ -1694,8 +1734,8 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
             if (pat) {
               result = { output: runGitWithPat(cwd, action, pat as string) }
             } else {
-              // execFile 기반 비동기 실행 — 이벤트 루프 블로킹 방지
-              result = { output: await runGitAsync(cwd, [action]) }
+              // 세마포어 적용 비동기 실행 — 이벤트 루프 블로킹 + 동시 프로세스 폭증 방지
+              result = { output: await runGitSemaphore(cwd, [action]) }
             }
           } else if (action === 'custom' && Array.isArray(args)) {
             const subCmd = args[0] as string | undefined
@@ -1782,7 +1822,15 @@ app.prepare().then(() => {
 
         } else if (msg.type === 'input' && sessionId) {
           const session = ptySessions.get(sessionId)
-          if (session) session.pty.write(msg.data)
+          if (session) {
+            // 메시지당 4096 bytes 제한 + 10ms rate limit (PTY 플러딩 방지)
+            const inputData = String(msg.data ?? '').slice(0, 4096)
+            const now = Date.now()
+            if (now - session._lastInputMs >= 10) {
+              session.pty.write(inputData)
+              session._lastInputMs = now
+            }
+          }
 
         } else if (msg.type === 'resize' && sessionId) {
           const session = ptySessions.get(sessionId)
