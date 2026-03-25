@@ -3,7 +3,7 @@ import next from 'next'
 import { WebSocketServer, WebSocket } from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
-import { execSync } from 'child_process'
+import { execSync, execFile } from 'child_process'
 import * as os from 'os'
 import { handleHarnessRoutes } from './harness'
 
@@ -234,8 +234,18 @@ interface IssueProcessor {
   events: string[]
   interrupt: (() => Promise<void>) | null
   sseClients: Set<import('http').ServerResponse>
+  completedAt?: number
 }
 const issueProcessors = new Map<string, IssueProcessor>()
+// done/error 상태의 processor를 10분 후 자동 삭제 — 메모리 누수 방지
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, proc] of issueProcessors) {
+    if (proc.status !== 'running' && proc.completedAt && now - proc.completedAt > 10 * 60 * 1000) {
+      issueProcessors.delete(key)
+    }
+  }
+}, 60 * 1000).unref()
 
 // ── GitHub Poller Store (자동 폴링 루프) ──────────────────────────
 interface PollerEvent {
@@ -489,15 +499,13 @@ function discoverProjects(): Array<{ id: string; name: string; path: string; ses
       const sessions: string[] = []
       try {
         const files = fs.readdirSync(fullPath).filter(f => f.endsWith('.jsonl'))
-        // 수정 시간 기준 최신순 정렬
-        files.sort((a, b) => {
-          try {
-            const mtimeA = fs.statSync(path.join(fullPath, a)).mtimeMs
-            const mtimeB = fs.statSync(path.join(fullPath, b)).mtimeMs
-            return mtimeB - mtimeA
-          } catch { return 0 }
+        // mtime을 sort 전에 O(n)으로 사전 계산 — sort 내부에서 반복 statSync 호출 방지
+        const withMtime = files.map(f => {
+          try { return { f, mtime: fs.statSync(path.join(fullPath, f)).mtimeMs } }
+          catch { return { f, mtime: 0 } }
         })
-        for (const file of files) sessions.push(file.replace('.jsonl', ''))
+        withMtime.sort((a, b) => b.mtime - a.mtime)
+        for (const { f } of withMtime) sessions.push(f.replace('.jsonl', ''))
       } catch { /* */ }
 
       // 1차: 파일시스템 탐색으로 경로 복원
@@ -601,7 +609,17 @@ function findSessionJsonl(projectPath: string, sessionId: string): string | null
   return null
 }
 
+const MAX_SESSION_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
+
 function parseSessionHistory(jsonlPath: string): HistoryMessage[] {
+  // 거대 세션 파일 로딩 방지 — 50 MB 초과 시 빈 배열 반환
+  try {
+    const stat = fs.statSync(jsonlPath)
+    if (stat.size > MAX_SESSION_FILE_SIZE) {
+      console.warn(`[history] session file too large (${(stat.size / 1024 / 1024).toFixed(1)} MB), skipping: ${jsonlPath}`)
+      return []
+    }
+  } catch { return [] }
   const lines = fs.readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean)
   const messages: HistoryMessage[] = []
 
@@ -674,7 +692,35 @@ function parseSessionHistory(jsonlPath: string): HistoryMessage[] {
   return messages
 }
 
+// ── File Path Safety ───────────────────────────────────────────
+// 민감한 경로 차단 — ~/.ssh, ~/.aws, .env 파일 등
+const SENSITIVE_PATH_RE = /[/\\](\.ssh|\.gnupg|\.aws|\.netrc|\.npmrc|\.env[^/\\]*|\.config[/\\]gh)[/\\$]/i
+
+function isSafeFilePath(p: string): boolean {
+  if (!p || !path.isAbsolute(p)) return false
+  const normalized = path.normalize(p)
+  // path.normalize 후에도 '..' 잔존 시 거부
+  if (normalized.includes('..')) return false
+  if (SENSITIVE_PATH_RE.test(normalized)) return false
+  return true
+}
+
 // ── Git Operations ─────────────────────────────────────────────
+const ALLOWED_GIT_CUSTOM = new Set([
+  'stash', 'reset', 'rebase', 'cherry-pick', 'merge', 'tag',
+  'fetch', 'remote', 'show', 'describe', 'blame', 'shortlog',
+  'rev-parse', 'ls-files', 'clean',
+])
+
+function runGitAsync(cwd: string, args: string[]): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile('git', args, { cwd, encoding: 'utf8', timeout: 60000 }, (err, stdout, stderr) => {
+      if (err) reject(new Error(stderr || err.message))
+      else resolve(stdout)
+    })
+  })
+}
+
 function runGit(cwd: string, args: string[]): string {
   try {
     return execSync(`git ${args.join(' ')}`, { cwd, encoding: 'utf8', timeout: 30000 })
@@ -815,6 +861,7 @@ async function processIssueWithADK(
   }
   const sendDone = (status: 'done' | 'error') => {
     processor.status = status
+    processor.completedAt = Date.now()
     const payload = `data: ${JSON.stringify({ type: 'done', status })}\n\n`
     for (const client of processor.sseClients) {
       try { client.write(payload); client.end() } catch { /* */ }
@@ -1247,6 +1294,9 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     if (!filePath) {
       res.writeHead(400, CORS_HEADERS); res.end('Missing path'); return true
     }
+    if (!isSafeFilePath(filePath)) {
+      res.writeHead(403, CORS_HEADERS); res.end('Forbidden path'); return true
+    }
     // 경로가 존재하지 않으면 홈 디렉터리로 폴백
     const effectivePath = fs.existsSync(filePath) ? filePath : os.homedir()
     if (effectivePath !== filePath) {
@@ -1265,6 +1315,9 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     const filePath = url.searchParams.get('path') ?? ''
     if (!filePath || !fs.existsSync(filePath)) {
       res.writeHead(404, CORS_HEADERS); res.end('Not found'); return true
+    }
+    if (!isSafeFilePath(filePath)) {
+      res.writeHead(403, CORS_HEADERS); res.end('Forbidden path'); return true
     }
     try {
       const content = fs.readFileSync(filePath, 'utf8')
@@ -1299,6 +1352,9 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
         if (!filePath) {
           res.writeHead(400, CORS_HEADERS); res.end('Missing path'); return
         }
+        if (!isSafeFilePath(filePath)) {
+          res.writeHead(403, CORS_HEADERS); res.end('Forbidden path'); return
+        }
         fs.writeFileSync(filePath, content, 'utf8')
         res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
         res.end(JSON.stringify({ ok: true }))
@@ -1322,11 +1378,13 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     return true
   }
 
-  // GET /api/ws/github/issues?projectPath=...&token=...
-  // GitHub 이슈 최근 20개 조회
+  // GET /api/ws/github/issues?projectPath=...
+  // Authorization: Bearer <PAT> 헤더로 토큰 전달 (URL 쿼리 파라미터는 서버 로그에 노출되므로 지양)
   if (pathname === '/api/ws/github/issues' && req.method === 'GET') {
     const projectPath = url.searchParams.get('projectPath') ?? ''
-    const token = url.searchParams.get('token') ?? ''
+    // Authorization 헤더 우선, 폴백으로 쿼리 파라미터 지원 (하위 호환)
+    const authHeader = req.headers['authorization'] ?? ''
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : (url.searchParams.get('token') ?? '')
     if (!token) {
       res.writeHead(401, CORS_HEADERS); res.end(JSON.stringify({ error: 'GitHub PAT required' })); return true
     }
@@ -1364,17 +1422,21 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   }
 
   // POST /api/ws/github/issues
-  // body: { projectPath, token, title, body? }
+  // body: { projectPath, title, body? } — token은 Authorization: Bearer 헤더로 전달
   // GitHub 이슈 생성 (jikime-todo 라벨 자동 추가)
   if (pathname === '/api/ws/github/issues' && req.method === 'POST') {
+    const postAuthHeader = req.headers['authorization'] ?? ''
+    const postHeaderToken = postAuthHeader.startsWith('Bearer ') ? postAuthHeader.slice(7) : ''
     let body = ''
     req.on('data', c => { body += c })
     req.on('end', () => {
       ;(async () => {
         try {
-          const { projectPath, token, title, body: issueBody } = JSON.parse(body) as {
-            projectPath: string; token: string; title: string; body?: string
+          const { projectPath, token: bodyToken, title, body: issueBody } = JSON.parse(body) as {
+            projectPath: string; token?: string; title: string; body?: string
           }
+          // Authorization 헤더 우선, 폴백으로 body token 지원 (하위 호환)
+          const token = postHeaderToken || bodyToken || ''
           if (!token || !title) {
             res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'token and title required' })); return
           }
@@ -1476,6 +1538,7 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     if (processor) {
       processor.interrupt?.().catch(() => {})
       processor.status = 'error'
+      processor.completedAt = Date.now()
     }
     res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
     res.end(JSON.stringify({ ok: true }))
@@ -1592,57 +1655,64 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     let body = ''
     req.on('data', (chunk) => { body += chunk })
     req.on('end', () => {
-      try {
-        const { action, cwd, args, file, files, message, branch, pat } = JSON.parse(body)
-
-        // git 저장소 여부 먼저 확인
+      ;(async () => {
         try {
-          execSync('git rev-parse --git-dir', { cwd, stdio: 'pipe', timeout: 3000 })
-        } catch {
-          res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
-          res.end(JSON.stringify({ notGit: true, output: '' }))
-          return
-        }
+          const { action, cwd, args, file, files, message, branch, pat } = JSON.parse(body)
 
-        let result: unknown
-        if (action === 'status') {
-          result = { output: runGit(cwd, ['status', '--short']) }
-        } else if (action === 'log') {
-          result = { output: runGit(cwd, ['log', '--oneline', '-20']) }
-        } else if (action === 'diff') {
-          result = { output: runGit(cwd, ['diff', '--stat']) }
-        } else if (action === 'file_diff') {
-          const target = file as string | undefined
-          const diffArgs = target ? ['diff', 'HEAD', '--', target] : ['diff', 'HEAD']
-          result = { output: runGit(cwd, diffArgs) }
-        } else if (action === 'branch') {
-          result = { output: runGit(cwd, ['branch', '-a']) }
-        } else if (action === 'add') {
-          const targets: string[] = Array.isArray(files) && files.length > 0 ? files : ['.']
-          result = { output: runGit(cwd, ['add', '--', ...targets]) }
-        } else if (action === 'commit') {
-          if (!message) { res.writeHead(400, CORS_HEADERS); res.end('Missing message'); return }
-          result = { output: runGit(cwd, ['commit', '-m', message as string]) }
-        } else if (action === 'checkout') {
-          if (!branch) { res.writeHead(400, CORS_HEADERS); res.end('Missing branch'); return }
-          result = { output: runGit(cwd, ['checkout', branch as string]) }
-        } else if (action === 'push' || action === 'pull') {
-          if (pat) {
-            result = { output: runGitWithPat(cwd, action, pat as string) }
-          } else {
-            result = { output: runGit(cwd, [action]) }
+          // git 저장소 여부 먼저 확인
+          try {
+            execSync('git rev-parse --git-dir', { cwd, stdio: 'pipe', timeout: 3000 })
+          } catch {
+            res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+            res.end(JSON.stringify({ notGit: true, output: '' }))
+            return
           }
-        } else if (action === 'custom' && Array.isArray(args)) {
-          result = { output: runGit(cwd, args) }
-        } else {
-          res.writeHead(400, CORS_HEADERS); res.end('Unknown action'); return
+
+          let result: unknown
+          if (action === 'status') {
+            result = { output: runGit(cwd, ['status', '--short']) }
+          } else if (action === 'log') {
+            result = { output: runGit(cwd, ['log', '--oneline', '-20']) }
+          } else if (action === 'diff') {
+            result = { output: runGit(cwd, ['diff', '--stat']) }
+          } else if (action === 'file_diff') {
+            const target = file as string | undefined
+            const diffArgs = target ? ['diff', 'HEAD', '--', target] : ['diff', 'HEAD']
+            result = { output: runGit(cwd, diffArgs) }
+          } else if (action === 'branch') {
+            result = { output: runGit(cwd, ['branch', '-a']) }
+          } else if (action === 'add') {
+            const targets: string[] = Array.isArray(files) && files.length > 0 ? files : ['.']
+            result = { output: runGit(cwd, ['add', '--', ...targets]) }
+          } else if (action === 'commit') {
+            if (!message) { res.writeHead(400, CORS_HEADERS); res.end('Missing message'); return }
+            result = { output: runGit(cwd, ['commit', '-m', message as string]) }
+          } else if (action === 'checkout') {
+            if (!branch) { res.writeHead(400, CORS_HEADERS); res.end('Missing branch'); return }
+            result = { output: runGit(cwd, ['checkout', branch as string]) }
+          } else if (action === 'push' || action === 'pull') {
+            if (pat) {
+              result = { output: runGitWithPat(cwd, action, pat as string) }
+            } else {
+              // execFile 기반 비동기 실행 — 이벤트 루프 블로킹 방지
+              result = { output: await runGitAsync(cwd, [action]) }
+            }
+          } else if (action === 'custom' && Array.isArray(args)) {
+            const subCmd = args[0] as string | undefined
+            if (!subCmd || !ALLOWED_GIT_CUSTOM.has(subCmd)) {
+              res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: `Disallowed git subcommand: ${subCmd}` })); return
+            }
+            result = { output: runGit(cwd, args) }
+          } else {
+            res.writeHead(400, CORS_HEADERS); res.end('Unknown action'); return
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+          res.end(JSON.stringify(result))
+        } catch (e: unknown) {
+          res.writeHead(500, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+          res.end(JSON.stringify({ error: (e as Error).message }))
         }
-        res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
-        res.end(JSON.stringify(result))
-      } catch (e: unknown) {
-        res.writeHead(500, { 'Content-Type': 'application/json', ...CORS_HEADERS })
-        res.end(JSON.stringify({ error: (e as Error).message }))
-      }
+      })()
     })
     return true
   }

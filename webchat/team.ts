@@ -87,9 +87,9 @@ export class TeamFileStore {
 
   listTeams(projectPath?: string): string[] {
     if (!fs.existsSync(this.root)) return []
-    const all = fs.readdirSync(this.root).filter((e) =>
-      fs.statSync(path.join(this.root, e)).isDirectory()
-    )
+    // withFileTypes: true — 개별 statSync 호출 없이 isDirectory() 판별 가능
+    const all = fs.readdirSync(this.root, { withFileTypes: true })
+      .filter(e => e.isDirectory()).map(e => e.name)
     if (!projectPath) return all
     const realQuery = (() => { try { return fs.realpathSync(projectPath) } catch { return projectPath } })()
     return all.filter((name) => {

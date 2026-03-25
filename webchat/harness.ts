@@ -104,7 +104,14 @@ const CORS: Record<string, string> = {
 
 // ── WORKFLOW.md Parser ────────────────────────────────────────────
 
+// 5초 TTL 인메모리 캐시 — 매 요청마다 동기 readFileSync 방지
+const _wfCache = new Map<string, { config: WorkflowConfig; ts: number }>()
+const WF_CACHE_TTL_MS = 5000
+
 export function parseWorkflowMd(filePath: string): WorkflowConfig {
+  const cached = _wfCache.get(filePath)
+  if (cached && Date.now() - cached.ts < WF_CACHE_TTL_MS) return cached.config
+
   const raw = fs.readFileSync(filePath, 'utf8')
 
   // YAML 프론트매터 추출 (--- ... --- 사이)
@@ -143,7 +150,7 @@ export function parseWorkflowMd(filePath: string): WorkflowConfig {
   const workspaceRoot = ((workspace.root as string) ?? '/tmp/jikime_workspaces')
     .replace(/^~/, os.homedir())
 
-  return {
+  const config: WorkflowConfig = {
     tracker: {
       kind:            'github',
       api_key:         apiKey,
@@ -173,6 +180,8 @@ export function parseWorkflowMd(filePath: string): WorkflowConfig {
     server: { port: (server.port as number) ?? 0 },
     promptTemplate: promptBody.trim(),
   }
+  _wfCache.set(filePath, { config, ts: Date.now() })
+  return config
 }
 
 // ── Template Renderer ─────────────────────────────────────────────
@@ -589,6 +598,13 @@ export function startHarness(
   workflowPath: string,
   claudePath: string | undefined,
 ): HarnessOrchestrator {
+  // workflowPath 는 반드시 projectPath 내부여야 함 — 경로 탈출 방지
+  const normProject  = path.resolve(projectPath)
+  const normWorkflow = path.resolve(workflowPath)
+  if (!normWorkflow.startsWith(normProject + path.sep) && normWorkflow !== normProject) {
+    throw new Error(`workflowPath must be inside projectPath: ${workflowPath}`)
+  }
+
   stopHarness(projectPath)
 
   const config = parseWorkflowMd(workflowPath)
