@@ -289,7 +289,7 @@ const SessionItem = memo(function SessionItem({
 // ── 프로젝트 아이템 ───────────────────────────────────────────────
 const ProjectItem = memo(function ProjectItem({
   project, isOpen, isActive, deletingId, deletingSessionId, activeSessionId,
-  onToggle, onSelect, onDeleteProject, onSelectSession, onDeleteSession,
+  onToggle, onSelect, onDeleteProject, onNewChat, onSelectSession, onDeleteSession,
 }: {
   project: Project
   isOpen: boolean
@@ -300,6 +300,7 @@ const ProjectItem = memo(function ProjectItem({
   onToggle: (id: string) => void
   onSelect: (p: Project) => void
   onDeleteProject: (p: Project) => void
+  onNewChat: (p: Project) => void
   onSelectSession: (project: Project, sessionId: string) => void
   onDeleteSession: (project: Project, sessionId: string) => void
 }) {
@@ -344,7 +345,7 @@ const ProjectItem = memo(function ProjectItem({
         <div className="ml-5">
           <button
             className="flex items-center gap-2 px-3 py-1 text-base text-muted-foreground hover:text-foreground/80 w-full hover:bg-muted rounded-md"
-            onClick={() => onSelectSession(project, '')}
+            onClick={() => onNewChat(project)}
           >
             <Plus className="w-3 h-3" />
             {t.sidebar.newChat}
@@ -471,6 +472,20 @@ function Sidebar() {
     setActiveSessionId(null)
     setOpenProjects(prev => prev.has(p.id) ? prev : new Set([...prev, p.id]))
   }, [setActiveProject, setActiveSessionId])
+
+  const handleNewChat = useCallback(async (p: Project) => {
+    try {
+      const res = await fetch(getApiUrl('/api/ws/session/new'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId: p.id }),
+      })
+      if (!res.ok) return
+      const { sessionId } = await res.json() as { sessionId: string }
+      navigateToSession(p, sessionId)
+      await refreshProjects()
+    } catch { /* */ }
+  }, [getApiUrl, navigateToSession, refreshProjects])
 
   return (
     <div className="relative flex flex-col h-full bg-white dark:bg-muted">
@@ -636,6 +651,7 @@ function Sidebar() {
               onToggle={toggleProject}
               onSelect={selectProject}
               onDeleteProject={setDeletingProject}
+              onNewChat={handleNewChat}
               onSelectSession={(p, sId) => {
                 // 세션 클릭: URL을 /session/{sessionId}로 이동
                 navigateToSession(p, sId || '')

@@ -3,6 +3,7 @@ import next from 'next'
 import { WebSocketServer, WebSocket } from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
+import * as crypto from 'crypto'
 import { execFile, execFileSync } from 'child_process'
 import * as os from 'os'
 import { handleHarnessRoutes } from './harness'
@@ -1170,6 +1171,51 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     const projects = discoverProjects()
     res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
     res.end(JSON.stringify(projects))
+    return true
+  }
+
+  // POST /api/ws/session/new  { projectId }
+  // ~/.claude/projects/{projectId}/{uuid}.jsonl 빈 파일 생성 → 새 세션 ID 반환
+  if (pathname === '/api/ws/session/new' && req.method === 'POST') {
+    const MAX_BODY = 4 * 1024  // 4 KB
+    let body = ''; let bodySize = 0
+    req.on('data', (chunk: Buffer) => {
+      bodySize += chunk.length
+      if (bodySize > MAX_BODY) { req.destroy(); return }
+      body += chunk
+    })
+    req.on('end', () => {
+      let projectId: string
+      try {
+        projectId = (JSON.parse(body) as { projectId?: string }).projectId ?? ''
+      } catch {
+        res.writeHead(400, CORS_HEADERS); res.end('Invalid JSON'); return
+      }
+
+      // 입력 검증: 비어있거나 경로 탈출 문자 포함 금지
+      if (!projectId || projectId.includes('/') || projectId.includes('..')) {
+        res.writeHead(400, CORS_HEADERS); res.end('Invalid projectId'); return
+      }
+
+      const claudeDir = path.resolve(path.join(os.homedir(), '.claude', 'projects'))
+      const projectDir = path.join(claudeDir, projectId)
+
+      // 경로 탈출 방지
+      if (!path.resolve(projectDir).startsWith(claudeDir + path.sep)) {
+        res.writeHead(400, CORS_HEADERS); res.end('Invalid projectId'); return
+      }
+
+      try {
+        if (!fs.existsSync(projectDir)) fs.mkdirSync(projectDir, { recursive: true })
+        const sessionId = crypto.randomUUID()
+        fs.writeFileSync(path.join(projectDir, `${sessionId}.jsonl`), '', { encoding: 'utf8' })
+        res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+        res.end(JSON.stringify({ sessionId }))
+      } catch (e) {
+        console.error('[session/new] error:', e)
+        res.writeHead(500, CORS_HEADERS); res.end('Failed to create session')
+      }
+    })
     return true
   }
 
