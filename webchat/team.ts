@@ -203,7 +203,8 @@ const MAX_GLOBAL_SSE_CLIENTS = 5000
 
 // 30초마다 끊어진 SSE 클라이언트 정리 (기존 5분 → 30초로 단축)
 setInterval(() => {
-  for (const client of sseClients) {
+  // [...sseClients] 스냅샷 — 순회 중 다른 핸들러의 동시 삭제 충돌 방지
+  for (const client of [...sseClients]) {
     if (client.res.destroyed || client.res.writableEnded) {
       sseClients.delete(client)
     }
@@ -347,7 +348,9 @@ function broadcastTeamEvent(teamName: string): void {
       continue
     }
     try {
-      client.res.write(`data: ${payload}\n\n`)
+      // write() 반환 false = 소켓 버퍼 가득 참 → 클라이언트 제거로 메모리 누수 방지
+      const ok = client.res.write(`data: ${payload}\n\n`)
+      if (!ok) sseClients.delete(client)
     } catch {
       sseClients.delete(client)
     }
@@ -395,6 +398,8 @@ export function handleTeamRoutes(
   const tmplYamlMatch = pathname.match(/^\/api\/template\/([^/]+)\/yaml$/)
   if (method === 'GET' && tmplYamlMatch) {
     const tmplName = decodeURIComponent(tmplYamlMatch[1] || '')
+    // 디코딩 후 재검증 — %2F 등 URL 인코딩 경로 탈출 방지
+    if (!NAME_RE.test(tmplName)) { jsonReply(res, 400, { error: 'Invalid template name' }); return true }
     const filePath = path.join(os.homedir(), '.jikime', 'templates', `${tmplName}.yaml`)
     try {
       if (!fs.existsSync(filePath)) {
@@ -501,17 +506,18 @@ Rules:
               const content = (msg?.['content'] ?? []) as Array<Record<string, unknown>>
               for (const block of content) {
                 if (block['type'] === 'text' && typeof block['text'] === 'string') {
-                  res.write(`data: ${JSON.stringify({ chunk: block['text'] })}\n\n`)
+                  // writableEnded 체크 — 클라이언트 끊김 후 write 시도로 인한 오류 방지
+                  if (!res.writableEnded) res.write(`data: ${JSON.stringify({ chunk: block['text'] })}\n\n`)
                 }
               }
             }
           }
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err)
-          res.write(`data: ${JSON.stringify({ error: msg })}\n\n`)
+          if (!res.writableEnded) res.write(`data: ${JSON.stringify({ error: msg })}\n\n`)
         } finally {
-          res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
-          res.end()
+          if (!res.writableEnded) res.write(`data: ${JSON.stringify({ done: true })}\n\n`)
+          if (!res.destroyed)     res.end()
         }
       })()
     })
@@ -656,6 +662,8 @@ Rules:
   const agentKillMatch = subPath.match(/^\/agents\/([^/]+)$/)
   if (method === 'DELETE' && agentKillMatch) {
     const agentId = decodeURIComponent(agentKillMatch[1] || '')
+    // 디코딩 후 재검증 — tmux 세션명 구성 전 경로 탈출 / 인젝션 방지
+    if (!NAME_RE.test(agentId)) { jsonReply(res, 400, { error: 'Invalid agent ID' }); return true }
     const sessionName = `jikime-${teamName.replace(/[ /:]/g, '-')}-${agentId.replace(/[ /:]/g, '-')}`
     execFile('tmux', ['kill-session', '-t', sessionName], (err) => {
       if (err) { jsonReply(res, 500, { error: err.message }); return }

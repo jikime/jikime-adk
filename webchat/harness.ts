@@ -150,6 +150,12 @@ export function parseWorkflowMd(filePath: string): WorkflowConfig {
 
   const workspaceRoot = ((workspace.root as string) ?? '/tmp/jikime_workspaces')
     .replace(/^~/, os.homedir())
+  // workspaceRoot 경계 검증 — WORKFLOW.md 에 ~/../../etc 같은 경로 기재 시 차단
+  const normWsRoot    = path.resolve(workspaceRoot)
+  const allowedRoots  = [os.homedir(), os.tmpdir(), '/tmp']
+  if (!allowedRoots.some(r => normWsRoot === r || normWsRoot.startsWith(r + path.sep))) {
+    throw new Error(`workspace.root은 홈 디렉터리 또는 /tmp 내부여야 합니다: ${normWsRoot}`)
+  }
 
   const config: WorkflowConfig = {
     tracker: {
@@ -189,15 +195,16 @@ export function parseWorkflowMd(filePath: string): WorkflowConfig {
 
 function renderPrompt(template: string, issue: HarnessIssue): string {
   // strict mode: 렌더링 후 미치환 {{ }} 가 남으면 오류
+  // \s{0,10} 상한 — \s* 무제한 역추적으로 인한 ReDoS 방지
   const rendered = template
-    .replace(/\{\{\s*issue\.id\s*\}\}/g,          String(issue.id))
-    .replace(/\{\{\s*issue\.identifier\s*\}\}/g,  issue.identifier)
-    .replace(/\{\{\s*issue\.title\s*\}\}/g,       issue.title)
-    .replace(/\{\{\s*issue\.description\s*\}\}/g, issue.description)
-    .replace(/\{\{\s*issue\.state\s*\}\}/g,       issue.state)
-    .replace(/\{\{\s*issue\.url\s*\}\}/g,         issue.url)
-    .replace(/\{\{\s*issue\.branch_name\s*\}\}/g, issue.branch_name)
-    .replace(/\{\{\s*attempt\s*\}\}/g,            issue.attempt > 1 ? `Retry attempt ${issue.attempt}` : '')
+    .replace(/\{\{\s{0,10}issue\.id\s{0,10}\}\}/g,          String(issue.id))
+    .replace(/\{\{\s{0,10}issue\.identifier\s{0,10}\}\}/g,  issue.identifier)
+    .replace(/\{\{\s{0,10}issue\.title\s{0,10}\}\}/g,       issue.title)
+    .replace(/\{\{\s{0,10}issue\.description\s{0,10}\}\}/g, issue.description)
+    .replace(/\{\{\s{0,10}issue\.state\s{0,10}\}\}/g,       issue.state)
+    .replace(/\{\{\s{0,10}issue\.url\s{0,10}\}\}/g,         issue.url)
+    .replace(/\{\{\s{0,10}issue\.branch_name\s{0,10}\}\}/g, issue.branch_name)
+    .replace(/\{\{\s{0,10}attempt\s{0,10}\}\}/g,            issue.attempt > 1 ? `Retry attempt ${issue.attempt}` : '')
 
   const leftover = rendered.match(/\{\{[^}]+\}\}/)
   if (leftover) throw new Error(`WORKFLOW.md 프롬프트에 미정의 변수: ${leftover[0]}`)
@@ -402,9 +409,12 @@ async function runADK(
         const k = Object.keys(usage)[0]
         if (k) {
           const m = usage[k]
-          orch.tokenTotals.input  += m.inputTokens  ?? m.cumulativeInputTokens  ?? 0
-          orch.tokenTotals.output += m.outputTokens ?? m.cumulativeOutputTokens ?? 0
-          orch.tokenTotals.total  = orch.tokenTotals.input + orch.tokenTotals.output
+          // m 이 undefined 일 경우 방어 — modelUsage 구조 변경 시 크래시 방지
+          if (m) {
+            orch.tokenTotals.input  += m.inputTokens  ?? m.cumulativeInputTokens  ?? 0
+            orch.tokenTotals.output += m.outputTokens ?? m.cumulativeOutputTokens ?? 0
+            orch.tokenTotals.total  = orch.tokenTotals.input + orch.tokenTotals.output
+          }
         }
       }
       orch.tokenTotals.secondsRunning += (Date.now() - startTime) / 1000
@@ -903,6 +913,20 @@ gh pr create --title "Fix: {{ issue.title }}" --body "Closes {{ issue.url }}"
 `
 }
 
+// ── HTTP Route Helpers ────────────────────────────────────────────
+
+// projectPath 쿼리 파라미터 검증 — 경로 순회 및 빈 값 방지
+function validateProjectPathParam(rawPath: string): string | null {
+  if (!rawPath) return null
+  const norm = path.resolve(rawPath)
+  // '..' 잔존 검사 (resolve 후에는 사라져야 함) + 절대 경로 요구
+  if (!path.isAbsolute(norm)) return null
+  return norm
+}
+
+// owner/repo 형식 슬러그 검증
+const SLUG_RE = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+$/
+
 // ── HTTP Route Handler (server.ts 에서 등록) ──────────────────────
 
 export function handleHarnessRoutes(
@@ -1027,8 +1051,10 @@ export function handleHarnessRoutes(
   // ── GET /api/harness/check?projectPath=... ─────────────────────
   // WORKFLOW.md 존재 여부 + JiKiME-ADK 감지 + git remote slug 자동 감지
   if (pathname === '/api/harness/check' && req.method === 'GET') {
-    const qp = new URL(req.url!, 'http://localhost').searchParams
-    const projectPath = qp.get('projectPath') ?? ''
+    const qp          = new URL(req.url!, 'http://localhost').searchParams
+    const rawCheckPath = qp.get('projectPath') ?? ''
+    // projectPath 정규화 + 경로 순회 방지 — detectGitSlug(cwd) 호출 전 필수
+    const projectPath  = validateProjectPathParam(rawCheckPath) ?? rawCheckPath
     const workflowPath = path.join(projectPath, 'WORKFLOW.md')
     const exists    = projectPath ? fs.existsSync(workflowPath) : false
     const isRunning = orchestrators.has(projectPath)
@@ -1061,6 +1087,12 @@ export function handleHarnessRoutes(
         if (!projectPath || !slug) {
           res.writeHead(400, CORS)
           res.end(JSON.stringify({ error: 'projectPath 와 slug 가 필요합니다.' }))
+          return
+        }
+        // slug owner/repo 형식 검증 — WORKFLOW.md 템플릿 내 문자열 삽입 전 필수
+        if (!SLUG_RE.test(slug)) {
+          res.writeHead(400, CORS)
+          res.end(JSON.stringify({ error: 'slug는 owner/repo 형식이어야 합니다.' }))
           return
         }
 

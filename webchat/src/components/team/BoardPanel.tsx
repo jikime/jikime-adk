@@ -195,11 +195,9 @@ export default function BoardPanel() {
   const [showAddTask,    setShowAddTask]    = useState(false)
   const [showRunTeam,    setShowRunTeam]    = useState(false)
 
-  const currentTeamDesc = useMemo(() => {
-    if (!activeTeam) return null
-    const found = teams.find(t => t.name === activeTeam)
-    return (found?.config as { description?: string })?.description ?? null
-  }, [activeTeam, teams])
+  // teamBrief 사용 — teams 배열 전체가 새 참조로 바뀔 때마다 재연산하던 문제 해결
+  // teamBrief 는 SSE 로 현재 팀 정보만 업데이트되므로 불필요한 재렌더링 없음
+  const currentTeamDesc = teamBrief?.description ?? null
 
   // 프로젝트 미선택
   if (!activeProject) {

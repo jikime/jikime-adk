@@ -201,19 +201,26 @@ export function buildTeamSnapshot(teamName: string): unknown {
 
   const eventLogFile = path.join(teamDir(teamName), 'inbox', 'event-log.jsonl')
   const messages: Array<{ from: string; to: string; type: string; timestamp: string; content: string }> = []
+  // 대용량 event-log.jsonl 이벤트 루프 블로킹 방지 — 10 MB 초과 시 로딩 생략
+  const MAX_EVENT_LOG_SIZE = 10 * 1024 * 1024
   try {
-    const lines = fs.readFileSync(eventLogFile, 'utf8').split('\n').filter(Boolean)
-    for (const line of lines.slice(-50)) {
-      try {
-        const m = JSON.parse(line) as Record<string, unknown>
-        messages.push({
-          from:      (m['from']    as string) || '',
-          to:        (m['to']      as string) || '',
-          type:      (m['kind']    as string) || 'direct',
-          timestamp: (m['sent_at'] as string) || '',
-          content:   (m['body']    as string) || '',
-        })
-      } catch { /* skip malformed line */ }
+    const evLogStat = fs.statSync(eventLogFile)
+    if (evLogStat.size > MAX_EVENT_LOG_SIZE) {
+      console.warn(`[team-store] event-log.jsonl too large (${(evLogStat.size / 1024 / 1024).toFixed(1)} MB), skipping`)
+    } else {
+      const lines = fs.readFileSync(eventLogFile, 'utf8').split('\n').filter(Boolean)
+      for (const line of lines.slice(-50)) {
+        try {
+          const m = JSON.parse(line) as Record<string, unknown>
+          messages.push({
+            from:      (m['from']    as string) || '',
+            to:        (m['to']      as string) || '',
+            type:      (m['kind']    as string) || 'direct',
+            timestamp: (m['sent_at'] as string) || '',
+            content:   (m['body']    as string) || '',
+          })
+        } catch { /* skip malformed line */ }
+      }
     }
   } catch { /* log file may not exist yet */ }
 
