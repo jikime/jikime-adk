@@ -17,7 +17,7 @@ import * as fs   from 'fs'
 import * as path from 'path'
 import * as os   from 'os'
 import * as https from 'https'
-import { exec }  from 'child_process'
+import { execFile } from 'child_process'
 import type { IncomingMessage, ServerResponse } from 'http'
 import yaml from 'js-yaml'
 
@@ -241,8 +241,10 @@ function runHook(script: string, cwd: string, timeoutMs: number): Promise<void> 
   if (HOOK_UNSAFE_RE.test(script)) {
     return Promise.reject(new Error(`훅 스크립트에 허용되지 않는 셸 문법이 포함되어 있습니다: ${script.slice(0, 80)}`))
   }
+  // execFile 직접 호출 — shell 옵션 제거로 중간 셸 파싱 단계 없음
+  // bash -c <script> 형태이므로 HOOK_UNSAFE_RE 통과한 단순 명령만 실행 가능
   return new Promise((resolve, reject) => {
-    const proc = exec(script, { cwd, shell: '/bin/bash' })
+    const proc = execFile('/bin/bash', ['-c', script], { cwd })
     const timer = setTimeout(() => {
       proc.kill()
       reject(new Error(`훅 타임아웃 (${timeoutMs}ms)`))
@@ -1049,6 +1051,11 @@ export function handleHarnessRoutes(
       res.write(`data: ${JSON.stringify({ type: 'error', message: '실행 중인 하네스 없음' })}\n\n`)
       res.end(); return true
     }
+    // SSE 클라이언트 상한 200 — 단일 오케스트레이터에 연결 폭주 방지
+    if (orch.sseClients.size >= 200) {
+      res.writeHead(429, { 'Content-Type': 'application/json', ...CORS })
+      res.end(JSON.stringify({ error: 'Too many SSE clients' })); return true
+    }
     orch.sseClients.add(res)
     req.on('close', () => orch.sseClients.delete(res))
     return true
@@ -1069,6 +1076,11 @@ export function handleHarnessRoutes(
     // 기존 이벤트 리플레이
     for (const msg of worker.events) {
       res.write(`data: ${JSON.stringify({ type: 'event', message: msg })}\n\n`)
+    }
+    // SSE 클라이언트 상한 100 — 단일 워커에 연결 폭주 방지
+    if (worker.sseClients.size >= 100) {
+      res.writeHead(429, { 'Content-Type': 'application/json', ...CORS })
+      res.end(JSON.stringify({ error: 'Too many SSE clients for this worker' })); return true
     }
     worker.sseClients.add(res)
     req.on('close', () => worker.sseClients.delete(res))

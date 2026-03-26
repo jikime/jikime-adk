@@ -1503,11 +1503,21 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   // body: { projectPath, title, body? } — token은 Authorization: Bearer 헤더로 전달
   // GitHub 이슈 생성 (jikime-todo 라벨 자동 추가)
   if (pathname === '/api/ws/github/issues' && req.method === 'POST') {
+    req.setTimeout(30_000, () => { req.destroy() })  // slow-client DoS 방지
+    const MAX_ISSUES_BODY = 100 * 1024  // 100 KB
     const postAuthHeader = req.headers['authorization'] ?? ''
     const postHeaderToken = postAuthHeader.startsWith('Bearer ') ? postAuthHeader.slice(7) : ''
     let body = ''
-    req.on('data', c => { body += c })
+    let bodySize = 0
+    req.on('data', (c: Buffer) => {
+      bodySize += c.length
+      if (bodySize > MAX_ISSUES_BODY) { req.destroy(); return }
+      body += c
+    })
     req.on('end', () => {
+      if (bodySize > MAX_ISSUES_BODY) {
+        res.writeHead(413, CORS_HEADERS); res.end(JSON.stringify({ error: 'Request body too large' })); return
+      }
       ;(async () => {
         try {
           const { projectPath, token: bodyToken, title, body: issueBody } = JSON.parse(body) as {
@@ -1543,9 +1553,19 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   // body: { projectPath, token, issueNumber, issueTitle, issueBody, owner, repo, model? }
   // ADK로 이슈 처리 시작 (백그라운드)
   if (pathname === '/api/ws/github/process' && req.method === 'POST') {
+    req.setTimeout(30_000, () => { req.destroy() })  // slow-client DoS 방지
+    const MAX_PROCESS_BODY = 100 * 1024  // 100 KB
     let body = ''
-    req.on('data', c => { body += c })
+    let bodySize = 0
+    req.on('data', (c: Buffer) => {
+      bodySize += c.length
+      if (bodySize > MAX_PROCESS_BODY) { req.destroy(); return }
+      body += c
+    })
     req.on('end', () => {
+      if (bodySize > MAX_PROCESS_BODY) {
+        res.writeHead(413, CORS_HEADERS); res.end(JSON.stringify({ error: 'Request body too large' })); return
+      }
       try {
         const {
           projectPath, token, issueNumber, issueTitle, issueBody, owner, repo,

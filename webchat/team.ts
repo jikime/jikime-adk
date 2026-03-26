@@ -263,16 +263,35 @@ function stopTeamWatcher(teamName: string): void {
 
 // 이벤트 로그 파일 tail 캐시 — 3초 TTL (매 broadcast마다 readFileSync 방지)
 const _eventLogCache = new Map<string, { lines: string[]; ts: number }>()
+// tasks/agents/config 캐시 — 2초 TTL (listTasks O(n) 반복 호출 방지)
+const _teamDataCache = new Map<string, {
+  tasks:  Array<Record<string, unknown>>
+  agents: Array<Record<string, unknown>>
+  config: Record<string, unknown>
+  ts:     number
+}>()
 const EVENT_LOG_TTL = 3000
 
 function broadcastTeamEvent(teamName: string): void {
   // 팀이 삭제된 후 FSWatcher 이벤트가 지연 도착하는 경우 조기 종료
   if (!fs.existsSync(teamDir(teamName))) return
 
-  const store      = new TeamFileStore()
-  const tasksList  = store.listTasks(teamName)  as Array<Record<string, unknown>>
-  const agentsList = store.listAgents(teamName) as Array<Record<string, unknown>>
-  const config     = store.getConfig(teamName)  as Record<string, unknown>
+  const store   = new TeamFileStore()
+  const nowData = Date.now()
+  const dataCached = _teamDataCache.get(teamName)
+  let tasksList: Array<Record<string, unknown>>
+  let agentsList: Array<Record<string, unknown>>
+  let config: Record<string, unknown>
+  if (dataCached && nowData - dataCached.ts < 2000) {
+    tasksList  = dataCached.tasks
+    agentsList = dataCached.agents
+    config     = dataCached.config
+  } else {
+    tasksList  = store.listTasks(teamName)  as Array<Record<string, unknown>>
+    agentsList = store.listAgents(teamName) as Array<Record<string, unknown>>
+    config     = store.getConfig(teamName)  as Record<string, unknown>
+    _teamDataCache.set(teamName, { tasks: tasksList, agents: agentsList, config, ts: nowData })
+  }
 
   // Task summary counts
   const taskSummary: Record<string, number> = {
@@ -798,7 +817,9 @@ Rules:
   // PATCH /api/team/:name/tasks/:id
   const taskPatchMatch = subPath.match(/^\/tasks\/([^/]+)$/)
   if (method === 'PATCH' && taskPatchMatch) {
-    const taskID = taskPatchMatch[1]
+    const rawTaskID = decodeURIComponent(taskPatchMatch[1] || '')
+    if (!NAME_RE.test(rawTaskID)) { jsonReply(res, 400, { error: 'Invalid task ID' }); return true }
+    const taskID = rawTaskID
     parseBody(req).then((body) => {
       const b = body as Record<string, string>
       // status 화이트리스트 — 임의 문자열이 CLI 인수로 전달되는 것 방지
