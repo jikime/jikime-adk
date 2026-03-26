@@ -259,6 +259,9 @@ function stopTeamWatcher(teamName: string): void {
     watchers.forEach((w) => w.close())
     sseWatchers.delete(teamName)
   }
+  // 팀 캐시 즉시 삭제 — 삭제 후 재생성 시 오염된 캐시 사용 방지
+  _teamDataCache.delete(teamName)
+  _eventLogCache.delete(`evlog:${teamName}`)
 }
 
 // 이벤트 로그 파일 tail 캐시 — 3초 TTL (매 broadcast마다 readFileSync 방지)

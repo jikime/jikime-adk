@@ -968,9 +968,19 @@ export function handleHarnessRoutes(
 
   // ── POST /api/harness/start ─────────────────────────────────────
   if (pathname === '/api/harness/start' && req.method === 'POST') {
+    req.setTimeout(30_000, () => { req.destroy() })
+    const MAX_START_BODY = 100 * 1024  // 100 KB
     let body = ''
-    req.on('data', c => { body += c })
+    let bodySize = 0
+    req.on('data', (c: Buffer) => {
+      bodySize += c.length
+      if (bodySize > MAX_START_BODY) { req.destroy(); return }
+      body += c
+    })
     req.on('end', () => {
+      if (bodySize > MAX_START_BODY) {
+        res.writeHead(413, CORS); res.end(JSON.stringify({ error: 'Request body too large' })); return
+      }
       try {
         const { projectPath } = JSON.parse(body) as { projectPath: string }
         if (!projectPath) {
@@ -1002,7 +1012,7 @@ export function handleHarnessRoutes(
   // ── DELETE /api/harness/stop?projectPath=... ────────────────────
   if (pathname === '/api/harness/stop' && req.method === 'DELETE') {
     const qp = new URL(req.url!, 'http://localhost').searchParams
-    stopHarness(qp.get('projectPath') ?? '')
+    stopHarness(validateProjectPathParam(qp.get('projectPath') ?? '') ?? '')
     res.writeHead(200, { 'Content-Type': 'application/json', ...CORS })
     res.end(JSON.stringify({ status: 'stopped' }))
     return true
@@ -1011,7 +1021,7 @@ export function handleHarnessRoutes(
   // ── GET /api/harness/status?projectPath=... ─────────────────────
   if (pathname === '/api/harness/status' && req.method === 'GET') {
     const qp = new URL(req.url!, 'http://localhost').searchParams
-    const orch = orchestrators.get(qp.get('projectPath') ?? '')
+    const orch = orchestrators.get(validateProjectPathParam(qp.get('projectPath') ?? '') ?? '')
     if (!orch) {
       res.writeHead(200, { 'Content-Type': 'application/json', ...CORS })
       res.end(JSON.stringify({ status: 'stopped' }))
@@ -1034,7 +1044,7 @@ export function handleHarnessRoutes(
   // ── POST /api/harness/refresh?projectPath=... ───────────────────
   if (pathname === '/api/harness/refresh' && req.method === 'POST') {
     const qp = new URL(req.url!, 'http://localhost').searchParams
-    const orch = orchestrators.get(qp.get('projectPath') ?? '')
+    const orch = orchestrators.get(validateProjectPathParam(qp.get('projectPath') ?? '') ?? '')
     if (orch) pollOnce(orch, claudePath).catch(console.error)
     res.writeHead(200, { 'Content-Type': 'application/json', ...CORS })
     res.end(JSON.stringify({ ok: true }))
@@ -1045,7 +1055,7 @@ export function handleHarnessRoutes(
   // SSE: 오케스트레이터 전체 이벤트 스트림
   if (pathname === '/api/harness/events' && req.method === 'GET') {
     const qp    = new URL(req.url!, 'http://localhost').searchParams
-    const orch  = orchestrators.get(qp.get('projectPath') ?? '')
+    const orch  = orchestrators.get(validateProjectPathParam(qp.get('projectPath') ?? '') ?? '')
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', ...CORS })
     if (!orch) {
       res.write(`data: ${JSON.stringify({ type: 'error', message: '실행 중인 하네스 없음' })}\n\n`)
@@ -1065,7 +1075,7 @@ export function handleHarnessRoutes(
   // SSE: 특정 이슈 워커 이벤트 스트림 (기존 이벤트 리플레이 포함)
   if (pathname === '/api/harness/worker-events' && req.method === 'GET') {
     const qp    = new URL(req.url!, 'http://localhost').searchParams
-    const orch  = orchestrators.get(qp.get('projectPath') ?? '')
+    const orch  = orchestrators.get(validateProjectPathParam(qp.get('projectPath') ?? '') ?? '')
     const num   = parseInt(qp.get('issueNumber') ?? '0')
     res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive', ...CORS })
     const worker = orch?.workers.get(num)
@@ -1107,9 +1117,19 @@ export function handleHarnessRoutes(
   // ── POST /api/harness/init ──────────────────────────────────────
   // WORKFLOW.md 생성 (Basic 또는 JiKiME-ADK 템플릿)
   if (pathname === '/api/harness/init' && req.method === 'POST') {
+    req.setTimeout(30_000, () => { req.destroy() })
+    const MAX_INIT_BODY = 100 * 1024  // 100 KB
     let body = ''
-    req.on('data', c => { body += c })
+    let bodySize = 0
+    req.on('data', (c: Buffer) => {
+      bodySize += c.length
+      if (bodySize > MAX_INIT_BODY) { req.destroy(); return }
+      body += c
+    })
     req.on('end', () => {
+      if (bodySize > MAX_INIT_BODY) {
+        res.writeHead(413, CORS); res.end(JSON.stringify({ error: 'Request body too large' })); return
+      }
       try {
         const {
           projectPath, slug, label, workspaceRoot, port, maxAgents, mode,

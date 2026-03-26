@@ -1629,7 +1629,9 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     }
     // 실시간 구독
     processor.sseClients.add(res)
-    req.on('close', () => processor.sseClients.delete(res))
+    // 25초 하트비트 — 프록시/방화벽 idle timeout 방지
+    const hb = setInterval(() => { try { res.write(': heartbeat\n\n') } catch { clearInterval(hb) } }, 25_000)
+    req.on('close', () => { clearInterval(hb); processor.sseClients.delete(res) })
     return true
   }
 
@@ -1653,9 +1655,19 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   // POST /api/ws/github/poller — 자동 폴링 시작
   // body: { projectPath, token, intervalMs?, maxConcurrent?, model? }
   if (pathname === '/api/ws/github/poller' && req.method === 'POST') {
+    req.setTimeout(30_000, () => { req.destroy() })  // slow-client DoS 방지
+    const MAX_POLLER_BODY = 100 * 1024  // 100 KB
     let body = ''
-    req.on('data', c => { body += c })
+    let bodySize = 0
+    req.on('data', (c: Buffer) => {
+      bodySize += c.length
+      if (bodySize > MAX_POLLER_BODY) { req.destroy(); return }
+      body += c
+    })
     req.on('end', () => {
+      if (bodySize > MAX_POLLER_BODY) {
+        res.writeHead(413, CORS_HEADERS); res.end(JSON.stringify({ error: 'Request body too large' })); return
+      }
       try {
         const {
           projectPath, token,
@@ -1755,7 +1767,9 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
       activeIssues: Array.from(poller.activeIssues),
     })}\n\n`)
     poller.sseClients.add(res)
-    req.on('close', () => poller.sseClients.delete(res))
+    // 25초 하트비트 — 프록시/방화벽 idle timeout 방지
+    const hbp = setInterval(() => { try { res.write(': heartbeat\n\n') } catch { clearInterval(hbp) } }, 25_000)
+    req.on('close', () => { clearInterval(hbp); poller.sseClients.delete(res) })
     return true
   }
 

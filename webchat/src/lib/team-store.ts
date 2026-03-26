@@ -119,20 +119,22 @@ export class TeamFileStore {
     return readJSON(path.join(dir, files[0]), null)
   }
 
-  listAgents(name: string): unknown[] {
+  listAgents(name: string, limit = 1000): unknown[] {
     const dir = path.join(teamDir(name), 'registry')
     if (!fs.existsSync(dir)) return []
     return fs.readdirSync(dir)
       .filter((f) => f.endsWith('.json'))
+      .slice(0, limit)
       .map((f) => readJSON<Record<string, unknown>>(path.join(dir, f), {}))
   }
 
-  getCosts(name: string): { total: number; agents: Record<string, { tokens: number }> } {
+  getCosts(name: string, limit = 1000): { total: number; agents: Record<string, { tokens: number }> } {
     const dir    = path.join(teamDir(name), 'costs')
     const result: { total: number; agents: Record<string, { tokens: number }> } = { total: 0, agents: {} }
     if (!fs.existsSync(dir)) return result
     fs.readdirSync(dir)
       .filter((f) => f.endsWith('.json'))
+      .slice(0, limit)
       .forEach((f) => {
         const ev      = readJSON<Record<string, unknown>>(path.join(dir, f), {})
         const agentID = (ev['agent_id'] as string) || 'unknown'
