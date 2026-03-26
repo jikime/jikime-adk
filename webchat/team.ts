@@ -45,16 +45,15 @@ function readJSON<T>(filePath: string, fallback: T): T {
   }
 }
 
-function corsHeaders(): Record<string, string> {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  }
-}
+// const 객체로 선언 — 매 응답마다 새 객체 생성 방지
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+} as const
 
 function jsonReply(res: ServerResponse, status: number, body: unknown): void {
-  res.writeHead(status, { 'Content-Type': 'application/json', ...corsHeaders() })
+  res.writeHead(status, { 'Content-Type': 'application/json', ...CORS_HEADERS })
   res.end(JSON.stringify(body))
 }
 
@@ -423,7 +422,7 @@ export function handleTeamRoutes(
 
   // CORS preflight (shared early exit)
   if (method === 'OPTIONS') {
-    res.writeHead(204, corsHeaders())
+    res.writeHead(204, CORS_HEADERS)
     res.end()
     return true
   }
@@ -541,7 +540,7 @@ Rules:
         'Content-Type':  'text/event-stream',
         'Cache-Control': 'no-cache',
         'Connection':    'keep-alive',
-        ...corsHeaders(),
+        ...CORS_HEADERS,
       })
 
       const fullPrompt = `${systemPrompt}\n\n${userMessage}`;
@@ -886,7 +885,7 @@ Rules:
       'Content-Type':  'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection':    'keep-alive',
-      ...corsHeaders(),
+      ...CORS_HEADERS,
     })
     res.write('retry: 2000\n\n')
 

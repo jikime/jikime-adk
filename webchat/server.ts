@@ -1567,13 +1567,21 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
         res.writeHead(413, CORS_HEADERS); res.end(JSON.stringify({ error: 'Request body too large' })); return
       }
       try {
-        const {
-          projectPath, token, issueNumber, issueTitle, issueBody, owner, repo,
-          model = 'claude-sonnet-4-6',
-        } = JSON.parse(body) as {
+        const parsed = JSON.parse(body) as {
           projectPath: string; token: string; issueNumber: number
           issueTitle: string; issueBody: string; owner: string; repo: string; model?: string
         }
+        const { projectPath, token, issueNumber, model = 'claude-sonnet-4-6' } = parsed
+        const owner = parsed.owner
+        const repo  = parsed.repo
+        // owner/repo 형식 검증 — GitHub API 경로 삽입 전 필수
+        const GITHUB_REPO_RE = /^[a-zA-Z0-9_.-]+$/
+        if (!GITHUB_REPO_RE.test(owner) || !GITHUB_REPO_RE.test(repo)) {
+          res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'Invalid owner or repo format' })); return
+        }
+        // issueTitle/issueBody 길이 제한 + --- 구분자 치환 (프롬프트 인젝션 방지)
+        const issueTitle = (parsed.issueTitle || '').slice(0, 200).replace(/^---/gm, '- - -')
+        const issueBody  = (parsed.issueBody  || '').slice(0, 8000).replace(/^---/gm, '- - -')
         const issueKey = `${owner}/${repo}#${issueNumber}`
         if (issueProcessors.has(issueKey) && issueProcessors.get(issueKey)?.status === 'running') {
           res.writeHead(409, CORS_HEADERS); res.end(JSON.stringify({ error: 'Already processing', issueKey })); return

@@ -761,10 +761,10 @@ function detectGitSlug(projectPath: string): string {
     }).trim()
     // SSH: git@github.com:owner/repo.git
     const ssh = remote.match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?$/)
-    if (ssh) return ssh[1]
+    if (ssh && SLUG_RE.test(ssh[1])) return ssh[1]
     // HTTPS: https://github.com/owner/repo.git
     const https_ = remote.match(/github\.com\/([^/]+\/[^/]+?)(?:\.git)?$/)
-    if (https_) return https_[1]
+    if (https_ && SLUG_RE.test(https_[1])) return https_[1]
   } catch { /* git 없거나 remote 없음 */ }
   return ''
 }

@@ -45,6 +45,8 @@ function cachedRealpath(p: string): string {
   if (cached && now - cached.ts < RP_TTL_MS) return cached.real
   let real = p
   try { real = fs.realpathSync(p) } catch { /* use as-is */ }
+  // 크기 상한 1000 — 무제한 증가 방지 (가장 오래된 항목 삭제)
+  if (_rpCache.size >= 1000) _rpCache.delete(_rpCache.keys().next().value!)
   _rpCache.set(p, { real, ts: now })
   return real
 }
