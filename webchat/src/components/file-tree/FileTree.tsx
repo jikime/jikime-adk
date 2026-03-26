@@ -363,11 +363,15 @@ export default function FileTree() {
       {/* ── 좌측: 파일 트리 ──────────────────────── */}
       <div className="flex flex-col w-64 shrink-0 border-r border-border bg-white dark:bg-zinc-900">
         {/* 헤더 */}
-        <div className="flex items-center gap-1.5 px-2 py-2 bg-white dark:bg-accent border-b border-border shrink-0">
-          <span className="text-base text-muted-foreground truncate flex-1 font-mono" title={rootPath}>
-            {activeProject ? (rootPath || activeProject.name) : t.files.selectProject}
-          </span>
-          <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground"
+        <div className="flex items-center gap-1.5 px-3 py-2.5 bg-white dark:bg-accent border-b border-border shrink-0">
+          <FolderOpen className="w-4 h-4 text-amber-400 shrink-0" />
+          <span className="text-lg font-medium text-foreground shrink-0">{t.layout.tabs.files}</span>
+          {activeProject && (
+            <span className="text-[11px] text-muted-foreground truncate font-mono ml-1" title={rootPath}>
+              {activeProject.name}
+            </span>
+          )}
+          <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-foreground ml-auto"
             onClick={loadTree} disabled={loading}>
             <RefreshCw className={cn('w-3 h-3', loading && 'animate-spin')} />
           </Button>

@@ -33,7 +33,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   }
 }
 import dynamic from 'next/dynamic'
-import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings, Zap, Users } from 'lucide-react'
+import { Bot, Menu, Sun, Moon, ChevronDown, Check, MessageSquare, SquareTerminal, FolderOpen, GitBranch, Settings, Zap, Users, Layers } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -228,6 +228,17 @@ export default function AppLayout() {
             </button>
           ))}
         </div>
+
+        {/* 프로젝트 컨텍스트 배지 — 항상 동일한 위치에 표시 */}
+        {activeProject && (
+          <div
+            className="flex items-center gap-1 px-2 py-0.5 rounded bg-white/10 border border-white/20 text-white/80 text-[11px] font-mono shrink-0 max-w-[240px] cursor-default"
+            title={activeProject.path}
+          >
+            <Layers className="w-3 h-3 shrink-0 text-white/60" />
+            <span className="truncate">{activeProject.name}</span>
+          </div>
+        )}
 
         {/* Harness 진행 상태 뱃지 */}
         {harnessRunning && (

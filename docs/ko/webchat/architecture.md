@@ -29,18 +29,41 @@ HTTP :4000
 │     Claude Agent SDK query() 스트리밍
 │
 ├── /api/ws/*     → handleCustomRoutes (REST)
-│     ├── GET  /api/ws/health       헬스체크
-│     ├── GET  /api/ws/projects     프로젝트 목록
-│     ├── GET  /api/ws/sessions     세션 히스토리
-│     ├── GET  /api/ws/files        파일 트리
-│     ├── GET  /api/ws/file         파일 내용 읽기
-│     ├── POST /api/ws/file         파일 내용 저장
-│     ├── DELETE /api/ws/session    세션 삭제
-│     ├── DELETE /api/ws/project    프로젝트 삭제
-│     └── POST /api/ws/git          Git 작업
+│     ├── GET  /api/ws/health              헬스체크
+│     ├── GET  /api/ws/projects            프로젝트 목록
+│     ├── GET  /api/ws/session             세션 히스토리 조회
+│     ├── GET  /api/ws/session-lookup      세션 ID → 프로젝트 경로 역조회
+│     ├── DELETE /api/ws/session           세션 삭제
+│     ├── GET  /api/ws/files               파일 트리
+│     ├── GET  /api/ws/file                파일 내용 읽기
+│     ├── POST /api/ws/file                파일 내용 저장
+│     ├── DELETE /api/ws/project           프로젝트 삭제
+│     ├── POST /api/ws/project             프로젝트 등록
+│     └── POST /api/ws/git                 Git 작업
 │
-└── /* → Next.js handle()          페이지 / 정적 파일
+├── /api/ws/session/new (Next.js API Route)
+│     POST → 새 세션 파일 생성 + sessionId 반환
+│
+├── /api/harness/* → handleHarnessRoutes
+│     Harness Engineering 워크플로우 관리
+│
+└── /* → Next.js handle()                  페이지 / 정적 파일
 ```
+
+> **참고**: `POST /api/ws/session/new`는 `server.ts` 커스텀 라우트가 아닌 Next.js App Router API Route(`src/app/api/ws/session/new/route.ts`)로 구현되어 있습니다. `tsx server.ts`는 watch 모드 없이 실행되므로 파일 수정 시 서버 재시작이 필요하지만, Next.js API Route는 개발 서버가 핫 리로드로 즉시 반영합니다.
+
+### URL 라우팅
+
+세션 선택 시 URL이 **세션 ID 기반**으로 변경됩니다.
+
+| URL 패턴 | 설명 |
+|---|---|
+| `/` | 세션 미선택 (통합 안내 페이지 표시) |
+| `/session/{sessionId}` | 특정 세션 활성화 |
+
+- 프로젝트 선택은 URL에 반영되지 않습니다 (사이드바 상태만 변경).
+- 세션 ID는 UUID v4 형식 (`~/.claude/projects/{project}/{uuid}.jsonl`).
+- 브라우저 새로고침 시 `/api/ws/session-lookup?sessionId=...` 로 프로젝트 경로를 역조회합니다.
 
 ### Claude 경로 탐색 (`findClaudePath`)
 
@@ -54,7 +77,7 @@ HTTP :4000
 - ELF(Linux): `7F 45 4C 46`
 - Mach-O(macOS): `FEEDFACE / FEEDFACF / CEFAEDFE / CFFAEDFE`
 
-npm 래퍼 스크립트(셸 스크립트)는 제외하고, 실제 네이티브 바이너리 경로만 반환합니다. 단, 심링크의 경우 해소된 경로가 아닌 원본 심링크 경로를 반환합니다.
+npm 래퍼 스크립트(셸 스크립트)는 제외하고, 실제 네이티브 바이너리 경로만 반환합니다.
 
 ### 프로젝트 경로 디코딩 (`decodeProjectPath`)
 
@@ -90,7 +113,8 @@ Claude는 프로젝트 경로의 `/`를 `-`로 치환하여 `~/.claude/projects/
 ```
 ServerContext       서버 목록 · 활성 서버 관리 · URL 생성
     └── WebSocketContext   WebSocket 연결 관리 · 자동 재연결
-    └── ProjectContext     프로젝트 목록 · 활성 프로젝트 / 세션
+    └── ProjectContext     프로젝트 목록 · 활성 프로젝트 / 세션 · URL 라우팅
+    └── TeamContext        멀티 에이전트 팀 상태 · SSE 이벤트 구독
 ```
 
 **ServerContext** (`src/contexts/ServerContext.tsx`)
@@ -100,27 +124,51 @@ ServerContext       서버 목록 · 활성 서버 관리 · URL 생성
 
 **WebSocketContext** (`src/contexts/WebSocketContext.tsx`)
 - 활성 서버가 바뀌면 기존 연결을 닫고 새 서버로 재연결합니다.
-- `connectRef` 패턴으로 stale closure를 방지합니다. `ws.onclose` 내부에서 항상 최신 `connect` 함수를 참조합니다.
+- `connectRef` 패턴으로 stale closure를 방지합니다.
 - 연결 실패 시 3초 후 자동 재연결합니다.
 
 **ProjectContext** (`src/contexts/ProjectContext.tsx`)
-- 활성 서버가 변경되면 프로젝트 목록을 초기화하고 새 서버에서 재조회합니다.
+- `activeProject`: 현재 선택된 프로젝트 (URL에 반영 안 됨, 사이드바 상태).
+- `activeSessionId`: 현재 세션 ID (`/session/[id]` URL에서 관리).
+- `navigateToSession(project, sessionId)`: 세션 선택 시 URL 이동 (`/session/{id}` 또는 `/`).
+- 페이지 로드 시 URL의 세션 ID로 프로젝트를 역조회하여 상태를 복원합니다.
+
+**TeamContext** (`src/contexts/TeamContext.tsx`)
+- 팀 목록 · 활성 팀 · 에이전트 상태를 관리합니다.
+- SSE(`/api/team/{name}/events`)로 실시간 이벤트를 구독합니다.
 
 ### 주요 컴포넌트
 
 ```
 src/components/
 ├── sidebar/
-│   └── Sidebar.tsx       서버 선택 · 프로젝트 목록 · 세션 목록 · 연결 상태 표시
+│   └── Sidebar.tsx          서버 선택 · 프로젝트/세션 목록 · 새 대화 버튼
 ├── chat/
-│   └── ChatInterface.tsx 채팅 UI · 스트리밍 메시지 · 도구 승인 요청
+│   └── ChatInterface.tsx    채팅 UI · 스트리밍 메시지 · 도구 승인 요청
 ├── shell/
-│   └── ShellPanel.tsx    xterm.js 터미널 패널
+│   └── ShellPanel.tsx       xterm.js 터미널 패널
 ├── file-tree/
-│   └── FileTree.tsx      파일 트리 + Monaco 에디터
+│   └── FileTree.tsx         파일 트리 + Monaco 에디터
+├── git-panel/
+│   └── GitPanel.tsx         Git 변경사항 · 로그 · 브랜치 · Issues
+├── team/
+│   ├── BoardPanel.tsx        Team 탭 진입점 · 팀 선택 · 칸반 대시보드
+│   ├── TeamBoard.tsx         에이전트 상태 칸반 보드
+│   ├── TeamCreateModal.tsx   팀 생성 모달
+│   ├── TaskAddModal.tsx      태스크 추가 모달
+│   └── TeamServeModal.tsx    팀 실행 모달
 └── layout/
-    └── AppLayout.tsx     react-resizable-panels 기반 레이아웃
+    └── AppLayout.tsx         탭 헤더 · 프로젝트 컨텍스트 배지 · 패널 레이아웃
 ```
+
+### AppLayout 헤더 구성
+
+```
+[☰] [탭버튼들]   📁 프로젝트명   [⚡Harness]   [⚙️][🌐][🌙]
+```
+
+- **프로젝트 컨텍스트 배지**: `activeProject.name`을 항상 동일한 위치에 표시. hover 시 전체 경로 tooltip.
+- **탭 패널 헤더**: 각 패널 상단에 탭 아이콘 + 타이틀을 일관된 스타일로 표시. 각 탭의 특화 정보(브랜치명, 연결 상태 등)는 같은 헤더에 추가.
 
 ### WebSocket 메시지 프로토콜
 
@@ -179,26 +227,44 @@ docker-compose.yml
 
 ```
 webchat/
-├── server.ts                  커스텀 HTTP + WebSocket 서버
+├── server.ts                    커스텀 HTTP + WebSocket 서버
+├── harness.ts                   Harness Engineering 라우트 핸들러
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx         Context Provider 트리
-│   │   └── page.tsx           AppLayout 진입점
+│   │   ├── (app)/
+│   │   │   └── session/
+│   │   │       └── [sessionId]/
+│   │   │           └── page.tsx   세션 URL 라우트 (null 반환, AppLayout이 처리)
+│   │   ├── api/
+│   │   │   ├── ws/
+│   │   │   │   ├── project/route.ts
+│   │   │   │   └── session/
+│   │   │   │       └── new/route.ts  새 세션 파일 생성 API
+│   │   │   └── team/              멀티 에이전트 팀 API
+│   │   ├── layout.tsx             Context Provider 트리
+│   │   └── page.tsx               AppLayout 진입점
 │   ├── components/
-│   │   ├── chat/              채팅 UI
-│   │   ├── file-tree/         파일 탐색기 + 에디터
-│   │   ├── layout/            패널 레이아웃
-│   │   ├── shell/             터미널
-│   │   ├── sidebar/           사이드바
-│   │   └── ui/                shadcn/ui 기본 컴포넌트
-│   └── contexts/
-│       ├── ProjectContext.tsx
-│       ├── ServerContext.tsx
-│       └── WebSocketContext.tsx
+│   │   ├── chat/                  채팅 UI
+│   │   ├── file-tree/             파일 탐색기 + 에디터
+│   │   ├── git-panel/             Git 패널
+│   │   ├── layout/                패널 레이아웃 (AppLayout)
+│   │   ├── shell/                 터미널
+│   │   ├── sidebar/               사이드바
+│   │   ├── team/                  Team 탭 컴포넌트
+│   │   └── ui/                    shadcn/ui 기본 컴포넌트
+│   ├── contexts/
+│   │   ├── ProjectContext.tsx     세션 URL 라우팅 포함
+│   │   ├── ServerContext.tsx
+│   │   ├── TeamContext.tsx        멀티 에이전트 팀 상태
+│   │   └── WebSocketContext.tsx
+│   ├── i18n/
+│   │   ├── index.ts               타입 정의
+│   │   └── locales/               ko.ts, en.ts, ja.ts, zh.ts
+│   └── lib/
+│       └── team-store.ts          팀 데이터 TTL 캐시
 ├── scripts/
-│   ├── postinstall.js         node-pty 빌드 자동화
-│   └── fix-pty-linux.sh       node-pty 수동 빌드 스크립트
-├── docs/                      문서
+│   ├── postinstall.js             node-pty 빌드 자동화
+│   └── fix-pty-linux.sh           node-pty 수동 빌드 스크립트
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .env.example

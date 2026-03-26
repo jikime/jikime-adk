@@ -59,6 +59,7 @@ I've further enhanced JiKiME's capabilities by referencing the agent, command, a
 
 | Feature | Description | Documentation |
 |---------|-------------|---------------|
+| **Webchat** | Browser-based Claude AI chat with terminal, file editor, Git panel, and multi-agent Team board | [Webchat Docs](./docs/en/webchat/) |
 | **Harness Engineering** | Autonomous agent orchestration: GitHub Issue → Claude agent → PR → auto-merge, fully automated | [Harness Engineering](./docs/en/harness-engineering.md) |
 | **POC-First Workflow** | Phase-based greenfield development: Make It Work → Refactor → Test → Quality → PR | [POC-First Guide](./docs/en/poc-first.md) |
 | **SPEC-First DDD** | Behavior-preserving development with ANALYZE-PRESERVE-IMPROVE cycle | [DDD Docs](./docs/en/tdd-ddd.md) |
@@ -139,6 +140,7 @@ jikime-adk init
 | Command | Description |
 |---------|-------------|
 | `jikime init` | Install templates to project |
+| `jikime serve` | Launch browser-based webchat (port 4000) |
 | `jikime update` | Auto-update binary |
 | `jikime doctor` | System diagnostics |
 | `jikime router switch <provider>` | Switch LLM provider |
@@ -146,6 +148,40 @@ jikime-adk init
 | `jikime skill list` | List skills |
 
 > CLI details: [CLI Documentation](./docs/en/commands.md#cli-commands)
+
+---
+
+## Webchat
+
+JiKiME-ADK includes a built-in **browser-based webchat** for interacting with Claude AI directly from your browser.
+
+```bash
+# Launch webchat server (runs at http://localhost:4000)
+jikime serve
+```
+
+### Key Features
+
+| Panel | Description |
+|-------|-------------|
+| **Chat** | Streaming Claude AI conversation with model selection and permission modes |
+| **Terminal** | Full PTY terminal via xterm.js — run commands directly on the server |
+| **Files** | Project file tree with Monaco editor for in-browser file editing |
+| **Git** | Git status, diff viewer, commit, push/pull, branch management, and GitHub Issues |
+| **Team** | Multi-agent kanban board — create, run, and monitor agent teams in real time |
+
+### Session URL Routing
+
+Each session gets a unique URL (`/session/{uuid}`) — share or bookmark to resume any conversation.
+
+### Docker
+
+```bash
+cd webchat
+docker-compose up
+```
+
+> Full documentation: [Webchat Usage Guide](./docs/en/webchat/usage.md) · [Architecture](./docs/en/webchat/architecture.md)
 
 ---
 
@@ -183,6 +219,8 @@ IMPROVE   →  Change with confidence → (repeat)
 
 | Document | Description |
 |----------|-------------|
+| [Webchat Usage](./docs/en/webchat/usage.md) | Webchat UI usage guide |
+| [Webchat Architecture](./docs/en/webchat/architecture.md) | Webchat server/client architecture |
 | [Agent Catalog](./docs/en/agents.md) | 26 agent detailed roles |
 | [Agent Teams](./docs/en/agents-team.md) | Parallel team-based multi-agent orchestration |
 | [Command Reference](./docs/en/commands.md) | Full slash command and CLI list |
@@ -218,6 +256,10 @@ jikime-adk/
 ├── templates/              # Embedded project templates
 │   ├── .claude/            # Agents, commands, skills
 │   └── .jikime/            # Configuration files
+├── webchat/                # Browser-based webchat UI
+│   ├── server.ts           # Custom HTTP + WebSocket server
+│   ├── src/                # Next.js App Router frontend
+│   └── Dockerfile          # Docker configuration
 ├── docs/                   # Documentation
 │   ├── en/                 # English documentation
 │   └── ko/                 # Korean documentation

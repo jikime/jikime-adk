@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { SquareTerminal } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
@@ -179,16 +180,12 @@ export default function ShellPanel() {
   return (
     <div className="flex flex-col h-full bg-[#0a0a0a] rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-600">
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-accent border-b border-border shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="flex gap-1.5">
-            <div className="w-3 h-3 rounded-full bg-red-500/80" />
-            <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-            <div className="w-3 h-3 rounded-full bg-green-500/80" />
-          </div>
-          <span className="text-base text-muted-foreground ml-1 font-mono">Claude Code Terminal</span>
+      <div className="flex items-center px-3 py-2.5 bg-white dark:bg-accent border-b border-border shrink-0">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <SquareTerminal className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span className="text-lg font-medium text-foreground shrink-0">{t.layout.tabs.terminal}</span>
         </div>
-        <Badge variant={STATUS_VARIANT[status]} className="text-base">
+        <Badge variant={STATUS_VARIANT[status]} className="text-base shrink-0">
           {status === 'connecting' ? t.shell.connecting : status === 'ready' ? t.shell.ready : status === 'dead' ? t.shell.dead : t.shell.error}
         </Badge>
       </div>

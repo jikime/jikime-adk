@@ -5,7 +5,7 @@ import {
   Send, Square, Bot, ChevronDown, ChevronRight,
   Wrench, AlertCircle, Brain, Shield, Check, X, RefreshCw,
   Plus, Mic, MicOff, FileText, Image as ImageIcon, Loader2,
-  Trash2, HelpCircle, Terminal, RotateCcw, FolderOpen, Copy, Download,
+  Trash2, HelpCircle, Terminal, RotateCcw, Copy, Download,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -890,16 +890,7 @@ export default function ChatInterface() {
       {/* Header */}
       <div className="flex items-center gap-2.5 px-5 py-3 bg-white dark:bg-accent border-b border-border shrink-0 min-w-0">
         <Bot className="w-5 h-5 text-blue-400 shrink-0" />
-        <span className="text-xl font-semibold text-foreground shrink-0">Claude</span>
-        {activeProject && (
-          <span
-            className="inline-flex items-center gap-1 text-[11px] font-mono bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-500/30 rounded px-1.5 py-0.5 truncate"
-            title={activeProject.path}
-          >
-            <FolderOpen className="w-3 h-3 shrink-0" />
-            <span className="truncate">{activeProject.path}</span>
-          </span>
-        )}
+        <span className="text-lg font-medium text-foreground shrink-0">{t.layout.tabs.chat}</span>
 
         <div className="ml-auto flex items-center gap-1.5 shrink-0">
           {messages.length > 0 && !isStreaming && (

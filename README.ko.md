@@ -59,6 +59,7 @@ MoAI-ADK의 구조와 흐름을 깊이 분석했고, 그 단단한 철학적 기
 
 | 기능 | 설명 | 문서 |
 |------|------|------|
+| **Webchat** | 브라우저 기반 Claude AI 채팅 — 터미널, 파일 편집기, Git 패널, 멀티 에이전트 Team 보드 통합 | [Webchat 문서](./docs/ko/webchat/) |
 | **하네스 엔지니어링** | 자율 에이전트 오케스트레이션: GitHub Issue → Claude 에이전트 → PR → 자동 머지, 완전 자동화 | [하네스 엔지니어링](./docs/ko/harness-engineering.md) |
 | **POC-First 워크플로우** | 단계별 Greenfield 개발: 동작하게 만들기 → 리팩토링 → 테스팅 → 품질 검증 → PR | [POC-First 가이드](./docs/ko/poc-first.md) |
 | **SPEC-First DDD** | ANALYZE-PRESERVE-IMPROVE 사이클로 동작 보존 개발 | [DDD 문서](./docs/ko/tdd-ddd.md) |
@@ -139,6 +140,7 @@ jikime-adk init
 | 명령어 | 설명 |
 |--------|------|
 | `jikime init` | 프로젝트에 템플릿 설치 |
+| `jikime serve` | 브라우저 기반 Webchat 실행 (포트 4000) |
 | `jikime update` | 바이너리 자동 업데이트 |
 | `jikime doctor` | 시스템 진단 |
 | `jikime router switch <provider>` | LLM 프로바이더 전환 |
@@ -146,6 +148,40 @@ jikime-adk init
 | `jikime skill list` | 스킬 목록 조회 |
 
 > CLI 상세 옵션: [CLI 문서](./docs/ko/commands.md#cli-명령어)
+
+---
+
+## Webchat
+
+JiKiME-ADK에는 브라우저에서 바로 Claude AI와 대화할 수 있는 **웹챗** 기능이 내장되어 있어요.
+
+```bash
+# Webchat 서버 실행 (http://localhost:4000)
+jikime serve
+```
+
+### 주요 기능
+
+| 패널 | 설명 |
+|------|------|
+| **채팅** | 스트리밍 Claude AI 대화, 모델 선택, 권한 모드 설정 |
+| **터미널** | xterm.js 기반 전체 PTY 터미널 — 서버에서 명령어 직접 실행 |
+| **파일** | 프로젝트 파일 트리 + Monaco 에디터로 브라우저 내 파일 편집 |
+| **Git** | Git 상태, diff 뷰어, 커밋, push/pull, 브랜치 관리, GitHub Issues |
+| **Team** | 멀티 에이전트 칸반 보드 — 팀 생성, 실행, 실시간 에이전트 상태 모니터링 |
+
+### 세션 URL 라우팅
+
+세션마다 고유한 URL(`/session/{uuid}`)이 생성되어 북마크 또는 공유 후 언제든 이어서 대화할 수 있어요.
+
+### Docker
+
+```bash
+cd webchat
+docker-compose up
+```
+
+> 전체 문서: [Webchat 사용법](./docs/ko/webchat/usage.md) · [아키텍처](./docs/ko/webchat/architecture.md)
 
 ---
 
@@ -183,6 +219,8 @@ IMPROVE   →  자신감 있게 변경 → (반복)
 
 | 문서 | 설명 |
 |------|------|
+| [Webchat 사용법](./docs/ko/webchat/usage.md) | Webchat UI 사용 가이드 |
+| [Webchat 아키텍처](./docs/ko/webchat/architecture.md) | Webchat 서버/클라이언트 구조 |
 | [에이전트 카탈로그](./docs/ko/agents.md) | 26개 에이전트 상세 역할 |
 | [Agent Teams](./docs/ko/agents-team.md) | 병렬 팀 기반 멀티 에이전트 오케스트레이션 |
 | [명령어 레퍼런스](./docs/ko/commands.md) | 슬래시 명령어 및 CLI 전체 목록 |
@@ -218,6 +256,10 @@ jikime-adk/
 ├── templates/              # 임베디드 프로젝트 템플릿
 │   ├── .claude/            # 에이전트, 커맨드, 스킬
 │   └── .jikime/            # 설정 파일
+├── webchat/                # 브라우저 기반 웹챗 UI
+│   ├── server.ts           # 커스텀 HTTP + WebSocket 서버
+│   ├── src/                # Next.js App Router 프론트엔드
+│   └── Dockerfile          # Docker 설정
 ├── docs/                   # 문서
 │   ├── en/                 # 영어 문서
 │   └── ko/                 # 한국어 문서
