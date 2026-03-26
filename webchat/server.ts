@@ -3,7 +3,7 @@ import next from 'next'
 import { WebSocketServer, WebSocket } from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
-import { execSync, execFile, execFileSync } from 'child_process'
+import { execFile, execFileSync } from 'child_process'
 import * as os from 'os'
 import { handleHarnessRoutes } from './harness'
 
@@ -70,14 +70,12 @@ function findClaudePath(): string | undefined {
     return undefined
   }
 
-  // 2. which -a 로 PATH 전체 탐색 (여러 후보 확인)
-  try {
-    const all = execSync('which -a claude 2>/dev/null || which claude', { encoding: 'utf8', stdio: 'pipe' })
-    for (const line of all.split('\n').map(l => l.trim()).filter(Boolean)) {
-      const found = check(line)
-      if (found) return found
-    }
-  } catch { /* */ }
+  // 2. PATH 환경변수 직접 탐색 — which 셸 호출 불필요, 인젝션 위험 없음
+  for (const dir of (process.env.PATH ?? '').split(path.delimiter)) {
+    if (!dir) continue
+    const found = check(path.join(dir, 'claude'))
+    if (found) return found
+  }
 
   // 3. 흔한 네이티브 설치 경로 직접 확인
   const guesses = [
@@ -913,6 +911,8 @@ async function processIssueWithADK(
 
   const emit = (message: string) => {
     processor.events.push(message)
+    // 이벤트 배열 무한 누적 방지 — 최근 2500개만 유지
+    if (processor.events.length > 5000) processor.events = processor.events.slice(-2500)
     const payload = `data: ${JSON.stringify({ type: 'event', message })}\n\n`
     for (const client of processor.sseClients) {
       try { client.write(payload) } catch { /* client disconnected */ }
@@ -1399,6 +1399,7 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   // POST /api/ws/file (write/save file)
   if (pathname === '/api/ws/file' && req.method === 'POST') {
+    req.setTimeout(30_000, () => { req.destroy() })  // slow-client DoS 방지
     const MAX_FILE_WRITE = 10 * 1024 * 1024  // 10 MB
     let body = ''
     let bodySize = 0
@@ -1638,6 +1639,11 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
         if (!token || !projectPath) {
           res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'projectPath and token required' })); return
         }
+        // Map 크기 제한 — 신규 폴러 추가 시 최대 50개 초과 차단 (기존 키 갱신은 허용)
+        if (!projectPollers.has(projectPath) && projectPollers.size >= 50) {
+          res.writeHead(429, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+          res.end(JSON.stringify({ error: 'Too many pollers (max 50)' })); return
+        }
         const ghRepo = detectGitHubRepo(projectPath)
         if (!ghRepo) {
           res.writeHead(404, CORS_HEADERS); res.end(JSON.stringify({ error: 'Cannot detect GitHub repo' })); return
@@ -1724,6 +1730,7 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   }
 
   if (pathname === '/api/ws/git' && req.method === 'POST') {
+    req.setTimeout(30_000, () => { req.destroy() })  // slow-client DoS 방지
     let body = ''
     let bodySize = 0
     const MAX_GIT_BODY = 1 * 1024 * 1024  // 1 MB — 대형 commit message / files[] OOM 방지

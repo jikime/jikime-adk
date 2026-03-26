@@ -5,8 +5,13 @@ import { teamDir, buildTeamSnapshot } from '@/lib/team-store'
 
 type Params = { params: Promise<{ name: string }> }
 
+const NAME_RE = /^[a-zA-Z0-9_-]{1,64}$/
+
 export async function GET(request: NextRequest, { params }: Params) {
   const { name } = await params
+  if (!NAME_RE.test(name)) {
+    return new Response('Invalid team name', { status: 400 })
+  }
   const encoder  = new TextEncoder()
 
   const stream = new ReadableStream({
