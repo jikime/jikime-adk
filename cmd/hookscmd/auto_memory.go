@@ -56,8 +56,17 @@ func discoverAutoMemory(cwd string) *autoMemory {
 		return mem
 	}
 
+	const maxFileSize  = 512 * 1024       // 파일당 512 KB 상한
+	const maxTotalSize = 5 * 1024 * 1024  // 전체 5 MB 상한 — 세션 시작 시 메모리 고갈 방지
 	for _, entry := range entries {
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+			continue
+		}
+		if mem.TotalSize >= maxTotalSize {
+			break
+		}
+		info, err := entry.Info()
+		if err != nil || info.Size() > maxFileSize {
 			continue
 		}
 		filePath := filepath.Join(memoryDir, entry.Name())

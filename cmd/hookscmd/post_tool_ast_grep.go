@@ -1,6 +1,7 @@
 package hookscmd
 
 import (
+	"context"
 	"encoding/json"
 	"os"
 	"os/exec"
@@ -223,8 +224,10 @@ func runAstGrepScan(filePath, configPath string) scanResult {
 	}
 	cmdArgs = append(cmdArgs, filePath)
 
-	// Run scan with timeout
-	cmd := exec.Command(sgPath, cmdArgs...)
+	// Run scan with timeout — context 기반으로 goroutine 누수 방지
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, sgPath, cmdArgs...)
 
 	// Set project directory
 	projectDir := os.Getenv("CLAUDE_PROJECT_DIR")
@@ -233,30 +236,19 @@ func runAstGrepScan(filePath, configPath string) scanResult {
 	}
 	cmd.Dir = projectDir
 
-	// Use a channel for timeout handling
-	type cmdResult struct {
-		output []byte
-		err    error
-	}
-	done := make(chan cmdResult, 1)
-
-	go func() {
-		output, err := cmd.CombinedOutput()
-		done <- cmdResult{output, err}
-	}()
-
-	select {
-	case <-time.After(30 * time.Second):
-		cmd.Process.Kill()
+	output, err := cmd.CombinedOutput()
+	if ctx.Err() == context.DeadlineExceeded {
 		result.Error = "AST-Grep scan timed out"
 		return result
-	case res := <-done:
-		result.Scanned = true
+	}
 
-		if len(res.output) > 0 {
-			// Parse JSON output
-			var findings []astGrepFinding
-			if err := json.Unmarshal(res.output, &findings); err == nil {
+	result.Scanned = true
+	_ = err  // CombinedOutput 에러는 ast-grep 자체 exit code일 수 있어 무시
+
+	if len(output) > 0 {
+		// Parse JSON output
+		var findings []astGrepFinding
+		if err := json.Unmarshal(output, &findings); err == nil {
 				for _, finding := range findings {
 					severity := strings.ToLower(finding.Severity)
 					if severity == "" {
@@ -280,7 +272,6 @@ func runAstGrepScan(filePath, configPath string) scanResult {
 					})
 				}
 				result.IssuesFound = len(findings)
-			}
 		}
 	}
 

@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"syscall"
 
 	"github.com/fatih/color"
@@ -130,9 +132,10 @@ func printStartInfo(cfg *router.Config) {
 // --- PID file helpers ---
 
 func writePID(pid int) {
-	dir := router.PIDPath()
-	os.MkdirAll(dir[:len(dir)-len("/router.pid")], 0o755)
-	os.WriteFile(router.PIDPath(), []byte(strconv.Itoa(pid)), 0o644)
+	pidPath := router.PIDPath()
+	// filepath.Dir 사용 — 문자열 슬라이싱 대신 안전한 경로 추출
+	os.MkdirAll(filepath.Dir(pidPath), 0o755)
+	os.WriteFile(pidPath, []byte(strconv.Itoa(pid)), 0o644)
 }
 
 func readPID() int {
@@ -140,7 +143,10 @@ func readPID() int {
 	if err != nil {
 		return 0
 	}
-	pid, _ := strconv.Atoi(string(data))
+	pid, err := strconv.Atoi(strings.TrimSpace(string(data)))
+	if err != nil {
+		return 0
+	}
 	return pid
 }
 

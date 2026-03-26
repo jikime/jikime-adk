@@ -246,7 +246,8 @@ func getLatestRelease() (*GitHubRelease, error) {
 		return nil, fmt.Errorf("API error: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	// 응답 바디 크기 제한 — 대용량 응답으로 인한 메모리 고갈 방지 (10 MB)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024))
 	if err != nil {
 		return nil, err
 	}

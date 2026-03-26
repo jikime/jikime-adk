@@ -2,11 +2,13 @@
 package statuscmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -213,8 +215,12 @@ func printGitInfo(cwd string) {
 		return
 	}
 
+	// git 명령 공통 context — 5초 timeout으로 무한 대기 방지
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	// Check if this is a git repository
-	gitCmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+	gitCmd := exec.CommandContext(ctx, "git", "rev-parse", "--is-inside-work-tree")
 	gitCmd.Dir = cwd
 	if err := gitCmd.Run(); err != nil {
 		dim.Println("Not a git repository")
@@ -222,7 +228,7 @@ func printGitInfo(cwd string) {
 	}
 
 	// Get current branch
-	branchCmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+	branchCmd := exec.CommandContext(ctx, "git", "rev-parse", "--abbrev-ref", "HEAD")
 	branchCmd.Dir = cwd
 	branchOutput, err := branchCmd.Output()
 	if err == nil {
@@ -231,7 +237,7 @@ func printGitInfo(cwd string) {
 	}
 
 	// Get status (modified/staged files count)
-	statusCmd := exec.Command("git", "status", "--porcelain")
+	statusCmd := exec.CommandContext(ctx, "git", "status", "--porcelain")
 	statusCmd.Dir = cwd
 	statusOutput, err := statusCmd.Output()
 	if err == nil {
@@ -277,7 +283,7 @@ func printGitInfo(cwd string) {
 	}
 
 	// Get last commit info
-	logCmd := exec.Command("git", "log", "-1", "--format=%h %s", "--date=relative")
+	logCmd := exec.CommandContext(ctx, "git", "log", "-1", "--format=%h %s", "--date=relative")
 	logCmd.Dir = cwd
 	logOutput, err := logCmd.Output()
 	if err == nil {
@@ -289,7 +295,7 @@ func printGitInfo(cwd string) {
 	}
 
 	// Check remote status
-	remoteCmd := exec.Command("git", "rev-list", "--count", "--left-right", "@{upstream}...HEAD")
+	remoteCmd := exec.CommandContext(ctx, "git", "rev-list", "--count", "--left-right", "@{upstream}...HEAD")
 	remoteCmd.Dir = cwd
 	remoteOutput, err := remoteCmd.Output()
 	if err == nil {
