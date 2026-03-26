@@ -69,6 +69,8 @@ export default {
     stopResponding: '応答を停止',
     abortedBanner: 'Claude の応答が中断されました',
     retry: '再試行',
+    selectSession: 'セッションを選択してください',
+    selectSessionHint: '左サイドバーのプロジェクトフォルダからセッションをクリックするか、新しいチャットを開始してください。',
   },
   shell: {
     connecting: '接続中...',

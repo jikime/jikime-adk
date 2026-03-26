@@ -69,6 +69,8 @@ export default {
     stopResponding: '停止响应',
     abortedBanner: 'Claude 的响应已中断',
     retry: '重试',
+    selectSession: '请选择会话',
+    selectSessionHint: '在左侧边栏的项目文件夹中点击会话，或开始新对话。',
   },
   shell: {
     connecting: '连接中...',

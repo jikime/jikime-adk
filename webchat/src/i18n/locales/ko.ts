@@ -69,6 +69,8 @@ export default {
     stopResponding: '응답 중지',
     abortedBanner: 'Claude의 응답이 중단되었습니다',
     retry: '재시도',
+    selectSession: '세션을 선택하세요',
+    selectSessionHint: '왼쪽 사이드바의 프로젝트 폴더에서 세션을 클릭하거나, 새 채팅을 시작하세요.',
   },
   shell: {
     connecting: '연결 중...',

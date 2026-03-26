@@ -63,10 +63,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       if (res.ok) {
         const data: Project[] = await res.json()
         setProjects(data)
-        setActiveProjectState(prev => {
-          if (prev !== null) return prev
-          return data.length > 0 ? data[0] : null
-        })
+        // 자동 선택 없음 — URL 복원 effect가 처리하거나, 사용자가 직접 선택
       }
     } catch { /* */ }
   }, [getApiUrl])

@@ -69,6 +69,8 @@ export default {
     stopResponding: 'Stop responding',
     abortedBanner: "Claude's response was interrupted",
     retry: 'Retry',
+    selectSession: 'Select a session',
+    selectSessionHint: 'Click a session in a project folder on the left sidebar, or start a new chat.',
   },
   shell: {
     connecting: 'Connecting...',

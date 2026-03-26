@@ -46,6 +46,7 @@ export type Messages = {
     voiceStop: string; voiceStart: string; thinking: string
     allow: string; alwaysAllow: string; deny: string
     emptyState: string; stopResponding: string; abortedBanner: string; retry: string
+    selectSession: string; selectSessionHint: string
   }
   shell: { connecting: string; ready: string; dead: string; error: string }
   files: {
