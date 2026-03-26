@@ -1036,7 +1036,12 @@ async function pollOnce(poller: ProjectPoller): Promise<void> {
         activeCount: poller.activeIssues.size,
       })
 
-      // IssueProcessor 등록
+      // IssueProcessor 등록 — Map 크기 제한 500 (신규 키만 체크)
+      if (!issueProcessors.has(issueKey) && issueProcessors.size >= 500) {
+        console.warn('[poller] issueProcessors 한도 초과 — 이슈 처리 건너뜀:', issueKey)
+        poller.activeIssues.delete(number)
+        continue
+      }
       const processor: IssueProcessor = {
         status: 'running',
         events: [],
@@ -1552,6 +1557,11 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
         const issueKey = `${owner}/${repo}#${issueNumber}`
         if (issueProcessors.has(issueKey) && issueProcessors.get(issueKey)?.status === 'running') {
           res.writeHead(409, CORS_HEADERS); res.end(JSON.stringify({ error: 'Already processing', issueKey })); return
+        }
+        // Map 크기 제한 500 (신규 키만 체크)
+        if (!issueProcessors.has(issueKey) && issueProcessors.size >= 500) {
+          res.writeHead(429, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+          res.end(JSON.stringify({ error: 'Too many issue processors (max 500)' })); return
         }
         const processor: IssueProcessor = {
           status: 'running',

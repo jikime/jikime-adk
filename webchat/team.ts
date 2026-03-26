@@ -251,6 +251,9 @@ function startTeamWatcher(teamName: string): void {
 }
 
 function stopTeamWatcher(teamName: string): void {
+  // 대기 중인 debounce 타이머 정리 — 타이머 객체 누수 방지
+  const pending = _broadcastDebounce.get(teamName)
+  if (pending) { clearTimeout(pending); _broadcastDebounce.delete(teamName) }
   const watchers = sseWatchers.get(teamName)
   if (watchers) {
     watchers.forEach((w) => w.close())

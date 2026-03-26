@@ -232,7 +232,10 @@ function getWorkspacePath(config: WorkflowConfig, issue: HarnessIssue): string {
 // ;  — 명령 분리자 (command1; command2)
 // <( — 프로세스 치환
 // \n/\r — 줄바꿈 다중 명령 (git clone repo\ncat ~/.ssh/id_rsa | nc ...)
-const HOOK_UNSAFE_RE = /\$\(|`[^`]*`|\|+|>+|&&|;|<\(|[\r\n]/
+// $( — 명령 치환  `...` — 백틱 치환  |,> — 파이프/리다이렉트
+// && ; <( — 명령 연결 / 프로세스 치환  \r\n — 줄바꿈 멀티커맨드
+// ${ $VAR — 파라미터 확장 / 환경변수 참조 ($HOME, ${PATH} 등 경로 탈출 방지)
+const HOOK_UNSAFE_RE = /\$[\(\{]|\$[A-Za-z_]|`[^`]*`|\|+|>+|&&|;|<\(|[\r\n]/
 
 function runHook(script: string, cwd: string, timeoutMs: number): Promise<void> {
   if (HOOK_UNSAFE_RE.test(script)) {
