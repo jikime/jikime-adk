@@ -198,6 +198,8 @@ export function TeamProvider({ children }: { children: ReactNode }) {
         sse.onmessage = null
         sse.onerror   = null
         sse.close()
+        // sseRef stale 참조 제거 — 재연결 타임아웃 누적 방지
+        if (sseRef.current === sse) sseRef.current = null
       }
     }, 300)
 

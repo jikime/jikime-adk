@@ -626,11 +626,12 @@ async function pollOnce(orch: HarnessOrchestrator, claudePath: string | undefine
         5 * 60 * 1000,
       )
       console.warn(`[harness] 연속 ${orch.consecutiveErrors}회 실패 — ${Math.round(backoffMs / 1000)}초 후 재시도`)
+      // setTimeout 과 setInterval 이 동일 NodeJS.Timeout 타입이므로 캐스팅 불필요
       orch.timer = setTimeout(() => {
         if (orch.status !== 'running') return
         orch.timer = setInterval(() => pollOnce(orch, claudePath), orch.config.polling.interval_ms)
         pollOnce(orch, claudePath)
-      }, backoffMs) as unknown as ReturnType<typeof setInterval>
+      }, backoffMs)
     }
   }
 }
@@ -722,13 +723,23 @@ export function getHarness(projectPath: string): HarnessOrchestrator | undefined
   return orchestrators.get(projectPath)
 }
 
+// ── Graceful Shutdown ─────────────────────────────────────────────
+// SIGTERM 수신 시 모든 오케스트레이터 정상 종료 — 타이머/watcher 누수 방지
+process.once('SIGTERM', () => {
+  console.log('[harness] SIGTERM 수신 — 모든 오케스트레이터 종료 중')
+  for (const projectPath of [...orchestrators.keys()]) {
+    stopHarness(projectPath)
+  }
+})
+
 // ── Git Remote / JiKiME Detection ────────────────────────────────
 
 function detectGitSlug(projectPath: string): string {
   try {
-    const { execSync } = require('child_process') as typeof import('child_process')
-    const remote = execSync('git remote get-url origin 2>/dev/null', {
-      encoding: 'utf8', cwd: projectPath, timeout: 3000,
+    // execSync → execFileSync: 셸 미사용으로 인젝션 위험 제거
+    const { execFileSync } = require('child_process') as typeof import('child_process')
+    const remote = execFileSync('git', ['remote', 'get-url', 'origin'], {
+      encoding: 'utf8', cwd: projectPath, timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'],
     }).trim()
     // SSH: git@github.com:owner/repo.git
     const ssh = remote.match(/github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?$/)

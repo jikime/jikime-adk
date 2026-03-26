@@ -1967,4 +1967,14 @@ app.prepare().then(() => {
     console.log(`> Terminal WS: ws://${hostname}:${port}/ws/terminal`)
     console.log(`> Chat WS: ws://${hostname}:${port}/ws/chat`)
   })
+
+  // SIGTERM: PTY 세션 정리 후 종료 — fd/메모리 누수 방지
+  process.once('SIGTERM', () => {
+    console.log('[server] SIGTERM 수신 — PTY 세션 정리 중')
+    for (const [, session] of ptySessions) {
+      try { session.pty.kill() } catch { /* */ }
+    }
+    ptySessions.clear()
+    httpServer.close(() => process.exit(0))
+  })
 })

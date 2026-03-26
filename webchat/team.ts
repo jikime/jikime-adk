@@ -252,6 +252,9 @@ const _eventLogCache = new Map<string, { lines: string[]; ts: number }>()
 const EVENT_LOG_TTL = 3000
 
 function broadcastTeamEvent(teamName: string): void {
+  // 팀이 삭제된 후 FSWatcher 이벤트가 지연 도착하는 경우 조기 종료
+  if (!fs.existsSync(teamDir(teamName))) return
+
   const store      = new TeamFileStore()
   const tasksList  = store.listTasks(teamName)  as Array<Record<string, unknown>>
   const agentsList = store.listAgents(teamName) as Array<Record<string, unknown>>
@@ -298,6 +301,20 @@ function broadcastTeamEvent(teamName: string): void {
     const tailLines = (cached && now - cached.ts < EVENT_LOG_TTL)
       ? cached.lines
       : (() => {
+          // 2 MB 초과 시 마지막 500줄로 자동 truncate — 무제한 증가 방지
+          const MAX_EVLOG_BYTES = 2 * 1024 * 1024
+          try {
+            const evStat = fs.statSync(eventLogFile)
+            if (evStat.size > MAX_EVLOG_BYTES) {
+              const all  = fs.readFileSync(eventLogFile, 'utf8').split('\n').filter(Boolean)
+              const kept = all.slice(-500)
+              fs.writeFileSync(eventLogFile, kept.join('\n') + '\n', 'utf8')
+              console.log(`[team] event-log.jsonl auto-truncated: ${(evStat.size / 1024).toFixed(0)} KB → ${kept.length} lines`)
+              const tail = kept.slice(-50)
+              _eventLogCache.set(cacheKey, { lines: tail, ts: now })
+              return tail
+            }
+          } catch { /* statSync/truncate 실패 시 무시 — 아래 readFileSync 계속 */ }
           const raw = fs.readFileSync(eventLogFile, 'utf8').split('\n').filter(Boolean)
           const tail = raw.slice(-50)
           _eventLogCache.set(cacheKey, { lines: tail, ts: now })
@@ -422,6 +439,10 @@ export function handleTeamRoutes(
       if (!name || !yaml) {
         jsonReply(res, 400, { error: 'name and yaml are required' }); return
       }
+      // 1 MB 상한 — 대용량 YAML로 인한 디스크 소진 방지
+      if (yaml.length > 1 * 1024 * 1024) {
+        jsonReply(res, 413, { error: 'YAML exceeds 1 MB limit' }); return
+      }
       const templatesDir = path.join(os.homedir(), '.jikime', 'templates')
       try {
         fs.mkdirSync(templatesDir, { recursive: true })
@@ -438,7 +459,8 @@ export function handleTeamRoutes(
   if (method === 'POST' && pathname === '/api/template/generate') {
     parseBody(req).then(async (body) => {
       const b            = body as Record<string, string>
-      const userPrompt   = (b['prompt'] || '').trim()
+      // YAML front-matter 구분자 제거 — 프롬프트가 system prompt YAML을 탈출하는 인젝션 방지
+      const userPrompt   = (b['prompt'] || '').trim().replace(/---/g, '- - -')
       const existingYaml = (b['existingYaml'] || '').trim()
       if (!userPrompt) { jsonReply(res, 400, { error: 'prompt is required' }); return }
 
@@ -639,7 +661,13 @@ Rules:
   const teamMatch = pathname.match(/^\/api\/team\/([^/]+)(\/.*)?$/)
   if (!teamMatch) return false
 
-  const teamName = decodeURIComponent(teamMatch[1])
+  // decodeURIComponent 실패 시 400 — 잘못된 퍼센트 인코딩으로 인한 오류 방지
+  let teamName: string
+  try {
+    teamName = decodeURIComponent(teamMatch[1])
+  } catch {
+    jsonReply(res, 400, { error: 'Invalid URL encoding in team name' }); return true
+  }
   if (!NAME_RE.test(teamName)) { jsonReply(res, 400, { error: 'Invalid team name' }); return true }
   const subPath  = teamMatch[2] || ''
 

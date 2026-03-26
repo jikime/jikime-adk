@@ -59,6 +59,8 @@ export default React.memo(function TeamBoard() {
     { key: 'failed',      label: t.team.statusFailed,     color: 'border-red-500'   },
   ]
 
+  // STATUS_COLS 는 t 에서 파생되므로 [tasks, t] 로 충분 — STATUS_COLS 누락 경고 억제
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const columns = useMemo(() => {
     const map: Record<string, TeamTask[]> = {}
     for (const col of STATUS_COLS) map[col.key] = []
@@ -66,7 +68,6 @@ export default React.memo(function TeamBoard() {
       if (map[t.status]) map[t.status].push(t)
     }
     return map
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tasks, t])
 
   if (!activeTeam) {
