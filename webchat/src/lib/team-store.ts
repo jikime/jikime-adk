@@ -34,6 +34,21 @@ export function readJSON<T>(filePath: string, fallback: T): T {
   }
 }
 
+// ── realpathSync 모듈 레벨 캐시 — 반복 syscall 방지 ────────────────
+// listTeams 호출마다 Map 재생성하던 기존 방식 → 모듈 스코프로 이동 + 10s TTL
+const _rpCache = new Map<string, { real: string; ts: number }>()
+const RP_TTL_MS = 10_000
+
+function cachedRealpath(p: string): string {
+  const now    = Date.now()
+  const cached = _rpCache.get(p)
+  if (cached && now - cached.ts < RP_TTL_MS) return cached.real
+  let real = p
+  try { real = fs.realpathSync(p) } catch { /* use as-is */ }
+  _rpCache.set(p, { real, ts: now })
+  return real
+}
+
 // ── TeamFileStore ──────────────────────────────────────────────────
 
 export class TeamFileStore {
@@ -46,12 +61,11 @@ export class TeamFileStore {
       .filter((e) => e.isDirectory())
       .map((e) => e.name)
     if (!projectPath) return all
-    const realQuery = (() => { try { return fs.realpathSync(projectPath) } catch { return projectPath } })()
+    const realQuery = cachedRealpath(projectPath)
     return all.filter((name) => {
       const meta = this.getWebchatMeta(name)
       if (!meta.projectPath) return false
-      const realMeta = (() => { try { return fs.realpathSync(meta.projectPath) } catch { return meta.projectPath } })()
-      return realMeta === realQuery
+      return cachedRealpath(meta.projectPath as string) === realQuery
     })
   }
 
@@ -66,21 +80,35 @@ export class TeamFileStore {
   writeWebchatMeta(name: string, meta: { projectPath?: string }): void {
     const dir = teamDir(name)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    fs.writeFileSync(path.join(dir, 'webchat.json'), JSON.stringify(meta))
+    // 임시 파일에 쓴 후 rename — 동시 쓰기 경쟁 시 데이터 손실 방지 (atomic write)
+    const target = path.join(dir, 'webchat.json')
+    const tmp    = `${target}.tmp.${process.pid}`
+    try {
+      fs.writeFileSync(tmp, JSON.stringify(meta), 'utf8')
+      fs.renameSync(tmp, target)
+    } catch (e) {
+      try { fs.unlinkSync(tmp) } catch { /* */ }
+      throw e
+    }
   }
 
-  listTasks(name: string, status?: string, agent?: string, owner?: string): unknown[] {
+  listTasks(name: string, status?: string, agent?: string, owner?: string, limit = 1000): unknown[] {
     const dir = path.join(teamDir(name), 'tasks')
     if (!fs.existsSync(dir)) return []
-    return fs.readdirSync(dir)
-      .filter((f) => f.endsWith('.json'))
-      .map((f) => readJSON<Record<string, unknown>>(path.join(dir, f), {}))
-      .filter((t) => {
-        if (status && t['status']   !== status) return false
-        if (agent  && t['agent_id'] !== agent)  return false
-        if (owner  && t['owner']    !== owner)   return false
-        return true
-      })
+    const files = fs.readdirSync(dir, { withFileTypes: true })
+      .filter(e => !e.isDirectory() && e.name.endsWith('.json'))
+      .map(e => e.name)
+    // limit 먼저 적용 — 100K 태스크 전체 로딩으로 인한 OOM 방지
+    const results: unknown[] = []
+    for (const f of files) {
+      if (results.length >= limit) break
+      const t = readJSON<Record<string, unknown>>(path.join(dir, f), {})
+      if (status && t['status']   !== status) continue
+      if (agent  && t['agent_id'] !== agent)  continue
+      if (owner  && t['owner']    !== owner)   continue
+      results.push(t)
+    }
+    return results
   }
 
   getTask(name: string, taskID: string): unknown | null {

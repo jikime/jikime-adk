@@ -86,6 +86,7 @@ interface TeamContextType {
   teamBrief:      TeamBrief | null
   connected:      boolean
   lastEvent:      string | null
+  fetchError:     string | null
   setActiveTeam:  (name: string | null) => void
   refreshTeams:   () => Promise<void>
   refreshTeam:    () => Promise<void>
@@ -113,7 +114,9 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const [teamBrief, setTeamBrief]     = useState<TeamBrief | null>(null)
   const [connected, setConnected]     = useState(false)
   const [lastEvent, setLastEvent]     = useState<string | null>(null)
-  const sseRef = useRef<EventSource | null>(null)
+  const [fetchError, setFetchError]   = useState<string | null>(null)
+  const sseRef     = useRef<EventSource | null>(null)
+  const sseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const refreshTeams = useCallback(async () => {
     try {
@@ -138,7 +141,10 @@ export function TeamProvider({ children }: { children: ReactNode }) {
       if (infoRes.ok)   setTeamInfo(await infoRes.json() as TeamInfo)
       if (tasksRes.ok)  setTasks((await tasksRes.json() as { tasks: TeamTask[] }).tasks || [])
       if (agentsRes.ok) setAgents((await agentsRes.json() as { agents: TeamAgent[] }).agents || [])
-    } catch { /* */ }
+      setFetchError(null)
+    } catch (e) {
+      setFetchError((e as Error).message || '팀 정보를 불러오지 못했습니다')
+    }
   }, [getApiUrl, activeTeam])
 
   // activeProject 바뀌면 팀 목록 갱신 + 선택 초기화
@@ -148,51 +154,62 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     refreshTeams()
   }, [activeProject?.path]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Subscribe to SSE events when activeTeam changes
+  // Subscribe to SSE events when activeTeam changes — 300ms 디바운스로 연결 스톰 방지
   useEffect(() => {
-    if (sseRef.current) {
-      sseRef.current.close()
-      sseRef.current = null
-    }
+    if (sseRef.current) { sseRef.current.close(); sseRef.current = null }
+    if (sseTimerRef.current) { clearTimeout(sseTimerRef.current); sseTimerRef.current = null }
     setConnected(false)
     if (!activeTeam) return
 
     refreshTeam()
 
-    const url = getApiUrl(`/api/team/${activeTeam}/events`)
-    const sse = new EventSource(url)
-    sseRef.current = sse
+    // 300ms 디바운스 — 빠른 팀 전환 시 EventSource 연결 스톰 방지
+    sseTimerRef.current = setTimeout(() => {
+      sseTimerRef.current = null
+      const url = getApiUrl(`/api/team/${activeTeam}/events`)
+      const sse = new EventSource(url)
+      sseRef.current = sse
 
-    sse.onmessage = (e: MessageEvent) => {
-      try {
-        const payload = JSON.parse(e.data as string) as {
-          type?:        string
-          tasks?:       TeamTask[]
-          agents?:      TeamAgent[]
-          members?:     TeamMember[]
-          messages?:    TeamMessage[]
-          taskSummary?: TeamStat
-          team?:        TeamBrief
-          time?:        string
-        }
-        if (payload.tasks)       setTasks(payload.tasks)
-        if (payload.agents)      setAgents(payload.agents)
-        if (payload.members)     setMembers(payload.members)
-        if (payload.messages)    setMessages(payload.messages)
-        if (payload.taskSummary) setTaskSummary(payload.taskSummary)
-        if (payload.team)        setTeamBrief(payload.team)
-        if (payload.time)        setLastEvent(payload.time)
-        setConnected(true)
-      } catch { /* */ }
-    }
-    sse.onerror = () => {
-      setConnected(false)
-      sse.close()
-    }
+      sse.onmessage = (e: MessageEvent) => {
+        try {
+          const payload = JSON.parse(e.data as string) as {
+            type?:        string
+            tasks?:       TeamTask[]
+            agents?:      TeamAgent[]
+            members?:     TeamMember[]
+            messages?:    TeamMessage[]
+            taskSummary?: TeamStat
+            team?:        TeamBrief
+            time?:        string
+          }
+          if (payload.tasks)       setTasks(payload.tasks)
+          if (payload.agents)      setAgents(payload.agents)
+          if (payload.members)     setMembers(payload.members)
+          if (payload.messages)    setMessages(payload.messages)
+          if (payload.taskSummary) setTaskSummary(payload.taskSummary)
+          if (payload.team)        setTeamBrief(payload.team)
+          if (payload.time)        setLastEvent(payload.time)
+          setConnected(true)
+        } catch { /* */ }
+      }
+      sse.onerror = () => {
+        setConnected(false)
+        // 핸들러 명시적 제거 후 close — 브라우저 메모리에 리스너 잔류 방지
+        sse.onmessage = null
+        sse.onerror   = null
+        sse.close()
+      }
+    }, 300)
 
     return () => {
-      sse.close()
-      sseRef.current = null
+      if (sseTimerRef.current) { clearTimeout(sseTimerRef.current); sseTimerRef.current = null }
+      if (sseRef.current) {
+        // 명시적 핸들러 제거 — GC 전 이벤트 핸들러 참조 해제
+        sseRef.current.onmessage = null
+        sseRef.current.onerror   = null
+        sseRef.current.close()
+        sseRef.current = null
+      }
     }
   }, [activeTeam, getApiUrl, refreshTeam])
 
@@ -200,11 +217,16 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   useEffect(() => { refreshTeams() }, [refreshTeams])
 
   const createTask = useCallback(async (teamName: string, title: string, desc?: string) => {
-    await fetch(getApiUrl(`/api/team/${teamName}/tasks`), {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ title, desc }),
-    })
+    const ctrl    = new AbortController()
+    const timeout = setTimeout(() => ctrl.abort(), 10_000)
+    try {
+      await fetch(getApiUrl(`/api/team/${teamName}/tasks`), {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ title, desc }),
+        signal:  ctrl.signal,
+      })
+    } finally { clearTimeout(timeout) }
     await refreshTeam()
   }, [getApiUrl, refreshTeam])
 
@@ -213,19 +235,29 @@ export function TeamProvider({ children }: { children: ReactNode }) {
     taskId: string,
     patch: Partial<{ status: string; agent_id: string; result: string }>,
   ) => {
-    await fetch(getApiUrl(`/api/team/${teamName}/tasks/${taskId}`), {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(patch),
-    })
+    const ctrl    = new AbortController()
+    const timeout = setTimeout(() => ctrl.abort(), 10_000)
+    try {
+      await fetch(getApiUrl(`/api/team/${teamName}/tasks/${taskId}`), {
+        method:  'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(patch),
+        signal:  ctrl.signal,
+      })
+    } finally { clearTimeout(timeout) }
   }, [getApiUrl])
 
   const sendMessage = useCallback(async (teamName: string, to: string, body: string) => {
-    await fetch(getApiUrl(`/api/team/${teamName}/inbox/send`), {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ to, body }),
-    })
+    const ctrl    = new AbortController()
+    const timeout = setTimeout(() => ctrl.abort(), 10_000)
+    try {
+      await fetch(getApiUrl(`/api/team/${teamName}/inbox/send`), {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ to, body }),
+        signal:  ctrl.signal,
+      })
+    } finally { clearTimeout(timeout) }
   }, [getApiUrl])
 
   // useMemo prevents a new object reference on every render,
@@ -233,13 +265,13 @@ export function TeamProvider({ children }: { children: ReactNode }) {
   const contextValue = useMemo(() => ({
     teams, activeTeam, teamInfo, tasks, agents,
     members, messages, taskSummary, teamBrief, connected,
-    lastEvent,
+    lastEvent, fetchError,
     setActiveTeam, refreshTeams, refreshTeam,
     createTask, updateTask, sendMessage,
   }), [
     teams, activeTeam, teamInfo, tasks, agents,
     members, messages, taskSummary, teamBrief, connected,
-    lastEvent,
+    lastEvent, fetchError,
     setActiveTeam, refreshTeams, refreshTeam,
     createTask, updateTask, sendMessage,
   ])

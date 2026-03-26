@@ -122,18 +122,24 @@ export class TeamFileStore {
     fs.writeFileSync(path.join(dir, 'webchat.json'), JSON.stringify(meta))
   }
 
-  listTasks(name: string, status?: string, agent?: string, owner?: string): unknown[] {
+  listTasks(name: string, status?: string, agent?: string, owner?: string, limit = 1000): unknown[] {
     const dir = path.join(teamDir(name), 'tasks')
     if (!fs.existsSync(dir)) return []
-    return fs.readdirSync(dir)
-      .filter((f) => f.endsWith('.json'))
-      .map((f) => readJSON<Record<string, unknown>>(path.join(dir, f), {}))
-      .filter((t) => {
-        if (status && t['status'] !== status) return false
-        if (agent  && t['agent_id'] !== agent)  return false
-        if (owner  && t['owner']    !== owner)   return false
-        return true
-      })
+    // withFileTypes — isDirectory() 체크로 빈 디렉터리 엔트리 제거
+    const files = fs.readdirSync(dir, { withFileTypes: true })
+      .filter(e => !e.isDirectory() && e.name.endsWith('.json'))
+      .map(e => e.name)
+    // limit 먼저 적용 — 100K 태스크 전체 로딩으로 인한 OOM 방지
+    const results: unknown[] = []
+    for (const f of files) {
+      if (results.length >= limit) break
+      const t = readJSON<Record<string, unknown>>(path.join(dir, f), {})
+      if (status && t['status']   !== status) continue
+      if (agent  && t['agent_id'] !== agent)  continue
+      if (owner  && t['owner']    !== owner)   continue
+      results.push(t)
+    }
+    return results
   }
 
   getTask(name: string, taskID: string): unknown | null {
@@ -192,14 +198,17 @@ interface SSEClient {
 const sseClients: Set<SSEClient> = new Set()
 const sseWatchers: Map<string, fs.FSWatcher[]> = new Map()
 
-// 5분마다 끊어진 SSE 클라이언트 정리
+// 전역 SSE 클라이언트 상한 — N팀 × per-team 500 합산 DoS 방지
+const MAX_GLOBAL_SSE_CLIENTS = 5000
+
+// 30초마다 끊어진 SSE 클라이언트 정리 (기존 5분 → 30초로 단축)
 setInterval(() => {
   for (const client of sseClients) {
     if (client.res.destroyed || client.res.writableEnded) {
       sseClients.delete(client)
     }
   }
-}, 5 * 60 * 1000)
+}, 30 * 1000).unref()
 
 // 팀 이름별 브로드캐스트 디바운스 타이머 — 연속 파일 변경 시 burst 방지
 const _broadcastDebounce = new Map<string, ReturnType<typeof setTimeout>>()
@@ -278,18 +287,19 @@ function broadcastTeamEvent(teamName: string): void {
     }
   })
 
-  // Event log messages (last 50 from inbox/event-log.jsonl) — TTL 캐시 적용
+  // Event log messages (last 50 from inbox/event-log.jsonl) — teamName 키 TTL 캐시
   const eventLogFile = path.join(teamDir(teamName), 'inbox', 'event-log.jsonl')
   const messages: Array<{ from: string; to: string; type: string; timestamp: string; content: string }> = []
   try {
     const now = Date.now()
-    const cached = _eventLogCache.get(eventLogFile)
+    const cacheKey = `evlog:${teamName}`   // 절대 경로 대신 teamName 기반 키
+    const cached = _eventLogCache.get(cacheKey)
     const tailLines = (cached && now - cached.ts < EVENT_LOG_TTL)
       ? cached.lines
       : (() => {
           const raw = fs.readFileSync(eventLogFile, 'utf8').split('\n').filter(Boolean)
           const tail = raw.slice(-50)
-          _eventLogCache.set(eventLogFile, { lines: tail, ts: now })
+          _eventLogCache.set(cacheKey, { lines: tail, ts: now })
           return tail
         })()
     for (const line of tailLines) {
@@ -321,8 +331,21 @@ function broadcastTeamEvent(teamName: string): void {
     messages,
   })
 
+  const MAX_SSE_PER_TEAM = 500
+  let teamClientCount = 0
   for (const client of sseClients) {
     if (client.teamName !== teamName) continue
+    if (++teamClientCount > MAX_SSE_PER_TEAM) {
+      // 한도 초과 클라이언트는 종료 처리
+      try { client.res.end() } catch { /* */ }
+      sseClients.delete(client)
+      continue
+    }
+    // 백프레셔 확인 후 쓰기
+    if (client.res.destroyed || client.res.writableEnded) {
+      sseClients.delete(client)
+      continue
+    }
     try {
       client.res.write(`data: ${payload}\n\n`)
     } catch {
@@ -520,9 +543,10 @@ Rules:
       const b           = body as Record<string, unknown>
       const projectPath = (b['projectPath'] as string) || undefined
 
-      // template 화이트리스트 검증
+      // template 검증: NAME_RE 먼저 → 슬래시 포함 경로 탈출 방지
       const ALLOWED_TEMPLATES = ['leader-worker', 'leader-worker-reviewer', 'parallel-workers']
       const rawTmpl = (b['template'] as string || 'leader-worker').slice(0, 80)
+      if (!NAME_RE.test(rawTmpl)) { jsonReply(res, 400, { error: 'Invalid template name' }); return }
       if (!ALLOWED_TEMPLATES.includes(rawTmpl) &&
           !(projectPath && fs.existsSync(path.join(dataDir(), 'templates', `${rawTmpl}.yaml`)))) {
         jsonReply(res, 400, { error: `Invalid template: ${rawTmpl}` }); return
@@ -578,12 +602,22 @@ Rules:
   if (method === 'POST' && pathname === '/api/team/create') {
     parseBody(req).then((body) => {
       const b           = body as Record<string, string>
-      const name        = b['name'] || `team-${Date.now()}`
+      // name 검증
+      const rawCreateName = (b['name'] || '').trim()
+      if (rawCreateName && !NAME_RE.test(rawCreateName)) { jsonReply(res, 400, { error: 'Invalid name' }); return }
+      const name        = rawCreateName || `team-${Date.now()}`
       const projectPath = b['projectPath'] || undefined
+      // workers: 숫자만 허용
+      const createWorkers  = b['workers']  ? String(b['workers']).replace(/\D/g, '')  : ''
+      // template: NAME_RE 검증
+      const createTemplate = (b['template'] || '').slice(0, 80)
+      if (createTemplate && !NAME_RE.test(createTemplate)) { jsonReply(res, 400, { error: 'Invalid template' }); return }
+      // budget: 숫자만 허용
+      const createBudget   = b['budget']   ? String(b['budget']).replace(/\D/g, '')   : ''
       const args = ['team', 'create', name]
-      if (b['workers'])  args.push('--workers',  b['workers'])
-      if (b['template']) args.push('--template', b['template'])
-      if (b['budget'])   args.push('--budget',   b['budget'])
+      if (createWorkers)   args.push('--workers',  createWorkers)
+      if (createTemplate)  args.push('--template', createTemplate)
+      if (createBudget)    args.push('--budget',   createBudget)
       execFile('jikime', args, (err, stdout) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         if (projectPath) {
@@ -646,7 +680,10 @@ Rules:
     const status = url.searchParams.get('status') || ''
     const agent  = url.searchParams.get('agent')  || ''
     const owner  = url.searchParams.get('owner')  || ''
-    jsonReply(res, 200, { tasks: store.listTasks(teamName, status || undefined, agent || undefined, owner || undefined) })
+    // limit: 1~5000 범위, 기본 1000 — 대량 태스크 OOM 방지
+    const limitParam = parseInt(url.searchParams.get('limit') || '0')
+    const limit = Math.min(Math.max(1, limitParam || 1000), 5000)
+    jsonReply(res, 200, { tasks: store.listTasks(teamName, status || undefined, agent || undefined, owner || undefined, limit) })
     return true
   }
 
@@ -714,10 +751,21 @@ Rules:
     const taskID = taskPatchMatch[1]
     parseBody(req).then((body) => {
       const b = body as Record<string, string>
+      // status 화이트리스트 — 임의 문자열이 CLI 인수로 전달되는 것 방지
+      const ALLOWED_STATUSES = ['pending', 'in_progress', 'done', 'failed', 'blocked']
+      const patchStatus = (b['status'] || '').trim()
+      if (patchStatus && !ALLOWED_STATUSES.includes(patchStatus)) {
+        jsonReply(res, 400, { error: `Invalid status: ${patchStatus}` }); return
+      }
+      // agent_id NAME_RE 검증
+      const patchAgent = (b['agent_id'] || '').slice(0, 80)
+      if (patchAgent && !NAME_RE.test(patchAgent)) {
+        jsonReply(res, 400, { error: 'Invalid agent_id' }); return
+      }
       const args = ['team', 'tasks', 'update', teamName, taskID]
-      if (b['status'])   args.push('--status', b['status'])
-      if (b['agent_id']) args.push('--agent',  b['agent_id'])
-      if (b['result'])   args.push('--result',  JSON.stringify(b['result']))
+      if (patchStatus) args.push('--status', patchStatus)
+      if (patchAgent)  args.push('--agent',  patchAgent)
+      if (b['result']) args.push('--result',  JSON.stringify((b['result'] || '').slice(0, 2000)))
       execFile('jikime', args, (err) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 200, { ok: true })
@@ -756,6 +804,10 @@ Rules:
 
   // GET /api/team/:name/events  (SSE)
   if (method === 'GET' && subPath === '/events') {
+    // 전역 SSE 클라이언트 상한 — N팀 × per-team 500 합산 DoS 방지
+    if (sseClients.size >= MAX_GLOBAL_SSE_CLIENTS) {
+      jsonReply(res, 429, { error: 'Too many SSE connections' }); return true
+    }
     res.writeHead(200, {
       'Content-Type':  'text/event-stream',
       'Cache-Control': 'no-cache',

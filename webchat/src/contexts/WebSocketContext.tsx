@@ -85,6 +85,10 @@ export function WebSocketProvider({ children }: { children: ReactNode }) {
 
   const onMessage = useCallback((handler: (msg: WsMessage) => void) => {
     handlersRef.current.add(handler)
+    // 핸들러 수 > 50 경고 — 컴포넌트 언마운트 시 cleanup 함수 미호출로 인한 누수 감지용
+    if (handlersRef.current.size > 50) {
+      console.warn(`[WebSocket] handler count (${handlersRef.current.size}) exceeds 50 — possible leak; ensure cleanup function is called on unmount`)
+    }
     return () => { handlersRef.current.delete(handler) }
   }, [])
 

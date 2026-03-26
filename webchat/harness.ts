@@ -77,17 +77,18 @@ interface HarnessWorker {
 }
 
 interface HarnessOrchestrator {
-  projectPath:  string
-  workflowPath: string
-  config:       WorkflowConfig
-  status:       'running' | 'stopped'
-  workers:      Map<number, HarnessWorker>   // key: issue number
-  claimed:      Set<number>
-  timer:        ReturnType<typeof setInterval> | null
-  lastCheck:    string | null
-  tokenTotals:  { input: number; output: number; total: number; secondsRunning: number }
-  sseClients:   Set<ServerResponse>
-  watchHandle:  fs.FSWatcher | null
+  projectPath:       string
+  workflowPath:      string
+  config:            WorkflowConfig
+  status:            'running' | 'stopped'
+  workers:           Map<number, HarnessWorker>   // key: issue number
+  claimed:           Set<number>
+  timer:             ReturnType<typeof setInterval> | null
+  lastCheck:         string | null
+  tokenTotals:       { input: number; output: number; total: number; secondsRunning: number }
+  sseClients:        Set<ServerResponse>
+  watchHandle:       fs.FSWatcher | null
+  consecutiveErrors: number   // pollOnce 연속 실패 카운터 — 지수 백오프용
 }
 
 // ── Global Store ──────────────────────────────────────────────────
@@ -214,9 +215,11 @@ function getWorkspacePath(config: WorkflowConfig, issue: HarnessIssue): string {
   return path.join(config.workspace.root, sanitizeKey(issue.identifier))
 }
 
-// hook 스크립트에서 허용하지 않는 셸 확장 패턴 — $(), ``, 파이프 체이닝 등
+// hook 스크립트에서 허용하지 않는 셸 확장 패턴 — $(), ``, 파이프 체이닝, 명령 분리자 등
 // 단순 명령어 + 경로 인수는 허용, 셸 인젝션 벡터는 차단
-const HOOK_UNSAFE_RE = /\$\(|`[^`]*`|\|\||&&|>>/
+// ;  — 명령 분리자 (command1; command2)
+// <( — 프로세스 치환
+const HOOK_UNSAFE_RE = /\$\(|`[^`]*`|\|\||&&|>>|;|<\(/
 
 function runHook(script: string, cwd: string, timeoutMs: number): Promise<void> {
   if (HOOK_UNSAFE_RE.test(script)) {
@@ -297,7 +300,9 @@ function ghRequest(
         res.on('data', (c: string) => { data += c })
         res.on('end', () => {
           if ((res.statusCode ?? 0) >= 400) {
-            reject(new Error(`GitHub API ${res.statusCode}: ${data.slice(0, 200)}`))
+            // GitHub API 에러 응답에 토큰이 포함될 경우 마스킹 — 로그/SSE 노출 방지
+            const safeData = data.slice(0, 200).replace(/ghp_[A-Za-z0-9]{36}/g, 'ghp_***').replace(/Bearer\s+\S+/gi, 'Bearer ***')
+            reject(new Error(`GitHub API ${res.statusCode}: ${safeData}`))
           } else {
             try { resolve(data ? JSON.parse(data) : {}) }
             catch { resolve(data) }
@@ -327,6 +332,8 @@ async function fetchActiveIssues(
 function broadcastWorker(worker: HarnessWorker, message: string) {
   const payload = `data: ${JSON.stringify({ type: 'event', message })}\n\n`
   for (const client of worker.sseClients) {
+    // 이미 닫힌 클라이언트 정리 — zombie 연결 write 방지
+    if (client.destroyed || client.writableEnded) { worker.sseClients.delete(client); continue }
     try { client.write(payload) } catch { worker.sseClients.delete(client) }
   }
 }
@@ -380,6 +387,8 @@ async function runADK(
         }
         if (msg) {
           worker.events.push(msg)
+          // 이벤트 배열 무한 누적 방지 — 최근 500개만 유지
+          if (worker.events.length > 500) worker.events = worker.events.slice(-500)
           broadcastWorker(worker, msg)
           broadcastOrch(orch, { type: 'worker_event', issueNumber: worker.issue.id, message: msg })
         }
@@ -590,11 +599,29 @@ async function pollOnce(orch: HarnessOrchestrator, claudePath: string | undefine
       lastCheck:   orch.lastCheck,
       activeCount: activeCount(orch),
     })
+    // 성공 시 연속 실패 카운터 리셋
+    orch.consecutiveErrors = 0
 
   } catch (err: unknown) {
     const msg = (err as Error).message
+    orch.consecutiveErrors++
     broadcastOrch(orch, { type: 'error', message: msg })
     console.error('[harness] poll error:', msg)
+
+    // 연속 실패 시 지수 백오프 — API 다운 시 tight retry 루프 방지 (최대 5분)
+    if (orch.consecutiveErrors > 1 && orch.timer) {
+      clearInterval(orch.timer)
+      const backoffMs = Math.min(
+        orch.config.polling.interval_ms * Math.pow(2, orch.consecutiveErrors - 1),
+        5 * 60 * 1000,
+      )
+      console.warn(`[harness] 연속 ${orch.consecutiveErrors}회 실패 — ${Math.round(backoffMs / 1000)}초 후 재시도`)
+      orch.timer = setTimeout(() => {
+        if (orch.status !== 'running') return
+        orch.timer = setInterval(() => pollOnce(orch, claudePath), orch.config.polling.interval_ms)
+        pollOnce(orch, claudePath)
+      }, backoffMs) as unknown as ReturnType<typeof setInterval>
+    }
   }
 }
 
@@ -628,9 +655,10 @@ export function startHarness(
     claimed:     new Set(),
     timer:       null,
     lastCheck:   null,
-    tokenTotals: { input: 0, output: 0, total: 0, secondsRunning: 0 },
-    sseClients:  new Set(),
-    watchHandle: null,
+    tokenTotals:       { input: 0, output: 0, total: 0, secondsRunning: 0 },
+    sseClients:        new Set(),
+    watchHandle:       null,
+    consecutiveErrors: 0,
   }
 
   // WORKFLOW.md 핫리로드

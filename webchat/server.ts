@@ -113,6 +113,8 @@ if (CLAUDE_PATH) {
 }
 
 // ── PTY Session Store ──────────────────────────────────────────
+const MAX_PTY_SESSIONS = 50  // 무제한 터미널 세션 생성으로 인한 fd/메모리 고갈 방지
+
 interface PtySession {
   pty: import('node-pty').IPty
   clients: Set<WebSocket>
@@ -126,6 +128,9 @@ function getOrCreatePtySession(sessionId: string, cwd: string, cols: number, row
   if (!pty) throw new Error('node-pty unavailable')
   if (ptySessions.has(sessionId)) {
     return ptySessions.get(sessionId)!
+  }
+  if (ptySessions.size >= MAX_PTY_SESSIONS) {
+    throw new Error(`PTY session limit reached (max ${MAX_PTY_SESSIONS})`)
   }
 
   let ptyProcess: import('node-pty').IPty
@@ -338,15 +343,15 @@ async function handleClaudeMessage(
       ws.send(JSON.stringify({ type: 'permission_request', requestId, toolName, input }))
 
       return new Promise<{ behavior: string; updatedInput?: unknown; message?: string }>((resolve) => {
-        // 30초 타임아웃 → 허용으로 처리
+        // 30초 타임아웃 → 허용으로 처리 (Map에서 즉시 삭제 보장 — 메모리 누수 방지)
         const timer = setTimeout(() => {
-          pendingPermissions.delete(requestId)
+          pendingPermissions.delete(requestId)  // resolver 호출 전 선제 삭제
           resolve({ behavior: 'allow', updatedInput: input })
         }, 30000)
 
         pendingPermissions.set(requestId, ({ allow }) => {
           clearTimeout(timer)
-          pendingPermissions.delete(requestId)
+          pendingPermissions.delete(requestId)  // timer와 resolver 양쪽에서 delete 보장
           if (allow) {
             resolve({ behavior: 'allow', updatedInput: input })
           } else {
@@ -613,15 +618,28 @@ function findSessionJsonl(projectPath: string, sessionId: string): string | null
 
 const MAX_SESSION_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
 
+// mtime 기반 파싱 캐시 — 동일 파일 반복 파싱 방지 (60s TTL + mtime 불일치 시 무효화)
+const _sessionHistoryCache = new Map<string, { messages: HistoryMessage[]; mtime: number; ts: number }>()
+const SESSION_CACHE_TTL_MS = 60_000
+
 function parseSessionHistory(jsonlPath: string): HistoryMessage[] {
   // 거대 세션 파일 로딩 방지 — 50 MB 초과 시 빈 배열 반환
+  let stat: import('fs').Stats
   try {
-    const stat = fs.statSync(jsonlPath)
+    stat = fs.statSync(jsonlPath)
     if (stat.size > MAX_SESSION_FILE_SIZE) {
       console.warn(`[history] session file too large (${(stat.size / 1024 / 1024).toFixed(1)} MB), skipping: ${jsonlPath}`)
       return []
     }
   } catch { return [] }
+
+  // 캐시 히트: TTL 내이고 mtime 동일 시 재파싱 생략
+  const now    = Date.now()
+  const cached = _sessionHistoryCache.get(jsonlPath)
+  if (cached && now - cached.ts < SESSION_CACHE_TTL_MS && cached.mtime === stat.mtimeMs) {
+    return cached.messages
+  }
+
   const lines = fs.readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean)
   const messages: HistoryMessage[] = []
 
@@ -691,6 +709,8 @@ function parseSessionHistory(jsonlPath: string): HistoryMessage[] {
       }
     }
   }
+  // 결과 캐시 저장
+  _sessionHistoryCache.set(jsonlPath, { messages, mtime: stat.mtimeMs, ts: now })
   return messages
 }
 
@@ -834,7 +854,13 @@ function githubApiRequest(
           const parsed: unknown = data ? JSON.parse(data) : {}
           const statusCode = ghRes.statusCode ?? 0
           if (statusCode >= 400) {
-            const msg = (parsed as { message?: string })?.message ?? data
+            const rawMsg = String((parsed as { message?: string })?.message ?? data)
+            // 응답 본문에 토큰이 포함될 경우 마스킹 — 로그/클라이언트 노출 방지
+            const msg = rawMsg
+              .replace(/ghp_[A-Za-z0-9]{36}/g, 'ghp_***')
+              .replace(/Bearer\s+\S+/gi, 'Bearer ***')
+              .replace(/token\s+[A-Za-z0-9_-]{20,}/gi, 'token ***')
+              .slice(0, 200)
             reject(new Error(`GitHub API ${statusCode}: ${msg}`))
           } else {
             resolve(parsed)
@@ -1826,9 +1852,11 @@ app.prepare().then(() => {
             // 메시지당 4096 bytes 제한 + 10ms rate limit (PTY 플러딩 방지)
             const inputData = String(msg.data ?? '').slice(0, 4096)
             const now = Date.now()
-            if (now - session._lastInputMs >= 10) {
+            const elapsed = now - session._lastInputMs
+            // 허용/거부 관계없이 매 시도마다 타임스탬프 갱신 — burst 패턴 차단
+            session._lastInputMs = now
+            if (elapsed >= 10) {
               session.pty.write(inputData)
-              session._lastInputMs = now
             }
           }
 
@@ -1857,7 +1885,14 @@ app.prepare().then(() => {
     ws.on('close', () => {
       if (sessionId) {
         const session = ptySessions.get(sessionId)
-        if (session) session.clients.delete(ws)
+        if (session) {
+          session.clients.delete(ws)
+          // 마지막 클라이언트 종료 시 PTY 즉시 정리 — fd 누수 방지 (1시간 대기 제거)
+          if (session.clients.size === 0) {
+            try { session.pty.kill() } catch { /* */ }
+            ptySessions.delete(sessionId)
+          }
+        }
       }
     })
   })
@@ -1867,45 +1902,52 @@ app.prepare().then(() => {
     const wsKey = `chat-${Date.now()}-${Math.random()}`
     chatSessions.set(wsKey, { ws, queryInstance: null, claudeSessionId: null })
 
-    ws.on('message', async (raw) => {
-      try {
-        const msg = JSON.parse(raw.toString())
+    ws.on('message', (raw) => {
+      // async IIFE — 핸들러 자체를 async로 두면 unhandledRejection 위험
+      ;(async () => {
+        try {
+          const msg = JSON.parse(raw.toString())
 
-        if (msg.type === 'chat') {
-          const { sessionId, projectPath, prompt, model, permissionMode, extendedThinking } = msg
-          await handleClaudeMessage(
-            ws, wsKey,
-            sessionId || null,
-            projectPath || os.homedir(),
-            prompt,
-            model,
-            permissionMode,
-            !!extendedThinking,
-          )
+          if (msg.type === 'chat') {
+            const { sessionId, projectPath, prompt, model, permissionMode, extendedThinking } = msg
+            await handleClaudeMessage(
+              ws, wsKey,
+              sessionId || null,
+              projectPath || os.homedir(),
+              prompt,
+              model,
+              permissionMode,
+              !!extendedThinking,
+            )
 
-        } else if (msg.type === 'abort') {
-          const session = chatSessions.get(wsKey)
-          if (session?.queryInstance?.interrupt) {
-            try { await session.queryInstance.interrupt() } catch { /* */ }
+          } else if (msg.type === 'abort') {
+            const session = chatSessions.get(wsKey)
+            if (session?.queryInstance?.interrupt) {
+              try { await session.queryInstance.interrupt() } catch { /* */ }
+            }
+
+          } else if (msg.type === 'permission_response') {
+            // 브라우저에서 도구 실행 허용/거부 응답
+            const resolver = pendingPermissions.get(msg.requestId as string)
+            if (resolver) resolver({ allow: !!msg.allow, alwaysAllow: !!msg.alwaysAllow })
           }
-
-        } else if (msg.type === 'permission_response') {
-          // 브라우저에서 도구 실행 허용/거부 응답
-          const resolver = pendingPermissions.get(msg.requestId as string)
-          if (resolver) resolver({ allow: !!msg.allow, alwaysAllow: !!msg.alwaysAllow })
+        } catch (err) {
+          console.error('Chat WS error:', err)
+          try { ws.send(JSON.stringify({ type: 'error', message: String(err) })) } catch { /* ws already closed */ }
         }
-      } catch (err) {
-        console.error('Chat WS error:', err)
-        ws.send(JSON.stringify({ type: 'error', message: String(err) }))
-      }
+      })()
     })
 
     ws.on('close', () => {
       const session = chatSessions.get(wsKey)
       if (session?.queryInstance?.interrupt) {
-        session.queryInstance.interrupt().catch(() => {})
+        // interrupt 완료 후 삭제 — 진행 중 조회 가능하도록 순서 보장
+        session.queryInstance.interrupt()
+          .catch(() => { /* ignore */ })
+          .finally(() => { chatSessions.delete(wsKey) })
+      } else {
+        chatSessions.delete(wsKey)
       }
-      chatSessions.delete(wsKey)
     })
   })
 
