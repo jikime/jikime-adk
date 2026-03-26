@@ -121,7 +121,16 @@ export class TeamFileStore {
   writeWebchatMeta(name: string, meta: { projectPath?: string }): void {
     const dir = teamDir(name)
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    fs.writeFileSync(path.join(dir, 'webchat.json'), JSON.stringify(meta))
+    // 임시 파일 → rename 원자 쓰기 — 크래시/동시 쓰기 시 webchat.json 손상 방지
+    const target = path.join(dir, 'webchat.json')
+    const tmp    = `${target}.tmp.${process.pid}`
+    try {
+      fs.writeFileSync(tmp, JSON.stringify(meta), 'utf8')
+      fs.renameSync(tmp, target)
+    } catch (e) {
+      try { fs.unlinkSync(tmp) } catch { /* */ }
+      throw e
+    }
   }
 
   listTasks(name: string, status?: string, agent?: string, owner?: string, limit = 1000): unknown[] {

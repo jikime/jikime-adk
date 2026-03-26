@@ -139,6 +139,10 @@ function getOrCreatePtySession(sessionId: string, cwd: string, cols: number, row
   // tmux: prefix → 기존 tmux 세션을 linked-session 으로 뷰어 생성
   if (sessionId.startsWith('tmux:')) {
     const tmuxSession = sessionId.slice(5) // "tmux:jikime-lotto-team-leader" → "jikime-lotto-team-leader"
+    // tmux 세션명 검증 — 특수문자(:, {, }, .) 포함 시 tmux 오동작 방지
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(tmuxSession)) {
+      throw new Error(`Invalid tmux session name: ${tmuxSession.slice(0, 40)}`)
+    }
 
     // ── new-session -t 방식 (linked session) ────────────────────────────
     // attach-session 은 모든 클라이언트 중 가장 작은 크기로 윈도우를 제약해
@@ -171,10 +175,8 @@ function getOrCreatePtySession(sessionId: string, cwd: string, cols: number, row
 
     // PTY 종료 시 linked session 정리 (원본 세션은 그대로 유지)
     ptyProcess.onExit(() => {
-      try {
-        const { execSync } = require('child_process') as typeof import('child_process')
-        execSync(`tmux kill-session -t ${linkedName}`, { stdio: 'ignore' })
-      } catch { /* 이미 없으면 무시 */ }
+      // execFileSync: 셸 없이 tmux 직접 실행 — 향후 linkedName 변경 시 인젝션 방지
+      try { execFileSync('tmux', ['kill-session', '-t', linkedName], { stdio: 'ignore' }) } catch { /* 이미 없으면 무시 */ }
     })
   } else {
     // SHELL 환경변수 → 시스템에 실제 존재하는 셸 순서로 폴백
@@ -820,7 +822,7 @@ function runGitWithPat(cwd: string, action: 'push' | 'pull', pat: string): strin
 /** git remote origin URL에서 owner/repo 자동 감지 */
 function detectGitHubRepo(cwd: string): { owner: string; repo: string } | null {
   try {
-    const remoteUrl = execSync('git remote get-url origin', { cwd, encoding: 'utf8', timeout: 3000 }).trim()
+    const remoteUrl = execFileSync('git', ['remote', 'get-url', 'origin'], { cwd, encoding: 'utf8', timeout: 3000 }).trim()
     const m = remoteUrl.match(/github\.com[/:]([\w.-]+)\/([\w.-]+?)(?:\.git)?$/)
     if (m) return { owner: m[1], repo: m[2] }
   } catch { /* not a git repo or no origin */ }
