@@ -1,6 +1,7 @@
 package teamcmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -58,7 +59,9 @@ func newDiscoverListCmd() *cobra.Command {
 
 			// Collect active tmux sessions for this machine.
 			tmuxSessions := map[string][]string{}
-			if out, err2 := exec.Command("tmux", "list-sessions", "-F", "#{session_name}").Output(); err2 == nil {
+			tmuxCtx, tmuxCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer tmuxCancel()
+			if out, err2 := exec.CommandContext(tmuxCtx, "tmux", "list-sessions", "-F", "#{session_name}").Output(); err2 == nil {
 				for _, line := range strings.Split(strings.TrimSpace(string(out)), "\n") {
 					line = strings.TrimSpace(line)
 					if !strings.HasPrefix(line, "jikime-") {

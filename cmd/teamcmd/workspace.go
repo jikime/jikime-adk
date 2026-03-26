@@ -1,6 +1,7 @@
 package teamcmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -10,6 +11,11 @@ import (
 
 	"github.com/spf13/cobra"
 )
+
+// gitCtx returns a 30-second context for git commands — 무한 대기 방지
+func gitCtx() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 30*time.Second)
+}
 
 func newWorkspaceCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -31,7 +37,9 @@ func workspaceRoot(teamName, agentID string) string {
 // gitRepoRoot returns the root directory of the git repository containing dir.
 // For a worktree, this returns the worktree's own root (not the main repo).
 func gitRepoRoot(dir string) (string, error) {
-	out, err := exec.Command("git", "-C", dir, "rev-parse", "--show-toplevel").Output()
+	ctx, cancel := gitCtx()
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "git", "-C", dir, "rev-parse", "--show-toplevel").Output()
 	if err != nil {
 		return "", fmt.Errorf("not a git repo: %w", err)
 	}
@@ -42,7 +50,9 @@ func gitRepoRoot(dir string) (string, error) {
 // Works correctly whether called from a worktree or the main repo.
 func gitMainRepoRoot(dir string) (string, error) {
 	// --git-common-dir returns the shared .git directory (e.g. /main-repo/.git)
-	out, err := exec.Command("git", "-C", dir, "rev-parse", "--git-common-dir").Output()
+	ctx, cancel := gitCtx()
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "git", "-C", dir, "rev-parse", "--git-common-dir").Output()
 	if err != nil {
 		return "", fmt.Errorf("not a git repo: %w", err)
 	}
@@ -69,13 +79,15 @@ func createWorktree(gitRoot, wsPath, branch string) error {
 	}
 
 	// Try to create with a new branch first.
-	out, err := exec.Command("git", "-C", gitRoot, "worktree", "add", "-b", branch, wsPath).CombinedOutput()
+	ctx, cancel := gitCtx()
+	defer cancel()
+	out, err := exec.CommandContext(ctx, "git", "-C", gitRoot, "worktree", "add", "-b", branch, wsPath).CombinedOutput()
 	if err == nil {
 		return nil
 	}
 	// Branch already exists — create worktree without -b.
 	if strings.Contains(string(out), "already exists") || strings.Contains(string(out), "fatal: A branch named") {
-		out2, err2 := exec.Command("git", "-C", gitRoot, "worktree", "add", wsPath, branch).CombinedOutput()
+		out2, err2 := exec.CommandContext(ctx, "git", "-C", gitRoot, "worktree", "add", wsPath, branch).CombinedOutput()
 		if err2 != nil {
 			return fmt.Errorf("git worktree add: %s", strings.TrimSpace(string(out2)))
 		}
@@ -134,7 +146,9 @@ func newWorkspaceCheckpointCmd() *cobra.Command {
 				{"git", "-C", wsDir, "add", "-A"},
 				{"git", "-C", wsDir, "commit", "-m", message},
 			} {
-				out, err := exec.Command(c[0], c[1:]...).CombinedOutput()
+				ctx, cancel := gitCtx()
+				out, err := exec.CommandContext(ctx, c[0], c[1:]...).CombinedOutput()
+				cancel()
 				if err != nil && !strings.Contains(string(out), "nothing to commit") {
 					return fmt.Errorf("git: %w\n%s", err, out)
 				}
@@ -176,13 +190,17 @@ func newWorkspaceMergeCmd() *cobra.Command {
 
 			// Merge the agent branch into target FROM the main repo (not from the worktree).
 			mergeMsg := fmt.Sprintf("merge: %s into %s", branch, target)
-			out, mergeErr := exec.Command("git", "-C", gitRoot, "merge", "--no-ff", branch, "-m", mergeMsg).CombinedOutput()
+			ctx, cancel := gitCtx()
+			defer cancel()
+			out, mergeErr := exec.CommandContext(ctx, "git", "-C", gitRoot, "merge", "--no-ff", branch, "-m", mergeMsg).CombinedOutput()
 			if mergeErr != nil {
 				return fmt.Errorf("git merge: %w\n%s", mergeErr, out)
 			}
 
 			if cleanup {
-				_ = exec.Command("git", "-C", gitRoot, "worktree", "remove", "--force", wsDir).Run()
+				cleanCtx, cleanCancel := gitCtx()
+				_ = exec.CommandContext(cleanCtx, "git", "-C", gitRoot, "worktree", "remove", "--force", wsDir).Run()
+				cleanCancel()
 				_ = os.RemoveAll(wsDir)
 			}
 			fmt.Printf("✅ Branch %s merged into %s\n", branch, target)
@@ -204,7 +222,9 @@ func newWorkspaceCleanupCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if agentID != "" {
 				wsDir := workspaceRoot(args[0], agentID)
-				_ = exec.Command("git", "worktree", "remove", "--force", wsDir).Run()
+				ctx, cancel := gitCtx()
+				_ = exec.CommandContext(ctx, "git", "worktree", "remove", "--force", wsDir).Run()
+				cancel()
 				_ = os.RemoveAll(wsDir)
 				fmt.Printf("✅ Workspace for %s removed\n", agentID)
 				return nil
@@ -233,7 +253,9 @@ func newWorkspaceStatusCmd() *cobra.Command {
 				return fmt.Errorf("--agent or JIKIME_AGENT_ID required")
 			}
 			wsDir := workspaceRoot(args[0], agentID)
-			out, err := exec.Command("git", "-C", wsDir, "diff", "--stat").Output()
+			ctx, cancel := gitCtx()
+			defer cancel()
+			out, err := exec.CommandContext(ctx, "git", "-C", wsDir, "diff", "--stat").Output()
 			if err != nil {
 				return fmt.Errorf("git diff: %w", err)
 			}

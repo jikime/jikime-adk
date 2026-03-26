@@ -1,6 +1,7 @@
 package teamcmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -207,8 +208,12 @@ Example:
 			prefix := "jikime-" + boardSanitize(name) + "-"
 			boardSession := "jikime-" + boardSanitize(name) + "-board"
 
+			// tmux 명령 공통 10초 context — 무한 대기 방지
+			tCtx, tCancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer tCancel()
+
 			// List all tmux sessions to find agents for this team.
-			out, err := exec.Command("tmux", "list-sessions", "-F", "#{session_name}").Output()
+			out, err := exec.CommandContext(tCtx, "tmux", "list-sessions", "-F", "#{session_name}").Output()
 			if err != nil {
 				return fmt.Errorf("tmux list-sessions: %w (is tmux running?)", err)
 			}
@@ -229,10 +234,10 @@ Example:
 			}
 
 			// Kill stale board session if it exists.
-			_ = exec.Command("tmux", "kill-session", "-t", boardSession).Run()
+			_ = exec.CommandContext(tCtx, "tmux", "kill-session", "-t", boardSession).Run()
 
 			// Create a fresh board session (starts with a temporary shell window).
-			if out, err := exec.Command("tmux", "new-session", "-d", "-s", boardSession, "-n", "_board_").CombinedOutput(); err != nil {
+			if out, err := exec.CommandContext(tCtx, "tmux", "new-session", "-d", "-s", boardSession, "-n", "_board_").CombinedOutput(); err != nil {
 				return fmt.Errorf("create board session: %w\n%s", err, out)
 			}
 
@@ -244,10 +249,10 @@ Example:
 				agentName := strings.TrimPrefix(sess, prefix)
 				srcWin := sess + ":" + boardSanitize(agentName)
 
-				if err := exec.Command("tmux", "link-window", "-s", srcWin, "-t", boardSession).Run(); err != nil {
+				if err := exec.CommandContext(tCtx, "tmux", "link-window", "-s", srcWin, "-t", boardSession).Run(); err != nil {
 					// Fallback: try window index 0 if named window not found.
 					srcWin0 := sess + ":0"
-					if err2 := exec.Command("tmux", "link-window", "-s", srcWin0, "-t", boardSession).Run(); err2 != nil {
+					if err2 := exec.CommandContext(tCtx, "tmux", "link-window", "-s", srcWin0, "-t", boardSession).Run(); err2 != nil {
 						fmt.Printf("  ⚠️  could not link %s: %v\n", sess, err2)
 						continue
 					}
@@ -256,15 +261,15 @@ Example:
 			}
 
 			// Remove the initial placeholder window.
-			_ = exec.Command("tmux", "kill-window", "-t", boardSession+":_board_").Run()
+			_ = exec.CommandContext(tCtx, "tmux", "kill-window", "-t", boardSession+":_board_").Run()
 
 			if linked == 0 {
-				_ = exec.Command("tmux", "kill-session", "-t", boardSession).Run()
+				_ = exec.CommandContext(tCtx, "tmux", "kill-session", "-t", boardSession).Run()
 				return fmt.Errorf("failed to link any agent windows into board session")
 			}
 
 			// Move to first window.
-			_ = exec.Command("tmux", "select-window", "-t", boardSession+":0").Run()
+			_ = exec.CommandContext(tCtx, "tmux", "select-window", "-t", boardSession+":0").Run()
 
 			fmt.Printf("📺 Board session: %s\n", boardSession)
 			fmt.Printf("   %d agent windows linked (Ctrl-b n/p to switch, Ctrl-b d to detach)\n\n", linked)
