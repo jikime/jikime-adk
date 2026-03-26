@@ -288,9 +288,9 @@ export default function AppLayout() {
         {/* Main content */}
         <ResizablePanel id="content-panel" minSize="320px" className="min-w-0 bg-white dark:bg-muted">
           <main className="h-full overflow-hidden relative">
-            {/* 세션 미선택 시 통합 가이드 페이지 — 모든 탭 위에 표시 */}
+            {/* 세션 미선택 시 통합 가이드 페이지 — 탭(z-10)보다 위, 헤더(z-20)보다 아래 */}
             {!activeSessionId && (
-              <div className="absolute inset-0 z-20 p-2">
+              <div className="absolute inset-0 z-[11] p-2">
                 <div className="flex flex-col items-center justify-center h-full bg-muted dark:bg-background rounded-lg border border-zinc-300 dark:border-zinc-600 text-center gap-6 px-8">
                   <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
                     <MessageSquare className="w-9 h-9 text-blue-400/70" />
