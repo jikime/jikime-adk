@@ -1,6 +1,7 @@
 package team
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -22,7 +23,10 @@ func waitForClaudeReady(target string, timeout time.Duration) error {
 	readyMarkers := []string{"❯", "bypass permissions", "esc to interrupt"}
 
 	for time.Now().Before(deadline) {
-		out, err := exec.Command("tmux", "capture-pane", "-p", "-t", target).Output()
+		// 개별 tmux 명령 5초 타임아웃 — 폴링 루프에서 단일 명령 무한 대기 방지
+		paneCtx, paneCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		out, err := exec.CommandContext(paneCtx, "tmux", "capture-pane", "-p", "-t", target).Output()
+		paneCancel()
 		if err == nil {
 			content := string(out)
 			for _, marker := range readyMarkers {
@@ -185,8 +189,12 @@ func (s *Spawner) spawnTmux(cfg SpawnConfig) (*SpawnResult, error) {
 	if startDir == "" {
 		startDir, _ = os.Getwd()
 	}
+	// tmux 명령 공통 10초 타임아웃 — 명령 무한 블로킹 방지
+	tmuxCtx, tmuxCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer tmuxCancel()
+
 	args := []string{"new-session", "-d", "-s", session, "-n", windowName, "-c", startDir, fullCmd}
-	cmd := exec.Command("tmux", args...)
+	cmd := exec.CommandContext(tmuxCtx, "tmux", args...)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("team/spawner: tmux new-session %s: %w\n%s", cfg.AgentID, err, out)
 	}
@@ -202,12 +210,12 @@ func (s *Spawner) spawnTmux(cfg SpawnConfig) (*SpawnResult, error) {
 
 	// Step 3: Load the prompt file into a named tmux buffer.
 	bufName := "jikime-" + sanitize(cfg.AgentID)
-	if out, err := exec.Command("tmux", "load-buffer", "-b", bufName, promptFile).CombinedOutput(); err != nil {
+	if out, err := exec.CommandContext(tmuxCtx, "tmux", "load-buffer", "-b", bufName, promptFile).CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("team/spawner: tmux load-buffer %s: %w\n%s", cfg.AgentID, err, out)
 	}
 
 	// Step 4: Paste the buffer into the window (simulates typing the full prompt).
-	if out, err := exec.Command("tmux", "paste-buffer", "-b", bufName, "-t", target).CombinedOutput(); err != nil {
+	if out, err := exec.CommandContext(tmuxCtx, "tmux", "paste-buffer", "-b", bufName, "-t", target).CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("team/spawner: tmux paste-buffer %s: %w\n%s", cfg.AgentID, err, out)
 	}
 
@@ -215,16 +223,16 @@ func (s *Spawner) spawnTmux(cfg SpawnConfig) (*SpawnResult, error) {
 	//   First Enter: confirms the pasted multi-line text.
 	//   Second Enter: submits the message.
 	time.Sleep(500 * time.Millisecond)
-	if out, err := exec.Command("tmux", "send-keys", "-t", target, "Enter").CombinedOutput(); err != nil {
+	if out, err := exec.CommandContext(tmuxCtx, "tmux", "send-keys", "-t", target, "Enter").CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("team/spawner: tmux send-keys Enter1 %s: %w\n%s", cfg.AgentID, err, out)
 	}
 	time.Sleep(300 * time.Millisecond)
-	if out, err := exec.Command("tmux", "send-keys", "-t", target, "Enter").CombinedOutput(); err != nil {
+	if out, err := exec.CommandContext(tmuxCtx, "tmux", "send-keys", "-t", target, "Enter").CombinedOutput(); err != nil {
 		return nil, fmt.Errorf("team/spawner: tmux send-keys Enter2 %s: %w\n%s", cfg.AgentID, err, out)
 	}
 
 	// Clean up the named buffer.
-	_ = exec.Command("tmux", "delete-buffer", "-b", bufName).Run()
+	_ = exec.CommandContext(tmuxCtx, "tmux", "delete-buffer", "-b", bufName).Run()
 
 	return &SpawnResult{
 		AgentID:     cfg.AgentID,

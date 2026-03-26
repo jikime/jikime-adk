@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"jikime-adk/internal/router/provider"
 	"jikime-adk/internal/router/types"
@@ -17,8 +18,8 @@ func (s *Server) handleMessages(w http.ResponseWriter, r *http.Request, provider
 		return
 	}
 
-	// Parse request body
-	body, err := io.ReadAll(r.Body)
+	// Parse request body — 10 MB 상한: 대용량 요청으로 인한 OOM 방지
+	body, err := io.ReadAll(io.LimitReader(r.Body, 10*1024*1024))
 	if err != nil {
 		s.writeError(w, http.StatusBadRequest, "invalid_request_error", "Failed to read request body")
 		return
@@ -73,8 +74,8 @@ func (s *Server) handleMessages(w http.ResponseWriter, r *http.Request, provider
 		provReq.Header.Set(k, v)
 	}
 
-	// Forward to provider
-	client := &http.Client{}
+	// Forward to provider — 60초 타임아웃: AI 프로바이더 무응답 시 goroutine 무한 블로킹 방지
+	client := &http.Client{Timeout: 60 * time.Second}
 	resp, err := client.Do(provReq)
 	if err != nil {
 		s.writeError(w, http.StatusBadGateway, "api_error",
@@ -85,7 +86,8 @@ func (s *Server) handleMessages(w http.ResponseWriter, r *http.Request, provider
 
 	// Check provider response status
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
+		// 에러 응답 1 MB 상한 + 에러 처리 — 대용량 오류 바디로 인한 메모리 고갈 방지
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1*1024*1024))
 		s.logger.Printf("<- Provider error (%d): %s", resp.StatusCode, string(respBody))
 		s.writeError(w, resp.StatusCode, "api_error",
 			fmt.Sprintf("Provider returned %d: %s", resp.StatusCode, string(respBody)))
@@ -143,7 +145,8 @@ func (s *Server) handleStreamResponse(w http.ResponseWriter, resp *http.Response
 
 // handleSyncResponse processes a non-streaming response from the provider.
 func (s *Server) handleSyncResponse(w http.ResponseWriter, resp *http.Response, prov provider.Provider, providerName, model string) {
-	body, err := io.ReadAll(resp.Body)
+	// 동기 응답 10 MB 상한 — 프로바이더 대용량 응답으로 인한 메모리 고갈 방지
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024))
 	if err != nil {
 		s.writeError(w, http.StatusBadGateway, "api_error", "Failed to read provider response")
 		return
