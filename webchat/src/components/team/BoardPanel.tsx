@@ -202,16 +202,10 @@ export default function BoardPanel() {
   // 프로젝트 미선택
   if (!activeProject) {
     return (
-      <div className="flex flex-col h-full items-center justify-center gap-4 bg-background rounded-lg border border-border text-center px-8">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-          <FolderOpen className="w-6 h-6 text-muted-foreground/50" />
-        </div>
-        <div>
-          <p className="text-base font-semibold text-foreground mb-1">{t.team.selectProject}</p>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            {t.team.selectProjectHint}
-          </p>
-        </div>
+      <div className="flex flex-col h-full items-center justify-center gap-2 bg-background rounded-lg border border-border text-center px-8">
+        <FolderOpen className="w-8 h-8 text-muted-foreground/30" />
+        <p className="text-lg text-muted-foreground">{t.team.selectProject}</p>
+        <p className="text-base text-muted-foreground/50">{t.team.selectProjectHint}</p>
       </div>
     )
   }
