@@ -1312,6 +1312,29 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
     return true
   }
 
+  // GET /api/ws/session-lookup?sessionId=...
+  // sessionId로 ~/.claude/projects/ 디렉터리를 스캔해 projectPath 반환
+  if (pathname === '/api/ws/session-lookup' && req.method === 'GET') {
+    const sessionId = url.searchParams.get('sessionId') ?? ''
+    if (!sessionId) {
+      res.writeHead(400, CORS_HEADERS); res.end('Missing sessionId'); return true
+    }
+    const claudeDir = path.join(os.homedir(), '.claude', 'projects')
+    try {
+      for (const entry of fs.readdirSync(claudeDir)) {
+        const p = path.join(claudeDir, entry, `${sessionId}.jsonl`)
+        if (fs.existsSync(p)) {
+          const projectPath = decodeProjectPath(entry)
+          res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+          res.end(JSON.stringify({ projectPath: projectPath ?? null }))
+          return true
+        }
+      }
+    } catch { /* */ }
+    res.writeHead(404, CORS_HEADERS); res.end('Session not found')
+    return true
+  }
+
   // GET /api/ws/commands?projectPath=...
   // {projectPath}/.claude/commands/jikime/ 의 .md 파일을 파일명 기준 정렬해서 반환
   if (pathname === '/api/ws/commands' && req.method === 'GET') {

@@ -369,7 +369,7 @@ const ProjectItem = memo(function ProjectItem({
 // ── 메인 사이드바 ─────────────────────────────────────────────────
 function Sidebar() {
   const { t } = useLocale()
-  const { projects, activeProject, activeSessionId, setActiveProject, setActiveSessionId, refreshProjects } = useProject()
+  const { projects, activeProject, activeSessionId, setActiveProject, setActiveSessionId, navigateToSession, refreshProjects } = useProject()
   const { servers, activeServer, setActiveServerId, addServer, updateServer, removeServer, getApiUrl } = useServer()
   const { isConnected } = useWebSocket()
 
@@ -466,6 +466,7 @@ function Sidebar() {
   }, [])
 
   const selectProject = useCallback((p: Project) => {
+    // 프로젝트 폴더 클릭: URL 변경 없이 상태만 업데이트 + 하위 세션 목록 열기
     setActiveProject(p)
     setActiveSessionId(null)
     setOpenProjects(prev => prev.has(p.id) ? prev : new Set([...prev, p.id]))
@@ -636,9 +637,8 @@ function Sidebar() {
               onSelect={selectProject}
               onDeleteProject={setDeletingProject}
               onSelectSession={(p, sId) => {
-                // 이미 활성 프로젝트면 router.push 없이 세션만 전환
-                if (activeProject?.id !== p.id) setActiveProject(p)
-                setActiveSessionId(sId || null)
+                // 세션 클릭: URL을 /session/{sessionId}로 이동
+                navigateToSession(p, sId || '')
               }}
               onDeleteSession={(p, sId) => setDeletingSession({ project: p, sessionId: sId })}
             />
