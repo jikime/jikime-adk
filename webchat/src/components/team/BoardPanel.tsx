@@ -207,8 +207,8 @@ export default function BoardPanel() {
           <FolderOpen className="w-6 h-6 text-muted-foreground/50" />
         </div>
         <div>
-          <p className="text-[14px] font-semibold text-foreground mb-1">{t.team.selectProject}</p>
-          <p className="text-[12px] text-muted-foreground leading-relaxed">
+          <p className="text-base font-semibold text-foreground mb-1">{t.team.selectProject}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
             {t.team.selectProjectHint}
           </p>
         </div>
