@@ -1223,9 +1223,19 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   // POST /api/ws/project — 새 프로젝트 경로 등록 (경로 디렉터리가 없어도 가능)
   if (pathname === '/api/ws/project' && req.method === 'POST') {
+    req.setTimeout(30_000, () => { req.destroy() })  // slow-client DoS 방지
+    const MAX_PROJECT_BODY = 10 * 1024  // 10 KB
     let body = ''
-    req.on('data', (chunk: Buffer) => { body += chunk })
+    let bodySize = 0
+    req.on('data', (chunk: Buffer) => {
+      bodySize += chunk.length
+      if (bodySize > MAX_PROJECT_BODY) { req.destroy(); return }
+      body += chunk
+    })
     req.on('end', () => {
+      if (bodySize > MAX_PROJECT_BODY) {
+        res.writeHead(413, CORS_HEADERS); res.end(JSON.stringify({ error: 'Request body too large' })); return
+      }
       try {
         const { path: projectPath } = JSON.parse(body) as { path?: string }
         if (!projectPath || typeof projectPath !== 'string') {
@@ -1614,6 +1624,11 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   // SSE: 이슈 처리 이벤트 실시간 스트리밍
   if (pathname === '/api/ws/github/events' && req.method === 'GET') {
     const issueKey = url.searchParams.get('issueKey') ?? ''
+    // issueKey 형식 검증 — owner/repo#number (로그 인젝션 + 일관성 방지)
+    const ISSUE_KEY_RE = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+#\d+$/
+    if (!ISSUE_KEY_RE.test(issueKey)) {
+      res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'Invalid issueKey format' })); return true
+    }
     res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
@@ -1647,6 +1662,10 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
   // 이슈 처리 중단
   if (pathname === '/api/ws/github/process' && req.method === 'DELETE') {
     const issueKey = url.searchParams.get('issueKey') ?? ''
+    const ISSUE_KEY_RE = /^[a-zA-Z0-9_.-]+\/[a-zA-Z0-9_.-]+#\d+$/
+    if (!ISSUE_KEY_RE.test(issueKey)) {
+      res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'Invalid issueKey format' })); return true
+    }
     const processor = issueProcessors.get(issueKey)
     if (processor) {
       processor.interrupt?.().catch(() => {})
@@ -1689,6 +1708,9 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
         if (!token || !projectPath) {
           res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: 'projectPath and token required' })); return
         }
+        // intervalMs: 5s~1h, maxConcurrent: 1~20 범위 클램핑 — 공격적 폴링 / 과부하 방지
+        const safeIntervalMs    = Math.min(Math.max(Number(intervalMs)    || 15000, 5_000), 3_600_000)
+        const safeMaxConcurrent = Math.min(Math.max(Number(maxConcurrent) || 3,     1),     20)
         // Map 크기 제한 — 신규 폴러 추가 시 최대 50개 초과 차단 (기존 키 갱신은 허용)
         if (!projectPollers.has(projectPath) && projectPollers.size >= 50) {
           res.writeHead(429, { 'Content-Type': 'application/json', ...CORS_HEADERS })
@@ -1703,7 +1725,7 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
         const poller = startProjectPoller(
           projectPath, token, ghRepo.owner, ghRepo.repo,
-          intervalMs, maxConcurrent, model,
+          safeIntervalMs, safeMaxConcurrent, model,
         )
         res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
         res.end(JSON.stringify({

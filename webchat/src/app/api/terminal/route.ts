@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { spawn, execSync, type ChildProcessWithoutNullStreams } from 'child_process'
+import { spawn, execFileSync, type ChildProcessWithoutNullStreams } from 'child_process'
 
 export const dynamic = 'force-dynamic'
 
@@ -138,7 +138,7 @@ function findPython3(): string {
   const candidates = ['python3', '/usr/bin/python3', '/opt/homebrew/bin/python3', '/usr/local/bin/python3']
   for (const p of candidates) {
     try {
-      execSync(`${p} --version`, { stdio: 'pipe', timeout: 3000 })
+      execFileSync(p, ['--version'], { stdio: 'pipe', timeout: 3000 })
       return p
     } catch { /* continue */ }
   }
@@ -357,7 +357,22 @@ export async function POST(request: NextRequest) {
     case 'create': {
       const cols = Number(body.cols) || 220
       const rows = Number(body.rows) || 50
-      const cwd = (body.cwd as string) || '/tmp'
+      // cwd 경로 검증 — 절대 경로 + 실제 디렉터리만 허용 (path traversal 방지)
+      const rawCwd = (body.cwd as string) || ''
+      let cwd = '/tmp'
+      if (rawCwd && typeof rawCwd === 'string') {
+        const { resolve, sep } = await import('path')
+        const { existsSync, statSync } = await import('fs')
+        const norm = resolve(rawCwd)
+        const BLOCKED = ['/', '/etc', '/root', '/var', '/sys', '/proc', '/dev', '/boot']
+        if (
+          norm.startsWith(sep) &&
+          !BLOCKED.some(b => norm === b || norm.startsWith(b + sep)) &&
+          existsSync(norm) && statSync(norm).isDirectory()
+        ) {
+          cwd = norm
+        }
+      }
       const id = createSession(cols, rows, cwd)
       return Response.json({ ok: true, session: id })
     }
@@ -370,6 +385,11 @@ export async function POST(request: NextRequest) {
         return Response.json({ error: 'Session not found or dead' }, { status: 404 })
       }
       session.lastActivity = Date.now()
+      // stdin 입력 크기 제한 — 대용량 페이로드로 셸 블로킹 방지 (64 KB)
+      const MAX_INPUT = 64 * 1024
+      if (typeof data !== 'string' || data.length > MAX_INPUT) {
+        return Response.json({ error: 'Input too large (max 64 KB)' }, { status: 413 })
+      }
       session.proc.stdin.write(data)
 
       // Enter 키 → 응답 대기 시작 (에코가 지나간 뒤)
