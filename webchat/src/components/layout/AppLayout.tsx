@@ -136,7 +136,7 @@ const LanguageSelector = memo(function LanguageSelector() {
 export default function AppLayout() {
   const { t } = useLocale()
   const { getApiUrl } = useServer()
-  const { activeProject } = useProject()
+  const { activeProject, activeSessionId } = useProject()
   const sidebarPanelRef = usePanelRef()
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [sidebarPx, setSidebarPx] = useState(256)
@@ -288,6 +288,20 @@ export default function AppLayout() {
         {/* Main content */}
         <ResizablePanel id="content-panel" minSize="320px" className="min-w-0 bg-white dark:bg-muted">
           <main className="h-full overflow-hidden relative">
+            {/* 세션 미선택 시 통합 가이드 페이지 — 모든 탭 위에 표시 */}
+            {!activeSessionId && (
+              <div className="absolute inset-0 z-20 p-2">
+                <div className="flex flex-col items-center justify-center h-full bg-muted dark:bg-background rounded-lg border border-zinc-300 dark:border-zinc-600 text-center gap-6 px-8">
+                  <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                    <MessageSquare className="w-9 h-9 text-blue-400/70" />
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xl font-semibold text-foreground/80">{t.chat.selectSession}</p>
+                    <p className="text-base text-muted-foreground max-w-xs leading-relaxed">{t.chat.selectSessionHint}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className={cn('absolute inset-0 p-2 transition-none bg-white dark:bg-muted',
               activeTab === 'chat' ? 'visible pointer-events-auto z-10' : 'invisible pointer-events-none z-0')}>
               <div className="h-full rounded-lg bg-muted dark:bg-background"><ErrorBoundary><ChatInterface /></ErrorBoundary></div>

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react'
 import {
-  Send, Square, Bot, ChevronDown, ChevronRight, MessageSquare,
+  Send, Square, Bot, ChevronDown, ChevronRight,
   Wrench, AlertCircle, Brain, Shield, Check, X, RefreshCw,
   Plus, Mic, MicOff, FileText, Image as ImageIcon, Loader2,
   Trash2, HelpCircle, Terminal, RotateCcw, FolderOpen, Copy, Download,
@@ -883,21 +883,6 @@ export default function ChatInterface() {
     a.click()
     URL.revokeObjectURL(url)
   }, [messages])
-
-  // 세션 미선택: 안내 화면
-  if (!activeSessionId) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full bg-muted dark:bg-background rounded-lg border border-zinc-300 dark:border-zinc-600 text-center gap-6 px-8">
-        <div className="w-20 h-20 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-          <MessageSquare className="w-9 h-9 text-blue-400/70" />
-        </div>
-        <div className="space-y-2">
-          <p className="text-xl font-semibold text-foreground/80">{t.chat.selectSession}</p>
-          <p className="text-base text-muted-foreground max-w-xs leading-relaxed">{t.chat.selectSessionHint}</p>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col h-full bg-muted dark:bg-background rounded-lg overflow-hidden border border-zinc-300 dark:border-zinc-600">
