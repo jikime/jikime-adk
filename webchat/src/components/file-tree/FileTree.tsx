@@ -11,6 +11,7 @@ import { useProject } from '@/contexts/ProjectContext'
 import { useServer } from '@/contexts/ServerContext'
 import { useLocale } from '@/contexts/LocaleContext'
 import MonacoReactEditor, { type OnMount } from '@monaco-editor/react'
+import '@/lib/monaco-setup'
 
 // ── 타입 ──────────────────────────────────────────────────────────
 interface FileNode {

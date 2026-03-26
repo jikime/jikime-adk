@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect, useMemo, memo } from 'react'
+import { useRouter } from 'next/navigation'
 import {
   Send, Square, Bot, ChevronDown, ChevronRight,
   Wrench, AlertCircle, Brain, Shield, Check, X, RefreshCw,
@@ -421,6 +422,7 @@ export default function ChatInterface() {
   const { sendMessage, onMessage } = useWebSocket()
   const { activeProject, activeSessionId, setActiveSessionId } = useProject()
   const { getApiUrl } = useServer()
+  const router = useRouter()
 
   const [messages, setMessages]               = useState<Message[]>([])
   const [input, setInput]                     = useState('')
@@ -454,6 +456,8 @@ export default function ChatInterface() {
   // 서버가 새로 할당한 session ID를 저장 — 히스토리 로드를 건너뛸 때 사용
   // boolean이 아닌 ID 값 자체를 보관해야 StrictMode 이중 실행에서도 안전
   const serverAssignedIdRef = useRef<string | null>(null)
+  // IME 조합 중 여부 (한글·중국어·일본어 입력 시 Enter 이중 발생 방지)
+  const isComposingRef = useRef(false)
 
   // 마이크 지원 여부 확인
   useEffect(() => {
@@ -582,6 +586,9 @@ export default function ChatInterface() {
       if (msg.type === 'session_id') {
         serverAssignedIdRef.current = msg.sessionId as string
         setActiveSessionId(msg.sessionId as string)
+        // URL을 Claude 부여 session ID로 교체 (새 대화 시 우리 UUID → Claude UUID)
+        // replace()로 히스토리 항목 교체 — 뒤로가기 시 중복 방지
+        router.replace(`/session/${msg.sessionId as string}`)
       } else if (msg.type === 'text') {
         setMessages(prev => prev.map(m =>
           m.id === id ? { ...m, text: m.text + (msg.text as string) } : m
@@ -664,7 +671,9 @@ export default function ChatInterface() {
 
     sendMessage({
       type:             'chat',
-      sessionId:        activeSessionId,
+      // serverAssignedIdRef.current: Claude가 부여한 세션 ID (기존 대화 재개 시에만 전달)
+      // null이면 서버가 새 대화를 시작 — 우리가 생성한 UUID를 resume에 사용하면 안 됨
+      sessionId:        serverAssignedIdRef.current,
       projectPath:      activeProject?.path || process.env.HOME || '/tmp',
       prompt,
       model,
@@ -713,7 +722,7 @@ export default function ChatInterface() {
 
     sendMessage({
       type:           'chat',
-      sessionId:      activeSessionId,
+      sessionId:      serverAssignedIdRef.current,
       projectPath:    activeProject?.path || process.env.HOME || '/tmp',
       prompt,
       model,
@@ -841,7 +850,12 @@ export default function ChatInterface() {
         return
       }
     }
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      // IME 조합 중(한글·중국어 등)에는 Enter를 무시 — 마지막 글자가 입력창에 남는 현상 방지
+      if (isComposingRef.current) return
+      e.preventDefault()
+      submit()
+    }
   }, [slashOpen, filteredCommands, slashIndex, selectSlashCommand, closeSlash, submit])
 
   const handleInput = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -1088,6 +1102,8 @@ export default function ChatInterface() {
             value={input}
             onChange={handleInput}
             onKeyDown={handleKeyDown}
+            onCompositionStart={() => { isComposingRef.current = true }}
+            onCompositionEnd={() => { isComposingRef.current = false }}
             placeholder={t.chat.placeholder}
             rows={1}
             className="w-full bg-transparent border-0 ring-0 shadow-none px-5 pt-4 pb-2 text-xl text-foreground placeholder:text-muted-foreground outline-none resize-none min-h-[64px] max-h-[240px] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-0 focus-visible:border-0"

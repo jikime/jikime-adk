@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, memo } from 'react'
+import { useState, useEffect, useCallback, memo } from 'react'
 import {
   Folder, FolderOpen, MessageSquare, Plus, RefreshCw,
   ChevronDown, ChevronRight, X, Check,
@@ -376,6 +376,13 @@ function Sidebar() {
 
   const [loading,          setLoading]         = useState(false)
   const [openProjects,     setOpenProjects]     = useState<Set<string>>(new Set())
+
+  // URL 복원으로 activeProject가 설정되면 해당 프로젝트 트리를 자동으로 열기
+  useEffect(() => {
+    if (activeProject) {
+      setOpenProjects(prev => prev.has(activeProject.id) ? prev : new Set([...prev, activeProject.id]))
+    }
+  }, [activeProject?.id])
   const [showServerPicker, setShowServerPicker] = useState(false)
   const [addingServer,     setAddingServer]     = useState(false)
   const [editingServerId,  setEditingServerId]  = useState<string | null>(null)

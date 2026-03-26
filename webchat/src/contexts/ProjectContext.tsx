@@ -37,7 +37,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [activeProject, setActiveProjectState]  = useState<Project | null>(null)
   const [activeSessionId, setActiveSessionId]   = useState<string | null>(null)
   const prevServerIdRef = useRef<string | null>(null)
-  const restoredRef     = useRef(false)
+  // 마지막으로 복원한 pathname 저장 — 같은 URL 재복원 방지, URL 변경 시 재복원 허용
+  const restoredPathnameRef = useRef<string | null>(null)
 
   // 프로젝트 선택 — URL 변경 없이 상태만 업데이트
   const setActiveProject = useCallback((p: Project | null) => {
@@ -68,18 +69,22 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     } catch { /* */ }
   }, [getApiUrl])
 
-  // URL이 /session/... 형태이면 해당 세션과 프로젝트를 복원 (최초 1회)
+  // URL이 /session/... 형태이면 해당 세션과 프로젝트를 복원
+  // pathname이 바뀔 때마다 재실행 — 같은 URL은 ref로 중복 방지
   useEffect(() => {
-    if (restoredRef.current || projects.length === 0) return
+    if (projects.length === 0) return
     if (!pathname.startsWith(SESSION_PREFIX)) return
 
     const sessionId = pathname.slice(SESSION_PREFIX.length)
     if (!sessionId) return
 
+    // 이미 이 pathname으로 복원했으면 건너뜀 (URL 이동 없이 프로젝트 재로드 시 중복 방지)
+    if (restoredPathnameRef.current === pathname) return
+
     // 이미 로드된 프로젝트에서 세션 검색
     for (const p of projects) {
       if (p.sessions.includes(sessionId)) {
-        restoredRef.current = true
+        restoredPathnameRef.current = pathname
         setActiveProjectState(p)
         setActiveSessionId(sessionId)
         return
@@ -95,7 +100,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
           if (data.projectPath) {
             const found = projects.find(p => p.path === data.projectPath)
             if (found) {
-              restoredRef.current = true
+              restoredPathnameRef.current = pathname
               setActiveProjectState(found)
               setActiveSessionId(sessionId)
             }
@@ -111,7 +116,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     if (prevServerIdRef.current !== activeServer.id) {
       const isInitialMount = prevServerIdRef.current === null
       prevServerIdRef.current = activeServer.id
-      restoredRef.current = false
+      restoredPathnameRef.current = null
       setProjects([])
       setActiveProjectState(null)
       setActiveSessionId(null)
