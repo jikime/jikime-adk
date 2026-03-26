@@ -41,7 +41,6 @@ const koSidebar = [
       { text: 'Worktree 관리', link: '/ko/worktree' },
       { text: 'Task 포맷', link: '/ko/task-format' },
       { text: 'Sync 워크플로우', link: '/ko/sync' },
-      { text: 'Site-Flow', link: '/ko/site-flow' },
     ],
   },
   {
@@ -120,7 +119,6 @@ const enSidebar = [
       { text: 'Worktree', link: '/en/worktree' },
       { text: 'Task Format', link: '/en/task-format' },
       { text: 'Sync Workflow', link: '/en/sync' },
-      { text: 'Site-Flow', link: '/en/site-flow' },
     ],
   },
   {

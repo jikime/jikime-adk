@@ -240,7 +240,6 @@ IMPROVE   →  Change with confidence → (repeat)
 | [Ralph Loop](./docs/en/ralph-loop.md) | LSP/AST-grep feedback loop |
 | [Statusline](./docs/en/statusline.md) | Claude Code statusline customization |
 | [Codemap](./docs/en/codemap.md) | AST-based architecture map |
-| [Site-Flow Integration](./docs/en/site-flow.md) | Project management and progress tracking |
 
 ---
 
