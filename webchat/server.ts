@@ -3,7 +3,7 @@ import next from 'next'
 import { WebSocketServer, WebSocket } from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
-import { execSync, execFile } from 'child_process'
+import { execSync, execFile, execFileSync } from 'child_process'
 import * as os from 'os'
 import { handleHarnessRoutes } from './harness'
 
@@ -104,7 +104,8 @@ const CLAUDE_PATH = findClaudePath()
 // 시작 시 claude 동작 확인
 if (CLAUDE_PATH) {
   try {
-    const ver = execSync(`"${CLAUDE_PATH}" --version 2>&1`, { encoding: 'utf8', timeout: 5000 }).trim()
+    // execFileSync: 셸 미사용 — CLAUDE_PATH 경로에 메타문자 포함 시 인젝션 방지
+    const ver = execFileSync(CLAUDE_PATH, ['--version'], { encoding: 'utf8', timeout: 5000 }).trim()
     console.log(`[server] claude 버전: ${ver}`)
   } catch (e: unknown) {
     const err = e as { stderr?: string; stdout?: string; message?: string }
@@ -429,10 +430,11 @@ async function handleClaudeMessage(
       const isRootCheck = process.getuid?.() === 0
       let detail = ''
       try {
-        const debugArgs = isRootCheck
-          ? `--output-format stream-json -p "ping"`
-          : `--dangerously-skip-permissions --output-format stream-json -p "ping"`
-        execSync(`"${CLAUDE_PATH ?? 'claude'}" ${debugArgs} 2>&1`, {
+        const debugArgArray = isRootCheck
+          ? ['--output-format', 'stream-json', '-p', 'ping']
+          : ['--dangerously-skip-permissions', '--output-format', 'stream-json', '-p', 'ping']
+        // execFileSync: 셸 미사용 — CLAUDE_PATH 경로 인젝션 방지
+        execFileSync(CLAUDE_PATH ?? 'claude', debugArgArray, {
           encoding: 'utf8', timeout: 10000,
         })
       } catch (e: unknown) {
@@ -770,17 +772,18 @@ async function runGitSemaphore(cwd: string, args: string[]): Promise<string> {
 
 function runGit(cwd: string, args: string[]): string {
   try {
-    return execSync(`git ${args.join(' ')}`, { cwd, encoding: 'utf8', timeout: 30000 })
+    // execFileSync: 셸 없이 git 직접 실행 — message/branch/files 등 사용자 입력의 인젝션 방지
+    return execFileSync('git', args, { cwd, encoding: 'utf8', timeout: 30000 })
   } catch (e: unknown) {
     throw new Error((e as { stderr?: string; message?: string }).stderr || (e as Error).message)
   }
 }
 
 function runGitWithPat(cwd: string, action: 'push' | 'pull', pat: string): string {
-  // 리모트 URL 확인
+  // 리모트 URL 확인 — execFileSync: 셸 없이 실행
   let remoteUrl: string
   try {
-    remoteUrl = execSync('git remote get-url origin', { cwd, encoding: 'utf8', timeout: 3000 }).trim()
+    remoteUrl = execFileSync('git', ['remote', 'get-url', 'origin'], { cwd, encoding: 'utf8', timeout: 3000 }).trim()
   } catch {
     throw new Error('원격 저장소(origin)가 설정되지 않았습니다.')
   }
@@ -795,14 +798,15 @@ function runGitWithPat(cwd: string, action: 'push' | 'pull', pat: string): strin
   const authUrl = remoteUrl.replace(/^https:\/\/([^@]*@)?/, `https://oauth2:${pat}@`)
 
   try {
-    let cmd: string
+    let result: string
     if (action === 'push') {
-      const branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd, encoding: 'utf8', timeout: 3000 }).trim()
-      cmd = `git push "${authUrl}" HEAD:refs/heads/${branch}`
+      // execFileSync: authUrl(PAT 포함) + branch를 셸 문자열 없이 배열로 전달 — 인젝션 방지
+      const branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], { cwd, encoding: 'utf8', timeout: 3000 }).trim()
+      result = execFileSync('git', ['push', authUrl, `HEAD:refs/heads/${branch}`], { cwd, encoding: 'utf8', timeout: 60000 })
     } else {
-      cmd = `git pull "${authUrl}"`
+      result = execFileSync('git', ['pull', authUrl], { cwd, encoding: 'utf8', timeout: 60000 })
     }
-    return execSync(cmd, { cwd, encoding: 'utf8', timeout: 60000 })
+    return result
   } catch (e: unknown) {
     const raw = (e as { stderr?: string; message?: string }).stderr || (e as Error).message || ''
     // PAT가 에러 메시지에 노출되지 않도록 마스킹
@@ -1719,15 +1723,32 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
   if (pathname === '/api/ws/git' && req.method === 'POST') {
     let body = ''
-    req.on('data', (chunk) => { body += chunk })
+    let bodySize = 0
+    const MAX_GIT_BODY = 1 * 1024 * 1024  // 1 MB — 대형 commit message / files[] OOM 방지
+    req.on('data', (chunk: Buffer) => {
+      bodySize += chunk.length
+      if (bodySize > MAX_GIT_BODY) { req.destroy(); return }
+      body += chunk
+    })
     req.on('end', () => {
+      if (bodySize > MAX_GIT_BODY) {
+        res.writeHead(413, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+        res.end(JSON.stringify({ error: 'Request body too large' })); return
+      }
       ;(async () => {
         try {
           const { action, cwd, args, file, files, message, branch, pat } = JSON.parse(body)
 
-          // git 저장소 여부 먼저 확인
+          // cwd 기본 검증: 절대경로 + 존재하는 디렉터리 — 경로 탈출 방지
+          const resolvedCwd = path.resolve(String(cwd || ''))
+          if (!cwd || !path.isAbsolute(resolvedCwd) || !fs.existsSync(resolvedCwd) || !fs.statSync(resolvedCwd).isDirectory()) {
+            res.writeHead(400, { 'Content-Type': 'application/json', ...CORS_HEADERS })
+            res.end(JSON.stringify({ error: 'Invalid cwd' })); return
+          }
+
+          // git 저장소 여부 먼저 확인 — execFileSync: 셸 없이 실행
           try {
-            execSync('git rev-parse --git-dir', { cwd, stdio: 'pipe', timeout: 3000 })
+            execFileSync('git', ['rev-parse', '--git-dir'], { cwd: resolvedCwd, stdio: 'pipe', timeout: 3000 })
           } catch {
             res.writeHead(200, { 'Content-Type': 'application/json', ...CORS_HEADERS })
             res.end(JSON.stringify({ notGit: true, output: '' }))
@@ -1736,39 +1757,39 @@ function handleCustomRoutes(req: import('http').IncomingMessage, res: import('ht
 
           let result: unknown
           if (action === 'status') {
-            result = { output: runGit(cwd, ['status', '--short']) }
+            result = { output: runGit(resolvedCwd, ['status', '--short']) }
           } else if (action === 'log') {
-            result = { output: runGit(cwd, ['log', '--oneline', '-20']) }
+            result = { output: runGit(resolvedCwd, ['log', '--oneline', '-20']) }
           } else if (action === 'diff') {
-            result = { output: runGit(cwd, ['diff', '--stat']) }
+            result = { output: runGit(resolvedCwd, ['diff', '--stat']) }
           } else if (action === 'file_diff') {
             const target = file as string | undefined
             const diffArgs = target ? ['diff', 'HEAD', '--', target] : ['diff', 'HEAD']
-            result = { output: runGit(cwd, diffArgs) }
+            result = { output: runGit(resolvedCwd, diffArgs) }
           } else if (action === 'branch') {
-            result = { output: runGit(cwd, ['branch', '-a']) }
+            result = { output: runGit(resolvedCwd, ['branch', '-a']) }
           } else if (action === 'add') {
             const targets: string[] = Array.isArray(files) && files.length > 0 ? files : ['.']
-            result = { output: runGit(cwd, ['add', '--', ...targets]) }
+            result = { output: runGit(resolvedCwd, ['add', '--', ...targets]) }
           } else if (action === 'commit') {
             if (!message) { res.writeHead(400, CORS_HEADERS); res.end('Missing message'); return }
-            result = { output: runGit(cwd, ['commit', '-m', message as string]) }
+            result = { output: runGit(resolvedCwd, ['commit', '-m', message as string]) }
           } else if (action === 'checkout') {
             if (!branch) { res.writeHead(400, CORS_HEADERS); res.end('Missing branch'); return }
-            result = { output: runGit(cwd, ['checkout', branch as string]) }
+            result = { output: runGit(resolvedCwd, ['checkout', branch as string]) }
           } else if (action === 'push' || action === 'pull') {
             if (pat) {
-              result = { output: runGitWithPat(cwd, action, pat as string) }
+              result = { output: runGitWithPat(resolvedCwd, action, pat as string) }
             } else {
               // 세마포어 적용 비동기 실행 — 이벤트 루프 블로킹 + 동시 프로세스 폭증 방지
-              result = { output: await runGitSemaphore(cwd, [action]) }
+              result = { output: await runGitSemaphore(resolvedCwd, [action]) }
             }
           } else if (action === 'custom' && Array.isArray(args)) {
             const subCmd = args[0] as string | undefined
             if (!subCmd || !ALLOWED_GIT_CUSTOM.has(subCmd)) {
               res.writeHead(400, CORS_HEADERS); res.end(JSON.stringify({ error: `Disallowed git subcommand: ${subCmd}` })); return
             }
-            result = { output: runGit(cwd, args) }
+            result = { output: runGit(resolvedCwd, args) }
           } else {
             res.writeHead(400, CORS_HEADERS); res.end('Unknown action'); return
           }

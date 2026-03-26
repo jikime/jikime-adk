@@ -143,8 +143,11 @@ export function parseWorkflowMd(filePath: string): WorkflowConfig {
   let apiKey = (tracker.api_key as string | undefined) ?? ''
   if (!apiKey) {
     try {
-      const { execSync } = require('child_process') as typeof import('child_process')
-      apiKey = execSync('gh auth token 2>/dev/null', { encoding: 'utf8', timeout: 3000 }).trim()
+      // execFileSync: 셸 없이 gh 직접 호출 — 셸 메타문자 인젝션 방지
+      const { execFileSync } = require('child_process') as typeof import('child_process')
+      apiKey = execFileSync('gh', ['auth', 'token'], {
+        encoding: 'utf8', timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim()
     } catch { /* gh 없으면 빈 문자열 유지 */ }
   }
 

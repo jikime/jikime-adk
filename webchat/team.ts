@@ -63,6 +63,8 @@ const NAME_RE = /^[a-zA-Z0-9_-]{1,80}$/
 
 function parseBody(req: IncomingMessage): Promise<unknown> {
   return new Promise((resolve) => {
+    // 슬로우 클라이언트 DoS 방지 — 30초 내 전체 바디 수신 없으면 연결 끊김
+    req.setTimeout(30_000, () => { req.destroy(); resolve({}) })
     const chunks: Buffer[] = []
     let totalSize = 0
     req.on('data', (chunk: Buffer) => {
