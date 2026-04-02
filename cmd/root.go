@@ -7,18 +7,19 @@ import (
 	"github.com/spf13/cobra"
 	"jikime-adk/cmd/banner"
 	"jikime-adk/cmd/doctorcmd"
-	"jikime-adk/cmd/routercmd"
 	"jikime-adk/cmd/hookscmd"
-	"jikime-adk/cmd/mcpcmd"
 	"jikime-adk/cmd/initcmd"
 	"jikime-adk/cmd/languagecmd"
 	"jikime-adk/cmd/lspsetupcmd"
+	"jikime-adk/cmd/mcpcmd"
+	"jikime-adk/cmd/routercmd"
 	"jikime-adk/cmd/skillcmd"
 	"jikime-adk/cmd/statuscmd"
 	"jikime-adk/cmd/statuslinecmd"
 	"jikime-adk/cmd/tagcmd"
 	"jikime-adk/cmd/teamcmd"
 	"jikime-adk/cmd/updatecmd"
+	"jikime-adk/cmd/webchatcmd"
 	"jikime-adk/cmd/worktreecmd"
 	"jikime-adk/version"
 )
@@ -29,7 +30,7 @@ func NewRoot() *cobra.Command {
 		Short:   "Jikime ADK — Agentic development toolkit",
 		Version: version.String(),
 		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Help()
+			_ = cmd.Help()
 		},
 	}
 
@@ -75,6 +76,9 @@ func NewRoot() *cobra.Command {
 
 	// Multi-agent team orchestration
 	root.AddCommand(teamcmd.NewTeam())
+
+	// Webchat UI management
+	root.AddCommand(webchatcmd.NewWebchat())
 
 	return root
 }

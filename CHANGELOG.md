@@ -5,6 +5,24 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-04-02
+
+### Added
+
+- **Webchat CLI** (`jikime webchat`): New subcommand group for managing the webchat UI — `start`, `install`, `build`, `status`; downloads webchat source from GitHub releases, runs `pnpm install` + `pnpm build` on user machine, and serves via `tsx server.ts`
+- **Webchat packaging script** (`scripts/package-webchat.sh`): Packages webchat source as `jikime-webchat-v{VERSION}.tar.gz` for GitHub Release assets; excludes `node_modules`, `.next`, and env files (~392KB output)
+- **Webchat installer integration** (`install.sh`): Added `--skip-webchat` flag; installer now downloads webchat tarball, runs `pnpm install --frozen-lockfile`, and `pnpm build` automatically; gracefully skips if Node.js/pnpm not available
+- **revfactory-harness skill**: Meta-skill for designing agent teams and skills — defines agent definitions in `.claude/agents/`, generates skills in `.claude/skills/`, supports both Agent Teams and sub-agent execution modes with 6-phase workflow (domain analysis → team architecture → agent definition → skill creation → orchestration → verification)
+
+### Changed
+
+- **CLAUDE.md optimized** (v15 → v16): Reduced from 781 lines to 404 lines (48% reduction) using "Pointer Pattern" — replaced content duplicated in auto-loaded rules (`agents.md`, `core.md`, `tone.md`, `interaction.md`) with single-line pointers; all 18 sections preserved
+- **Skills catalog updated**: `total_skills` 75 → 87; added 3 new domains (`harness` 6 skills, `team` 5 skills, `revfactory` 1 skill); added missing `jikime-workflow-symphony` to skills list; synchronized catalog with actual `templates/.claude/skills/` directory
+
+### Documentation
+
+- **`docs/ko/templates-architecture.md`**: New comprehensive architecture document covering Commands (34), Agents (68), Skills (87) with Claude Code role explanations, inter-component relationships, and workflow chain diagrams
+
 ## [1.7.0] - 2026-03-20
 
 ### Added

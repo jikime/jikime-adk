@@ -1,9 +1,9 @@
 # JikiME-ADK Skills Catalog
-# Auto-generated on 2026-02-06 23:55
+# Auto-generated on 2026-03-30 00:00
 
 version: '1.0.0'
-generated_at: '2026-02-06T23:55:49.967027'
-total_skills: 75
+generated_at: '2026-03-30T00:00:00.000000'
+total_skills: 87
 
 # Skills by domain
 domains:
@@ -98,6 +98,30 @@ domains:
       - jikime-tool-agent-browser
       - jikime-tool-ast-grep
       - jikime-tool-mcp-builder
+
+  harness:
+    count: 6
+    skills:
+      - jikime-harness-plan
+      - jikime-harness-release
+      - jikime-harness-review
+      - jikime-harness-setup
+      - jikime-harness-sync
+      - jikime-harness-work
+
+  team:
+    count: 5
+    skills:
+      - jikime-team
+      - jikime-team-leader
+      - jikime-team-reviewer
+      - jikime-team-swarm
+      - jikime-team-worker
+
+  revfactory:
+    count: 1
+    skills:
+      - revfactory-harness
 
   workflow:
     count: 23
@@ -579,6 +603,13 @@ skills:
     user_invocable: false
     tags: ["workflow", "spec", "ears", "requirements", "planning"]
 
+  - name: jikime-workflow-symphony
+    domain: workflow
+    description: "Autonomous agent orchestration service for Claude Code. Use when setting up jikime serve, configuring WORKFLOW.md, or running autonomous multi-agent pipelines."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["workflow", "symphony", "orchestration", "autonomous", "serve", "pipeline"]
+
   - name: jikime-workflow-sync
     domain: workflow
     description: "Documentation synchronization workflow specialist for code-to-docs sync, quality verification, and git operations"
@@ -614,12 +645,33 @@ skills:
     user_invocable: false
     tags: ["workflow", "agent-teams", "parallel", "orchestration", "team"]
 
+  - name: jikime-team
+    domain: team
+    description: "Use when the user asks to use jikime team, create a team, spawn agents, delegate tasks to multiple agents, run agents in parallel, coordinate agents, distribute tasks, check team status, or create tasks."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["team", "multi-agent", "orchestration", "parallel", "task-distribution"]
+
   - name: jikime-team-leader
     domain: team
     description: "Leader agent role guide for jikime team orchestration. Task distribution, plan approval, worker monitoring."
     version: 1.0.0
     user_invocable: false
     tags: ["team", "leader", "orchestration", "task-distribution"]
+
+  - name: jikime-team-reviewer
+    domain: team
+    description: "Reviewer agent role guide for jikime team orchestration. Plan review, quality assessment, acceptance criteria validation."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["team", "reviewer", "quality", "plan-review"]
+
+  - name: jikime-team-swarm
+    domain: team
+    description: "Claude Code skill for operating as part of a jikime multi-agent team (swarm). Command reference, coordination protocols, and role-specific workflows for leader, worker, and reviewer agents."
+    version: 1.0.0
+    user_invocable: false
+    tags: ["team", "swarm", "multi-agent", "coordination", "worker", "leader", "reviewer"]
 
   - name: jikime-team-worker
     domain: team
@@ -628,12 +680,54 @@ skills:
     user_invocable: false
     tags: ["team", "worker", "task-execution", "plan-submit"]
 
-  - name: jikime-team-reviewer
-    domain: team
-    description: "Reviewer agent role guide for jikime team orchestration. Plan review, quality assessment, acceptance criteria validation."
+  - name: jikime-harness-plan
+    domain: harness
+    description: "Harness Engineering plan manager — creates and manages Plans.md with structured task tracking, DoD criteria, and dependency mapping"
     version: 1.0.0
-    user_invocable: false
-    tags: ["team", "reviewer", "quality", "plan-review"]
+    user_invocable: true
+    tags: ["harness", "plan", "plans.md", "task-management", "dod", "workflow", "harness-engineering"]
+
+  - name: jikime-harness-release
+    domain: harness
+    description: "Harness Engineering release manager — generates CHANGELOG from pm:OK tasks, bumps version, creates git tag, and writes release notes"
+    version: 1.0.0
+    user_invocable: true
+    tags: ["harness", "release", "changelog", "version", "tag", "plans.md", "harness-engineering"]
+
+  - name: jikime-harness-review
+    domain: harness
+    description: "Harness Engineering review orchestrator — manages pm:REVIEW → pm:OK flow with 4-perspective code review and user approval gate"
+    version: 1.0.0
+    user_invocable: true
+    tags: ["harness", "review", "pm:REVIEW", "pm:OK", "code-review", "4-perspective", "harness-engineering"]
+
+  - name: jikime-harness-setup
+    domain: harness
+    description: "Harness Engineering project initializer — validates environment, registers hooks, and prepares Plans.md workspace for the full Plan→Work→Review→Ship workflow"
+    version: 1.0.0
+    user_invocable: true
+    tags: ["harness", "setup", "init", "initialization", "plans.md", "hooks", "harness-engineering"]
+
+  - name: jikime-harness-sync
+    domain: harness
+    description: "Harness Engineering sync manager — Plans.md ↔ git history detailed sync, Agent Trace analysis, and 4-item retrospective generation"
+    version: 1.0.0
+    user_invocable: true
+    tags: ["harness", "sync", "retrospective", "plans.md", "git", "agent-trace", "harness-engineering"]
+
+  - name: jikime-harness-work
+    domain: harness
+    description: "Harness Engineering work orchestrator — executes Plans.md tasks through the cc:WIP → cc:DONE lifecycle with Worker, Reviewer, and Scaffolder agents"
+    version: 1.0.0
+    user_invocable: true
+    tags: ["harness", "work", "implementation", "cc:WIP", "cc:DONE", "worker", "plans.md", "harness-engineering"]
+
+  - name: revfactory-harness
+    domain: revfactory
+    description: "하네스를 구성합니다. 전문 에이전트를 정의하며, 해당 에이전트가 사용할 스킬을 생성하는 메타 스킬. (1) '하네스 구성해줘', '하네스 구축해줘' 요청 시, (2) '하네스 설계', '하네스 엔지니어링' 요청 시, (3) 새로운 도메인/프로젝트에 대한 하네스 기반 자동화 체계를 구축할 때, (4) 하네스 구성을 재구성하거나 확장할 때 사용."
+    version: 1.0.0
+    user_invocable: true
+    tags: ["revfactory", "harness", "meta-skill", "agent-design", "skill-creation", "orchestration"]
 
   - name: jikime-workflow-testing
     domain: workflow
