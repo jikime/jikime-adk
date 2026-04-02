@@ -7,11 +7,68 @@
 | Node.js | 22 이상 | |
 | pnpm | 최신 | `corepack enable && corepack prepare pnpm@latest --activate` |
 | Claude CLI | 최신 | `npm install -g @anthropic-ai/claude-code` |
+| JikiME-ADK | 1.8.0 이상 | 방법 1 사용 시 필요 (`go install` 또는 `install.sh`) |
 | Git | 2.x 이상 | 터미널 Git 패널 사용 시 |
 
 ---
 
-## 방법 1 — 로컬 직접 실행
+## 방법 1 — JikiME CLI (권장)
+
+JikiME-ADK 1.8.0부터 `jikime webchat` 명령으로 webchat을 설치·관리할 수 있습니다.
+설치 위치: `~/.jikime/webchat/`
+
+### 1. 설치
+
+```bash
+jikime webchat install
+```
+
+이 명령은 다음을 자동 수행합니다:
+1. GitHub Release에서 webchat 소스 다운로드
+2. `pnpm install --frozen-lockfile` 실행
+3. `pnpm build` 실행
+
+> **참고**: `install.sh`로 JikiME-ADK를 설치하면 webchat도 자동 설치됩니다. `--skip-webchat` 플래그로 건너뛸 수 있습니다.
+
+### 2. 실행
+
+```bash
+jikime webchat start                # 기본 포트 4000
+jikime webchat start --port 3000    # 커스텀 포트
+```
+
+브라우저에서 `http://localhost:4000` 으로 접속합니다.
+
+### 3. 상태 확인
+
+```bash
+jikime webchat status
+```
+
+설치 경로, 버전, 의존성 상태, 빌드 상태, Node.js/pnpm 버전을 확인합니다.
+
+### 4. 재빌드
+
+소스를 수정하거나 업데이트 후 재빌드가 필요할 때:
+
+```bash
+jikime webchat build
+```
+
+### 5. 업데이트
+
+최신 버전으로 업데이트:
+
+```bash
+jikime webchat install                    # 현재 jikime 버전에 맞는 webchat 설치
+jikime webchat install --version 1.8.0    # 특정 버전 설치
+```
+
+기존 `node_modules`와 `.next`는 보존되며, 소스만 교체 후 `pnpm install` + `pnpm build`를 재실행합니다.
+
+---
+
+## 방법 2 — 로컬 직접 실행
 
 ### 1. 의존성 설치
 
