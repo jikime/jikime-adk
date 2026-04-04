@@ -138,12 +138,51 @@ Smart Rebuild:    스크린샷 + 소스 → AI가 새로 생성 (클린 코드)
 
 | 옵션 | 설명 | 기본값 |
 |------|------|--------|
-| `--merge` | 기존 sitemap.json에 새 route만 추가 | ✅ (기본) |
-| `--force` | sitemap 새로 생성 (기존 덮어쓰기) | - |
+| `--merge` | 기존 sitemap.json 보존하면서 병합 (completed 페이지 유지) | - |
+| `--include <patterns>` | 특정 URL 패턴만 캡처 (`--merge`와 함께 사용) | 전체 |
 | `--prefetch` | 모든 페이지 HTML + 스크린샷 미리 캡처 | - |
-| `--clean` | 더 이상 존재하지 않는 route 제거 | - |
 | `--max-pages` | 최대 캡처 페이지 수 | `100` |
 | `--login` | 로그인 필요 시 (브라우저 열림) | - |
+
+### 4.3 단일 페이지 캡처 (`capture-page`)
+
+특정 페이지 1개만 캡처하고 **sitemap.json에 자동 반영**합니다.
+
+| 옵션 | 설명 |
+|------|------|
+| `<url>` | 캡처할 페이지 URL (직접 지정) |
+| `--page <id>` | mapping.json의 페이지 ID로 URL 자동 조회 (예: `page_009`) |
+| `--mapping <file>` | mapping.json 경로 (state에서 자동 탐색) |
+| `--output <dir>` | 출력 디렉토리 (state에서 자동 탐색) |
+
+```bash
+# URL 직접 지정
+smart-rebuild capture-page https://example.com/qna/list.php
+
+# mapping.json의 page ID로 (경로 자동 탐색)
+smart-rebuild capture-page --page page_009
+```
+
+**sitemap 반영 규칙:**
+- 기존 URL과 일치하면 → screenshot/html/capturedAt **업데이트**
+- 새 URL이면 → 새 항목 **추가** (ID 자동 부여)
+- summary 카운트 **자동 재계산**
+
+### 4.4 경로 자동 탐색 (`.smart-rebuild-state.json`)
+
+capture + analyze 단계에서 자동 생성되는 state 파일이 경로 정보를 추적합니다.
+**이후 단계에서 `--output`, `--mapping`, `--capture`, `--source` 옵션을 생략할 수 있습니다.**
+
+```json
+{
+  "captureDir": "/path/to/capture",
+  "sourceDir": "/path/to/source",
+  "mappingFile": "/path/to/mapping.json",
+  "baseUrl": "https://example.com"
+}
+```
+
+**우선순위:** 사용자 입력 > state 파일 값 > 기본값
 
 ### 4.3 sitemap.json 구조
 
@@ -619,10 +658,21 @@ E-5. 다음 섹션 체크
 # Phase 1: 캡처 (로그인 필요)
 /jikime:smart-rebuild capture https://example.com --login --output=./capture
 
-# Phase 2: 분석 & 매핑
-/jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
+# Phase 1: 캡처 (기존 sitemap 유지하면서 재크롤링)
+/jikime:smart-rebuild capture https://example.com --merge
 
-# Phase 3: 프론트엔드 생성 (페이지별)
+# Phase 1: 캡처 (특정 URL 패턴만 선택적 캡처)
+/jikime:smart-rebuild capture https://example.com --merge --include "/qna/*,/review/*"
+
+# Phase 1: 단일 페이지 캡처 (sitemap 자동 반영)
+/jikime:smart-rebuild capture-page https://example.com/qna/list.php
+/jikime:smart-rebuild capture-page --page page_009    # mapping.json ID로 자동 조회
+
+# Phase 2: 분석 & 매핑 (경로 자동 탐색)
+/jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
+/jikime:smart-rebuild analyze    # state에서 경로 자동 탐색
+
+# Phase 3: 프론트엔드 생성 (페이지별, 경로 자동 탐색)
 /jikime:smart-rebuild generate frontend --page 1
 /jikime:smart-rebuild generate frontend --next
 /jikime:smart-rebuild generate frontend --status
@@ -696,8 +746,9 @@ Cannot acquire connection from data source
 ---
 
 **작성일:** 2026-02-09
-**버전:** 2.2.0
+**버전:** 2.3.0
 **변경 이력:**
+- v2.3.0: `capture-page` sitemap 자동 반영, `--page ID` mapping.json 연동, `capture --merge` 기존 sitemap 병합, `.smart-rebuild-state.json` 경로 자동 탐색
 - v2.2.0: HITL HARD RULES 추가, 섹션 ID 매칭 시스템 추가, 개발 서버 포트 3893으로 표준화, sections 배열 구조 추가
 - v2.0.0: Phase G (페이지별 점진적 백엔드 연동), Lazy Capture 방식 추가
 - v1.0.0: 초기 버전

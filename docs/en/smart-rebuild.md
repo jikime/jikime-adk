@@ -138,12 +138,51 @@ Characteristics: DB integration required, has business logic
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--merge` | Add only new routes to existing sitemap.json | ✅ (default) |
-| `--force` | Create new sitemap (overwrite existing) | - |
+| `--merge` | Preserve existing sitemap.json and merge new results (completed pages kept) | - |
+| `--include <patterns>` | Capture only specific URL patterns (use with `--merge`) | all |
 | `--prefetch` | Pre-capture all pages HTML + screenshots | - |
-| `--clean` | Remove routes that no longer exist | - |
 | `--max-pages` | Maximum number of pages to capture | `100` |
 | `--login` | When login is required (browser opens) | - |
+
+### 4.3 Single Page Capture (`capture-page`)
+
+Capture a single page and **auto-update sitemap.json**.
+
+| Option | Description |
+|--------|-------------|
+| `<url>` | Page URL to capture (direct) |
+| `--page <id>` | Auto-resolve URL from mapping.json page ID (e.g. `page_009`) |
+| `--mapping <file>` | mapping.json path (auto-detected from state) |
+| `--output <dir>` | Output directory (auto-detected from state) |
+
+```bash
+# Direct URL
+smart-rebuild capture-page https://example.com/qna/list.php
+
+# By mapping.json page ID (paths auto-detected)
+smart-rebuild capture-page --page page_009
+```
+
+**Sitemap update rules:**
+- Matching URL exists → **update** screenshot/html/capturedAt
+- New URL → **append** new entry (auto ID assignment)
+- Summary counts **auto-recalculated**
+
+### 4.4 Auto Path Resolution (`.smart-rebuild-state.json`)
+
+A state file auto-generated during capture + analyze tracks all path information.
+**Subsequent commands can omit `--output`, `--mapping`, `--capture`, `--source` options.**
+
+```json
+{
+  "captureDir": "/path/to/capture",
+  "sourceDir": "/path/to/source",
+  "mappingFile": "/path/to/mapping.json",
+  "baseUrl": "https://example.com"
+}
+```
+
+**Priority:** User input > state file value > default
 
 ### 4.3 sitemap.json Structure
 
@@ -619,10 +658,21 @@ Complete page 1 FE → Generate that page's API → Integrate → Verify immedia
 # Phase 1: Capture (login required)
 /jikime:smart-rebuild capture https://example.com --login --output=./capture
 
-# Phase 2: Analyze & Mapping
-/jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
+# Phase 1: Capture (merge with existing sitemap)
+/jikime:smart-rebuild capture https://example.com --merge
 
-# Phase 3: Generate frontend (page by page)
+# Phase 1: Capture (selective URL patterns only)
+/jikime:smart-rebuild capture https://example.com --merge --include "/qna/*,/review/*"
+
+# Phase 1: Single page capture (auto-updates sitemap)
+/jikime:smart-rebuild capture-page https://example.com/qna/list.php
+/jikime:smart-rebuild capture-page --page page_009    # Auto-resolve from mapping.json
+
+# Phase 2: Analyze & Mapping (paths auto-detected from state)
+/jikime:smart-rebuild analyze --source=./legacy-php --capture=./capture
+/jikime:smart-rebuild analyze    # Auto-detect paths from state
+
+# Phase 3: Generate frontend (page by page, paths auto-detected)
 /jikime:smart-rebuild generate frontend --page 1
 /jikime:smart-rebuild generate frontend --next
 /jikime:smart-rebuild generate frontend --status
@@ -696,8 +746,9 @@ Cannot acquire connection from data source
 ---
 
 **Created:** 2026-02-09
-**Version:** 2.2.0
+**Version:** 2.3.0
 **Change History:**
+- v2.3.0: `capture-page` auto sitemap sync, `--page ID` mapping.json lookup, `capture --merge` existing sitemap preservation, `.smart-rebuild-state.json` auto path resolution
 - v2.2.0: Added HITL HARD RULES, Added section ID matching system, Standardized dev server port to 3893, Added sections array structure
 - v2.0.0: Phase G (page-by-page progressive backend integration), Added Lazy Capture method
 - v1.0.0: Initial version
