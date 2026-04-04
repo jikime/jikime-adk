@@ -334,10 +334,10 @@ func detectInstaller() string {
 func performUpdate(installer string, release *GitHubRelease) error {
 	switch installer {
 	case "go install":
-		cmd := exec.Command("go", "install", "github.com/jikime/jikime-adk@latest")
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		return cmd.Run()
+		// go.mod uses local module path "jikime-adk", not "github.com/jikime/jikime-adk",
+		// so `go install github.com/...@latest` fails with module path conflict.
+		// Fall back to binary download from GitHub Releases instead.
+		return performBinaryUpdate(release)
 	case "brew":
 		cmd := exec.Command("brew", "upgrade", "jikime-adk")
 		cmd.Stdout = os.Stdout
