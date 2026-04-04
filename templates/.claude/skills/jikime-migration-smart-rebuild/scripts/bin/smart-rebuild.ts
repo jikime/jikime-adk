@@ -7,7 +7,44 @@ import { generateFrontend } from '../generate/frontend';
 import { generateBackend } from '../generate/backend';
 import { connectFrontendToBackend } from '../generate/connect';
 import { spawn } from 'child_process';
+import * as fs from 'fs';
 import * as path from 'path';
+
+/**
+ * .smart-rebuild-state.json 자동 탐색
+ * 현재 디렉토리부터 상위로 올라가며 state 파일을 찾는다.
+ */
+function findStateFile(startDir?: string): Record<string, unknown> | null {
+  const searchDirs = [
+    startDir,
+    process.cwd(),
+    path.join(process.cwd(), 'capture'),
+  ].filter(Boolean) as string[];
+
+  for (const dir of searchDirs) {
+    const stateFile = path.join(dir, '.smart-rebuild-state.json');
+    if (fs.existsSync(stateFile)) {
+      try {
+        return JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+      } catch { /* ignore */ }
+    }
+  }
+  return null;
+}
+
+/**
+ * state에서 경로 자동 해석 (사용자 입력 > state > 기본값)
+ */
+function resolveFromState(
+  userValue: string | undefined,
+  stateKey: string,
+  defaultValue: string,
+  state: Record<string, unknown> | null,
+): string {
+  if (userValue && userValue !== defaultValue) return userValue;
+  if (state && state[stateKey]) return state[stateKey] as string;
+  return defaultValue;
+}
 
 const program = new Command();
 
@@ -54,21 +91,29 @@ program
   });
 
 // 🔴 Capture single page command (for generate phase)
-// URL 직접 지정 또는 --page ID + --mapping으로 URL 자동 조회
+// URL 직접 지정 또는 --page ID로 URL 자동 조회 (state에서 경로 자동 해석)
 program
   .command('capture-page [url]')
   .description('Capture a single page and auto-update sitemap.json')
-  .option('-o, --output <dir>', 'Output directory', './capture')
+  .option('-o, --output <dir>', 'Output directory (auto-detect from state)')
   .option('-p, --page <id>', 'Page ID from mapping.json (e.g. page_009)')
-  .option('-m, --mapping <file>', 'Mapping file path (for --page lookup)')
+  .option('-m, --mapping <file>', 'Mapping file path (auto-detect from state)')
   .option('-a, --auth <file>', 'Auth session file (JSON)')
   .option('-t, --timeout <ms>', 'Page load timeout', '30000')
   .action(async (url, options) => {
+    // state 파일에서 경로 자동 해석
+    const state = findStateFile(options.output);
+    const outputDir = resolveFromState(options.output, 'captureDir', './capture', state);
+    const mappingFile = resolveFromState(options.mapping, 'mappingFile', path.join(outputDir, '..', 'mapping.json'), state);
+
+    if (state) {
+      console.log(`💾 State 자동 로드: ${(state as any).captureDir || 'N/A'}`);
+    }
+
     // --page 옵션으로 mapping.json에서 URL 조회
     let targetUrl = url;
     if (!targetUrl && options.page) {
-      const mappingFile = options.mapping || path.join(options.output, '..', 'mapping.json');
-      console.log(`🔍 mapping.json에서 ${options.page} 조회 중...`);
+      console.log(`🔍 mapping.json에서 ${options.page} 조회 중... (${mappingFile})`);
       const resolved = getUrlFromMapping(mappingFile, options.page);
       if (!resolved) {
         console.error(`❌ ${options.page}를 찾을 수 없습니다: ${mappingFile}`);
@@ -81,17 +126,18 @@ program
     if (!targetUrl) {
       console.error('❌ URL 또는 --page 옵션이 필요합니다.');
       console.error('   사용법: capture-page <url>');
-      console.error('   또는:   capture-page --page page_009 --mapping ./mapping.json');
+      console.error('   또는:   capture-page --page page_009');
+      console.error('   (--output, --mapping은 .smart-rebuild-state.json에서 자동 탐색)');
       process.exit(1);
     }
 
     console.log('📸 Smart Rebuild - Single Page Capture');
     console.log(`📍 URL: ${targetUrl}`);
-    console.log(`📁 Output: ${options.output}`);
+    console.log(`📁 Output: ${outputDir}`);
 
     const result = await captureSinglePage(
       targetUrl,
-      options.output,
+      outputDir,
       options.auth,
       parseInt(options.timeout)
     );
@@ -102,7 +148,6 @@ program
       console.log(`   HTML: ${result.html}`);
       console.log(`   시간: ${result.capturedAt}`);
       console.log(`   sitemap.json: 자동 반영됨`);
-      // JSON 결과 출력 (프로그래매틱 사용용)
       console.log(`\n<!-- CAPTURE_RESULT_JSON_START -->`);
       console.log(JSON.stringify(result, null, 2));
       console.log(`<!-- CAPTURE_RESULT_JSON_END -->`);
@@ -125,9 +170,18 @@ program
   .option('--manual-mapping <file>', 'Manual URL to source mapping file')
   .option('--framework <type>', 'Source framework (auto-detect if not specified)', '')
   .action(async (options) => {
+    // state 파일에서 경로 자동 해석
+    const state = findStateFile(options.capture);
+    const captureDir = resolveFromState(options.capture, 'captureDir', './capture', state);
+    const sourceDir = resolveFromState(options.source, 'sourceDir', './source', state);
+
+    if (state) {
+      console.log(`💾 State 자동 로드`);
+    }
+
     console.log('🔍 Smart Rebuild - Analyze Phase');
-    console.log(`📂 Source: ${options.source}`);
-    console.log(`📸 Capture: ${options.capture}`);
+    console.log(`📂 Source: ${sourceDir}`);
+    console.log(`📸 Capture: ${captureDir}`);
 
     if (options.framework) {
       console.log(`📦 Framework: ${options.framework} (수동 지정)`);
@@ -142,8 +196,8 @@ program
     }
 
     await analyzeSource({
-      sourcePath: options.source,
-      capturePath: options.capture,
+      sourcePath: sourceDir,
+      capturePath: captureDir,
       outputFile: options.output,
       dbSchemaFile: options.dbSchema,
       dbFromEnv: options.dbFromEnv,
@@ -162,26 +216,32 @@ const generateCmd = program
 generateCmd
   .command('frontend')
   .description('Generate frontend pages with mock data')
-  .option('-m, --mapping <file>', 'Mapping file', './mapping.json')
+  .option('-m, --mapping <file>', 'Mapping file (auto-detect from state)')
   .option('-o, --output <dir>', 'Output directory', './output/frontend')
   .option('-f, --framework <type>', 'Frontend framework', 'nextjs')
-  .option('-c, --capture <dir>', 'Capture directory (for HTML extraction)')
+  .option('-c, --capture <dir>', 'Capture directory (auto-detect from state)')
   .option('--style <type>', 'CSS framework', 'tailwind')
   .action(async (options) => {
+    const state = findStateFile(options.capture);
+    const mappingFile = resolveFromState(options.mapping, 'mappingFile', './mapping.json', state);
+    const captureDir = resolveFromState(options.capture, 'captureDir', '', state);
+
+    if (state) console.log(`💾 State 자동 로드`);
+
     console.log('🎨 Smart Rebuild - Generate Frontend (Mock)');
-    console.log(`📋 Mapping: ${options.mapping}`);
+    console.log(`📋 Mapping: ${mappingFile}`);
     console.log(`📁 Output: ${options.output}`);
     console.log(`🖼️ Framework: ${options.framework}`);
-    if (options.capture) {
-      console.log(`📸 Capture: ${options.capture}`);
+    if (captureDir) {
+      console.log(`📸 Capture: ${captureDir}`);
     }
 
     await generateFrontend({
-      mappingFile: options.mapping,
+      mappingFile,
       outputDir: options.output,
       framework: options.framework,
       style: options.style,
-      captureDir: options.capture,
+      captureDir: captureDir || undefined,
     });
   });
 
