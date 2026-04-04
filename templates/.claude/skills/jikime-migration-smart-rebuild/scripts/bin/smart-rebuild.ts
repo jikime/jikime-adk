@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander';
-import { crawlAndCapture, captureSinglePage } from '../capture/crawl';
+import { crawlAndCapture, captureSinglePage, getUrlFromMapping } from '../capture/crawl';
 import { analyzeSource } from '../analyze/classify';
 import { generateFrontend } from '../generate/frontend';
 import { generateBackend } from '../generate/backend';
@@ -25,14 +25,19 @@ program
   .option('-c, --concurrency <n>', 'Concurrent page captures', '5')
   .option('-a, --auth <file>', 'Auth session file (JSON)')
   .option('-e, --exclude <patterns>', 'URL patterns to exclude', '/admin/*,/api/*')
+  .option('-i, --include <patterns>', 'URL patterns to include (merge mode only)', '')
   .option('-t, --timeout <ms>', 'Page load timeout', '30000')
   .option('--login', 'Open browser for login, then capture')
   .option('--prefetch', '🔴 Capture all pages immediately (default: Lazy Capture - links only)')
+  .option('--merge', 'Merge with existing sitemap.json (preserve completed pages)')
   .action(async (url, options) => {
     console.log('🚀 Smart Rebuild - Capture Phase');
     console.log(`📍 Target: ${url}`);
     console.log(`📁 Output: ${options.output}`);
     console.log(`📸 Mode: ${options.prefetch ? 'Prefetch (즉시 캡처)' : 'Lazy Capture (링크만 수집)'}`);
+    if (options.merge) {
+      console.log(`🔀 Merge: 기존 sitemap.json 병합 모드`);
+    }
 
     await crawlAndCapture(url, {
       outputDir: options.output,
@@ -40,26 +45,52 @@ program
       concurrency: parseInt(options.concurrency),
       authFile: options.auth,
       exclude: options.exclude.split(','),
+      include: options.include ? options.include.split(',') : [],
       timeout: parseInt(options.timeout),
       login: options.login || false,
-      prefetch: options.prefetch || false,  // 🔴 Lazy Capture: 기본값 false
+      prefetch: options.prefetch || false,
+      merge: options.merge || false,
     });
   });
 
 // 🔴 Capture single page command (for generate phase)
+// URL 직접 지정 또는 --page ID + --mapping으로 URL 자동 조회
 program
-  .command('capture-page <url>')
-  .description('Capture a single page (used by generate phase for Lazy Capture)')
+  .command('capture-page [url]')
+  .description('Capture a single page and auto-update sitemap.json')
   .option('-o, --output <dir>', 'Output directory', './capture')
+  .option('-p, --page <id>', 'Page ID from mapping.json (e.g. page_009)')
+  .option('-m, --mapping <file>', 'Mapping file path (for --page lookup)')
   .option('-a, --auth <file>', 'Auth session file (JSON)')
   .option('-t, --timeout <ms>', 'Page load timeout', '30000')
   .action(async (url, options) => {
+    // --page 옵션으로 mapping.json에서 URL 조회
+    let targetUrl = url;
+    if (!targetUrl && options.page) {
+      const mappingFile = options.mapping || path.join(options.output, '..', 'mapping.json');
+      console.log(`🔍 mapping.json에서 ${options.page} 조회 중...`);
+      const resolved = getUrlFromMapping(mappingFile, options.page);
+      if (!resolved) {
+        console.error(`❌ ${options.page}를 찾을 수 없습니다: ${mappingFile}`);
+        process.exit(1);
+      }
+      targetUrl = resolved;
+      console.log(`📍 URL 확인: ${targetUrl}`);
+    }
+
+    if (!targetUrl) {
+      console.error('❌ URL 또는 --page 옵션이 필요합니다.');
+      console.error('   사용법: capture-page <url>');
+      console.error('   또는:   capture-page --page page_009 --mapping ./mapping.json');
+      process.exit(1);
+    }
+
     console.log('📸 Smart Rebuild - Single Page Capture');
-    console.log(`📍 URL: ${url}`);
+    console.log(`📍 URL: ${targetUrl}`);
     console.log(`📁 Output: ${options.output}`);
 
     const result = await captureSinglePage(
-      url,
+      targetUrl,
       options.output,
       options.auth,
       parseInt(options.timeout)
@@ -70,6 +101,7 @@ program
       console.log(`   스크린샷: ${result.screenshot}`);
       console.log(`   HTML: ${result.html}`);
       console.log(`   시간: ${result.capturedAt}`);
+      console.log(`   sitemap.json: 자동 반영됨`);
       // JSON 결과 출력 (프로그래매틱 사용용)
       console.log(`\n<!-- CAPTURE_RESULT_JSON_START -->`);
       console.log(JSON.stringify(result, null, 2));
