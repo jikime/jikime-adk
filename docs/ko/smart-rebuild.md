@@ -143,8 +143,49 @@ Smart Rebuild:    스크린샷 + 소스 → AI가 새로 생성 (클린 코드)
 | `--prefetch` | 모든 페이지 HTML + 스크린샷 미리 캡처 | - |
 | `--max-pages` | 최대 캡처 페이지 수 | `100` |
 | `--login` | 로그인 필요 시 (브라우저 열림) | - |
+| `--auth <file>` | 저장된 인증 세션 파일 사용 | - |
 
-### 4.3 단일 페이지 캡처 (`capture-page`)
+### 4.3 인증이 필요한 페이지 캡처
+
+로그인이 필요한 페이지(회원 전용, 관리자 등)는 두 가지 방식으로 접근합니다.
+
+**방법 1: `--login` (수동 로그인)**
+
+```bash
+smart-rebuild capture https://example.com --login
+```
+
+1. Playwright 브라우저가 **화면에 열림** (headless: false)
+2. 사용자가 직접 로그인 (ID/PW 입력, 소셜 로그인 등)
+3. 터미널에서 `Enter` 누름
+4. 세션 쿠키가 `capture/auth.json`에 **자동 저장**
+5. headless 모드로 전환하여 로그인 상태로 크롤링 시작
+
+```
+🔐 로그인 모드 활성화
+📍 브라우저에서 로그인을 완료하세요.
+✅ 로그인 완료 후 Enter를 누르세요...
+💾 세션 저장 완료: ./capture/auth.json
+🚀 캡처 시작...
+```
+
+**방법 2: `--auth` (저장된 세션 재사용)**
+
+한번 `--login`으로 저장한 세션을 이후에 재사용합니다.
+
+```bash
+# 단일 페이지 캡처 시 기존 세션 사용
+smart-rebuild capture-page --page page_009 --auth ./capture/auth.json
+
+# 전체 재크롤링 시 기존 세션 사용
+smart-rebuild capture https://example.com --auth ./capture/auth.json --merge
+```
+
+**세션 만료 시:** 다시 `--login`으로 갱신하면 `auth.json`이 덮어쓰여집니다.
+
+> `auth.json`은 Playwright의 `storageState` 형식으로, 쿠키와 localStorage를 모두 포함합니다.
+
+### 4.4 단일 페이지 캡처 (`capture-page`)
 
 특정 페이지 1개만 캡처하고 **sitemap.json에 자동 반영**합니다.
 

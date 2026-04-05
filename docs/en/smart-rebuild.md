@@ -143,8 +143,49 @@ Characteristics: DB integration required, has business logic
 | `--prefetch` | Pre-capture all pages HTML + screenshots | - |
 | `--max-pages` | Maximum number of pages to capture | `100` |
 | `--login` | When login is required (browser opens) | - |
+| `--auth <file>` | Use saved authentication session file | - |
 
-### 4.3 Single Page Capture (`capture-page`)
+### 4.3 Capturing Authenticated Pages
+
+Pages requiring login (member-only, admin, etc.) can be accessed in two ways.
+
+**Method 1: `--login` (Manual Login)**
+
+```bash
+smart-rebuild capture https://example.com --login
+```
+
+1. Playwright browser opens **visibly** (headless: false)
+2. User logs in manually (ID/PW, social login, etc.)
+3. Press `Enter` in terminal
+4. Session cookies **auto-saved** to `capture/auth.json`
+5. Switches to headless mode and starts crawling with login state
+
+```
+🔐 Login mode activated
+📍 Complete login in the browser.
+✅ Press Enter after login is complete...
+💾 Session saved: ./capture/auth.json
+🚀 Starting capture...
+```
+
+**Method 2: `--auth` (Reuse Saved Session)**
+
+Reuse a session previously saved with `--login`.
+
+```bash
+# Single page capture with saved session
+smart-rebuild capture-page --page page_009 --auth ./capture/auth.json
+
+# Full re-crawl with saved session
+smart-rebuild capture https://example.com --auth ./capture/auth.json --merge
+```
+
+**Session expired?** Run `--login` again to refresh `auth.json`.
+
+> `auth.json` uses Playwright's `storageState` format, which includes both cookies and localStorage.
+
+### 4.4 Single Page Capture (`capture-page`)
 
 Capture a single page and **auto-update sitemap.json**.
 
