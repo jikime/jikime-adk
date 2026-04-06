@@ -5,7 +5,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"jikime-adk/worktree"
+	"jikime-adk/internal/worktree"
 )
 
 func newSyncCmd() *cobra.Command {

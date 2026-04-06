@@ -20,7 +20,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 
-	"jikime-adk/backup"
+	"jikime-adk/internal/backup"
 	"jikime-adk/templates"
 	"jikime-adk/version"
 )

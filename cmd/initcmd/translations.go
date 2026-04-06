@@ -7,7 +7,7 @@ import (
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 
-	"jikime-adk/translations"
+	"jikime-adk/internal/translations"
 )
 
 var (

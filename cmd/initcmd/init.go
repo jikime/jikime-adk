@@ -14,7 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	"jikime-adk/cmd/banner"
 	"jikime-adk/cmd/ui"
-	"jikime-adk/project"
+	"jikime-adk/internal/project"
 	"jikime-adk/version"
 )
 
