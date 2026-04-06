@@ -13,7 +13,6 @@ const koSidebar = [
   {
     text: '스킬 시스템',
     items: [
-      { text: '스킬 목록', link: '/ko/skills-catalog' },
       { text: '스킬 개요', link: '/ko/skills' },
       { text: '스킬 만들기', link: '/ko/skill-create' },
       { text: '마케팅 스킬', link: '/ko/marketing' },
@@ -91,7 +90,6 @@ const enSidebar = [
   {
     text: 'Skills System',
     items: [
-      { text: 'Skills Catalog', link: '/en/skills-catalog' },
       { text: 'Skills Overview', link: '/en/skills' },
       { text: 'Create a Skill', link: '/en/skill-create' },
       { text: 'Marketing Skills', link: '/en/marketing' },
@@ -166,7 +164,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: '홈', link: '/ko/' },
-          { text: '스킬', link: '/ko/skills-catalog' },
+          { text: '스킬', link: '/ko/skills' },
           { text: 'Webchat', link: '/ko/webchat/installation' },
           {
             text: '언어',
@@ -188,7 +186,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Home', link: '/en/' },
-          { text: 'Skills', link: '/en/skills-catalog' },
+          { text: 'Skills', link: '/en/skills' },
           {
             text: 'Language',
             items: [

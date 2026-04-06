@@ -70,7 +70,7 @@ MoAI-ADK의 구조와 흐름을 깊이 분석했고, 그 단단한 철학적 기
 | **구조화된 태스크 포맷** | Do/Files/Done when/Verify/Commit 5필드 구조 + 품질 체크포인트 | [태스크 포맷 가이드](./docs/ko/task-format.md) |
 | **PR 라이프사이클 자동화** | PR 생성, CI 모니터링, 리뷰 해결, 머지 자동화 | [PR 라이프사이클 가이드](./docs/ko/pr-lifecycle.md) |
 | **Auto-Memory** | Claude Code 네이티브 메모리 시스템을 통한 크로스 세션 프로젝트 컨텍스트 자동 주입 | [Auto-Memory 가이드](./docs/ko/auto-memory.md) |
-| **73개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 카탈로그](./docs/ko/skills-catalog.md) |
+| **87개 스킬 시스템** | Progressive Disclosure 기반 지식 로딩 | [스킬 개요](./docs/ko/skills.md) |
 | **품질 보증** | TRUST 5 프레임워크 + LSP 품질 게이트 | [품질 가이드](./docs/ko/rules.md) |
 | **LLM 프로바이더 라우터** | OpenAI, Gemini, GLM, Ollama 전환 | [라우터 문서](./docs/ko/provider-router.md) |
 
@@ -224,7 +224,7 @@ IMPROVE   →  자신감 있게 변경 → (반복)
 | [에이전트 카탈로그](./docs/ko/agents.md) | 26개 에이전트 상세 역할 |
 | [Agent Teams](./docs/ko/agents-team.md) | 병렬 팀 기반 멀티 에이전트 오케스트레이션 |
 | [명령어 레퍼런스](./docs/ko/commands.md) | 슬래시 명령어 및 CLI 전체 목록 |
-| [스킬 카탈로그](./docs/ko/skills-catalog.md) | 60개 스킬 분류 및 설명 |
+| [스킬 개요](./docs/ko/skills.md) | 87개 스킬 분류 및 설명 |
 | [마이그레이션 가이드](./docs/ko/migration.md) | F.R.I.D.A.Y. 마이그레이션 워크플로우 |
 | [Smart Rebuild 가이드](./docs/ko/smart-rebuild.md) | 스크린샷 기반 레거시 사이트 새로 구축 |
 | [Smart Rebuild 플로우](./docs/ko/smart-rebuild-flow.md) | Smart Rebuild 전체 워크플로우 다이어그램 |

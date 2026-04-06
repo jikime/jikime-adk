@@ -70,7 +70,7 @@ I've further enhanced JiKiME's capabilities by referencing the agent, command, a
 | **Structured Task Format** | Do/Files/Done-when/Verify/Commit 5-field task structure with quality checkpoints | [Task Format Guide](./docs/en/task-format.md) |
 | **PR Lifecycle Automation** | Automated PR creation, CI monitoring, review resolution, and merge | [PR Lifecycle Guide](./docs/en/pr-lifecycle.md) |
 | **Auto-Memory** | Cross-session project context injection via Claude Code's native memory system | [Auto-Memory Guide](./docs/en/auto-memory.md) |
-| **73 Skill System** | Progressive Disclosure based knowledge loading | [Skills Catalog](./docs/en/skills-catalog.md) |
+| **87 Skill System** | Progressive Disclosure based knowledge loading | [Skills Overview](./docs/en/skills.md) |
 | **Quality Assurance** | TRUST 5 Framework + LSP Quality Gates | [Quality Guide](./docs/en/rules.md) |
 | **LLM Provider Router** | Switch between OpenAI, Gemini, GLM, Ollama | [Router Docs](./docs/en/provider-router.md) |
 
@@ -224,7 +224,7 @@ IMPROVE   →  Change with confidence → (repeat)
 | [Agent Catalog](./docs/en/agents.md) | 26 agent detailed roles |
 | [Agent Teams](./docs/en/agents-team.md) | Parallel team-based multi-agent orchestration |
 | [Command Reference](./docs/en/commands.md) | Full slash command and CLI list |
-| [Skills Catalog](./docs/en/skills-catalog.md) | 60 skill classifications and descriptions |
+| [Skills Overview](./docs/en/skills.md) | 87 skill classifications and descriptions |
 | [Migration Guide](./docs/en/migration.md) | F.R.I.D.A.Y. migration workflow |
 | [Smart Rebuild Guide](./docs/en/smart-rebuild.md) | Screenshot-based legacy site reconstruction |
 | [Smart Rebuild Flow](./docs/en/smart-rebuild-flow.md) | Smart Rebuild full workflow diagram |
