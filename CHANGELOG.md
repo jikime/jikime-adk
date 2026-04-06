@@ -5,6 +5,34 @@ All notable changes to JikiME-ADK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-04-06
+
+### Fixed
+
+- **21 code review findings resolved** (CRITICAL → LOW): address all issues identified by comprehensive review-lead audit
+  - CRITICAL-01: Replaced `os/exec` shell injection in `update.go` with safe `execFileSync`-style approach using validated binary paths
+  - CRITICAL-02: Webchat terminal route — `WEBCHAT_AUTO_CLAUDE=true` now required to auto-inject `claude --dangerously-skip-permissions` (opt-in, default off)
+  - HIGH-01: Webchat CORS restricted to `localhost` origins only (removed wildcard `*`)
+  - HIGH-02: Webchat auth middleware (`src/lib/auth.ts`) added to all API routes
+  - HIGH-03: Shared input validation module (`src/lib/validation.ts`) with `NAME_RE` / `BUDGET_RE` regex guards
+  - HIGH-04: Terminal stdin capped at 64 KB to prevent shell blocking
+  - MEDIUM-01: `throttledExecFile` concurrency limiter added to prevent fork-bomb on concurrent skill loads
+  - MEDIUM-02 to LOW-05: Various quality, style, and dead-code fixes across CLI and webchat
+
+### Refactored
+
+- **`internal/` package encapsulation**: Moved 6 packages from top-level to `internal/` — `backup`, `project`, `skill`, `tag`, `translations`, `worktree`; prevents accidental external import of implementation details
+- **`board.go` decomposed**: Split into `board.go` (router), `board_data.go` (data handlers), `board_serve.go` (SPA server), `board_spa.html` (embedded template) for better maintainability
+
+### Added
+
+- **38 new tests**: `update_test.go` (update logic), `loader_test.go` (skill loader), `registry_test.go` (skill registry) — improves confidence in core CLI subsystems
+
+### Removed
+
+- **`schemas/` directory deleted**: Unused JSON schema files removed (dead code cleanup)
+- **`skills-catalog.yaml` removed**: Static catalog file was unused at runtime; skill loading handled by `skill/loader.go` scanning `SKILL.md` directly
+
 ## [1.8.0] - 2026-04-02
 
 ### Added
