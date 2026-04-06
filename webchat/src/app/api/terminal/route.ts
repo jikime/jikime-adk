@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { spawn, execFileSync, type ChildProcessWithoutNullStreams } from 'child_process'
+import { checkAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -169,9 +170,10 @@ if (typeof globalThis !== 'undefined') {
       }
     }
   }
-  const g = globalThis as unknown as Record<string, unknown>
-  if (!g.__webchatTerminalCleanup) {
-    g.__webchatTerminalCleanup = setInterval(cleanup, 2 * 60 * 1000)
+  // Prevent duplicate cleanup intervals in dev hot-reload
+  const CLEANUP_KEY = '__terminal_cleanup_interval__'
+  if (!(globalThis as Record<string, unknown>)[CLEANUP_KEY]) {
+    (globalThis as Record<string, unknown>)[CLEANUP_KEY] = setInterval(cleanup, 2 * 60 * 1000)
   }
 }
 
@@ -269,11 +271,14 @@ function createSession(cols = 220, rows = 50, cwd = '/tmp'): string {
 
   sessions.set(id, session)
 
-  setTimeout(() => {
-    if (session.alive) {
-      proc.stdin.write('claude --dangerously-skip-permissions\r')
-    }
-  }, 600)
+  // WEBCHAT_AUTO_CLAUDE=true 인 경우에만 자동 주입 (기본값: 비활성)
+  if (process.env.WEBCHAT_AUTO_CLAUDE === 'true') {
+    setTimeout(() => {
+      if (session.alive) {
+        proc.stdin.write('claude --dangerously-skip-permissions\r')
+      }
+    }, 600)
+  }
 
   return id
 }
@@ -281,6 +286,9 @@ function createSession(cols = 220, rows = 50, cwd = '/tmp'): string {
 /* ── GET: SSE stream ── */
 
 export async function GET(request: NextRequest) {
+  const authError = checkAuth(request)
+  if (authError) return authError
+
   const { searchParams } = new URL(request.url)
   const action = searchParams.get('action') || 'stream'
   const sessionId = searchParams.get('session') || ''
@@ -350,6 +358,9 @@ export async function GET(request: NextRequest) {
 /* ── POST ── */
 
 export async function POST(request: NextRequest) {
+  const authError = checkAuth(request)
+  if (authError) return authError
+
   const body = await request.json()
   const action = body.action as string
 

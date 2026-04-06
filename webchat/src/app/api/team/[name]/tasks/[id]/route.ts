@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { execFile } from 'child_process'
-
-const NAME_RE  = /^[a-zA-Z0-9_-]{1,64}$/
+import { NAME_RE } from '@/lib/validation'
 const VALID_STATUSES = new Set(['pending', 'in_progress', 'done', 'failed', 'blocked'])
 
 type Params = { params: Promise<{ name: string; id: string }> }

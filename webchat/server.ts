@@ -1139,11 +1139,11 @@ function stopProjectPoller(projectPath: string): void {
   console.log(`[poller] stopped — ${poller.owner}/${poller.repo}`)
 }
 
-// ── CORS 헤더 (원격 브라우저에서 접근 허용) ───────────────────────
+// ── CORS 헤더 (localhost 전용) ───────────────────────────────────
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Origin':  process.env.CORS_ORIGIN || 'http://localhost:4000',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 }
 
 // ── HTTP Request Handler for custom routes ─────────────────────

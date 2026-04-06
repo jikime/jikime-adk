@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { execFile } from 'child_process'
-
-const NAME_RE = /^[a-zA-Z0-9_-]{1,64}$/
+import { NAME_RE } from '@/lib/validation'
 
 type Params = { params: Promise<{ name: string }> }
 
@@ -17,8 +16,8 @@ export async function POST(request: NextRequest, { params }: Params) {
   const msg  = (body['body'] || body['message'] || '').slice(0, 4000)
   const from = (body['from'] || 'webchat').slice(0, 80).trim()
   if (!to || !msg) return NextResponse.json({ error: 'to and body required' }, { status: 400 })
-  if (!NAME_RE.test(to))   return NextResponse.json({ error: '"to" must match [a-zA-Z0-9_-]{1,64}' }, { status: 400 })
-  if (!NAME_RE.test(from)) return NextResponse.json({ error: '"from" must match [a-zA-Z0-9_-]{1,64}' }, { status: 400 })
+  if (!NAME_RE.test(to))   return NextResponse.json({ error: '"to" must match [a-zA-Z0-9_-]{1,80}' }, { status: 400 })
+  if (!NAME_RE.test(from)) return NextResponse.json({ error: '"from" must match [a-zA-Z0-9_-]{1,80}' }, { status: 400 })
 
   return new Promise<NextResponse>((resolve) => {
     execFile('jikime', ['team', 'inbox', 'send', name, to, msg, '--from', from], (err) => {

@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -274,10 +275,22 @@ func compareVersions(v1, v2 string) int {
 	for i := 0; i < maxLen; i++ {
 		var n1, n2 int
 		if i < len(v1Parts) {
-			fmt.Sscanf(v1Parts[i], "%d", &n1)
+			val, err := strconv.Atoi(v1Parts[i])
+			if err != nil {
+				// pre-release 태그 등 숫자가 아닌 경우 문자열 비교로 폴백
+				if i < len(v2Parts) {
+					return strings.Compare(v1Parts[i], v2Parts[i])
+				}
+				return 1
+			}
+			n1 = val
 		}
 		if i < len(v2Parts) {
-			fmt.Sscanf(v2Parts[i], "%d", &n2)
+			val, err := strconv.Atoi(v2Parts[i])
+			if err != nil {
+				return strings.Compare(v1Parts[i], v2Parts[i])
+			}
+			n2 = val
 		}
 
 		if n1 < n2 {

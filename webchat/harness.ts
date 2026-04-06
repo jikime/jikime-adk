@@ -98,9 +98,9 @@ const orchestrators = new Map<string, HarnessOrchestrator>()
 // ── CORS ──────────────────────────────────────────────────────────
 
 const CORS: Record<string, string> = {
-  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Origin':  process.env.CORS_ORIGIN || 'http://localhost:4000',
   'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 }
 
 // ── WORKFLOW.md Parser ────────────────────────────────────────────

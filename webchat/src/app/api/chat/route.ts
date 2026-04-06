@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server'
 import { spawn } from 'child_process'
 import * as fs   from 'fs'
 import * as path from 'path'
+import { checkAuth } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,8 +16,11 @@ export const dynamic = 'force-dynamic'
  *   { type: "result", result: "...", ... }
  */
 export async function POST(request: NextRequest) {
+  const authError = checkAuth(request)
+  if (authError) return authError
+
   const body    = await request.json()
-  const message = (body.message as string)?.trim()
+  const message = (body.message as string)?.trim().slice(0, 100_000)
 
   if (!message) {
     return Response.json({ error: 'No message' }, { status: 400 })

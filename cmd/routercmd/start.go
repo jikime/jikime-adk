@@ -134,8 +134,12 @@ func printStartInfo(cfg *router.Config) {
 func writePID(pid int) {
 	pidPath := router.PIDPath()
 	// filepath.Dir 사용 — 문자열 슬라이싱 대신 안전한 경로 추출
-	os.MkdirAll(filepath.Dir(pidPath), 0o755)
-	os.WriteFile(pidPath, []byte(strconv.Itoa(pid)), 0o644)
+	if err := os.MkdirAll(filepath.Dir(pidPath), 0o755); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: failed to create PID directory: %v\n", err)
+	}
+	if err := os.WriteFile(pidPath, []byte(strconv.Itoa(pid)), 0o644); err != nil {
+		fmt.Fprintf(os.Stderr, "warning: failed to write PID file: %v\n", err)
+	}
 }
 
 func readPID() int {

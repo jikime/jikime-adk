@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { execFile } from 'child_process'
 import { TeamFileStore } from '@/lib/team-store'
-
-const NAME_RE = /^[a-zA-Z0-9_-]{1,64}$/
+import { NAME_RE } from '@/lib/validation'
 
 type Params = { params: Promise<{ name: string }> }
 

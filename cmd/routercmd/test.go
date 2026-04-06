@@ -80,11 +80,17 @@ func runTest(cmd *cobra.Command, args []string) error {
 	}
 	defer resp.Body.Close()
 
-	respBody, _ := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024)) // 10 MB limit
+	if err != nil {
+		return fmt.Errorf("failed to read response body: %w", err)
+	}
 
 	if resp.StatusCode == http.StatusOK {
 		var anthropicResp types.AnthropicResponse
-		json.Unmarshal(respBody, &anthropicResp)
+		if err := json.Unmarshal(respBody, &anthropicResp); err != nil {
+			fmt.Printf("  Response parse error: %v\n", err)
+			fmt.Printf("  Raw response: %s\n", string(respBody[:min(len(respBody), 500)]))
+		}
 
 		color.Green("  Success (%dms)", elapsed.Milliseconds())
 		if len(anthropicResp.Content) > 0 && anthropicResp.Content[0].Type == "text" {

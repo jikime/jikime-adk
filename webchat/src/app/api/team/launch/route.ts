@@ -4,11 +4,13 @@ import * as os   from 'os'
 import * as path from 'path'
 import { execFile } from 'child_process'
 import { TeamFileStore } from '@/lib/team-store'
-
-const NAME_RE   = /^[a-zA-Z0-9_-]{1,80}$/
-const BUDGET_RE = /^\d{1,10}$/
+import { NAME_RE, BUDGET_RE } from '@/lib/validation'
+import { checkAuth } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
+  const authError = checkAuth(request)
+  if (authError) return authError
+
   const contentLength = request.headers.get('content-length')
   if (contentLength && parseInt(contentLength) > 10_240) {
     return NextResponse.json({ error: 'Request too large' }, { status: 413 })

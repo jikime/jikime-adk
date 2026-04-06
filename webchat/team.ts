@@ -47,7 +47,7 @@ function readJSON<T>(filePath: string, fallback: T): T {
 
 // const 객체로 선언 — 매 응답마다 새 객체 생성 방지
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || 'http://localhost:4000',
   'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 } as const

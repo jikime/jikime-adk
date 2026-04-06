@@ -346,8 +346,12 @@ Example:
 					cfg := struct {
 						Description string `json:"description"`
 					}{}
-					data, _ := os.ReadFile(filepath.Join(teamsDir, e.Name(), "config.json"))
-					_ = json.Unmarshal(data, &cfg)
+					data, err := os.ReadFile(filepath.Join(teamsDir, e.Name(), "config.json"))
+					if err == nil {
+						if jsonErr := json.Unmarshal(data, &cfg); jsonErr != nil {
+							fmt.Fprintf(os.Stderr, "warning: failed to parse config for team %s: %v\n", e.Name(), jsonErr)
+						}
+					}
 					list = append(list, teamMeta{Name: e.Name(), Description: cfg.Description})
 				}
 				if list == nil {
@@ -383,7 +387,7 @@ Example:
 				w.Header().Set("Content-Type", "text/event-stream")
 				w.Header().Set("Cache-Control", "no-cache")
 				w.Header().Set("Connection", "keep-alive")
-				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Origin", corsOrigin(r))
 
 				flusher, ok := w.(http.Flusher)
 				if !ok {
@@ -424,7 +428,14 @@ Example:
 				fmt.Printf("   Default team: %s\n", defaultTeam)
 			}
 			fmt.Println("   Press Ctrl+C to stop.")
-			return http.ListenAndServe(addr, mux)
+			srv := &http.Server{
+				Addr:         addr,
+				Handler:      mux,
+				ReadTimeout:  15 * time.Second,
+				WriteTimeout: 60 * time.Second,
+				IdleTimeout:  120 * time.Second,
+			}
+			return srv.ListenAndServe()
 		},
 	}
 	cmd.Flags().IntVarP(&port, "port", "p", 8080, "HTTP server port")
@@ -433,10 +444,23 @@ Example:
 	return cmd
 }
 
+// corsOrigin returns the Origin header if it is a localhost address,
+// otherwise falls back to http://localhost:4000.
+func corsOrigin(r *http.Request) string {
+	origin := r.Header.Get("Origin")
+	if origin == "" {
+		return "http://localhost:4000"
+	}
+	if strings.HasPrefix(origin, "http://localhost:") || strings.HasPrefix(origin, "http://127.0.0.1:") {
+		return origin
+	}
+	return "http://localhost:4000"
+}
+
 // writeJSON2 serialises v as indented JSON with CORS headers.
 func writeJSON2(w http.ResponseWriter, v interface{}) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4000")
 	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	_ = enc.Encode(v)
@@ -479,12 +503,22 @@ func collectBoardData(name string) (map[string]interface{}, error) {
 		LeaderID    string `json:"leader_id"`
 		Description string `json:"description"`
 	}{}
-	data, _ := os.ReadFile(filepath.Join(td, "config.json"))
-	_ = json.Unmarshal(data, &cfg)
+	data, err := os.ReadFile(filepath.Join(td, "config.json"))
+	if err == nil {
+		if jsonErr := json.Unmarshal(data, &cfg); jsonErr != nil {
+			fmt.Fprintf(os.Stderr, "warning: failed to parse team config for %s: %v\n", name, jsonErr)
+		}
+	}
 
 	// Agents
-	reg, _ := team.NewRegistry(filepath.Join(td, "registry"))
-	agents, _ := reg.List()
+	reg, regErr := team.NewRegistry(filepath.Join(td, "registry"))
+	if regErr != nil {
+		fmt.Fprintf(os.Stderr, "warning: failed to load registry for %s: %v\n", name, regErr)
+	}
+	var agents []*team.AgentInfo
+	if reg != nil {
+		agents, _ = reg.List()
+	}
 
 	leaderName := cfg.LeaderID
 	members := make([]boardMember, 0, len(agents))
@@ -505,8 +539,14 @@ func collectBoardData(name string) (map[string]interface{}, error) {
 	}
 
 	// Tasks
-	store, _ := team.NewStore(filepath.Join(td, "tasks"))
-	allTasks, _ := store.List("", "")
+	store, storeErr := team.NewStore(filepath.Join(td, "tasks"))
+	if storeErr != nil {
+		fmt.Fprintf(os.Stderr, "warning: failed to load task store for %s: %v\n", name, storeErr)
+	}
+	var allTasks []*team.Task
+	if store != nil {
+		allTasks, _ = store.List("", "")
+	}
 
 	taskGroups := map[string][]boardTaskItem{
 		"pending":     {},

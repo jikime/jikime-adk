@@ -6,7 +6,7 @@
     "dev": "tsx server.ts",
     "dev:server": "tsx watch server.ts",
     "build": "next build",
-    "start": "next start --port 4000",
+    "start": "next start --port 4500",
     "lint": "eslint",
     "fix-pty": "bash scripts/fix-pty-linux.sh",
     "postinstall": "node scripts/postinstall.js"

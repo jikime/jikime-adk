@@ -2,10 +2,9 @@ import { NextRequest } from 'next/server'
 import * as fs from 'fs'
 import * as path from 'path'
 import { teamDir, buildTeamSnapshot } from '@/lib/team-store'
+import { NAME_RE } from '@/lib/validation'
 
 type Params = { params: Promise<{ name: string }> }
-
-const NAME_RE = /^[a-zA-Z0-9_-]{1,64}$/
 
 export async function GET(request: NextRequest, { params }: Params) {
   const { name } = await params

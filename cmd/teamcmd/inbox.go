@@ -205,6 +205,10 @@ for each incoming message. Message data is passed as environment variables:
 			return ib.Watch(done, func(m *team.Message) {
 				fmt.Printf("[%s] from:%-12s  %s\n", m.SentAt.Format("15:04:05"), m.From, m.Body)
 				if execCmd != "" {
+					// Security: use env vars for message data instead of shell interpolation.
+					// WARNING: Do NOT use $JIKIME_MSG_BODY directly in shell expansions
+					// (e.g. echo $JIKIME_MSG_BODY). Use quoted form: echo "$JIKIME_MSG_BODY"
+					// to prevent shell injection from malicious message content.
 					c := exec.Command("sh", "-c", execCmd)
 					c.Env = append(os.Environ(),
 						"JIKIME_MSG_FROM="+m.From,
@@ -223,7 +227,7 @@ for each incoming message. Message data is passed as environment variables:
 		},
 	}
 	cmd.Flags().StringVarP(&agentID, "agent", "a", "", "Agent ID")
-	cmd.Flags().StringVarP(&execCmd, "exec", "e", "", "Shell command to run for each new message")
+	cmd.Flags().StringVarP(&execCmd, "exec", "e", "", "Shell command for each message (use quoted $JIKIME_MSG_BODY to avoid injection)")
 	return cmd
 }
 
