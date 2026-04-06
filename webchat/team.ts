@@ -23,6 +23,32 @@ import * as os   from 'os'
 import { execFile } from 'child_process'
 import type { IncomingMessage, ServerResponse } from 'http'
 
+// Rate-limit concurrent jikime CLI calls to prevent resource exhaustion
+const MAX_CONCURRENT_EXEC = 5
+let activeExecs = 0
+const execQueue: Array<() => void> = []
+
+function throttledExecFile(
+  cmd: string,
+  args: string[],
+  opts: Record<string, unknown>,
+  cb: (err: Error | null, stdout: string, stderr: string) => void
+): void {
+  const run = () => {
+    activeExecs++
+    execFile(cmd, args, opts as any, (err, stdout, stderr) => {
+      activeExecs--
+      if (execQueue.length > 0) execQueue.shift()!()
+      cb(err, stdout || '', stderr || '')
+    })
+  }
+  if (activeExecs < MAX_CONCURRENT_EXEC) {
+    run()
+  } else {
+    execQueue.push(run)
+  }
+}
+
 // ── Helpers ────────────────────────────────────────────────────────
 
 function dataDir(): string {
@@ -632,7 +658,7 @@ Rules:
       if (b['budget']) args.push('--budget', String(b['budget']).slice(0, 20))
       if (useWorktree) args.push('--worktree')
       const effectiveCwd1 = (projectPath && fs.existsSync(projectPath)) ? projectPath : os.homedir()
-      execFile('jikime', args, { timeout: 120_000, cwd: effectiveCwd1 }, (err, stdout, stderr) => {
+      throttledExecFile('jikime', args, { timeout: 120_000, cwd: effectiveCwd1 }, (err, stdout, stderr) => {
         if (err) { jsonReply(res, 500, { error: err.message, output: ((stdout ?? '') + (stderr ?? '')).trim() }); return }
         // Extract team name from output and save webchat meta
         const launched = stdout.match(/Launching team "([^"]+)"/)?.[1] || rawName || ''
@@ -681,7 +707,7 @@ Rules:
       if (createWorkers)   args.push('--workers',  createWorkers)
       if (createTemplate)  args.push('--template', createTemplate)
       if (createBudget)    args.push('--budget',   createBudget)
-      execFile('jikime', args, (err, stdout) => {
+      throttledExecFile('jikime', args, {}, (err, stdout) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         if (projectPath) {
           try { new TeamFileStore().writeWebchatMeta(name, { projectPath }) } catch { /* */ }
@@ -728,7 +754,7 @@ Rules:
     // 디코딩 후 재검증 — tmux 세션명 구성 전 경로 탈출 / 인젝션 방지
     if (!NAME_RE.test(agentId)) { jsonReply(res, 400, { error: 'Invalid agent ID' }); return true }
     const sessionName = `jikime-${teamName.replace(/[ /:]/g, '-')}-${agentId.replace(/[ /:]/g, '-')}`
-    execFile('tmux', ['kill-session', '-t', sessionName], (err) => {
+    throttledExecFile('tmux', ['kill-session', '-t', sessionName], {}, (err) => {
       if (err) { jsonReply(res, 500, { error: err.message }); return }
       jsonReply(res, 200, { ok: true })
     })
@@ -737,7 +763,7 @@ Rules:
 
   // DELETE /api/team/:name
   if (method === 'DELETE' && subPath === '') {
-    execFile('jikime', ['team', 'stop', teamName, '--force'], (err) => {
+    throttledExecFile('jikime', ['team', 'stop', teamName, '--force'], {}, (err) => {
       if (err) { jsonReply(res, 500, { error: err.message }); return }
       stopTeamWatcher(teamName)
       jsonReply(res, 200, { ok: true })
@@ -766,7 +792,7 @@ Rules:
       if (b['desc'])   args.push('--desc',  JSON.stringify(b['desc']))
       if (b['dod'])    args.push('--dod',   JSON.stringify(b['dod']))
       if (b['owner'])  args.push('--owner', b['owner'])
-      execFile('jikime', args, (err, stdout) => {
+      throttledExecFile('jikime', args, {}, (err, stdout) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 201, { ok: true, output: stdout.trim() })
       })
@@ -805,7 +831,7 @@ Rules:
       if (b['goal'])     args.push('--goal', JSON.stringify(b['goal']))
       if (b['worktree']) args.push('--worktree')
       const effectiveCwd2 = (projectPath && fs.existsSync(projectPath)) ? projectPath : os.homedir()
-      execFile('jikime', args, { timeout: 120_000, cwd: effectiveCwd2 }, (err, stdout, stderr) => {
+      throttledExecFile('jikime', args, { timeout: 120_000, cwd: effectiveCwd2 }, (err, stdout, stderr) => {
         if (err) { jsonReply(res, 500, { error: err.message, output: ((stdout ?? '') + (stderr ?? '')).trim() }); return }
         if (projectPath) {
           try { store.writeWebchatMeta(teamName, { projectPath }) } catch { /* */ }
@@ -839,7 +865,7 @@ Rules:
       if (patchStatus) args.push('--status', patchStatus)
       if (patchAgent)  args.push('--agent',  patchAgent)
       if (b['result']) args.push('--result',  JSON.stringify((b['result'] || '').slice(0, 2000)))
-      execFile('jikime', args, (err) => {
+      throttledExecFile('jikime', args, {}, (err) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 200, { ok: true })
       })
@@ -867,7 +893,7 @@ Rules:
       if (!NAME_RE.test(to))   { jsonReply(res, 400, { error: '"to" must match [a-zA-Z0-9_-]{1,80}' }); return }
       if (!msg)                 { jsonReply(res, 400, { error: 'body required' }); return }
       if (!NAME_RE.test(from)) { jsonReply(res, 400, { error: '"from" must match [a-zA-Z0-9_-]{1,80}' }); return }
-      execFile('jikime', ['team', 'inbox', 'send', teamName, to, msg, '--from', from], (err) => {
+      throttledExecFile('jikime', ['team', 'inbox', 'send', teamName, to, msg, '--from', from], {}, (err) => {
         if (err) { jsonReply(res, 500, { error: err.message }); return }
         jsonReply(res, 200, { ok: true })
       })

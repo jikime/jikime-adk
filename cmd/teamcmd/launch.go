@@ -44,6 +44,8 @@ Example:
 			}
 			def = team.Render(def, goal, teamName)
 
+			// Note: Emoji characters may not render in non-UTF-8 terminals or CI environments.
+			// Consider using --no-emoji flag in future if needed.
 			fmt.Printf("🚀 Launching team %q from template %q\n", teamName, templateName)
 
 			// Step 1: Create team directory structure

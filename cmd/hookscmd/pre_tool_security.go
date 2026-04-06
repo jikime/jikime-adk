@@ -26,6 +26,10 @@ Security Features:
 	RunE: runPreToolSecurity,
 }
 
+// TODO: Allow supplementary patterns via .jikime/config/security.yaml
+// Current patterns are hardcoded. Future enhancement: load additional
+// deny/ask patterns from project config at runtime.
+
 // Patterns for files that should NEVER be modified
 var denyPatterns = []string{
 	// Secrets and credentials
